@@ -162,7 +162,9 @@ function renderizarPecas(origem, pecas, custos, vendas) {
   mensagemProdutosOrigem.textContent = "";
 
   pecas.forEach(peca => {
-    const custoBase = calcularCustoPeca(peca, pecas, origem);
+    const custoCalculado = calcularCustoPeca(peca, pecas, origem);
+    const precoVenda = Number(peca.precoVenda || 0);
+    const lucro = precoVenda - custoCalculado;
     const custosDiversos = somarCustosPorSku(custos, peca.sku);
     const vendasProduto = vendas.filter(venda => venda.sku === peca.sku);
     const faturamento = somarCampo(vendasProduto, "valorTotal");
@@ -174,7 +176,10 @@ function renderizarPecas(origem, pecas, custos, vendas) {
       <td data-label="SKU">${peca.sku || "-"}</td>
       <td data-label="Categoria">${peca.categoria || "-"}</td>
       <td data-label="Quantidade">${peca.quantidade || 0}</td>
-      <td data-label="Custo base">${formatarMoeda(custoBase)}</td>
+      <td data-label="Tipo de custo">${peca.tipoCusto}</td>
+      <td data-label="Custo calculado">${formatarMoeda(custoCalculado)}</td>
+      <td data-label="Preço de venda">${formatarMoeda(precoVenda)}</td>
+      <td data-label="Lucro">${formatarMoeda(lucro)}</td>
       <td data-label="Custos diversos">${formatarMoeda(custosDiversos)}</td>
       <td data-label="Faturamento">${formatarMoeda(faturamento)}</td>
       <td data-label="Lucro bruto">${formatarMoeda(lucroBruto)}</td>
