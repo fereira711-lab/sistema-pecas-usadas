@@ -50,7 +50,7 @@ function renderizarOrigens() {
 
   mensagemOrigens.textContent = "";
 
-  origens.forEach((origem, indice) => {
+  origens.forEach(origem => {
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -62,7 +62,7 @@ function renderizarOrigens() {
       <td data-label="Ações">
         <div class="table-actions">
           <button type="button" data-acao="detalhes" data-origem-id="${origem.id}">Ver detalhes</button>
-          <button type="button" data-acao="remover" data-indice="${indice}">Remover</button>
+          <button type="button" data-acao="remover" data-origem-id="${origem.id}">Remover</button>
         </div>
       </td>
     `;
@@ -75,16 +75,22 @@ function abrirDetalhesOrigem(origemId) {
   window.location.href = `detalhes-origem.html?origemId=${origemId}`;
 }
 
-function removerOrigem(indice) {
+function removerOrigem(origemId) {
   const origens = buscarOrigens();
-  const confirmou = confirm(`Deseja remover a origem "${origens[indice].descricao}"?`);
+  const origem = origens.find(item => item.id === origemId);
+
+  if (!origem) {
+    mensagemOrigens.textContent = "Origem não encontrada para remoção.";
+    return;
+  }
+
+  const confirmou = confirm(`Deseja remover a origem "${origem.descricao}"?`);
 
   if (!confirmou) {
     return;
   }
 
-  origens.splice(indice, 1);
-  salvarOrigens(origens);
+  salvarOrigens(origens.filter(item => item.id !== origemId));
   renderizarOrigens();
 }
 
@@ -100,7 +106,7 @@ tabelaOrigensLista.addEventListener("click", function (evento) {
   }
 
   if (botao.dataset.acao === "remover") {
-    removerOrigem(Number(botao.dataset.indice));
+    removerOrigem(Number(botao.dataset.origemId));
   }
 });
 
