@@ -2,18 +2,38 @@ const formularioProduto = document.getElementById("formProduto");
 const mensagemProduto = document.getElementById("mensagemProduto");
 const botaoPreencherExemplo = document.getElementById("btnPreencherExemplo");
 
+const TIPOS_CUSTO_PECA = ["real", "rateado", "simbolico"];
+const TIPO_CUSTO_PADRAO = "real";
+
 const produtoExemplo = {
   nome: "Farol esquerdo Fiat Uno",
   sku: "FAR-UNO-001",
   categoria: "Iluminação",
   quantidade: 3,
   custo: 120,
+  tipoCusto: TIPO_CUSTO_PADRAO,
   precoVenda: 250,
   observacoes: "Peça usada em bom estado"
 };
 
+function normalizarTipoCusto(tipoCusto) {
+  return TIPOS_CUSTO_PECA.includes(tipoCusto) ? tipoCusto : TIPO_CUSTO_PADRAO;
+}
+
+function normalizarProduto(produto) {
+  return {
+    ...produto,
+    origemId: Number(produto.origemId || 0),
+    tipoCusto: normalizarTipoCusto(produto.tipoCusto)
+  };
+}
+
 function buscarProdutosSalvos() {
-  return JSON.parse(localStorage.getItem("produtos")) || [];
+  const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+  const produtosNormalizados = produtos.map(normalizarProduto);
+
+  localStorage.setItem("produtos", JSON.stringify(produtosNormalizados));
+  return produtosNormalizados;
 }
 
 function buscarOrigensSalvas() {
@@ -36,7 +56,7 @@ function garantirIdsDasOrigens(origens) {
 
 function salvarProduto(produto) {
   const produtosSalvos = buscarProdutosSalvos();
-  produtosSalvos.push(produto);
+  produtosSalvos.push(normalizarProduto(produto));
   localStorage.setItem("produtos", JSON.stringify(produtosSalvos));
 }
 
@@ -103,6 +123,7 @@ formularioProduto.addEventListener("submit", function (evento) {
     origem: origemSelecionada ? origemSelecionada.descricao : "",
     quantidade: Number(quantidadeDigitada),
     custo: Number(custoDigitado),
+    tipoCusto: TIPO_CUSTO_PADRAO,
     precoVenda: Number(precoVendaDigitado),
     observacoes: document.getElementById("observacoesProduto").value.trim()
   };

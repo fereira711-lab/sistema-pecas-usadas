@@ -11,8 +11,27 @@ const campoCliente = document.getElementById("clienteVenda");
 const campoObservacoes = document.getElementById("observacoesVenda");
 const mensagemVenda = document.getElementById("mensagemVenda");
 
+const TIPOS_CUSTO_PECA = ["real", "rateado", "simbolico"];
+const TIPO_CUSTO_PADRAO = "real";
+
+function normalizarTipoCusto(tipoCusto) {
+  return TIPOS_CUSTO_PECA.includes(tipoCusto) ? tipoCusto : TIPO_CUSTO_PADRAO;
+}
+
+function normalizarProduto(produto) {
+  return {
+    ...produto,
+    origemId: Number(produto.origemId || 0),
+    tipoCusto: normalizarTipoCusto(produto.tipoCusto)
+  };
+}
+
 function buscarProdutos() {
-  return JSON.parse(localStorage.getItem("produtos")) || [];
+  const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+  const produtosNormalizados = produtos.map(normalizarProduto);
+
+  salvarProdutos(produtosNormalizados);
+  return produtosNormalizados;
 }
 
 function buscarCustos() {

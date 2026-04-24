@@ -9,6 +9,9 @@ const resumoOrigem = document.getElementById("resumoOrigem");
 const mensagemProdutosOrigem = document.getElementById("mensagemProdutosOrigem");
 const tabelaProdutosOrigem = document.getElementById("tabelaProdutosOrigem");
 
+const TIPOS_CUSTO_PECA = ["real", "rateado", "simbolico"];
+const TIPO_CUSTO_PADRAO = "real";
+
 function buscarLista(chave) {
   return JSON.parse(localStorage.getItem(chave)) || [];
 }
@@ -27,17 +30,22 @@ function garantirIdsDasOrigens(origens) {
   return origensComId;
 }
 
-function garantirOrigemIdDasPecas(pecas) {
-  const pecasComOrigemId = pecas.map((peca, indice) => {
+function normalizarTipoCusto(tipoCusto) {
+  return TIPOS_CUSTO_PECA.includes(tipoCusto) ? tipoCusto : TIPO_CUSTO_PADRAO;
+}
+
+function garantirDadosDasPecas(pecas) {
+  const pecasNormalizadas = pecas.map((peca, indice) => {
     return {
       ...peca,
       id: peca.id || Date.now() + indice,
-      origemId: Number(peca.origemId || 0)
+      origemId: Number(peca.origemId || 0),
+      tipoCusto: normalizarTipoCusto(peca.tipoCusto)
     };
   });
 
-  salvarLista("produtos", pecasComOrigemId);
-  return pecasComOrigemId;
+  salvarLista("produtos", pecasNormalizadas);
+  return pecasNormalizadas;
 }
 
 function formatarMoeda(valor) {
@@ -168,7 +176,7 @@ function renderizarPecas(pecas, custos, vendas) {
 
 function iniciarDetalhesOrigem() {
   const origens = garantirIdsDasOrigens(buscarLista("origens"));
-  const pecas = garantirOrigemIdDasPecas(buscarLista("produtos"));
+  const pecas = garantirDadosDasPecas(buscarLista("produtos"));
   const custos = buscarLista("custosDiversos");
   const vendas = buscarLista("vendas");
   const origem = origens.find(o => o.id === origemId);

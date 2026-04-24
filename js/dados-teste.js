@@ -9,6 +9,7 @@ function obterProdutosTeste() {
       origem: "Fiat Uno 2012 para desmonte",
       quantidade: 3,
       custo: 120,
+      tipoCusto: "real",
       precoVenda: 250,
       observacoes: "Peça usada em bom estado"
     },
@@ -21,6 +22,7 @@ function obterProdutosTeste() {
       origem: "Lote de peças diversas",
       quantidade: 2,
       custo: 180,
+      tipoCusto: "rateado",
       precoVenda: 420,
       observacoes: "Possui pequenos riscos na pintura"
     },
@@ -33,6 +35,7 @@ function obterProdutosTeste() {
       origem: "Compra avulsa",
       quantidade: 4,
       custo: 65,
+      tipoCusto: "simbolico",
       precoVenda: 140,
       observacoes: "Retrovisor manual em bom estado"
     },
@@ -45,6 +48,7 @@ function obterProdutosTeste() {
       origem: "Lote de peças diversas",
       quantidade: 1,
       custo: 220,
+      tipoCusto: "rateado",
       precoVenda: 480,
       observacoes: "Testado antes do cadastro"
     },
@@ -57,6 +61,7 @@ function obterProdutosTeste() {
       origem: "Compra avulsa",
       quantidade: 5,
       custo: 70,
+      tipoCusto: "real",
       precoVenda: 160,
       observacoes: "Sem trincas aparentes"
     },
@@ -69,6 +74,7 @@ function obterProdutosTeste() {
       origem: "Fiat Uno 2012 para desmonte",
       quantidade: 2,
       custo: 95,
+      tipoCusto: "real",
       precoVenda: 210,
       observacoes: "Funcionamento validado em bancada"
     },
@@ -81,6 +87,7 @@ function obterProdutosTeste() {
       origem: "Lote de peças diversas",
       quantidade: 3,
       custo: 90,
+      tipoCusto: "rateado",
       precoVenda: 190,
       observacoes: "Peça com presilhas conservadas"
     },
@@ -93,6 +100,7 @@ function obterProdutosTeste() {
       origem: "Carro para desmonte",
       quantidade: 1,
       custo: 450,
+      tipoCusto: "real",
       precoVenda: 950,
       observacoes: "Necessita polimento"
     }
