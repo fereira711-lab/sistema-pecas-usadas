@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastrar Venda</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Cadastro</p>
+      <h1>Cadastrar Venda</h1>
+      <p class="hero__description">
+        Registre a venda de uma peça pelo ID da peça.
+      </p>
+    </div>
+  </header>
+
+  <main class="container form-layout">
+    <section class="form-card">
+      <h2>Cadastrar Venda</h2>
+
+      <div class="form-group">
+        <input id="pecaId" type="number" placeholder="ID da peça">
+      </div>
+
+      <div class="form-group">
+        <input id="valorVenda" type="number" placeholder="Valor da venda">
+      </div>
+
+      <div class="form-group">
+        <input id="canalVenda" placeholder="Canal da venda">
+      </div>
+
+      <div class="form-group">
+        <input id="custoEmbalagem" type="number" placeholder="Custo de embalagem">
+      </div>
+
+      <div class="form-group">
+        <input id="custoComissao" type="number" placeholder="Custo de comissão">
+      </div>
+
+      <div class="form-group">
+        <input id="custoFrete" type="number" placeholder="Custo de frete">
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="button-primary" onclick="salvarVenda()">Salvar</button>
+        <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/venda.js"></script>
+</body>
+</html>

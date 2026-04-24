@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastrar Peça</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Cadastro</p>
+      <h1>Cadastrar Peça</h1>
+      <p class="hero__description">
+        Registre uma peça vinculada a uma origem.
+      </p>
+    </div>
+  </header>
+
+  <main class="container form-layout">
+    <section class="form-card">
+      <h2>Cadastrar Peça</h2>
+
+      <div class="form-group">
+        <input id="nome" placeholder="Nome da peça">
+      </div>
+
+      <div class="form-group">
+        <input id="preco" type="number" placeholder="Preço de venda">
+      </div>
+
+      <div class="form-group">
+        <input id="custo" type="number" placeholder="Custo (se real ou simbólico)">
+      </div>
+
+      <div class="form-group">
+        <select id="tipoCusto">
+          <option value="real">Real</option>
+          <option value="rateado">Rateado</option>
+          <option value="simbolico">Simbólico</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <input id="origemId" type="number" placeholder="ID da origem">
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="button-primary" onclick="salvarPeca()">Salvar</button>
+        <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/peca.js"></script>
+</body>
+</html>
