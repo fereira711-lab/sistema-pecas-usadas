@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastrar Custo Diverso</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Custos</p>
+      <h1>Cadastrar Custo Diverso</h1>
+      <p class="hero__description">
+        Adicione custos extras de preparo, reparo, embalagem ou outros custos vinculados a uma peça.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="form-card">
+      <form id="formCusto">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="produtoCusto">Produto *</label>
+            <select id="produtoCusto" name="produtoCusto" required>
+              <option value="">Selecione um produto</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="tipoCusto">Tipo de custo *</label>
+            <select id="tipoCusto" name="tipoCusto" required>
+              <option value="">Selecione o tipo</option>
+              <option value="Limpeza">Limpeza</option>
+              <option value="Solda">Solda</option>
+              <option value="Pintura">Pintura</option>
+              <option value="Conserto">Conserto</option>
+              <option value="Embalagem">Embalagem</option>
+              <option value="Preparo">Preparo</option>
+              <option value="Frete">Frete</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+        </div>
+
+        <section id="resumoProdutoCusto" class="summary-grid summary-grid--compact" aria-label="Resumo de custos do produto"></section>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="descricaoCusto">Descrição do custo *</label>
+            <input
+              id="descricaoCusto"
+              name="descricaoCusto"
+              type="text"
+              placeholder="Ex: Solda na base do farol"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="valorCusto">Valor do custo *</label>
+            <input
+              id="valorCusto"
+              name="valorCusto"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Ex: 35.00"
+              required
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="dataCusto">Data do custo *</label>
+          <input id="dataCusto" name="dataCusto" type="date" required>
+        </div>
+
+        <div class="form-group">
+          <label for="observacoesCusto">Observações</label>
+          <textarea
+            id="observacoesCusto"
+            name="observacoesCusto"
+            rows="4"
+            placeholder="Ex: Custo de preparo antes da venda"
+          ></textarea>
+        </div>
+
+        <p id="mensagemCusto" class="form-message" aria-live="polite"></p>
+
+        <div class="form-actions">
+          <button type="submit" class="button-primary">Salvar Custo</button>
+          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Custos cadastrados</h2>
+          <p>Custos diversos vinculados às peças pelo SKU.</p>
+        </div>
+      </div>
+
+      <p id="mensagemListaCustos" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Produto</th>
+              <th>SKU</th>
+              <th>Tipo</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaCustos"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/custos.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalhes da Peça</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Estoque</p>
+      <h1>Detalhes da Peça</h1>
+      <p class="hero__description">
+        Visualize os dados completos da peça, custos diversos, vendas e resultado.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2 id="tituloProduto">Produto</h2>
+          <p id="subtituloProduto">Dados detalhados do item selecionado.</p>
+        </div>
+        <div class="form-actions">
+          <a class="button-secondary" href="estoque.html">Voltar para o estoque</a>
+          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+        </div>
+      </div>
+
+      <p id="mensagemProdutoNaoEncontrado" class="empty-message"></p>
+      <div id="dadosProduto" class="detail-grid"></div>
+    </section>
+
+    <section class="summary-grid section-spaced" id="resumoFinanceiro" aria-label="Resumo financeiro da peça"></section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Custos diversos da peça</h2>
+          <p>Custos vinculados ao mesmo SKU do produto.</p>
+        </div>
+      </div>
+
+      <p id="mensagemCustosProduto" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Tipo</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Observações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaCustosProduto"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Vendas desta peça</h2>
+          <p>Vendas registradas para o mesmo SKU do produto.</p>
+        </div>
+      </div>
+
+      <p id="mensagemVendasProduto" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Quantidade</th>
+              <th>Preço unitário</th>
+              <th>Valor total</th>
+              <th>Custo total</th>
+              <th>Lucro bruto</th>
+              <th>Cliente</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaVendasProduto"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/detalhes-produto.js"></script>
+</body>
+</html>

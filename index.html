@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Gestão de Peças Usadas</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__content">
+      <p class="hero__tag">Painel principal</p>
+      <h1>Sistema de Gestão de Peças Usadas</h1>
+      <p class="hero__description">
+        Controle visual de origens, peças, estoque, custos, vendas e relatórios.
+      </p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="intro">
+      <h2>Porta de entrada do sistema</h2>
+      <p>Use os módulos abaixo para acessar as telas existentes e visualizar o que será criado nas próximas etapas.</p>
+    </section>
+
+    <section class="module-section" aria-labelledby="modulo-origens">
+      <div class="module-heading">
+        <p class="hero__tag">Módulo</p>
+        <h2 id="modulo-origens">Origens</h2>
+      </div>
+
+      <div class="menu-grid menu-grid--module">
+        <article class="menu-card">
+          <h3>Cadastrar Origem</h3>
+          <p>Cadastre compras avulsas, carros para desmonte ou lotes.</p>
+          <button type="button" data-url="paginas/origens.html">Acessar</button>
+        </article>
+
+        <article class="menu-card">
+          <h3>Listar Origens</h3>
+          <p>Visualize as origens cadastradas, como compras avulsas, carros para desmonte e lotes.</p>
+          <button type="button" data-url="paginas/listar-origens.html">Acessar</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="module-section" aria-labelledby="modulo-pecas">
+      <div class="module-heading">
+        <p class="hero__tag">Módulo</p>
+        <h2 id="modulo-pecas">Peças e Estoque</h2>
+      </div>
+
+      <div class="menu-grid menu-grid--module">
+        <article class="menu-card">
+          <h3>Cadastrar Peça</h3>
+          <p>Cadastre peças usadas vinculadas a uma origem.</p>
+          <button type="button" data-url="paginas/produtos.html">Acessar</button>
+        </article>
+
+        <article class="menu-card">
+          <h3>Ver Estoque</h3>
+          <p>Visualize as peças cadastradas e suas quantidades.</p>
+          <button type="button" data-url="paginas/estoque.html">Acessar</button>
+        </article>
+
+        <article class="menu-card menu-card--future">
+          <h3>Detalhes da Peça</h3>
+          <p>Veja custos, vendas e informações completas de uma peça.</p>
+          <button type="button" data-alert="Para ver os detalhes de uma peça, acesse a tela Ver Estoque e clique em Ver detalhes.">Como acessar</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="module-section" aria-labelledby="modulo-custos">
+      <div class="module-heading">
+        <p class="hero__tag">Módulo</p>
+        <h2 id="modulo-custos">Custos</h2>
+      </div>
+
+      <div class="menu-grid menu-grid--module">
+        <article class="menu-card">
+          <h3>Cadastrar Custo Diverso</h3>
+          <p>Adicione custos de limpeza, preparo, conserto, embalagem e outros.</p>
+          <button type="button" data-url="paginas/custos.html">Acessar</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="module-section" aria-labelledby="modulo-vendas">
+      <div class="module-heading">
+        <p class="hero__tag">Módulo</p>
+        <h2 id="modulo-vendas">Vendas</h2>
+      </div>
+
+      <div class="menu-grid menu-grid--module">
+        <article class="menu-card">
+          <h3>Registrar Venda</h3>
+          <p>Registre uma venda e atualize o estoque.</p>
+          <button type="button" data-url="paginas/vendas.html">Acessar</button>
+        </article>
+
+        <article class="menu-card">
+          <h3>Histórico de Vendas</h3>
+          <p>Visualize vendas registradas, faturamento, custos e lucro.</p>
+          <button type="button" data-url="paginas/historico-vendas.html">Acessar</button>
+        </article>
+
+        <article class="menu-card menu-card--future">
+          <h3>Detalhes da Venda</h3>
+          <p>Veja os dados completos de uma venda específica.</p>
+          <button type="button" data-alert="Para ver os detalhes de uma venda, acesse o Histórico de Vendas e clique em Ver detalhes.">Como acessar</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="module-section" aria-labelledby="modulo-relatorios">
+      <div class="module-heading">
+        <p class="hero__tag">Módulo</p>
+        <h2 id="modulo-relatorios">Relatórios</h2>
+      </div>
+
+      <div class="menu-grid menu-grid--module">
+        <article class="menu-card">
+          <h3>Relatórios</h3>
+          <p>Veja resumo geral de estoque, vendas, custos e lucro bruto.</p>
+          <button type="button" data-url="paginas/relatorios.html">Acessar</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="test-tools" aria-label="Ferramentas de teste">
+      <div>
+        <p class="hero__tag">Desenvolvimento</p>
+        <h2>Ferramentas de Teste</h2>
+        <p>Esses botões são apenas para testes durante o desenvolvimento.</p>
+      </div>
+
+      <div class="test-tools__actions">
+        <button type="button" class="button-primary" onclick="gerarTudoTeste()">Gerar dados de teste</button>
+        <button type="button" class="button-secondary" onclick="limparDadosTeste()">Limpar dados de teste</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/dados-teste.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

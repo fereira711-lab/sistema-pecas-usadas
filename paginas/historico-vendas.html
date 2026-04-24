@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Histórico de Vendas</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Vendas</p>
+      <h1>Histórico de Vendas</h1>
+      <p class="hero__description">
+        Visualize as vendas registradas no sistema.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="summary-grid" aria-label="Resumo das vendas">
+      <article class="summary-card">
+        <span>Total de vendas</span>
+        <strong id="totalVendas">0</strong>
+      </article>
+
+      <article class="summary-card">
+        <span>Peças vendidas</span>
+        <strong id="pecasVendidas">0</strong>
+      </article>
+
+      <article class="summary-card">
+        <span>Faturamento total</span>
+        <strong id="faturamentoTotal">R$ 0,00</strong>
+      </article>
+    </section>
+
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2>Vendas registradas</h2>
+          <p>Lista temporária salva no navegador usando localStorage.</p>
+        </div>
+        <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+      </div>
+
+      <p id="mensagemHistorico" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Produto</th>
+              <th>SKU</th>
+              <th>Quantidade</th>
+              <th>Preço unitário</th>
+              <th>Valor total</th>
+              <th>Cliente</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaHistoricoVendas"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/historico-vendas.js"></script>
+</body>
+</html>

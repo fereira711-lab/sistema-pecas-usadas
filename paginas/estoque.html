@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estoque de Peças</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Estoque</p>
+      <h1>Estoque de Peças</h1>
+      <p class="hero__description">
+        Visualize as peças cadastradas no sistema.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2>Peças cadastradas</h2>
+          <p>Lista temporária salva no navegador usando localStorage.</p>
+        </div>
+        <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+      </div>
+
+      <p id="mensagemEstoque" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Nome da peça</th>
+              <th>SKU</th>
+              <th>Categoria</th>
+              <th>Origem</th>
+              <th>Quantidade</th>
+              <th>Custo base</th>
+              <th>Custos diversos</th>
+              <th>Custo total</th>
+              <th>Preço de venda</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaEstoque"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/estoque.js"></script>
+</body>
+</html>

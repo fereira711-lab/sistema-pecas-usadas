@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastrar Origem</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Cadastro</p>
+      <h1>Cadastrar Origem</h1>
+      <p class="hero__description">
+        Registre de onde vieram as peças antes de cadastrar os itens no estoque.
+      </p>
+    </div>
+  </header>
+
+  <main class="container form-layout">
+    <section class="form-card">
+      <form id="formOrigem">
+        <div class="form-group">
+          <label for="tipoOrigem">Tipo de origem *</label>
+          <select id="tipoOrigem" name="tipoOrigem" required>
+            <option value="">Selecione uma opção</option>
+            <option value="Compra avulsa">Compra avulsa</option>
+            <option value="Carro para desmonte">Carro para desmonte</option>
+            <option value="Lote">Lote</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="descricaoOrigem">Descrição da origem *</label>
+          <input
+            id="descricaoOrigem"
+            name="descricaoOrigem"
+            type="text"
+            placeholder="Ex: Fiat Uno 2012 para desmonte"
+            required
+          >
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="valorPago">Valor pago *</label>
+            <input
+              id="valorPago"
+              name="valorPago"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Ex: 2500.00"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="dataCompra">Data da compra *</label>
+            <input id="dataCompra" name="dataCompra" type="date" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="observacoes">Observações</label>
+          <textarea
+            id="observacoes"
+            name="observacoes"
+            rows="4"
+            placeholder="Ex: Compra feita com nota, peças ainda serão avaliadas."
+          ></textarea>
+        </div>
+
+        <p id="mensagemFormulario" class="form-message" aria-live="polite"></p>
+
+        <div class="form-actions">
+          <button type="submit" class="button-primary">Salvar Origem</button>
+          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="../js/origens.js"></script>
+</body>
+</html>

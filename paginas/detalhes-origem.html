@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalhes da Origem</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Origens</p>
+      <h1>Detalhes da Origem</h1>
+      <p class="hero__description">
+        Visualize os dados da origem, peças vinculadas, custos, vendas e resultado.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2 id="tituloOrigem">Origem</h2>
+          <p id="subtituloOrigem">Dados detalhados da origem selecionada.</p>
+        </div>
+        <div class="form-actions">
+          <a class="button-secondary" href="listar-origens.html">Voltar para origens</a>
+          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+        </div>
+      </div>
+
+      <p id="mensagemOrigemNaoEncontrada" class="empty-message"></p>
+      <div id="dadosOrigem" class="detail-grid"></div>
+    </section>
+
+    <section class="summary-grid section-spaced" id="resumoOrigem" aria-label="Resumo financeiro da origem"></section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Peças vinculadas à origem</h2>
+          <p>Produtos cujo campo origem corresponde à descrição desta origem.</p>
+        </div>
+      </div>
+
+      <p id="mensagemProdutosOrigem" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>SKU</th>
+              <th>Categoria</th>
+              <th>Quantidade</th>
+              <th>Custo base</th>
+              <th>Custos diversos</th>
+              <th>Faturamento</th>
+              <th>Lucro bruto</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaProdutosOrigem"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/detalhes-origem.js"></script>
+</body>
+</html>

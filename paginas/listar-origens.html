@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Origens Cadastradas</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Origens</p>
+      <h1>Origens Cadastradas</h1>
+      <p class="hero__description">
+        Visualize compras avulsas, carros para desmonte e lotes cadastrados no sistema.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="summary-grid" aria-label="Resumo das origens">
+      <article class="summary-card">
+        <span>Total de origens</span>
+        <strong id="totalOrigens">0</strong>
+      </article>
+
+      <article class="summary-card">
+        <span>Valor total investido</span>
+        <strong id="valorTotalInvestido">R$ 0,00</strong>
+      </article>
+
+      <article class="summary-card">
+        <span>Carros para desmonte</span>
+        <strong id="totalCarros">0</strong>
+      </article>
+
+      <article class="summary-card">
+        <span>Lotes</span>
+        <strong id="totalLotes">0</strong>
+      </article>
+
+      <article class="summary-card">
+        <span>Compras avulsas</span>
+        <strong id="totalComprasAvulsas">0</strong>
+      </article>
+    </section>
+
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2>Lista de origens</h2>
+          <p>Registros temporários salvos no navegador usando localStorage.</p>
+        </div>
+        <div class="form-actions">
+          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+          <a class="button-primary" href="origens.html">Cadastrar nova origem</a>
+        </div>
+      </div>
+
+      <p id="mensagemOrigens" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Data da compra</th>
+              <th>Tipo</th>
+              <th>Descrição</th>
+              <th>Valor pago</th>
+              <th>Observações</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaOrigensLista"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/listar-origens.js"></script>
+</body>
+</html>

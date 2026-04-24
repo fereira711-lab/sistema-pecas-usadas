@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Relatórios</p>
+      <h1>Relatórios</h1>
+      <p class="hero__description">
+        Resumo geral de estoque, custos, vendas e resultados do sistema.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2>Resumo geral</h2>
+          <p>Indicadores calculados com dados temporários do localStorage.</p>
+        </div>
+        <div class="form-actions">
+          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+          <a class="button-secondary" href="estoque.html">Ver estoque</a>
+          <a class="button-secondary" href="historico-vendas.html">Histórico de vendas</a>
+        </div>
+      </div>
+
+      <section id="cardsRelatorios" class="summary-grid" aria-label="Cards principais dos relatórios"></section>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Resumo do Estoque</h2>
+          <p>Produtos cadastrados com seus custos e preços.</p>
+        </div>
+      </div>
+
+      <p id="mensagemEstoqueRelatorio" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>SKU</th>
+              <th>Categoria</th>
+              <th>Quantidade</th>
+              <th>Custo base</th>
+              <th>Custos diversos</th>
+              <th>Custo total</th>
+              <th>Preço de venda</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaResumoEstoque"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Alertas de Estoque</h2>
+          <p>Produtos sem estoque ou com estoque baixo.</p>
+        </div>
+      </div>
+
+      <p id="mensagemAlertasEstoque" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>SKU</th>
+              <th>Quantidade</th>
+              <th>Situação</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaAlertasEstoque"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Resumo de Vendas</h2>
+          <p>Últimas 5 vendas registradas.</p>
+        </div>
+      </div>
+
+      <p id="mensagemResumoVendas" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Produto</th>
+              <th>SKU</th>
+              <th>Quantidade</th>
+              <th>Valor total</th>
+              <th>Lucro bruto</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaResumoVendas"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Produtos Mais Vendidos</h2>
+          <p>Ranking agrupado por SKU.</p>
+        </div>
+      </div>
+
+      <p id="mensagemProdutosMaisVendidos" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>SKU</th>
+              <th>Quantidade vendida</th>
+              <th>Faturamento</th>
+              <th>Lucro bruto</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaProdutosMaisVendidos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Custos Diversos por Tipo</h2>
+          <p>Totais agrupados por tipo de custo.</p>
+        </div>
+      </div>
+
+      <p id="mensagemCustosPorTipo" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Tipo de custo</th>
+              <th>Valor total</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaCustosPorTipo"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/relatorios.js"></script>
+</body>
+</html>
