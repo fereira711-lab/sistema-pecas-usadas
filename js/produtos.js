@@ -5,15 +5,17 @@ const botaoPreencherExemplo = document.getElementById("btnPreencherExemplo");
 const TIPOS_CUSTO_PECA = ["real", "rateado", "simbolico"];
 const TIPO_CUSTO_PADRAO = "real";
 
+let origensCarregadas = [];
+
 const produtoExemplo = {
   nome: "Farol esquerdo Fiat Uno",
   sku: "FAR-UNO-001",
-  categoria: "Iluminação",
+  categoria: "Motor",
   quantidade: 3,
   custo: 120,
   tipoCusto: TIPO_CUSTO_PADRAO,
   precoVenda: 250,
-  observacoes: "Peça usada em bom estado"
+  observacoes: "Peca usada em bom estado"
 };
 
 function normalizarTipoCusto(tipoCusto) {
@@ -44,6 +46,10 @@ function buscarProdutosSalvos() {
 }
 
 function buscarOrigensSalvas() {
+  if (origensCarregadas.length > 0) {
+    return origensCarregadas;
+  }
+
   return JSON.parse(localStorage.getItem("origens")) || [];
 }
 
@@ -67,10 +73,29 @@ function salvarProduto(produto) {
   localStorage.setItem("produtos", JSON.stringify(produtosSalvos));
 }
 
-function carregarOrigensNoSelect() {
-  const selectOrigem = document.getElementById("origemProduto");
-  const origens = garantirIdsDasOrigens(buscarOrigensSalvas());
+function salvarProdutoNoCache(produto) {
+  const produtosSalvos = buscarProdutosSalvos().filter(item => Number(item.id) !== Number(produto.id));
+  produtosSalvos.push(normalizarProduto(produto));
+  localStorage.setItem("produtos", JSON.stringify(produtosSalvos));
+}
 
+async function carregarOrigensNoSelect() {
+  const selectOrigem = document.getElementById("origemProduto");
+  let origens = buscarOrigensSalvas();
+
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      origens = await window.supabaseService.listarOrigens();
+      salvarOrigens(origens);
+    } catch (erro) {
+      console.error("Erro ao carregar origens do Supabase:", erro);
+      mensagemProduto.textContent = "Nao foi possivel carregar origens do Supabase. Usando dados temporarios do navegador.";
+      mensagemProduto.className = "form-message form-message--warning";
+    }
+  }
+
+  origens = garantirIdsDasOrigens(origens);
+  origensCarregadas = origens;
   selectOrigem.innerHTML = '<option value="">Selecione uma origem</option>';
 
   origens.forEach(origem => {
@@ -85,7 +110,7 @@ function buscarOrigemSelecionada() {
   const origemId = Number(document.getElementById("origemProduto").value);
   const origens = buscarOrigensSalvas();
 
-  return origens.find(origem => origem.id === origemId);
+  return origens.find(origem => Number(origem.id) === origemId);
 }
 
 function mostrarSucesso(mensagem) {
@@ -108,11 +133,11 @@ function preencherFormularioComExemplo() {
   document.getElementById("precoVendaProduto").value = produtoExemplo.precoVenda;
   document.getElementById("observacoesProduto").value = produtoExemplo.observacoes;
 
-  mensagemProduto.textContent = "Formulário preenchido com exemplo. Revise e clique em Salvar Peça.";
+  mensagemProduto.textContent = "Formulario preenchido com exemplo. Revise e clique em Salvar Peca.";
   mensagemProduto.className = "form-message";
 }
 
-formularioProduto.addEventListener("submit", function (evento) {
+formularioProduto.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
   const quantidadeDigitada = document.getElementById("quantidadeProduto").value;
@@ -145,19 +170,38 @@ formularioProduto.addEventListener("submit", function (evento) {
     !custoDigitado ||
     !precoVendaDigitado
   ) {
-    mensagemProduto.textContent = "Preencha nome, categoria, origem, quantidade, custo e preço de venda.";
+    mensagemProduto.textContent = "Preencha nome, categoria, origem, quantidade, custo e preco de venda.";
     mensagemProduto.className = "form-message form-message--warning";
     return;
   }
 
-  salvarProduto(produto);
+  const botaoSalvar = formularioProduto.querySelector("button[type='submit']");
+  botaoSalvar.disabled = true;
 
-  console.log("Peça preenchida:", produto);
+  try {
+    const produtoSalvo = window.supabaseService && window.supabaseService.estaConfigurado()
+      ? await window.supabaseService.salvarPeca(produto)
+      : null;
 
-  mostrarSucesso("Peça cadastrada no estoque temporário.");
+    if (produtoSalvo) {
+      salvarProdutoNoCache(produtoSalvo);
+      console.log("Peca cadastrada no Supabase:", produtoSalvo);
+      mostrarSucesso("Peca cadastrada no Supabase.");
+    } else {
+      salvarProduto(produto);
+      console.log("Peca cadastrada no armazenamento temporario:", produto);
+      mostrarSucesso("Peca cadastrada no estoque temporario. Configure o Supabase para salvar no banco.");
+    }
 
-  alert("Peça cadastrada com sucesso.");
-  formularioProduto.reset();
+    alert("Peca cadastrada com sucesso.");
+    formularioProduto.reset();
+  } catch (erro) {
+    console.error("Erro ao cadastrar peca:", erro);
+    mensagemProduto.textContent = "Nao foi possivel salvar a peca no Supabase. Verifique a configuracao e se a origem existe no banco.";
+    mensagemProduto.className = "form-message form-message--warning";
+  } finally {
+    botaoSalvar.disabled = false;
+  }
 });
 
 carregarOrigensNoSelect();

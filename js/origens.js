@@ -5,13 +5,24 @@ function buscarOrigens() {
   return JSON.parse(localStorage.getItem("origens")) || [];
 }
 
-function salvarOrigem(origem) {
+function salvarOrigemLocal(origem) {
   const origens = buscarOrigens();
   origens.push(origem);
   localStorage.setItem("origens", JSON.stringify(origens));
 }
 
-formularioOrigem.addEventListener("submit", function (evento) {
+function salvarOrigemNoCache(origem) {
+  const origens = buscarOrigens().filter(item => Number(item.id) !== Number(origem.id));
+  origens.push(origem);
+  localStorage.setItem("origens", JSON.stringify(origens));
+}
+
+function mostrarMensagem(mensagem, tipo) {
+  mensagemFormulario.textContent = mensagem;
+  mensagemFormulario.className = `form-message form-message--${tipo}`;
+}
+
+formularioOrigem.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
   const valorPagoDigitado = document.getElementById("valorPago").value;
@@ -26,17 +37,34 @@ formularioOrigem.addEventListener("submit", function (evento) {
   };
 
   if (!origem.tipo || !origem.descricao || !valorPagoDigitado || !origem.dataCompra) {
-    mensagemFormulario.textContent = "Preencha tipo, descrição, valor pago e data da compra.";
-    mensagemFormulario.className = "form-message form-message--warning";
+    mostrarMensagem("Preencha tipo, descricao, valor pago e data da compra.", "warning");
     return;
   }
 
-  salvarOrigem(origem);
-  console.log("Origem cadastrada:", origem);
+  const botaoSalvar = formularioOrigem.querySelector("button[type='submit']");
+  botaoSalvar.disabled = true;
 
-  mensagemFormulario.textContent = "Origem cadastrada no armazenamento temporário.";
-  mensagemFormulario.className = "form-message form-message--success";
+  try {
+    const origemSalva = window.supabaseService && window.supabaseService.estaConfigurado()
+      ? await window.supabaseService.salvarOrigem(origem)
+      : null;
 
-  alert("Origem cadastrada com sucesso.");
-  formularioOrigem.reset();
+    if (origemSalva) {
+      salvarOrigemNoCache(origemSalva);
+      console.log("Origem cadastrada no Supabase:", origemSalva);
+      mostrarMensagem("Origem cadastrada no Supabase.", "success");
+    } else {
+      salvarOrigemLocal(origem);
+      console.log("Origem cadastrada no armazenamento temporario:", origem);
+      mostrarMensagem("Origem cadastrada no armazenamento temporario. Configure o Supabase para salvar no banco.", "success");
+    }
+
+    alert("Origem cadastrada com sucesso.");
+    formularioOrigem.reset();
+  } catch (erro) {
+    console.error("Erro ao cadastrar origem:", erro);
+    mostrarMensagem("Nao foi possivel salvar a origem no Supabase. Verifique a configuracao e as tabelas.", "warning");
+  } finally {
+    botaoSalvar.disabled = false;
+  }
 });
