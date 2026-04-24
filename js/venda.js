@@ -1,24 +1,9 @@
-const TIPOS_CUSTO_PECA = ["real", "rateado", "simbolico"];
-const TIPO_CUSTO_PADRAO = "real";
-
-function normalizarTipoCusto(tipoCusto) {
-  return TIPOS_CUSTO_PECA.includes(tipoCusto) ? tipoCusto : TIPO_CUSTO_PADRAO;
-}
-
 function buscarPecas() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
 }
 
 function salvarPecas(pecas) {
   localStorage.setItem("produtos", JSON.stringify(pecas));
-}
-
-function buscarOrigens() {
-  return JSON.parse(localStorage.getItem("origens")) || [];
-}
-
-function buscarCustosPeca() {
-  return JSON.parse(localStorage.getItem("custosDiversos")) || [];
 }
 
 function buscarVendas() {
@@ -39,7 +24,6 @@ function normalizarPeca(peca) {
     quantidade,
     quantidadeVendida,
     origemId: Number(peca.origemId || 0),
-    tipoCusto: normalizarTipoCusto(peca.tipoCusto),
     status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque"
   };
 }
@@ -48,110 +32,191 @@ function calcularQuantidadeDisponivel(peca) {
   return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
 }
 
-function calcularCustoPeca(peca, pecasDaOrigem, origem) {
-  if (peca.tipoCusto !== "rateado") {
-    return Number(peca.custo || 0);
+function salvarPecaNoCache(pecaAtualizada) {
+  const pecas = buscarPecas().map(normalizarPeca);
+  const indice = pecas.findIndex(peca => Number(peca.id) === Number(pecaAtualizada.id));
+
+  if (indice >= 0) {
+    pecas[indice] = normalizarPeca(pecaAtualizada);
+  } else {
+    pecas.push(normalizarPeca(pecaAtualizada));
   }
 
-  if (!origem || pecasDaOrigem.length === 0) {
-    return Number(peca.custo || 0);
-  }
-
-  return Number(origem.valorPago || origem.valor_pago || 0) / pecasDaOrigem.length;
+  salvarPecas(pecas);
 }
 
-function somarCustosPorSku(peca) {
-  if (!peca.sku) {
+function salvarVendaNoCache(venda) {
+  const vendas = buscarVendas().filter(item => Number(item.id) !== Number(venda.id));
+  vendas.push(venda);
+  salvarVendas(vendas);
+}
+
+function lerValorCampo(id) {
+  const campo = document.getElementById(id);
+
+  if (!campo || campo.value === "") {
     return 0;
   }
 
-  return buscarCustosPeca()
-    .filter(custo => custo.sku === peca.sku)
-    .reduce((total, custo) => total + Number(custo.valor || 0), 0);
+  return Number(campo.value);
 }
 
-function calcularCustoUnitarioPeca(peca, pecas) {
-  const origens = buscarOrigens();
-  const origem = origens.find(item => Number(item.id) === Number(peca.origemId));
-  const pecasDaOrigem = pecas.filter(item => Number(item.origemId || 0) === Number(peca.origemId || 0));
-
-  return calcularCustoPeca(peca, pecasDaOrigem, origem) + somarCustosPorSku(peca);
+function criarCustoVenda(tipo, descricao, valor) {
+  return {
+    tipo,
+    tipoCusto: tipo,
+    descricao,
+    valor,
+    data: new Date().toISOString().slice(0, 10),
+    dataCusto: new Date().toISOString().slice(0, 10)
+  };
 }
 
-function criarCustosVenda(custoEmbalagem, custoComissao, custoFrete) {
-  return [
-    { tipo: "embalagem", valor: custoEmbalagem },
-    { tipo: "comissao", valor: custoComissao },
-    { tipo: "frete", valor: custoFrete }
+function lerCustosVendaDoFormulario() {
+  const custos = [
+    criarCustoVenda("embalagem", "Custo de embalagem", lerValorCampo("custoEmbalagem")),
+    criarCustoVenda("comissao", "Custo de comissao", lerValorCampo("custoComissao")),
+    criarCustoVenda("frete", "Custo de frete", lerValorCampo("custoFrete")),
+    criarCustoVenda("outros", "Outros custos", lerValorCampo("custoOutros"))
   ];
+
+  return custos.filter(custo => Number(custo.valor || 0) > 0);
 }
 
 function somarCustosVenda(custosVenda) {
   return custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
-function salvarVenda() {
-  const pecaId = Number(document.getElementById("pecaId").value);
-  const valorVendaUnitario = Number(document.getElementById("valorVenda").value);
-  const quantidadeVendidaNaVenda = Number(document.getElementById("quantidadeVendidaNaVenda").value);
-  const canalVenda = document.getElementById("canalVenda").value;
-  const custoEmbalagem = Number(document.getElementById("custoEmbalagem").value);
-  const custoComissao = Number(document.getElementById("custoComissao").value);
-  const custoFrete = Number(document.getElementById("custoFrete").value);
+function existeCustoVendaNegativo() {
+  return ["custoEmbalagem", "custoComissao", "custoFrete", "custoOutros"]
+    .some(id => lerValorCampo(id) < 0);
+}
 
-  if (!pecaId || quantidadeVendidaNaVenda <= 0) {
-    alert("Informe a peça e uma quantidade vendida maior que zero.");
-    return;
+function calcularLucroVenda(venda, peca) {
+  const valorTotal = Number(venda.valorTotal || venda.valorVenda || 0);
+  const custoUnitario = Number(peca.custoTotal || peca.custo || 0);
+  const custoPeca = custoUnitario * Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0);
+  const totalCustosVenda = somarCustosVenda(venda.custosVenda || []);
+
+  return valorTotal - custoPeca - totalCustosVenda;
+}
+
+async function buscarPecaParaVenda(pecaId) {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    const peca = await window.supabaseService.buscarPecaPorId(pecaId);
+    salvarPecaNoCache(peca);
+    return peca;
   }
 
-  const pecas = buscarPecas().map(normalizarPeca);
-  const peca = pecas.find(item => Number(item.id) === pecaId);
+  return buscarPecas()
+    .map(normalizarPeca)
+    .find(item => Number(item.id) === Number(pecaId));
+}
 
-  if (!peca) {
-    alert("Peça não encontrada.");
-    return;
-  }
+function lerVendaDoFormulario() {
+  const quantidadeVendida = Number(document.getElementById("quantidadeVendidaNaVenda").value);
+  const valorUnitario = Number(document.getElementById("valorVenda").value);
+  const custosVenda = lerCustosVendaDoFormulario();
+  const totalCustosVenda = somarCustosVenda(custosVenda);
 
-  const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-
-  if (quantidadeVendidaNaVenda > quantidadeDisponivel) {
-    alert("Quantidade vendida maior que o estoque disponível.");
-    return;
-  }
-
-  const custosVenda = criarCustosVenda(custoEmbalagem, custoComissao, custoFrete);
-  const custoVendaUnitario = somarCustosVenda(custosVenda);
-  const custoUnitarioCalculado = calcularCustoUnitarioPeca(peca, pecas);
-  const valorVenda = valorVendaUnitario * quantidadeVendidaNaVenda;
-  const lucroVenda = (
-    valorVendaUnitario -
-    custoUnitarioCalculado -
-    custoVendaUnitario
-  ) * quantidadeVendidaNaVenda;
-
-  const novaVenda = {
+  return {
     id: Date.now(),
-    pecaId,
-    valorVenda,
-    valorVendaUnitario,
-    canalVenda,
-    quantidadeVendidaNaVenda,
+    pecaId: Number(document.getElementById("pecaId").value),
+    quantidadeVendida,
+    quantidadeVendidaNaVenda: quantidadeVendida,
+    valorUnitario,
+    valorVendaUnitario: valorUnitario,
+    valorVenda: quantidadeVendida * valorUnitario,
+    valorTotal: quantidadeVendida * valorUnitario,
+    canalVenda: document.getElementById("canalVenda").value.trim(),
     custosVenda,
-    custoVendaUnitario,
-    custoUnitarioCalculado,
-    lucroVenda
+    totalCustosVenda
   };
+}
 
-  peca.quantidadeVendida = Number(peca.quantidadeVendida || 0) + quantidadeVendidaNaVenda;
-  peca.status = peca.quantidadeVendida >= Number(peca.quantidade || 1) ? "vendida" : "em_estoque";
+function validarVenda(venda) {
+  if (!venda.pecaId) {
+    return "Informe o ID da peca.";
+  }
 
-  salvarPecas(pecas);
+  if (!venda.quantidadeVendida || venda.quantidadeVendida <= 0) {
+    return "Informe uma quantidade vendida maior que zero.";
+  }
 
-  const vendas = buscarVendas();
-  vendas.push(novaVenda);
-  salvarVendas(vendas);
+  if (existeCustoVendaNegativo()) {
+    return "Os custos da venda devem ser maiores ou iguais a zero.";
+  }
 
-  console.log("Venda criada:", novaVenda);
+  return "";
+}
 
-  alert("Venda cadastrada!");
+function atualizarPecaVendidaLocalmente(peca, quantidadeVendida) {
+  const pecaAtualizada = normalizarPeca({
+    ...peca,
+    quantidadeVendida: Number(peca.quantidadeVendida || 0) + quantidadeVendida
+  });
+
+  pecaAtualizada.status = pecaAtualizada.quantidadeVendida >= Number(pecaAtualizada.quantidade || 1)
+    ? "vendida"
+    : "em_estoque";
+
+  salvarPecaNoCache(pecaAtualizada);
+  return pecaAtualizada;
+}
+
+async function salvarVenda() {
+  const venda = lerVendaDoFormulario();
+  const erroValidacao = validarVenda(venda);
+  const botaoSalvar = document.querySelector("button[onclick='salvarVenda()']");
+
+  if (erroValidacao) {
+    alert(erroValidacao);
+    return;
+  }
+
+  botaoSalvar.disabled = true;
+
+  try {
+    const peca = await buscarPecaParaVenda(venda.pecaId);
+
+    if (!peca) {
+      alert("Peca nao encontrada.");
+      return;
+    }
+
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
+
+    if (venda.quantidadeVendida > quantidadeDisponivel) {
+      alert("Quantidade vendida maior que o estoque disponivel.");
+      return;
+    }
+
+    if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+      const resultado = await window.supabaseService.salvarVenda(venda);
+      const vendaComLucro = {
+        ...resultado.venda,
+        lucroVenda: calcularLucroVenda(resultado.venda, resultado.peca)
+      };
+
+      salvarVendaNoCache(vendaComLucro);
+      salvarPecaNoCache(resultado.peca);
+      alert("Venda e custos da venda cadastrados no Supabase com sucesso.");
+    } else {
+      const pecaAtualizada = atualizarPecaVendidaLocalmente(peca, venda.quantidadeVendida);
+      salvarVendaNoCache({
+        ...venda,
+        produtoNome: pecaAtualizada.nome,
+        sku: pecaAtualizada.sku || "",
+        lucroVenda: calcularLucroVenda(venda, pecaAtualizada)
+      });
+      alert("Venda e custos da venda cadastrados no armazenamento temporario. Configure o Supabase para salvar no banco.");
+    }
+
+    window.location.href = "estoque.html";
+  } catch (erro) {
+    console.error("Erro ao cadastrar venda:", erro);
+    alert("Nao foi possivel salvar a venda no Supabase. Verifique se a peca existe e se a tabela vendas foi criada.");
+  } finally {
+    botaoSalvar.disabled = false;
+  }
 }

@@ -46,7 +46,9 @@
       </div>
 
       <div class="form-group">
-        <input id="origemId" type="number" placeholder="ID da origem">
+        <select id="origemId">
+          <option value="">Selecione a origem</option>
+        </select>
       </div>
 
       <div class="form-actions">
@@ -56,6 +58,9 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/supabase-service.js"></script>
   <script src="../js/peca.js"></script>
 </body>
 </html>

@@ -12,7 +12,7 @@
       <p class="hero__tag">Cadastro</p>
       <h1>Cadastrar Origem</h1>
       <p class="hero__description">
-        Registre de onde vieram as peças antes de cadastrar os itens no estoque.
+        Registre de onde vieram as pecas antes de cadastrar os itens no estoque.
       </p>
     </div>
   </header>
@@ -22,19 +22,33 @@
       <h2>Cadastrar Origem</h2>
 
       <div class="form-group">
-        <input id="descricao" placeholder="Descrição (ex: Gol 1.0 2005)">
+        <input id="descricao" placeholder="Descricao (ex: Gol 1.0 2005)">
       </div>
 
       <div class="form-group">
-        <input id="valor" type="number" placeholder="Valor pago">
+        <input id="custoTotal" type="number" min="0" step="0.01" placeholder="Custo total">
       </div>
 
       <div class="form-group">
-        <select id="tipo">
-          <option value="carro">Carro</option>
-          <option value="lote">Lote</option>
-          <option value="avulsa">Avulsa</option>
+        <select id="tipoOrigem">
+          <option value="">Tipo da origem</option>
+          <option value="Carro para desmonte">Carro para desmonte</option>
+          <option value="Lote">Lote</option>
+          <option value="Compra avulsa">Compra avulsa</option>
         </select>
+      </div>
+
+      <div class="form-group">
+        <select id="custoTipo">
+          <option value="">Tipo de custo</option>
+          <option value="compra">Compra</option>
+          <option value="frete">Frete</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <textarea id="observacoes" rows="4" placeholder="Observacoes"></textarea>
       </div>
 
       <p id="mensagemFormulario" class="form-message" aria-live="polite"></p>
@@ -46,6 +60,9 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/supabase-service.js"></script>
   <script src="../js/origem.js"></script>
 </body>
 </html>
