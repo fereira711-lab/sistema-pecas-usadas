@@ -86,12 +86,35 @@ function calcularCustoTotal(venda) {
   return 0;
 }
 
-function calcularLucroBruto(venda) {
-  if (venda.lucroBruto !== undefined) {
-    return Number(venda.lucroBruto || 0);
+function normalizarCustosVenda(custosVenda) {
+  if (!Array.isArray(custosVenda)) {
+    return [];
   }
 
-  return Number(venda.valorTotal || 0) - calcularCustoTotal(venda);
+  return custosVenda
+    .map(custo => ({
+      tipo: String(custo.tipo || "").trim(),
+      descricao: String(custo.descricao || "").trim(),
+      valor: Number(custo.valor || 0)
+    }))
+    .filter(custo => custo.tipo && custo.valor > 0);
+}
+
+function calcularTotalCustosVenda(venda) {
+  if (venda.totalCustosVenda !== undefined) {
+    return Number(venda.totalCustosVenda || 0);
+  }
+
+  return normalizarCustosVenda(venda.custosVenda)
+    .reduce((total, custo) => total + Number(custo.valor || 0), 0);
+}
+
+function calcularLucroBruto(venda) {
+  if (venda.valorTotal !== undefined) {
+    return Number(venda.valorTotal || 0) - calcularCustoTotal(venda) - calcularTotalCustosVenda(venda);
+  }
+
+  return Number(venda.lucroBruto || 0);
 }
 
 function calcularCustoPeca(peca, pecasDaOrigem, origem) {
@@ -154,6 +177,7 @@ function renderizarResumoFinanceiro(venda) {
   const valorTotal = Number(venda.valorTotal || 0);
   const custoUnitario = calcularCustoUnitario(venda);
   const custoTotal = calcularCustoTotal(venda);
+  const totalCustosVenda = calcularTotalCustosVenda(venda);
   const lucroBruto = calcularLucroBruto(venda);
   const margem = valorTotal > 0 ? (lucroBruto / valorTotal) * 100 : 0;
 
@@ -169,6 +193,10 @@ function renderizarResumoFinanceiro(venda) {
     <article class="summary-card">
       <span>Custo total</span>
       <strong>${formatarMoeda(custoTotal)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Custos da venda</span>
+      <strong>${formatarMoeda(totalCustosVenda)}</strong>
     </article>
     <article class="summary-card">
       <span>Lucro bruto</span>
@@ -231,9 +259,10 @@ function renderizarProduto(venda) {
 
 function renderizarCustos(venda) {
   const custos = buscarCustos().filter(custo => custo.sku === venda.sku);
+  const custosVenda = normalizarCustosVenda(venda.custosVenda);
   tabelaCustosVenda.innerHTML = "";
 
-  if (custos.length === 0) {
+  if (custos.length === 0 && custosVenda.length === 0) {
     mensagemCustosVenda.textContent = "Nenhum custo diverso vinculado a este produto.";
     return;
   }
@@ -247,6 +276,19 @@ function renderizarCustos(venda) {
       <td data-label="Data">${custo.data}</td>
       <td data-label="Tipo">${custo.tipo}</td>
       <td data-label="Descrição">${custo.descricao}</td>
+      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
+    `;
+
+    tabelaCustosVenda.appendChild(linha);
+  });
+
+  custosVenda.forEach(custo => {
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Data">${venda.dataVenda || "-"}</td>
+      <td data-label="Tipo">Venda - ${custo.tipo}</td>
+      <td data-label="Descrição">${custo.descricao || "-"}</td>
       <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
     `;
 

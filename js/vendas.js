@@ -8,6 +8,7 @@ const campoCustoTotalVenda = document.getElementById("custoTotalVenda");
 const campoLucroBruto = document.getElementById("lucroBruto");
 const campoDataVenda = document.getElementById("dataVenda");
 const campoCliente = document.getElementById("clienteVenda");
+const campoCustosVenda = document.getElementById("custosVenda");
 const campoObservacoes = document.getElementById("observacoesVenda");
 const mensagemVenda = document.getElementById("mensagemVenda");
 
@@ -46,12 +47,62 @@ function salvarProdutos(produtos) {
   localStorage.setItem("produtos", JSON.stringify(produtos));
 }
 
-function buscarVendas() {
-  return JSON.parse(localStorage.getItem("vendas")) || [];
-}
-
 function salvarVendas(vendas) {
   localStorage.setItem("vendas", JSON.stringify(vendas));
+}
+
+function normalizarCustosVenda(custosVenda) {
+  if (!Array.isArray(custosVenda)) {
+    return [];
+  }
+
+  return custosVenda
+    .map(custo => ({
+      tipo: String(custo.tipo || "").trim(),
+      descricao: String(custo.descricao || "").trim(),
+      valor: Number(custo.valor || 0)
+    }))
+    .filter(custo => custo.tipo && custo.valor > 0);
+}
+
+function somarCustosVenda(custosVenda) {
+  return normalizarCustosVenda(custosVenda)
+    .reduce((total, custo) => total + Number(custo.valor || 0), 0);
+}
+
+function buscarVendas() {
+  const vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+
+  return vendas.map(venda => ({
+    ...venda,
+    custosVenda: normalizarCustosVenda(venda.custosVenda),
+    totalCustosVenda: venda.totalCustosVenda !== undefined
+      ? Number(venda.totalCustosVenda || 0)
+      : somarCustosVenda(venda.custosVenda)
+  }));
+}
+
+function lerCustosVendaDoFormulario() {
+  const texto = campoCustosVenda.value.trim();
+
+  if (!texto) {
+    return [];
+  }
+
+  return texto.split("\n").map((linha, indice) => {
+    const partes = linha.split(";").map(parte => parte.trim());
+    const valor = Number((partes[2] || "").replace(",", "."));
+
+    if (partes.length < 3 || !partes[0] || Number.isNaN(valor) || valor <= 0) {
+      throw new Error(`Custo da venda inválido na linha ${indice + 1}. Use tipo;descrição;valor.`);
+    }
+
+    return {
+      tipo: partes[0],
+      descricao: partes[1],
+      valor
+    };
+  });
 }
 
 function somarCustosPorSku(sku) {
@@ -122,7 +173,15 @@ function calcularValoresVenda() {
   const valorTotal = quantidade * precoUnitario;
   const custoUnitarioAtualizado = calcularCustoUnitarioAtualizado(produto);
   const custoTotalVenda = quantidade * custoUnitarioAtualizado;
-  const lucroBruto = valorTotal - custoTotalVenda;
+  let totalCustosVenda = 0;
+
+  try {
+    totalCustosVenda = somarCustosVenda(lerCustosVendaDoFormulario());
+  } catch (erro) {
+    totalCustosVenda = 0;
+  }
+
+  const lucroBruto = valorTotal - custoTotalVenda - totalCustosVenda;
 
   campoValorTotal.value = valorTotal > 0 ? valorTotal.toFixed(2) : "";
   campoCustoUnitario.value = custoUnitarioAtualizado > 0 ? custoUnitarioAtualizado.toFixed(2) : "";
@@ -182,7 +241,17 @@ formularioVenda.addEventListener("submit", function (evento) {
   const custoUnitarioAtualizado = calcularCustoUnitarioAtualizado(produto);
   const valorTotal = quantidadeVendida * precoUnitario;
   const custoTotalVenda = quantidadeVendida * custoUnitarioAtualizado;
-  const lucroBruto = valorTotal - custoTotalVenda;
+  let custosVenda;
+
+  try {
+    custosVenda = lerCustosVendaDoFormulario();
+  } catch (erro) {
+    mostrarAviso(erro.message);
+    return;
+  }
+
+  const totalCustosVenda = somarCustosVenda(custosVenda);
+  const lucroBruto = valorTotal - custoTotalVenda - totalCustosVenda;
 
   const venda = {
     id: "VENDA-" + Date.now(),
@@ -195,6 +264,8 @@ formularioVenda.addEventListener("submit", function (evento) {
     custoTotal: custoTotalVenda,
     custoUnitarioAtualizado: custoUnitarioAtualizado,
     custoTotalVenda: custoTotalVenda,
+    custosVenda: custosVenda,
+    totalCustosVenda: totalCustosVenda,
     lucroBruto: lucroBruto,
     dataVenda: dataVenda,
     cliente: campoCliente.value.trim(),
@@ -224,5 +295,6 @@ formularioVenda.addEventListener("submit", function (evento) {
 selectProduto.addEventListener("change", selecionarProduto);
 campoQuantidade.addEventListener("input", calcularValoresVenda);
 campoPrecoUnitario.addEventListener("input", calcularValoresVenda);
+campoCustosVenda.addEventListener("input", calcularValoresVenda);
 
 carregarProdutosNoSelect();

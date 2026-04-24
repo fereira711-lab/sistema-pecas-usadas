@@ -66,6 +66,11 @@ function somarCampo(lista, campo) {
 }
 
 function lucroVenda(venda) {
+  if (venda.valorTotal !== undefined) {
+    const custoTotal = Number(venda.custoTotal || venda.custoTotalVenda || 0);
+    return Number(venda.valorTotal || 0) - custoTotal - calcularTotalCustosVenda(venda);
+  }
+
   return Number(venda.lucroBruto || 0);
 }
 
@@ -79,6 +84,33 @@ function calcularCustoPeca(peca, pecasDaOrigem, origem) {
   }
 
   return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+}
+
+function somarCustosReaisDasPecas(pecas) {
+  return pecas
+    .filter(peca => peca.tipoCusto === "real")
+    .reduce((total, peca) => total + Number(peca.custo || 0), 0);
+}
+
+function calcularLucroOrigem(origem, faturamento, custosAdicionaisOrigem, custosReaisDasPecas) {
+  return (
+    faturamento -
+    Number(origem.valorPago || 0) -
+    Number(custosAdicionaisOrigem || 0) -
+    Number(custosReaisDasPecas || 0)
+  );
+}
+
+function calcularTotalCustosVenda(venda) {
+  if (venda.totalCustosVenda !== undefined) {
+    return Number(venda.totalCustosVenda || 0);
+  }
+
+  if (!Array.isArray(venda.custosVenda)) {
+    return 0;
+  }
+
+  return venda.custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
 function renderizarDadosOrigem(origem) {
@@ -121,7 +153,9 @@ function renderizarResumo(origem, pecas, custos, vendas) {
     return total + calcularCustoPeca(peca, pecas, origem);
   }, 0);
   const faturamento = somarCampo(vendasDaOrigem, "valorTotal");
-  const lucroBruto = vendasDaOrigem.reduce((total, venda) => total + lucroVenda(venda), 0);
+  const custosReaisDasPecas = somarCustosReaisDasPecas(pecas) + custosDosProdutos;
+  const custosDasVendas = vendasDaOrigem.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
+  const lucroOrigem = calcularLucroOrigem(origem, faturamento, custosDasVendas, custosReaisDasPecas);
 
   resumoOrigem.innerHTML = `
     <article class="summary-card">
@@ -146,7 +180,7 @@ function renderizarResumo(origem, pecas, custos, vendas) {
     </article>
     <article class="summary-card">
       <span>Lucro bruto da origem</span>
-      <strong>${formatarMoeda(lucroBruto)}</strong>
+      <strong>${formatarMoeda(lucroOrigem)}</strong>
     </article>
   `;
 }

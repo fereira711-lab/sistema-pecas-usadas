@@ -45,11 +45,24 @@ function filtrarVendasPorSku(sku) {
 }
 
 function calcularLucroVenda(venda) {
-  if (venda.lucroBruto !== undefined) {
-    return Number(venda.lucroBruto || 0);
+  if (venda.valorTotal !== undefined) {
+    const custoTotal = Number(venda.custoTotal || venda.custoTotalVenda || 0);
+    return Number(venda.valorTotal || 0) - custoTotal - calcularTotalCustosVenda(venda);
   }
 
-  return Number(venda.valorTotal || 0) - Number(venda.custoTotal || venda.custoTotalVenda || 0);
+  return Number(venda.lucroBruto || 0);
+}
+
+function calcularTotalCustosVenda(venda) {
+  if (venda.totalCustosVenda !== undefined) {
+    return Number(venda.totalCustosVenda || 0);
+  }
+
+  if (!Array.isArray(venda.custosVenda)) {
+    return 0;
+  }
+
+  return venda.custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
 function calcularCustoPeca(peca, pecasDaOrigem, origem) {
@@ -179,7 +192,7 @@ function renderizarVendas(vendas) {
   mensagemVendasProduto.textContent = "";
 
   vendas.forEach(venda => {
-    const custoTotal = Number(venda.custoTotalVenda || venda.custoTotal || 0);
+    const custoTotal = Number(venda.custoTotalVenda || venda.custoTotal || 0) + calcularTotalCustosVenda(venda);
     const lucroBruto = calcularLucroVenda(venda);
     const linha = document.createElement("tr");
 
