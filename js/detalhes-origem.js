@@ -36,9 +36,16 @@ function normalizarTipoCusto(tipoCusto) {
 
 function garantirDadosDasPecas(pecas) {
   const pecasNormalizadas = pecas.map((peca, indice) => {
+    const quantidade = Number(peca.quantidade || 1);
+    const quantidadeVendida = Number(peca.quantidadeVendida || 0);
+    const quantidadeDisponivel = Math.max(quantidade - quantidadeVendida, 0);
+
     return {
       ...peca,
       id: peca.id || Date.now() + indice,
+      quantidade,
+      quantidadeVendida,
+      status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque",
       origemId: Number(peca.origemId || 0),
       tipoCusto: normalizarTipoCusto(peca.tipoCusto)
     };
@@ -111,6 +118,16 @@ function calcularTotalCustosVenda(venda) {
   }
 
   return venda.custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
+}
+
+function calcularQuantidadeDisponivel(peca) {
+  return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
+}
+
+function obterStatusPeca(peca) {
+  return Number(peca.quantidadeVendida || 0) >= Number(peca.quantidade || 1)
+    ? "vendida"
+    : "em_estoque";
 }
 
 function renderizarDadosOrigem(origem) {
@@ -199,6 +216,10 @@ function renderizarPecas(origem, pecas, custos, vendas) {
     const custoCalculado = calcularCustoPeca(peca, pecas, origem);
     const precoVenda = Number(peca.precoVenda || 0);
     const lucro = precoVenda - custoCalculado;
+    const quantidade = Number(peca.quantidade || 1);
+    const quantidadeVendida = Number(peca.quantidadeVendida || 0);
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
+    const status = obterStatusPeca(peca);
     const custosDiversos = somarCustosPorSku(custos, peca.sku);
     const vendasProduto = vendas.filter(venda => venda.sku === peca.sku);
     const faturamento = somarCampo(vendasProduto, "valorTotal");
@@ -209,7 +230,10 @@ function renderizarPecas(origem, pecas, custos, vendas) {
       <td data-label="Produto">${peca.nome}</td>
       <td data-label="SKU">${peca.sku || "-"}</td>
       <td data-label="Categoria">${peca.categoria || "-"}</td>
-      <td data-label="Quantidade">${peca.quantidade || 0}</td>
+      <td data-label="Qtd. total">${quantidade}</td>
+      <td data-label="Qtd. vendida">${quantidadeVendida}</td>
+      <td data-label="Qtd. disponível">${quantidadeDisponivel}</td>
+      <td data-label="Status">${status}</td>
       <td data-label="Tipo de custo">${peca.tipoCusto}</td>
       <td data-label="Custo calculado">${formatarMoeda(custoCalculado)}</td>
       <td data-label="Preço de venda">${formatarMoeda(precoVenda)}</td>

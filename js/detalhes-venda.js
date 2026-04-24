@@ -70,7 +70,7 @@ function calcularCustoUnitario(venda) {
   }
 
   const custoTotal = calcularCustoTotal(venda);
-  const quantidade = Number(venda.quantidadeVendida || 0);
+  const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
   return quantidade > 0 ? custoTotal / quantidade : 0;
 }
 
@@ -129,6 +129,16 @@ function calcularCustoPeca(peca, pecasDaOrigem, origem) {
   return Number(origem.valorPago || 0) / pecasDaOrigem.length;
 }
 
+function calcularQuantidadeDisponivel(produto) {
+  return Math.max(Number(produto.quantidade || 1) - Number(produto.quantidadeVendida || 0), 0);
+}
+
+function obterStatusProduto(produto) {
+  return Number(produto.quantidadeVendida || 0) >= Number(produto.quantidade || 1)
+    ? "vendida"
+    : "em_estoque";
+}
+
 function renderizarDadosVenda(venda) {
   tituloVenda.textContent = venda.id || "Venda sem ID";
   subtituloVenda.textContent = `${venda.produtoNome} • ${venda.dataVenda}`;
@@ -152,7 +162,7 @@ function renderizarDadosVenda(venda) {
     </article>
     <article class="detail-card">
       <span>Quantidade vendida</span>
-      <strong>${venda.quantidadeVendida}</strong>
+      <strong>${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</strong>
     </article>
     <article class="detail-card">
       <span>Preço unitário</span>
@@ -224,6 +234,10 @@ function renderizarProduto(venda) {
   const origem = buscarOrigens().find(item => item.id === Number(produto.origemId || 0));
   const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
   const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
+  const quantidade = Number(produto.quantidade || 1);
+  const quantidadeVendida = Number(produto.quantidadeVendida || 0);
+  const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
+  const status = obterStatusProduto(produto);
 
   acaoDetalhesProduto.innerHTML = `
     <a class="button-primary" href="detalhes-produto.html?sku=${encodeURIComponent(produto.sku)}">Ver detalhes da peça</a>
@@ -243,8 +257,20 @@ function renderizarProduto(venda) {
       <strong>${produto.origem || "-"}</strong>
     </article>
     <article class="detail-card">
-      <span>Quantidade atual em estoque</span>
-      <strong>${produto.quantidade}</strong>
+      <span>Quantidade total</span>
+      <strong>${quantidade}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Quantidade vendida</span>
+      <strong>${quantidadeVendida}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Quantidade disponível</span>
+      <strong>${quantidadeDisponivel}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Status</span>
+      <strong>${status}</strong>
     </article>
     <article class="detail-card">
       <span>Custo base atual</span>

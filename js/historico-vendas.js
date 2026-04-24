@@ -21,7 +21,7 @@ function formatarMoeda(valor) {
 
 function atualizarResumo(vendas) {
   const quantidadeVendida = vendas.reduce((total, venda) => {
-    return total + Number(venda.quantidadeVendida || 0);
+    return total + Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
   }, 0);
 
   const faturamento = vendas.reduce((total, venda) => {
@@ -52,7 +52,7 @@ function renderizarHistorico() {
       <td data-label="Data">${venda.dataVenda}</td>
       <td data-label="Produto">${venda.produtoNome}</td>
       <td data-label="SKU">${venda.sku || "-"}</td>
-      <td data-label="Quantidade">${venda.quantidadeVendida}</td>
+      <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</td>
       <td data-label="Preço unitário">${formatarMoeda(venda.precoUnitario)}</td>
       <td data-label="Valor total">${formatarMoeda(venda.valorTotal)}</td>
       <td data-label="Cliente">${venda.cliente || "-"}</td>

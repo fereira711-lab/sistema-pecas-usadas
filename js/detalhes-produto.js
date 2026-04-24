@@ -77,9 +77,23 @@ function calcularCustoPeca(peca, pecasDaOrigem, origem) {
   return Number(origem.valorPago || 0) / pecasDaOrigem.length;
 }
 
+function calcularQuantidadeDisponivel(produto) {
+  return Math.max(Number(produto.quantidade || 1) - Number(produto.quantidadeVendida || 0), 0);
+}
+
+function obterStatusProduto(produto) {
+  return Number(produto.quantidadeVendida || 0) >= Number(produto.quantidade || 1)
+    ? "vendida"
+    : "em_estoque";
+}
+
 function renderizarDadosProduto(produto, custoBase) {
   tituloProduto.textContent = produto.nome;
   subtituloProduto.textContent = `SKU ${produto.sku || "-"} • ${produto.categoria || "Sem categoria"}`;
+  const quantidade = Number(produto.quantidade || 1);
+  const quantidadeVendida = Number(produto.quantidadeVendida || 0);
+  const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
+  const status = obterStatusProduto(produto);
 
   dadosProduto.innerHTML = `
     <article class="detail-card">
@@ -99,8 +113,20 @@ function renderizarDadosProduto(produto, custoBase) {
       <strong>${produto.origem || "-"}</strong>
     </article>
     <article class="detail-card">
-      <span>Quantidade em estoque</span>
-      <strong>${produto.quantidade}</strong>
+      <span>Quantidade total</span>
+      <strong>${quantidade}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Quantidade vendida</span>
+      <strong>${quantidadeVendida}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Quantidade disponível</span>
+      <strong>${quantidadeDisponivel}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Status</span>
+      <strong>${status}</strong>
     </article>
     <article class="detail-card">
       <span>Custo base</span>
@@ -120,7 +146,9 @@ function renderizarDadosProduto(produto, custoBase) {
 function renderizarResumo(produto, custos, vendas, custoBase) {
   const totalCustosDiversos = custos.reduce((total, custo) => total + Number(custo.valor || 0), 0);
   const custoTotalAtualizado = custoBase + totalCustosDiversos;
-  const quantidadeVendida = vendas.reduce((total, venda) => total + Number(venda.quantidadeVendida || 0), 0);
+  const quantidadeVendida = vendas.reduce((total, venda) => {
+    return total + Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
+  }, 0);
   const faturamentoTotal = vendas.reduce((total, venda) => total + Number(venda.valorTotal || 0), 0);
   const lucroBruto = vendas.reduce((total, venda) => total + calcularLucroVenda(venda), 0);
 
@@ -198,7 +226,7 @@ function renderizarVendas(vendas) {
 
     linha.innerHTML = `
       <td data-label="Data">${venda.dataVenda}</td>
-      <td data-label="Quantidade">${venda.quantidadeVendida}</td>
+      <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</td>
       <td data-label="Preço unitário">${formatarMoeda(venda.precoUnitario)}</td>
       <td data-label="Valor total">${formatarMoeda(venda.valorTotal)}</td>
       <td data-label="Custo total">${formatarMoeda(custoTotal)}</td>

@@ -21,8 +21,15 @@ function normalizarTipoCusto(tipoCusto) {
 }
 
 function normalizarProduto(produto) {
+  const quantidade = Number(produto.quantidade || 1);
+  const quantidadeVendida = Number(produto.quantidadeVendida || 0);
+  const quantidadeDisponivel = Math.max(quantidade - quantidadeVendida, 0);
+
   return {
     ...produto,
+    quantidade,
+    quantidadeVendida,
+    status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque",
     origemId: Number(produto.origemId || 0),
     tipoCusto: normalizarTipoCusto(produto.tipoCusto)
   };
@@ -122,6 +129,8 @@ formularioProduto.addEventListener("submit", function (evento) {
     origemId,
     origem: origemSelecionada ? origemSelecionada.descricao : "",
     quantidade: Number(quantidadeDigitada),
+    quantidadeVendida: 0,
+    status: "em_estoque",
     custo: Number(custoDigitado),
     tipoCusto: TIPO_CUSTO_PADRAO,
     precoVenda: Number(precoVendaDigitado),

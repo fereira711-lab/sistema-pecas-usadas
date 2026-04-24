@@ -20,8 +20,15 @@ function normalizarTipoCusto(tipoCusto) {
 }
 
 function normalizarProduto(produto) {
+  const quantidade = Number(produto.quantidade || 1);
+  const quantidadeVendida = Number(produto.quantidadeVendida || 0);
+  const quantidadeDisponivel = Math.max(quantidade - quantidadeVendida, 0);
+
   return {
     ...produto,
+    quantidade,
+    quantidadeVendida,
+    status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque",
     origemId: Number(produto.origemId || 0),
     tipoCusto: normalizarTipoCusto(produto.tipoCusto)
   };
@@ -150,13 +157,24 @@ function calcularCustoUnitarioAtualizado(produto) {
   return custoBase + somarCustosPorSku(produto.sku);
 }
 
+function calcularQuantidadeDisponivel(produto) {
+  return Math.max(Number(produto.quantidade || 1) - Number(produto.quantidadeVendida || 0), 0);
+}
+
+function atualizarStatusProduto(produto) {
+  produto.status = Number(produto.quantidadeVendida || 0) >= Number(produto.quantidade || 1)
+    ? "vendida"
+    : "em_estoque";
+}
+
 function carregarProdutosNoSelect() {
   const produtos = buscarProdutos();
 
   produtos.forEach((produto, indice) => {
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
     const opcao = document.createElement("option");
     opcao.value = indice;
-    opcao.textContent = `${produto.nome} - estoque: ${produto.quantidade}`;
+    opcao.textContent = `${produto.nome} - estoque: ${quantidadeDisponivel}`;
     selectProduto.appendChild(opcao);
   });
 
@@ -176,7 +194,7 @@ function calcularValoresVenda() {
   let totalCustosVenda = 0;
 
   try {
-    totalCustosVenda = somarCustosVenda(lerCustosVendaDoFormulario());
+    totalCustosVenda = somarCustosVenda(lerCustosVendaDoFormulario()) * quantidade;
   } catch (erro) {
     totalCustosVenda = 0;
   }
@@ -233,7 +251,9 @@ formularioVenda.addEventListener("submit", function (evento) {
 
   const produto = produtos[Number(indiceProduto)];
 
-  if (quantidadeVendida > produto.quantidade) {
+  const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
+
+  if (quantidadeVendida > quantidadeDisponivel) {
     alert("Quantidade vendida maior que o estoque disponível.");
     return;
   }
@@ -250,7 +270,8 @@ formularioVenda.addEventListener("submit", function (evento) {
     return;
   }
 
-  const totalCustosVenda = somarCustosVenda(custosVenda);
+  const custosVendaUnitario = somarCustosVenda(custosVenda);
+  const totalCustosVenda = custosVendaUnitario * quantidadeVendida;
   const lucroBruto = valorTotal - custoTotalVenda - totalCustosVenda;
 
   const venda = {
@@ -258,6 +279,7 @@ formularioVenda.addEventListener("submit", function (evento) {
     produtoNome: produto.nome,
     sku: produto.sku,
     quantidadeVendida: quantidadeVendida,
+    quantidadeVendidaNaVenda: quantidadeVendida,
     precoUnitario: precoUnitario,
     valorTotal: valorTotal,
     custoUnitario: custoUnitarioAtualizado,
@@ -265,6 +287,7 @@ formularioVenda.addEventListener("submit", function (evento) {
     custoUnitarioAtualizado: custoUnitarioAtualizado,
     custoTotalVenda: custoTotalVenda,
     custosVenda: custosVenda,
+    custosVendaUnitario: custosVendaUnitario,
     totalCustosVenda: totalCustosVenda,
     lucroBruto: lucroBruto,
     dataVenda: dataVenda,
@@ -276,7 +299,8 @@ formularioVenda.addEventListener("submit", function (evento) {
   vendas.push(venda);
   salvarVendas(vendas);
 
-  produto.quantidade = produto.quantidade - quantidadeVendida;
+  produto.quantidadeVendida = Number(produto.quantidadeVendida || 0) + quantidadeVendida;
+  atualizarStatusProduto(produto);
   salvarProdutos(produtos);
 
   console.log("Venda registrada:", venda);

@@ -70,6 +70,16 @@ function somarCustosReaisDasPecas(produtos) {
     .reduce((total, produto) => total + Number(produto.custo || 0), 0);
 }
 
+function calcularQuantidadeDisponivel(produto) {
+  return Math.max(Number(produto.quantidade || 1) - Number(produto.quantidadeVendida || 0), 0);
+}
+
+function obterStatusProduto(produto) {
+  return Number(produto.quantidadeVendida || 0) >= Number(produto.quantidade || 1)
+    ? "vendida"
+    : "em_estoque";
+}
+
 function criarCard(titulo, valor) {
   return `
     <article class="summary-card">
@@ -118,13 +128,20 @@ function renderizarResumoEstoque(produtos, custos, origens) {
     const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
     const custosDiversos = somarCustosPorSku(custos, produto.sku);
     const custoTotal = custoBase + custosDiversos;
+    const quantidade = Number(produto.quantidade || 1);
+    const quantidadeVendida = Number(produto.quantidadeVendida || 0);
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
+    const status = obterStatusProduto(produto);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
       <td data-label="Produto">${produto.nome}</td>
       <td data-label="SKU">${produto.sku || "-"}</td>
       <td data-label="Categoria">${produto.categoria || "-"}</td>
-      <td data-label="Quantidade">${produto.quantidade || 0}</td>
+      <td data-label="Qtd. total">${quantidade}</td>
+      <td data-label="Qtd. vendida">${quantidadeVendida}</td>
+      <td data-label="Qtd. disponível">${quantidadeDisponivel}</td>
+      <td data-label="Status">${status}</td>
       <td data-label="Custo base">${formatarMoeda(custoBase)}</td>
       <td data-label="Custos diversos">${formatarMoeda(custosDiversos)}</td>
       <td data-label="Custo total">${formatarMoeda(custoTotal)}</td>
@@ -136,7 +153,7 @@ function renderizarResumoEstoque(produtos, custos, origens) {
 }
 
 function renderizarAlertasEstoque(produtos) {
-  const alertas = produtos.filter(produto => Number(produto.quantidade || 0) <= 1);
+  const alertas = produtos.filter(produto => calcularQuantidadeDisponivel(produto) <= 1);
   tabelaAlertasEstoque.innerHTML = "";
 
   if (alertas.length === 0) {
@@ -147,7 +164,7 @@ function renderizarAlertasEstoque(produtos) {
   mensagemAlertasEstoque.textContent = "";
 
   alertas.forEach(produto => {
-    const quantidade = Number(produto.quantidade || 0);
+    const quantidade = calcularQuantidadeDisponivel(produto);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -187,7 +204,7 @@ function renderizarResumoVendas(vendas) {
       <td data-label="Data">${venda.dataVenda || "-"}</td>
       <td data-label="Produto">${venda.produtoNome || "-"}</td>
       <td data-label="SKU">${venda.sku || "-"}</td>
-      <td data-label="Quantidade">${venda.quantidadeVendida || 0}</td>
+      <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0}</td>
       <td data-label="Valor total">${formatarMoeda(venda.valorTotal)}</td>
       <td data-label="Lucro bruto">${formatarMoeda(calcularLucroVenda(venda))}</td>
       <td data-label="Ações">
@@ -226,7 +243,7 @@ function renderizarProdutosMaisVendidos(vendas) {
       };
     }
 
-    agrupado[chave].quantidade += Number(venda.quantidadeVendida || 0);
+    agrupado[chave].quantidade += Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
     agrupado[chave].faturamento += Number(venda.valorTotal || 0);
     agrupado[chave].lucro += calcularLucroVenda(venda);
   });

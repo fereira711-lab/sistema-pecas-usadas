@@ -42,6 +42,16 @@ function calcularCustoPeca(peca, pecasDaOrigem, origem) {
   return Number(origem.valorPago || 0) / pecasDaOrigem.length;
 }
 
+function calcularQuantidadeDisponivel(produto) {
+  return Math.max(Number(produto.quantidade || 1) - Number(produto.quantidadeVendida || 0), 0);
+}
+
+function obterStatusProduto(produto) {
+  return Number(produto.quantidadeVendida || 0) >= Number(produto.quantidade || 1)
+    ? "vendida"
+    : "em_estoque";
+}
+
 function renderizarEstoque() {
   const produtos = buscarProdutos();
   const origens = buscarOrigens();
@@ -60,6 +70,10 @@ function renderizarEstoque() {
     const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
     const custosDiversos = somarCustosPorSku(produto.sku);
     const custoTotal = custoBase + custosDiversos;
+    const quantidade = Number(produto.quantidade || 1);
+    const quantidadeVendida = Number(produto.quantidadeVendida || 0);
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
+    const status = obterStatusProduto(produto);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -67,7 +81,10 @@ function renderizarEstoque() {
       <td data-label="SKU">${produto.sku || "-"}</td>
       <td data-label="Categoria">${produto.categoria}</td>
       <td data-label="Origem">${produto.origem}</td>
-      <td data-label="Quantidade">${produto.quantidade}</td>
+      <td data-label="Qtd. total">${quantidade}</td>
+      <td data-label="Qtd. vendida">${quantidadeVendida}</td>
+      <td data-label="Qtd. disponível">${quantidadeDisponivel}</td>
+      <td data-label="Status">${status}</td>
       <td data-label="Custo base">${formatarMoeda(custoBase)}</td>
       <td data-label="Custos diversos">${formatarMoeda(custosDiversos)}</td>
       <td data-label="Custo total">${formatarMoeda(custoTotal)}</td>
