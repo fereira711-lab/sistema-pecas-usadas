@@ -69,6 +69,18 @@ function lucroVenda(venda) {
   return Number(venda.lucroBruto || 0);
 }
 
+function calcularCustoPeca(peca, pecasDaOrigem, origem) {
+  if (peca.tipoCusto !== "rateado") {
+    return Number(peca.custo || 0);
+  }
+
+  if (!origem || pecasDaOrigem.length === 0) {
+    return Number(peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+}
+
 function renderizarDadosOrigem(origem) {
   tituloOrigem.textContent = origem.descricao;
   subtituloOrigem.textContent = `${origem.tipo} - ${origem.dataCompra}`;
@@ -105,7 +117,9 @@ function renderizarResumo(origem, pecas, custos, vendas) {
   const skus = pecas.map(peca => peca.sku);
   const vendasDaOrigem = vendas.filter(venda => skus.includes(venda.sku));
   const custosDosProdutos = pecas.reduce((total, peca) => total + somarCustosPorSku(custos, peca.sku), 0);
-  const custoBaseProdutos = somarCampo(pecas, "custo");
+  const custoBaseProdutos = pecas.reduce((total, peca) => {
+    return total + calcularCustoPeca(peca, pecas, origem);
+  }, 0);
   const faturamento = somarCampo(vendasDaOrigem, "valorTotal");
   const lucroBruto = vendasDaOrigem.reduce((total, venda) => total + lucroVenda(venda), 0);
 
@@ -137,7 +151,7 @@ function renderizarResumo(origem, pecas, custos, vendas) {
   `;
 }
 
-function renderizarPecas(pecas, custos, vendas) {
+function renderizarPecas(origem, pecas, custos, vendas) {
   tabelaProdutosOrigem.innerHTML = "";
 
   if (pecas.length === 0) {
@@ -148,6 +162,7 @@ function renderizarPecas(pecas, custos, vendas) {
   mensagemProdutosOrigem.textContent = "";
 
   pecas.forEach(peca => {
+    const custoBase = calcularCustoPeca(peca, pecas, origem);
     const custosDiversos = somarCustosPorSku(custos, peca.sku);
     const vendasProduto = vendas.filter(venda => venda.sku === peca.sku);
     const faturamento = somarCampo(vendasProduto, "valorTotal");
@@ -159,7 +174,7 @@ function renderizarPecas(pecas, custos, vendas) {
       <td data-label="SKU">${peca.sku || "-"}</td>
       <td data-label="Categoria">${peca.categoria || "-"}</td>
       <td data-label="Quantidade">${peca.quantidade || 0}</td>
-      <td data-label="Custo base">${formatarMoeda(peca.custo)}</td>
+      <td data-label="Custo base">${formatarMoeda(custoBase)}</td>
       <td data-label="Custos diversos">${formatarMoeda(custosDiversos)}</td>
       <td data-label="Faturamento">${formatarMoeda(faturamento)}</td>
       <td data-label="Lucro bruto">${formatarMoeda(lucroBruto)}</td>
@@ -193,7 +208,7 @@ function iniciarDetalhesOrigem() {
   mensagemOrigemNaoEncontrada.textContent = "";
   renderizarDadosOrigem(origem);
   renderizarResumo(origem, pecasDaOrigem, custos, vendas);
-  renderizarPecas(pecasDaOrigem, custos, vendas);
+  renderizarPecas(origem, pecasDaOrigem, custos, vendas);
 }
 
 iniciarDetalhesOrigem();

@@ -17,6 +17,10 @@ function buscarProdutos() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
 }
 
+function buscarOrigens() {
+  return JSON.parse(localStorage.getItem("origens")) || [];
+}
+
 function buscarCustos() {
   return JSON.parse(localStorage.getItem("custosDiversos")) || [];
 }
@@ -88,6 +92,18 @@ function calcularLucroBruto(venda) {
   }
 
   return Number(venda.valorTotal || 0) - calcularCustoTotal(venda);
+}
+
+function calcularCustoPeca(peca, pecasDaOrigem, origem) {
+  if (peca.tipoCusto !== "rateado") {
+    return Number(peca.custo || 0);
+  }
+
+  if (!origem || pecasDaOrigem.length === 0) {
+    return Number(peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
 }
 
 function renderizarDadosVenda(venda) {
@@ -166,7 +182,8 @@ function renderizarResumoFinanceiro(venda) {
 }
 
 function renderizarProduto(venda) {
-  const produto = buscarProdutos().find(item => item.sku === venda.sku);
+  const produtos = buscarProdutos();
+  const produto = produtos.find(item => item.sku === venda.sku);
 
   if (!produto) {
     mensagemProdutoVenda.textContent = "Produto não encontrado no estoque atual.";
@@ -176,6 +193,10 @@ function renderizarProduto(venda) {
   }
 
   mensagemProdutoVenda.textContent = "";
+  const origem = buscarOrigens().find(item => item.id === Number(produto.origemId || 0));
+  const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
+  const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
+
   acaoDetalhesProduto.innerHTML = `
     <a class="button-primary" href="detalhes-produto.html?sku=${encodeURIComponent(produto.sku)}">Ver detalhes da peça</a>
   `;
@@ -199,7 +220,7 @@ function renderizarProduto(venda) {
     </article>
     <article class="detail-card">
       <span>Custo base atual</span>
-      <strong>${formatarMoeda(produto.custo)}</strong>
+      <strong>${formatarMoeda(custoBase)}</strong>
     </article>
     <article class="detail-card">
       <span>Preço de venda atual</span>

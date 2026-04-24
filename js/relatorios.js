@@ -31,6 +31,18 @@ function somarCustosPorSku(custos, sku) {
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
+function calcularCustoPeca(peca, pecasDaOrigem, origem) {
+  if (peca.tipoCusto !== "rateado") {
+    return Number(peca.custo || 0);
+  }
+
+  if (!origem || pecasDaOrigem.length === 0) {
+    return Number(peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+}
+
 function calcularLucroVenda(venda) {
   return Number(venda.lucroBruto || 0);
 }
@@ -65,7 +77,7 @@ function renderizarCardsPrincipais(dados) {
     criarCard("Lucro bruto total", formatarMoeda(lucroBruto));
 }
 
-function renderizarResumoEstoque(produtos, custos) {
+function renderizarResumoEstoque(produtos, custos, origens) {
   tabelaResumoEstoque.innerHTML = "";
 
   if (produtos.length === 0) {
@@ -76,7 +88,9 @@ function renderizarResumoEstoque(produtos, custos) {
   mensagemEstoqueRelatorio.textContent = "";
 
   produtos.forEach(produto => {
-    const custoBase = Number(produto.custo || 0);
+    const origem = origens.find(item => item.id === Number(produto.origemId || 0));
+    const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
+    const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
     const custosDiversos = somarCustosPorSku(custos, produto.sku);
     const custoTotal = custoBase + custosDiversos;
     const linha = document.createElement("tr");
@@ -247,7 +261,7 @@ function iniciarRelatorios() {
   };
 
   renderizarCardsPrincipais(dados);
-  renderizarResumoEstoque(dados.produtos, dados.custos);
+  renderizarResumoEstoque(dados.produtos, dados.custos, dados.origens);
   renderizarAlertasEstoque(dados.produtos);
   renderizarResumoVendas(dados.vendas);
   renderizarProdutosMaisVendidos(dados.vendas);

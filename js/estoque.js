@@ -9,6 +9,10 @@ function buscarCustos() {
   return JSON.parse(localStorage.getItem("custosDiversos")) || [];
 }
 
+function buscarOrigens() {
+  return JSON.parse(localStorage.getItem("origens")) || [];
+}
+
 function salvarProdutos(produtos) {
   localStorage.setItem("produtos", JSON.stringify(produtos));
 }
@@ -26,8 +30,21 @@ function somarCustosPorSku(sku) {
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
+function calcularCustoPeca(peca, pecasDaOrigem, origem) {
+  if (peca.tipoCusto !== "rateado") {
+    return Number(peca.custo || 0);
+  }
+
+  if (!origem || pecasDaOrigem.length === 0) {
+    return Number(peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+}
+
 function renderizarEstoque() {
   const produtos = buscarProdutos();
+  const origens = buscarOrigens();
   tabelaEstoque.innerHTML = "";
 
   if (produtos.length === 0) {
@@ -38,7 +55,9 @@ function renderizarEstoque() {
   mensagemEstoque.textContent = "";
 
   produtos.forEach((produto, indice) => {
-    const custoBase = Number(produto.custo || 0);
+    const origem = origens.find(item => item.id === Number(produto.origemId || 0));
+    const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
+    const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
     const custosDiversos = somarCustosPorSku(produto.sku);
     const custoTotal = custoBase + custosDiversos;
     const linha = document.createElement("tr");

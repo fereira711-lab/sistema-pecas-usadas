@@ -12,6 +12,10 @@ function buscarProdutos() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
 }
 
+function buscarOrigens() {
+  return JSON.parse(localStorage.getItem("origens")) || [];
+}
+
 function buscarCustos() {
   return JSON.parse(localStorage.getItem("custosDiversos")) || [];
 }
@@ -48,7 +52,19 @@ function calcularLucroVenda(venda) {
   return Number(venda.valorTotal || 0) - Number(venda.custoTotal || venda.custoTotalVenda || 0);
 }
 
-function renderizarDadosProduto(produto) {
+function calcularCustoPeca(peca, pecasDaOrigem, origem) {
+  if (peca.tipoCusto !== "rateado") {
+    return Number(peca.custo || 0);
+  }
+
+  if (!origem || pecasDaOrigem.length === 0) {
+    return Number(peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+}
+
+function renderizarDadosProduto(produto, custoBase) {
   tituloProduto.textContent = produto.nome;
   subtituloProduto.textContent = `SKU ${produto.sku || "-"} • ${produto.categoria || "Sem categoria"}`;
 
@@ -75,7 +91,7 @@ function renderizarDadosProduto(produto) {
     </article>
     <article class="detail-card">
       <span>Custo base</span>
-      <strong>${formatarMoeda(produto.custo)}</strong>
+      <strong>${formatarMoeda(custoBase)}</strong>
     </article>
     <article class="detail-card">
       <span>Preço de venda</span>
@@ -88,8 +104,7 @@ function renderizarDadosProduto(produto) {
   `;
 }
 
-function renderizarResumo(produto, custos, vendas) {
-  const custoBase = Number(produto.custo || 0);
+function renderizarResumo(produto, custos, vendas, custoBase) {
   const totalCustosDiversos = custos.reduce((total, custo) => total + Number(custo.valor || 0), 0);
   const custoTotalAtualizado = custoBase + totalCustosDiversos;
   const quantidadeVendida = vendas.reduce((total, venda) => total + Number(venda.quantidadeVendida || 0), 0);
@@ -184,7 +199,8 @@ function renderizarVendas(vendas) {
 
 function iniciarDetalhes() {
   const sku = obterSkuDaUrl();
-  const produto = buscarProdutos().find(item => item.sku === sku);
+  const produtos = buscarProdutos();
+  const produto = produtos.find(item => item.sku === sku);
 
   if (!sku || !produto) {
     mensagemProdutoNaoEncontrado.textContent = "Produto não encontrado.";
@@ -195,10 +211,13 @@ function iniciarDetalhes() {
 
   const custos = filtrarCustosPorSku(sku);
   const vendas = filtrarVendasPorSku(sku);
+  const origem = buscarOrigens().find(item => item.id === Number(produto.origemId || 0));
+  const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
+  const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
 
   mensagemProdutoNaoEncontrado.textContent = "";
-  renderizarDadosProduto(produto);
-  renderizarResumo(produto, custos, vendas);
+  renderizarDadosProduto(produto, custoBase);
+  renderizarResumo(produto, custos, vendas, custoBase);
   renderizarCustos(custos);
   renderizarVendas(vendas);
 }

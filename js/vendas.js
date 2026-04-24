@@ -34,6 +34,10 @@ function buscarProdutos() {
   return produtosNormalizados;
 }
 
+function buscarOrigens() {
+  return JSON.parse(localStorage.getItem("origens")) || [];
+}
+
 function buscarCustos() {
   return JSON.parse(localStorage.getItem("custosDiversos")) || [];
 }
@@ -56,6 +60,26 @@ function somarCustosPorSku(sku) {
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
+function calcularCustoPeca(peca, pecasDaOrigem, origem) {
+  if (peca.tipoCusto !== "rateado") {
+    return Number(peca.custo || 0);
+  }
+
+  if (!origem || pecasDaOrigem.length === 0) {
+    return Number(peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+}
+
+function obterContextoOrigem(produto) {
+  const produtos = buscarProdutos();
+  const origem = buscarOrigens().find(item => item.id === produto.origemId);
+  const pecasDaOrigem = produtos.filter(item => item.origemId === produto.origemId);
+
+  return { origem, pecasDaOrigem };
+}
+
 function obterProdutoSelecionado() {
   if (selectProduto.value === "") {
     return null;
@@ -69,7 +93,10 @@ function calcularCustoUnitarioAtualizado(produto) {
     return 0;
   }
 
-  return Number(produto.custo || 0) + somarCustosPorSku(produto.sku);
+  const { origem, pecasDaOrigem } = obterContextoOrigem(produto);
+  const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
+
+  return custoBase + somarCustosPorSku(produto.sku);
 }
 
 function carregarProdutosNoSelect() {
