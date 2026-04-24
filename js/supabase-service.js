@@ -100,6 +100,65 @@
     return data.map(mapearOrigemDoBanco);
   }
 
+  async function buscarOrigemPorId(origemId) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("origens")
+      .select("*")
+      .eq("id", origemId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearOrigemDoBanco(data);
+  }
+
+  async function listarPecas() {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("pecas")
+      .select("*, origens(descricao)")
+      .order("id", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return data.map(mapearPecaDoBanco);
+  }
+
+  async function listarPecasPorOrigem(origemId) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("pecas")
+      .select("*, origens(descricao)")
+      .eq("origem_id", origemId)
+      .order("id", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return data.map(mapearPecaDoBanco);
+  }
+
   async function salvarOrigem(origem) {
     const cliente = obterCliente();
 
@@ -143,6 +202,9 @@
   window.supabaseService = {
     estaConfigurado: supabaseEstaConfigurado,
     listarOrigens,
+    buscarOrigemPorId,
+    listarPecas,
+    listarPecasPorOrigem,
     salvarOrigem,
     salvarPeca
   };

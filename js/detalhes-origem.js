@@ -16,8 +16,55 @@ function buscarLista(chave) {
   return JSON.parse(localStorage.getItem(chave)) || [];
 }
 
+async function carregarOrigem(origemId) {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      const origem = await window.supabaseService.buscarOrigemPorId(origemId);
+      salvarOrigemNoCache(origem);
+      return origem;
+    } catch (erro) {
+      console.error("Erro ao carregar origem do Supabase:", erro);
+      mensagemOrigemNaoEncontrada.textContent = "Nao foi possivel carregar a origem do Supabase. Exibindo dados temporarios do navegador.";
+    }
+  }
+
+  return garantirIdsDasOrigens(buscarLista("origens")).find(o => Number(o.id) === Number(origemId));
+}
+
+async function carregarPecasDaOrigem(origemId) {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      const pecas = await window.supabaseService.listarPecasPorOrigem(origemId);
+      salvarPecasNoCache(pecas);
+      return pecas;
+    } catch (erro) {
+      console.error("Erro ao carregar pecas da origem do Supabase:", erro);
+    }
+  }
+
+  return garantirDadosDasPecas(buscarLista("produtos"))
+    .filter(p => Number(p.origemId) === Number(origemId));
+}
+
 function salvarLista(chave, lista) {
   localStorage.setItem(chave, JSON.stringify(lista));
+}
+
+function salvarOrigemNoCache(origem) {
+  if (!origem) {
+    return;
+  }
+
+  const origens = buscarLista("origens").filter(item => Number(item.id) !== Number(origem.id));
+  origens.push(origem);
+  salvarLista("origens", origens);
+}
+
+function salvarPecasNoCache(pecas) {
+  const idsDasPecas = pecas.map(peca => Number(peca.id));
+  const pecasAntigas = buscarLista("produtos").filter(peca => !idsDasPecas.includes(Number(peca.id)));
+
+  salvarLista("produtos", [...pecasAntigas, ...pecas]);
 }
 
 function garantirIdsDasOrigens(origens) {
@@ -252,12 +299,11 @@ function renderizarPecas(origem, pecas, custos, vendas) {
   });
 }
 
-function iniciarDetalhesOrigem() {
-  const origens = garantirIdsDasOrigens(buscarLista("origens"));
-  const pecas = garantirDadosDasPecas(buscarLista("produtos"));
+async function iniciarDetalhesOrigem() {
+  const origem = await carregarOrigem(origemId);
+  const pecasDaOrigem = await carregarPecasDaOrigem(origemId);
   const custos = buscarLista("custosDiversos");
   const vendas = buscarLista("vendas");
-  const origem = origens.find(o => o.id === origemId);
 
   if (!origem) {
     mensagemOrigemNaoEncontrada.textContent = "Origem não encontrada.";
@@ -265,8 +311,6 @@ function iniciarDetalhesOrigem() {
     resumoOrigem.innerHTML = "";
     return;
   }
-
-  const pecasDaOrigem = pecas.filter(p => p.origemId === origemId);
 
   mensagemOrigemNaoEncontrada.textContent = "";
   renderizarDadosOrigem(origem);

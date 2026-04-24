@@ -5,12 +5,41 @@ function buscarProdutos() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
 }
 
+async function carregarProdutos() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      const produtos = await window.supabaseService.listarPecas();
+      salvarProdutos(produtos);
+      return produtos;
+    } catch (erro) {
+      console.error("Erro ao carregar pecas do Supabase:", erro);
+      mensagemEstoque.textContent = "Nao foi possivel carregar pecas do Supabase. Exibindo dados temporarios do navegador.";
+    }
+  }
+
+  return buscarProdutos();
+}
+
 function buscarCustos() {
   return JSON.parse(localStorage.getItem("custosDiversos")) || [];
 }
 
 function buscarOrigens() {
   return JSON.parse(localStorage.getItem("origens")) || [];
+}
+
+async function carregarOrigens() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      const origens = await window.supabaseService.listarOrigens();
+      localStorage.setItem("origens", JSON.stringify(origens));
+      return origens;
+    } catch (erro) {
+      console.error("Erro ao carregar origens do Supabase:", erro);
+    }
+  }
+
+  return buscarOrigens();
 }
 
 function salvarProdutos(produtos) {
@@ -52,9 +81,9 @@ function obterStatusProduto(produto) {
     : "em_estoque";
 }
 
-function renderizarEstoque() {
-  const produtos = buscarProdutos();
-  const origens = buscarOrigens();
+async function renderizarEstoque() {
+  const produtos = await carregarProdutos();
+  const origens = await carregarOrigens();
   tabelaEstoque.innerHTML = "";
 
   if (produtos.length === 0) {

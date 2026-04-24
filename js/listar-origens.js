@@ -17,6 +17,21 @@ function buscarOrigens() {
   return origensComId;
 }
 
+async function carregarOrigens() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      const origens = await window.supabaseService.listarOrigens();
+      salvarOrigens(origens);
+      return origens;
+    } catch (erro) {
+      console.error("Erro ao carregar origens do Supabase:", erro);
+      mensagemOrigens.textContent = "Nao foi possivel carregar do Supabase. Exibindo dados temporarios do navegador.";
+    }
+  }
+
+  return buscarOrigens();
+}
+
 function salvarOrigens(origens) {
   localStorage.setItem("origens", JSON.stringify(origens));
 }
@@ -38,8 +53,8 @@ function atualizarResumo(origens) {
   totalComprasAvulsas.textContent = origens.filter(origem => origem.tipo === "Compra avulsa").length;
 }
 
-function renderizarOrigens() {
-  const origens = buscarOrigens();
+async function renderizarOrigens() {
+  const origens = await carregarOrigens();
   tabelaOrigensLista.innerHTML = "";
   atualizarResumo(origens);
 
