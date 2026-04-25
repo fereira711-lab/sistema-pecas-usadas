@@ -9,6 +9,10 @@ function buscarProdutos() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
 }
 
+function salvarProdutos(produtos) {
+  localStorage.setItem("produtos", JSON.stringify(produtos));
+}
+
 function buscarOrigens() {
   return JSON.parse(localStorage.getItem("origens")) || [];
 }
@@ -19,6 +23,27 @@ function buscarCustos() {
 
 function salvarCustos(custos) {
   localStorage.setItem("custosDiversos", JSON.stringify(custos));
+}
+
+function normalizarProduto(produto) {
+  const quantidade = Number(produto.quantidade || 1);
+  const quantidadeVendida = Number(produto.quantidadeVendida || 0);
+  const quantidadeDisponivel = Math.max(quantidade - quantidadeVendida, 0);
+
+  return {
+    ...produto,
+    id: Number(produto.id),
+    quantidade,
+    quantidadeVendida,
+    status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque",
+    origemId: Number(produto.origemId || 0)
+  };
+}
+
+function salvarCustoNoCache(custo) {
+  const custos = buscarCustos().filter(item => Number(item.id) !== Number(custo.id));
+  custos.push(custo);
+  salvarCustos(custos);
 }
 
 function formatarMoeda(valor) {
@@ -46,18 +71,35 @@ function calcularCustoPeca(peca, pecasDaOrigem, origem) {
   return Number(origem.valorPago || 0) / pecasDaOrigem.length;
 }
 
-function carregarProdutos() {
-  const produtos = buscarProdutos();
+async function carregarProdutos() {
+  let produtos = buscarProdutos();
+  const supabaseConfigurado = window.supabaseService && window.supabaseService.estaConfigurado();
+
+  if (supabaseConfigurado) {
+    try {
+      produtos = await window.supabaseService.listarPecas();
+      salvarProdutos(produtos.map(normalizarProduto));
+    } catch (erro) {
+      console.error("Erro ao carregar pecas do Supabase para custos:", erro);
+    }
+  }
+
+  selectProdutoCusto.innerHTML = '<option value="">Selecione um produto</option>';
 
   produtos.forEach((produto, indice) => {
     const opcao = document.createElement("option");
+    const nomeProduto = produto.nome || produto.nomePeca || produto.nomeProduto || produto.descricao || `Peca ${produto.id || indice + 1}`;
+    const skuProduto = produto.sku || produto.codigo || produto.codigoPeca || "sem SKU";
+
     opcao.value = indice;
-    opcao.textContent = `${produto.nome} - ${produto.sku || "sem SKU"}`;
+    opcao.textContent = `${nomeProduto} - ${skuProduto}`;
     selectProdutoCusto.appendChild(opcao);
   });
 
   if (produtos.length === 0) {
-    mensagemCusto.textContent = "Nenhum produto cadastrado. Cadastre uma peça antes de adicionar custos.";
+    mensagemCusto.textContent = supabaseConfigurado
+      ? "Nenhum produto encontrado no Supabase. Cadastre uma peca antes de adicionar custos."
+      : "Supabase nao configurado. Preencha js/supabase-config.js para carregar as pecas do banco.";
     mensagemCusto.className = "form-message form-message--warning";
   }
 }
@@ -121,9 +163,9 @@ function renderizarCustos() {
       <td data-label="Produto">${custo.produtoNome}</td>
       <td data-label="SKU">${custo.sku || "-"}</td>
       <td data-label="Tipo">${custo.tipo}</td>
-      <td data-label="Descrição">${custo.descricao}</td>
+      <td data-label="Descricao">${custo.descricao}</td>
       <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
-      <td data-label="Ações">
+      <td data-label="Acoes">
         <div class="table-actions">
           <button type="button" data-acao="detalhes" data-indice="${indice}">Ver detalhes</button>
           <button type="button" data-acao="remover" data-indice="${indice}">Remover</button>
@@ -142,10 +184,10 @@ function verDetalhes(indice) {
     `Produto: ${custo.produtoNome}\n` +
     `SKU: ${custo.sku || "-"}\n` +
     `Tipo: ${custo.tipo}\n` +
-    `Descrição: ${custo.descricao}\n` +
+    `Descricao: ${custo.descricao}\n` +
     `Valor: ${formatarMoeda(custo.valor)}\n` +
     `Data: ${custo.data}\n` +
-    `Observações: ${custo.observacoes || "-"}`
+    `Observacoes: ${custo.observacoes || "-"}`
   );
 }
 
@@ -163,7 +205,48 @@ function removerCusto(indice) {
   renderizarResumoProduto();
 }
 
-formularioCusto.addEventListener("submit", function (evento) {
+function montarCusto(produto, tipo, descricao, valor, data) {
+  return {
+    id: Date.now(),
+    pecaId: Number(produto.id),
+    produtoNome: produto.nome || produto.nomePeca || produto.nomeProduto || produto.descricao || `Peca ${produto.id}`,
+    sku: produto.sku || produto.codigo || produto.codigoPeca || "",
+    tipo: tipo,
+    tipoCusto: tipo,
+    descricao: descricao,
+    valor: Number(valor),
+    data: data,
+    dataCusto: data,
+    observacoes: document.getElementById("observacoesCusto").value.trim()
+  };
+}
+
+async function salvarCustoNoSupabaseOuFallback(custo) {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      const custoSalvo = await window.supabaseService.salvarCustoPeca(custo);
+      const custoComDadosProduto = {
+        ...custo,
+        ...custoSalvo,
+        produtoNome: custo.produtoNome,
+        sku: custo.sku,
+        observacoes: custo.observacoes
+      };
+
+      salvarCustoNoCache(custoComDadosProduto);
+      console.log("Custo cadastrado no Supabase:", custoComDadosProduto);
+      return "supabase";
+    } catch (erro) {
+      console.error("Erro ao salvar custo da peca no Supabase:", erro);
+    }
+  }
+
+  salvarCustoNoCache(custo);
+  console.warn("Custo da peca salvo no armazenamento temporario:", custo);
+  return "fallback";
+}
+
+formularioCusto.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
   const produtos = buscarProdutos();
@@ -174,7 +257,7 @@ formularioCusto.addEventListener("submit", function (evento) {
   const data = document.getElementById("dataCusto").value;
 
   if (indiceProduto === "" || !tipo || !descricao || !valorDigitado || !data) {
-    mensagemCusto.textContent = "Preencha produto, tipo, descrição, valor e data do custo.";
+    mensagemCusto.textContent = "Preencha produto, tipo, descricao, valor e data do custo.";
     mensagemCusto.className = "form-message form-message--warning";
     return;
   }
@@ -186,28 +269,36 @@ formularioCusto.addEventListener("submit", function (evento) {
   }
 
   const produto = produtos[Number(indiceProduto)];
-  const custo = {
-    produtoNome: produto.nome,
-    sku: produto.sku,
-    tipo: tipo,
-    descricao: descricao,
-    valor: Number(valorDigitado),
-    data: data,
-    observacoes: document.getElementById("observacoesCusto").value.trim()
-  };
+  const custo = montarCusto(produto, tipo, descricao, valorDigitado, data);
 
-  const custos = buscarCustos();
-  custos.push(custo);
-  salvarCustos(custos);
+  if (!custo.pecaId) {
+    mensagemCusto.textContent = "Nao foi possivel identificar o ID da peca. Atualize a lista de pecas e tente novamente.";
+    mensagemCusto.className = "form-message form-message--warning";
+    return;
+  }
 
-  console.log("Custo cadastrado:", custo);
+  const botaoSalvar = formularioCusto.querySelector("button[type='submit']");
+  botaoSalvar.disabled = true;
 
-  alert("Custo cadastrado com sucesso.");
-  mensagemCusto.textContent = "Custo cadastrado e vinculado à peça.";
-  mensagemCusto.className = "form-message form-message--success";
-  formularioCusto.reset();
-  renderizarResumoProduto();
-  renderizarCustos();
+  try {
+    const destino = await salvarCustoNoSupabaseOuFallback(custo);
+    const mensagemSucesso = destino === "supabase"
+      ? "Custo cadastrado no Supabase e vinculado a peca."
+      : "Custo cadastrado no armazenamento temporario.";
+
+    alert("Custo cadastrado com sucesso.");
+    mensagemCusto.textContent = mensagemSucesso;
+    mensagemCusto.className = "form-message form-message--success";
+    formularioCusto.reset();
+    renderizarResumoProduto();
+    renderizarCustos();
+  } catch (erro) {
+    console.error("Erro ao cadastrar custo da peca:", erro);
+    mensagemCusto.textContent = "Nao foi possivel salvar o custo da peca.";
+    mensagemCusto.className = "form-message form-message--warning";
+  } finally {
+    botaoSalvar.disabled = false;
+  }
 });
 
 selectProdutoCusto.addEventListener("change", renderizarResumoProduto);

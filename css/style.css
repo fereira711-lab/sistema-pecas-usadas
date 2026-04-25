@@ -150,6 +150,78 @@ h1 {
   letter-spacing: -0.04em;
 }
 
+.accordion-menu {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 34px;
+}
+
+.accordion-group {
+  border: 1px solid var(--cor-borda);
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), transparent),
+    var(--cor-card);
+  box-shadow: var(--sombra-card);
+  overflow: hidden;
+}
+
+.accordion-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 24px;
+  border: 0;
+  background: transparent;
+  color: var(--cor-texto);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.accordion-trigger:hover,
+.accordion-trigger[aria-expanded="true"] {
+  background: rgba(242, 184, 75, 0.08);
+}
+
+.accordion-trigger span:first-child {
+  display: grid;
+  gap: 6px;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 700;
+}
+
+.accordion-trigger small {
+  color: var(--cor-primaria);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.accordion-icon {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--cor-borda-destaque);
+  border-radius: 999px;
+  color: var(--cor-primaria);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.accordion-panel {
+  padding: 0 24px 24px;
+}
+
+.accordion-panel[hidden] {
+  display: none;
+}
+
 .menu-card {
   display: flex;
   min-height: 245px;

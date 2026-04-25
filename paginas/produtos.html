@@ -3,136 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastrar Peça</title>
+  <title>Produtos e Pecas</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
   <header class="page-header">
     <div>
       <p class="hero__tag">Estoque</p>
-      <h1>Cadastrar Peça</h1>
+      <h1>Produtos e Pecas</h1>
       <p class="hero__description">
-        Registre uma peça usada para organizar o estoque e preparar futuras vendas.
+        Visualize todas as pecas cadastradas e suas origens.
       </p>
     </div>
   </header>
 
-  <main class="container form-layout">
-    <section class="form-card">
-      <form id="formProduto">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="nomeProduto">Nome da peça *</label>
-            <input
-              id="nomeProduto"
-              name="nomeProduto"
-              type="text"
-              placeholder="Ex: Farol esquerdo"
-              required
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="skuProduto">Código/SKU</label>
-            <input
-              id="skuProduto"
-              name="skuProduto"
-              type="text"
-              placeholder="Ex: FAROL-UNO-001"
-            >
-          </div>
+  <main class="container stock-layout">
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2>Pecas cadastradas</h2>
+          <p>Lista consolidada de pecas, estoque, custos e status.</p>
         </div>
+        <a class="button-secondary" href="cadastro-peca.html">Cadastrar peca</a>
+      </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="categoriaProduto">Categoria *</label>
-            <select id="categoriaProduto" name="categoriaProduto" required>
-              <option value="">Selecione uma categoria</option>
-              <option value="Iluminação">Iluminação</option>
-              <option value="Lataria">Lataria</option>
-              <option value="Motor">Motor</option>
-              <option value="Suspensão">Suspensão</option>
-              <option value="Interior">Interior</option>
-              <option value="Elétrica">Elétrica</option>
-            </select>
-          </div>
+      <p id="mensagemProdutos" class="empty-message"></p>
 
-          <div class="form-group">
-            <label for="origemProduto">Origem da peça *</label>
-            <select id="origemProduto" name="origemProduto" required>
-              <option value="">Selecione uma origem</option>
-              <option value="Fiat Uno 2012 para desmonte">Fiat Uno 2012 para desmonte</option>
-              <option value="Lote de peças diversas">Lote de peças diversas</option>
-              <option value="Compra avulsa">Compra avulsa</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row form-row--three">
-          <div class="form-group">
-            <label for="quantidadeProduto">Quantidade em estoque *</label>
-            <input
-              id="quantidadeProduto"
-              name="quantidadeProduto"
-              type="number"
-              min="0"
-              step="1"
-              placeholder="Ex: 1"
-              required
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="custoProduto">Custo da peça *</label>
-            <input
-              id="custoProduto"
-              name="custoProduto"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Ex: 120.00"
-              required
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="precoVendaProduto">Preço de venda *</label>
-            <input
-              id="precoVendaProduto"
-              name="precoVendaProduto"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Ex: 250.00"
-              required
-            >
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="observacoesProduto">Observações</label>
-          <textarea
-            id="observacoesProduto"
-            name="observacoesProduto"
-            rows="4"
-            placeholder="Ex: Peça usada em bom estado"
-          ></textarea>
-        </div>
-
-        <p id="mensagemProduto" class="form-message" aria-live="polite"></p>
-
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Salvar Peça</button>
-          <button type="button" id="btnPreencherExemplo" class="button-secondary">Preencher com exemplo</button>
-          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
-        </div>
-      </form>
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome da peca</th>
+              <th>Origem</th>
+              <th>Tipo de custo</th>
+              <th>Qtd. total</th>
+              <th>Qtd. vendida</th>
+              <th>Qtd. disponivel</th>
+              <th>Status</th>
+              <th>Preco</th>
+              <th>Preparada</th>
+              <th>Acoes</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaProdutos"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../js/supabase-config.js"></script>
-  <script src="../js/supabase-service.js"></script>
-  <script src="../js/produtos.js"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
+  <script src="../js/supabase-service.js?v=6"></script>
+  <script src="../js/produtos.js?v=6"></script>
 </body>
 </html>

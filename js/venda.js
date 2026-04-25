@@ -172,6 +172,20 @@ function atualizarLimiteQuantidadeSelecionada() {
   campoQuantidade.max = calcularQuantidadeDisponivel(peca);
 }
 
+function obterPecaIdDaUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("pecaId");
+}
+
+function selecionarPecaDaUrl() {
+  const pecaId = obterPecaIdDaUrl();
+  const campoPeca = document.getElementById("pecaId");
+
+  if (pecaId && campoPeca) {
+    campoPeca.value = pecaId;
+  }
+}
+
 async function inicializarFormularioVenda() {
   const campoPeca = document.getElementById("pecaId");
 
@@ -182,10 +196,12 @@ async function inicializarFormularioVenda() {
   try {
     const pecas = await carregarPecasParaVenda();
     renderizarDropdownPecas(pecas);
+    selecionarPecaDaUrl();
     atualizarLimiteQuantidadeSelecionada();
   } catch (erro) {
     console.error("Erro ao carregar peças para venda:", erro);
     renderizarDropdownPecas(buscarPecas().map(normalizarPeca));
+    selecionarPecaDaUrl();
     alert("Não foi possível carregar as peças do Supabase. Verifique a configuração e tente novamente.");
   }
 

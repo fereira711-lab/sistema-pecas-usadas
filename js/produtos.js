@@ -1,208 +1,166 @@
-const formularioProduto = document.getElementById("formProduto");
-const mensagemProduto = document.getElementById("mensagemProduto");
-const botaoPreencherExemplo = document.getElementById("btnPreencherExemplo");
+const tabelaProdutos = document.getElementById("tabelaProdutos");
+const mensagemProdutos = document.getElementById("mensagemProdutos");
 
-const TIPOS_CUSTO_PECA = ["real", "rateado", "simbolico"];
-const TIPO_CUSTO_PADRAO = "real";
-
-let origensCarregadas = [];
-
-const produtoExemplo = {
-  nome: "Farol esquerdo Fiat Uno",
-  sku: "FAR-UNO-001",
-  categoria: "Motor",
-  quantidade: 3,
-  custo: 120,
-  tipoCusto: TIPO_CUSTO_PADRAO,
-  precoVenda: 250,
-  observacoes: "Peca usada em bom estado"
-};
-
-function normalizarTipoCusto(tipoCusto) {
-  return TIPOS_CUSTO_PECA.includes(tipoCusto) ? tipoCusto : TIPO_CUSTO_PADRAO;
+function buscarListaLocal(chave) {
+  return JSON.parse(localStorage.getItem(chave)) || [];
 }
 
-function normalizarProduto(produto) {
-  const quantidade = Number(produto.quantidade || 1);
-  const quantidadeVendida = Number(produto.quantidadeVendida || 0);
-  const quantidadeDisponivel = Math.max(quantidade - quantidadeVendida, 0);
-
-  return {
-    ...produto,
-    quantidade,
-    quantidadeVendida,
-    status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque",
-    origemId: Number(produto.origemId || 0),
-    tipoCusto: normalizarTipoCusto(produto.tipoCusto)
-  };
+function salvarListaLocal(chave, lista) {
+  localStorage.setItem(chave, JSON.stringify(lista));
 }
 
-function buscarProdutosSalvos() {
-  const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-  const produtosNormalizados = produtos.map(normalizarProduto);
-
-  localStorage.setItem("produtos", JSON.stringify(produtosNormalizados));
-  return produtosNormalizados;
-}
-
-function buscarOrigensSalvas() {
-  if (origensCarregadas.length > 0) {
-    return origensCarregadas;
-  }
-
-  return JSON.parse(localStorage.getItem("origens")) || [];
-}
-
-function salvarOrigens(origens) {
-  localStorage.setItem("origens", JSON.stringify(origens));
-}
-
-function garantirIdsDasOrigens(origens) {
-  const origensComId = origens.map((origem, indice) => ({
-    ...origem,
-    id: origem.id || Date.now() + indice
-  }));
-
-  salvarOrigens(origensComId);
-  return origensComId;
-}
-
-function salvarProduto(produto) {
-  const produtosSalvos = buscarProdutosSalvos();
-  produtosSalvos.push(normalizarProduto(produto));
-  localStorage.setItem("produtos", JSON.stringify(produtosSalvos));
-}
-
-function salvarProdutoNoCache(produto) {
-  const produtosSalvos = buscarProdutosSalvos().filter(item => Number(item.id) !== Number(produto.id));
-  produtosSalvos.push(normalizarProduto(produto));
-  localStorage.setItem("produtos", JSON.stringify(produtosSalvos));
-}
-
-async function carregarOrigensNoSelect() {
-  const selectOrigem = document.getElementById("origemProduto");
-  let origens = buscarOrigensSalvas();
-
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    try {
-      origens = await window.supabaseService.listarOrigens();
-      salvarOrigens(origens);
-    } catch (erro) {
-      console.error("Erro ao carregar origens do Supabase:", erro);
-      mensagemProduto.textContent = "Nao foi possivel carregar origens do Supabase. Usando dados temporarios do navegador.";
-      mensagemProduto.className = "form-message form-message--warning";
-    }
-  }
-
-  origens = garantirIdsDasOrigens(origens);
-  origensCarregadas = origens;
-  selectOrigem.innerHTML = '<option value="">Selecione uma origem</option>';
-
-  origens.forEach(origem => {
-    const opcao = document.createElement("option");
-    opcao.value = origem.id;
-    opcao.textContent = origem.descricao;
-    selectOrigem.appendChild(opcao);
+function formatarMoeda(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
   });
 }
 
-function buscarOrigemSelecionada() {
-  const origemId = Number(document.getElementById("origemProduto").value);
-  const origens = buscarOrigensSalvas();
+function normalizarPeca(peca) {
+  const quantidade = Number(peca.quantidade || 1);
+  const quantidadeVendida = Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
+  const origemId = Number(peca.origemId || peca.origem_id || 0);
+  const precoVenda = Number(peca.precoVenda || peca.preco_venda || peca.preco_sugerido || 0);
 
-  return origens.find(origem => Number(origem.id) === origemId);
+  return {
+    ...peca,
+    id: Number(peca.id),
+    nome: peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`,
+    origemId,
+    tipoCusto: peca.tipoCusto || peca.tipo_custo || peca.tipo_custo_atribuido || "-",
+    quantidade,
+    quantidadeVendida,
+    status: peca.status || "em_estoque",
+    precoVenda,
+    preparada: Boolean(peca.preparada)
+  };
 }
 
-function mostrarSucesso(mensagem) {
-  mensagemProduto.textContent = mensagem;
-  mensagemProduto.className = "form-message form-message--success";
+function normalizarOrigem(origem) {
+  return {
+    ...origem,
+    id: Number(origem.id),
+    descricao: origem.descricao || origem.nome || `Origem ${origem.id}`
+  };
 }
 
-function preencherFormularioComExemplo() {
-  document.getElementById("nomeProduto").value = produtoExemplo.nome;
-  document.getElementById("skuProduto").value = produtoExemplo.sku;
-  document.getElementById("categoriaProduto").value = produtoExemplo.categoria;
+function calcularQuantidadeDisponivel(peca) {
+  return Math.max(Number(peca.quantidade || 0) - Number(peca.quantidadeVendida || 0), 0);
+}
 
-  const primeiraOrigem = buscarOrigensSalvas()[0];
-  if (primeiraOrigem) {
-    document.getElementById("origemProduto").value = primeiraOrigem.id;
+function criarMapaOrigens(origens) {
+  return origens.reduce((mapa, origem) => {
+    mapa[Number(origem.id)] = origem;
+    return mapa;
+  }, {});
+}
+
+async function carregarDados() {
+  let pecas = buscarListaLocal("produtos").map(normalizarPeca);
+  let origens = buscarListaLocal("origens").map(normalizarOrigem);
+
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      const [pecasSupabase, origensSupabase] = await Promise.all([
+        window.supabaseService.listarPecas(),
+        window.supabaseService.listarOrigens()
+      ]);
+
+      pecas = pecasSupabase.map(normalizarPeca);
+      origens = origensSupabase.map(normalizarOrigem);
+      salvarListaLocal("produtos", pecas);
+      salvarListaLocal("origens", origens);
+    } catch (erro) {
+      console.error("Erro ao carregar produtos do Supabase:", erro);
+      mensagemProdutos.textContent = "Nao foi possivel carregar do Supabase. Exibindo dados temporarios do navegador.";
+    }
   }
 
-  document.getElementById("quantidadeProduto").value = produtoExemplo.quantidade;
-  document.getElementById("custoProduto").value = produtoExemplo.custo;
-  document.getElementById("precoVendaProduto").value = produtoExemplo.precoVenda;
-  document.getElementById("observacoesProduto").value = produtoExemplo.observacoes;
-
-  mensagemProduto.textContent = "Formulario preenchido com exemplo. Revise e clique em Salvar Peca.";
-  mensagemProduto.className = "form-message";
+  return { pecas, origens };
 }
 
-formularioProduto.addEventListener("submit", async function (evento) {
-  evento.preventDefault();
+function abrirDetalhesOrigem(origemId) {
+  window.location.href = `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}`;
+}
 
-  const quantidadeDigitada = document.getElementById("quantidadeProduto").value;
-  const custoDigitado = document.getElementById("custoProduto").value;
-  const precoVendaDigitado = document.getElementById("precoVendaProduto").value;
-  const origemSelecionada = buscarOrigemSelecionada();
-  const origemId = origemSelecionada ? origemSelecionada.id : 0;
+function abrirLancamentoCusto(pecaId) {
+  window.location.href = `cadastro-custo-peca.html?pecaId=${encodeURIComponent(pecaId)}`;
+}
 
-  const produto = {
-    id: Date.now(),
-    nome: document.getElementById("nomeProduto").value.trim(),
-    sku: document.getElementById("skuProduto").value.trim(),
-    categoria: document.getElementById("categoriaProduto").value,
-    origemId,
-    origem: origemSelecionada ? origemSelecionada.descricao : "",
-    quantidade: Number(quantidadeDigitada),
-    quantidadeVendida: 0,
-    status: "em_estoque",
-    custo: Number(custoDigitado),
-    tipoCusto: TIPO_CUSTO_PADRAO,
-    precoVenda: Number(precoVendaDigitado),
-    observacoes: document.getElementById("observacoesProduto").value.trim()
-  };
+function abrirVenda(pecaId) {
+  window.location.href = `cadastro-venda.html?pecaId=${encodeURIComponent(pecaId)}`;
+}
 
-  if (
-    !produto.nome ||
-    !produto.categoria ||
-    !produto.origemId ||
-    !quantidadeDigitada ||
-    !custoDigitado ||
-    !precoVendaDigitado
-  ) {
-    mensagemProduto.textContent = "Preencha nome, categoria, origem, quantidade, custo e preco de venda.";
-    mensagemProduto.className = "form-message form-message--warning";
+function renderizarProdutos(pecas, origens) {
+  const mapaOrigens = criarMapaOrigens(origens);
+  tabelaProdutos.innerHTML = "";
+
+  if (pecas.length === 0) {
+    mensagemProdutos.textContent = "Nenhuma peca cadastrada.";
     return;
   }
 
-  const botaoSalvar = formularioProduto.querySelector("button[type='submit']");
-  botaoSalvar.disabled = true;
+  if (!mensagemProdutos.textContent) {
+    mensagemProdutos.textContent = "";
+  }
 
-  try {
-    const produtoSalvo = window.supabaseService && window.supabaseService.estaConfigurado()
-      ? await window.supabaseService.salvarPeca(produto)
-      : null;
+  pecas.forEach(peca => {
+    const origem = mapaOrigens[Number(peca.origemId)];
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
+    const linha = document.createElement("tr");
 
-    if (produtoSalvo) {
-      salvarProdutoNoCache(produtoSalvo);
-      console.log("Peca cadastrada no Supabase:", produtoSalvo);
-      mostrarSucesso("Peca cadastrada no Supabase.");
-    } else {
-      salvarProduto(produto);
-      console.log("Peca cadastrada no armazenamento temporario:", produto);
-      mostrarSucesso("Peca cadastrada no estoque temporario. Configure o Supabase para salvar no banco.");
-    }
+    linha.innerHTML = `
+      <td data-label="ID">${peca.id}</td>
+      <td data-label="Nome da peca">${peca.nome}</td>
+      <td data-label="Origem">${origem ? origem.descricao : "-"}</td>
+      <td data-label="Tipo de custo">${peca.tipoCusto}</td>
+      <td data-label="Qtd. total">${peca.quantidade}</td>
+      <td data-label="Qtd. vendida">${peca.quantidadeVendida}</td>
+      <td data-label="Qtd. disponivel">${quantidadeDisponivel}</td>
+      <td data-label="Status">${peca.status}</td>
+      <td data-label="Preco">${formatarMoeda(peca.precoVenda)}</td>
+      <td data-label="Preparada">${peca.preparada ? "Sim" : "Nao"}</td>
+      <td data-label="Acoes">
+        <div class="table-actions">
+          <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
+          <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lancar custo</button>
+          <button type="button" data-acao="venda" data-peca-id="${peca.id}" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
+          <button type="button" data-acao="editar" data-peca-id="${peca.id}">Editar peca</button>
+        </div>
+      </td>
+    `;
 
-    alert("Peca cadastrada com sucesso.");
-    formularioProduto.reset();
-  } catch (erro) {
-    console.error("Erro ao cadastrar peca:", erro);
-    mensagemProduto.textContent = "Nao foi possivel salvar a peca no Supabase. Verifique a configuracao e se a origem existe no banco.";
-    mensagemProduto.className = "form-message form-message--warning";
-  } finally {
-    botaoSalvar.disabled = false;
+    tabelaProdutos.appendChild(linha);
+  });
+}
+
+async function inicializarProdutos() {
+  const { pecas, origens } = await carregarDados();
+  renderizarProdutos(pecas, origens);
+}
+
+tabelaProdutos.addEventListener("click", evento => {
+  const botao = evento.target.closest("button[data-acao]");
+
+  if (!botao) {
+    return;
+  }
+
+  if (botao.dataset.acao === "origem" && botao.dataset.origemId) {
+    abrirDetalhesOrigem(botao.dataset.origemId);
+  }
+
+  if (botao.dataset.acao === "custo" && botao.dataset.pecaId) {
+    abrirLancamentoCusto(botao.dataset.pecaId);
+  }
+
+  if (botao.dataset.acao === "venda" && botao.dataset.pecaId) {
+    abrirVenda(botao.dataset.pecaId);
+  }
+
+  if (botao.dataset.acao === "editar") {
+    alert("Edicao de peca sera implementada em uma proxima etapa.");
   }
 });
 
-carregarOrigensNoSelect();
-botaoPreencherExemplo.addEventListener("click", preencherFormularioComExemplo);
+document.addEventListener("DOMContentLoaded", inicializarProdutos);
