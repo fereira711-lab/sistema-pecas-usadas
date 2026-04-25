@@ -14,6 +14,10 @@ function buscarLista(chave) {
   return JSON.parse(localStorage.getItem(chave)) || [];
 }
 
+function salvarLista(chave, lista) {
+  localStorage.setItem(chave, JSON.stringify(lista));
+}
+
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -25,9 +29,9 @@ function somar(lista, campo) {
   return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
 }
 
-function somarCustosPorSku(custos, sku) {
+function somarCustosPorPeca(custos, pecaId) {
   return custos
-    .filter(custo => custo.sku === sku)
+    .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
@@ -44,12 +48,9 @@ function calcularCustoPeca(peca, pecasDaOrigem, origem) {
 }
 
 function calcularLucroVenda(venda) {
-  if (venda.valorTotal !== undefined) {
-    const custoTotal = Number(venda.custoTotal || venda.custoTotalVenda || 0);
-    return Number(venda.valorTotal || 0) - custoTotal - calcularTotalCustosVenda(venda);
-  }
+  const custoTotal = Number(venda.custoTotal || venda.custoTotalVenda || 0);
 
-  return Number(venda.lucroBruto || 0);
+  return Number(venda.valorTotal || 0) - custoTotal - calcularTotalCustosVenda(venda);
 }
 
 function calcularTotalCustosVenda(venda) {
@@ -90,14 +91,14 @@ function criarCard(titulo, valor) {
 }
 
 function renderizarCardsPrincipais(dados) {
-  const totalProdutos = dados.produtos.length;
-  const quantidadeEstoque = somar(dados.produtos, "quantidade");
+  const totalProdutos = dados.pecas.length;
+  const quantidadeEstoque = dados.pecas.reduce((total, peca) => total + calcularQuantidadeDisponivel(peca), 0);
   const totalOrigens = dados.origens.length;
   const valorInvestido = somar(dados.origens, "valorPago");
-  const totalCustos = somar(dados.custos, "valor");
+  const totalCustos = somar(dados.custosPeca, "valor");
   const faturamento = somar(dados.vendas, "valorTotal");
   const custosDasVendas = dados.vendas.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
-  const custosReaisTotais = valorInvestido + totalCustos + somarCustosReaisDasPecas(dados.produtos);
+  const custosReaisTotais = valorInvestido + totalCustos + somarCustosReaisDasPecas(dados.pecas);
   const custoVendas = custosReaisTotais + custosDasVendas;
   const lucroBruto = faturamento - custosReaisTotais - custosDasVendas;
 
@@ -126,7 +127,7 @@ function renderizarResumoEstoque(produtos, custos, origens) {
     const origem = origens.find(item => item.id === Number(produto.origemId || 0));
     const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
     const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
-    const custosDiversos = somarCustosPorSku(custos, produto.sku);
+    const custosDiversos = somarCustosPorPeca(custos, produto.id);
     const custoTotal = custoBase + custosDiversos;
     const quantidade = Number(produto.quantidade || 1);
     const quantidadeVendida = Number(produto.quantidadeVendida || 0);
@@ -196,8 +197,8 @@ function renderizarResumoVendas(vendas) {
 
   mensagemResumoVendas.textContent = "";
 
-  vendas.slice(-5).reverse().forEach((venda, posicao) => {
-    const indexOriginal = vendas.length - 1 - posicao;
+  vendas.slice(0, 5).forEach((venda, posicao) => {
+    const indexOriginal = posicao;
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -231,7 +232,7 @@ function renderizarProdutosMaisVendidos(vendas) {
   const agrupado = {};
 
   vendas.forEach(venda => {
-    const chave = venda.sku || venda.produtoNome || "sem-sku";
+    const chave = venda.pecaId || venda.sku || venda.produtoNome || "sem-peca";
 
     if (!agrupado[chave]) {
       agrupado[chave] = {
@@ -294,20 +295,99 @@ function renderizarCustosPorTipo(custos) {
   });
 }
 
-function iniciarRelatorios() {
-  const dados = {
+function agruparCustosVendaPorVenda(custosVenda) {
+  return custosVenda.reduce((mapa, custo) => {
+    const vendaId = Number(custo.vendaId || 0);
+
+    if (!mapa[vendaId]) {
+      mapa[vendaId] = [];
+    }
+
+    mapa[vendaId].push(custo);
+    return mapa;
+  }, {});
+}
+
+function prepararVendas(vendas, pecas, custosVenda) {
+  const custosPorVenda = agruparCustosVendaPorVenda(custosVenda);
+
+  return vendas.map(venda => {
+    const peca = pecas.find(item => Number(item.id) === Number(venda.pecaId));
+    const quantidade = Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0);
+    const custoUnitario = Number(peca?.custoTotal || peca?.custo || 0);
+    const custosDaVenda = custosPorVenda[Number(venda.id)] || venda.custosVenda || [];
+
+    return {
+      ...venda,
+      produtoNome: venda.produtoNome || peca?.nome || "-",
+      sku: venda.sku || peca?.sku || "",
+      custoTotalVenda: custoUnitario * quantidade,
+      custosVenda: custosDaVenda,
+      totalCustosVenda: custosDaVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0)
+    };
+  }).sort((a, b) => {
+    const dataA = new Date(a.dataVenda || 0).getTime();
+    const dataB = new Date(b.dataVenda || 0).getTime();
+
+    if (dataA !== dataB) {
+      return dataB - dataA;
+    }
+
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
+}
+
+async function carregarDadosRelatorios() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      const [origens, pecas, custosPeca, vendas, custosVenda] = await Promise.all([
+        window.supabaseService.listarOrigens(),
+        window.supabaseService.listarPecas(),
+        window.supabaseService.listarCustosPeca(),
+        window.supabaseService.listarVendas(),
+        window.supabaseService.listarCustosVenda()
+      ]);
+
+      const vendasPreparadas = prepararVendas(vendas, pecas, custosVenda);
+
+      salvarLista("origens", origens);
+      salvarLista("produtos", pecas);
+      salvarLista("custosDiversos", custosPeca);
+      salvarLista("vendas", vendasPreparadas);
+
+      return {
+        origens,
+        pecas,
+        custosPeca,
+        vendas: vendasPreparadas
+      };
+    } catch (erro) {
+      console.error("Erro ao carregar relatorios do Supabase:", erro);
+      mensagemEstoqueRelatorio.textContent = "Nao foi possivel carregar do Supabase. Exibindo dados temporarios do navegador.";
+    }
+  }
+
+  const pecas = buscarLista("produtos");
+  const custosPeca = buscarLista("custosDiversos");
+  const vendas = prepararVendas(buscarLista("vendas"), pecas, buscarLista("custosVenda"));
+
+  return {
     origens: buscarLista("origens"),
-    produtos: buscarLista("produtos"),
-    custos: buscarLista("custosDiversos"),
-    vendas: buscarLista("vendas")
+    pecas,
+    custosPeca,
+    vendas
   };
+}
+
+async function iniciarRelatorios() {
+  const dados = await carregarDadosRelatorios();
 
   renderizarCardsPrincipais(dados);
-  renderizarResumoEstoque(dados.produtos, dados.custos, dados.origens);
-  renderizarAlertasEstoque(dados.produtos);
+  renderizarResumoEstoque(dados.pecas, dados.custosPeca, dados.origens);
+  renderizarAlertasEstoque(dados.pecas);
   renderizarResumoVendas(dados.vendas);
   renderizarProdutosMaisVendidos(dados.vendas);
-  renderizarCustosPorTipo(dados.custos);
+  renderizarCustosPorTipo(dados.custosPeca);
 }
 
 iniciarRelatorios();

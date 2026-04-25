@@ -102,14 +102,16 @@
 
     return {
       origem_id: Number(peca.origemId),
-      nome_peca: peca.nome,
+      nome: peca.nome,
+      sku: peca.sku || null,
+      categoria: peca.categoria || "Sem categoria",
+      quantidade: Number(peca.quantidade || 1),
+      quantidade_vendida: Number(peca.quantidadeVendida || 0),
       status: peca.status || "em_estoque",
-      preparada: false,
-      custo_atribuido: Number(custoTotal || 0),
-      tipo_custo_atribuido: peca.tipoCusto || "real",
-      preco_sugerido: Number(peca.precoVenda || 0),
       custo_total: Number(custoTotal || 0),
       custo: Number(custoTotal || 0),
+      tipo_custo: peca.tipoCusto || "real",
+      preco_venda: Number(peca.precoVenda || 0),
       observacoes: peca.observacoes || null
     };
   }
@@ -138,17 +140,19 @@
   }
 
   function mapearVendaDoBanco(venda) {
-    const itemVenda = Array.isArray(venda.itens_venda) ? venda.itens_venda[0] : null;
     const quantidadeVendida = Number(venda.quantidade_vendida || venda.quantidadeVendida || 1);
-    const valorTotal = Number(venda.valor_total || venda.valorTotal || itemVenda?.subtotal || 0);
-    const valorUnitario = Number(venda.valor_unitario || venda.valorUnitario || itemVenda?.preco_unitario || valorTotal);
+    const valorUnitario = Number(venda.valor_unitario || venda.valorUnitario || 0);
+    const valorTotal = Number(venda.valor_total || venda.valorTotal || valorUnitario * quantidadeVendida || 0);
 
     return {
       id: Number(venda.id),
-      pecaId: Number(venda.peca_id || itemVenda?.peca_id || 0),
+      pecaId: Number(venda.peca_id || 0),
+      produtoNome: venda.pecas?.nome || venda.produtoNome || "",
+      sku: venda.pecas?.sku || venda.sku || "",
       quantidadeVendida,
       quantidadeVendidaNaVenda: quantidadeVendida,
       valorUnitario,
+      precoUnitario: valorUnitario,
       valorVendaUnitario: valorUnitario,
       valorTotal,
       valorVenda: valorTotal,
@@ -158,23 +162,28 @@
   }
 
   function mapearVendaParaBanco(venda) {
+    const pecaId = Number(venda.pecaId);
+    const quantidadeVendida = Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda);
+    const valorUnitario = Number(venda.valorUnitario || venda.valorVendaUnitario);
+
+    if (!Number.isFinite(pecaId) || pecaId <= 0) {
+      throw new Error("peca_id invalido para salvar venda.");
+    }
+
+    if (!Number.isFinite(quantidadeVendida) || quantidadeVendida <= 0) {
+      throw new Error("quantidade_vendida invalida para salvar venda.");
+    }
+
+    if (!Number.isFinite(valorUnitario) || valorUnitario < 0) {
+      throw new Error("valor_unitario invalido para salvar venda.");
+    }
+
     return {
-      cliente_id: Number(venda.clienteId || 1),
-      data_venda: venda.dataVenda || new Date().toISOString().slice(0, 10),
-      valor_total: Number(venda.valorTotal || venda.valorVenda || 0),
+      peca_id: pecaId,
+      quantidade_vendida: quantidadeVendida,
+      valor_unitario: valorUnitario,
       canal_venda: venda.canalVenda || null,
-      observacoes: venda.observacoes || null
-    };
-  }
-
-  function mapearItemVendaParaBanco(vendaId, venda) {
-    const valorTotal = Number(venda.valorTotal || venda.valorVenda || 0);
-
-    return {
-      venda_id: Number(vendaId),
-      peca_id: Number(venda.pecaId),
-      preco_unitario: Number(venda.valorUnitario || venda.valorVendaUnitario || valorTotal || 0),
-      subtotal: valorTotal
+      data_venda: venda.dataVenda || new Date().toISOString().slice(0, 10)
     };
   }
 
@@ -199,6 +208,16 @@
       valor: Number(custo.valor || 0),
       data_custo: custo.dataCusto || custo.data || new Date().toISOString().slice(0, 10)
     };
+  }
+
+  function obterCustoVendaPorTipo(custosVenda, tipo) {
+    if (!Array.isArray(custosVenda)) {
+      return 0;
+    }
+
+    const custo = custosVenda.find(item => (item.tipoCusto || item.tipo) === tipo);
+
+    return Number(custo?.valor || 0);
   }
 
   async function listarOrigens() {
@@ -290,13 +309,76 @@
       .from("pecas")
       .select("*, origens(descricao)")
       .eq("id", pecaId)
-      .single();
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      throw error;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return mapearPecaDoBanco(data);
+  }
+
+  async function listarVendas() {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("vendas")
+      .select("*, pecas(nome, sku)")
+      .order("data_venda", { ascending: false })
+      .order("id", { ascending: false });
 
     if (error) {
       throw error;
     }
 
-    return mapearPecaDoBanco(data);
+    return data.map(mapearVendaDoBanco);
+  }
+
+  async function listarCustosPeca() {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("custos_peca")
+      .select("*")
+      .order("id", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return data.map(mapearCustoPecaDoBanco);
+  }
+
+  async function listarCustosVenda() {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("custos_venda")
+      .select("*")
+      .order("id", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return data.map(mapearCustoVendaDoBanco);
   }
 
   async function salvarOrigem(origem) {
@@ -377,11 +459,16 @@
       return [];
     }
 
-    console.warn("Tabela custos_venda nao existe no Supabase atual. Custos da venda ignorados.", {
-      vendaId,
-      custosVenda: custosValidos
-    });
-    return [];
+    const { data, error } = await cliente
+      .from("custos_venda")
+      .insert(custosValidos.map(custo => mapearCustoVendaParaBanco(vendaId, custo)))
+      .select();
+
+    if (error) {
+      throw error;
+    }
+
+    return data.map(mapearCustoVendaDoBanco);
   }
 
   async function salvarVenda(venda) {
@@ -392,58 +479,50 @@
     }
 
     const peca = await buscarPecaPorId(venda.pecaId);
-    const quantidadeVendidaNaVenda = Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 1);
-    const novaQuantidadeVendida = Number(peca.quantidadeVendida || 0) + quantidadeVendidaNaVenda;
-    const novoStatus = novaQuantidadeVendida >= Number(peca.quantidade || 1) ? "vendida" : "em_estoque";
 
-    const { data, error } = await cliente
-      .from("vendas")
-      .insert(mapearVendaParaBanco(venda))
-      .select()
-      .single();
+    if (!peca) {
+      throw new Error(`Peca com id ${venda.pecaId} nao existe na tabela pecas.`);
+    }
+
+    const vendaParaBanco = mapearVendaParaBanco(venda);
+    const { data: vendaId, error } = await cliente.rpc("registrar_venda", {
+      p_peca_id: vendaParaBanco.peca_id,
+      p_quantidade_vendida: vendaParaBanco.quantidade_vendida,
+      p_valor_unitario: vendaParaBanco.valor_unitario,
+      p_canal_venda: vendaParaBanco.canal_venda,
+      p_custo_embalagem: obterCustoVendaPorTipo(venda.custosVenda, "embalagem"),
+      p_custo_comissao: obterCustoVendaPorTipo(venda.custosVenda, "comissao"),
+      p_custo_frete: obterCustoVendaPorTipo(venda.custosVenda, "frete")
+    });
 
     if (error) {
+      console.error(error);
       throw error;
     }
 
-    const { data: itemVenda, error: erroItemVenda } = await cliente
-      .from("itens_venda")
-      .insert(mapearItemVendaParaBanco(data.id, venda))
-      .select()
-      .single();
-
-    if (erroItemVenda) {
-      throw erroItemVenda;
-    }
-
-    const custosVenda = await salvarCustosVenda(data.id, venda.custosVenda);
-
-    const { error: erroAtualizacao } = await cliente
-      .from("pecas")
-      .update({
-        status: novoStatus
-      })
-      .eq("id", venda.pecaId);
-
-    if (erroAtualizacao) {
-      throw erroAtualizacao;
-    }
+    const pecaAtualizada = await buscarPecaPorId(venda.pecaId);
+    const custosVenda = await listarCustosVenda();
+    const custosDaVenda = custosVenda.filter(custo => Number(custo.vendaId) === Number(vendaId));
 
     return {
       venda: {
-        ...mapearVendaDoBanco({
-          ...data,
-          itens_venda: [itemVenda],
-          quantidadeVendida: quantidadeVendidaNaVenda
-        }),
-        custosVenda,
-        totalCustosVenda: custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0)
+        id: Number(vendaId),
+        pecaId: vendaParaBanco.peca_id,
+        produtoNome: pecaAtualizada.nome,
+        sku: pecaAtualizada.sku || "",
+        quantidadeVendida: vendaParaBanco.quantidade_vendida,
+        quantidadeVendidaNaVenda: vendaParaBanco.quantidade_vendida,
+        valorUnitario: vendaParaBanco.valor_unitario,
+        precoUnitario: vendaParaBanco.valor_unitario,
+        valorVendaUnitario: vendaParaBanco.valor_unitario,
+        valorTotal: vendaParaBanco.quantidade_vendida * vendaParaBanco.valor_unitario,
+        valorVenda: vendaParaBanco.quantidade_vendida * vendaParaBanco.valor_unitario,
+        canalVenda: vendaParaBanco.canal_venda || "",
+        dataVenda: new Date().toISOString().slice(0, 10),
+        custosVenda: custosDaVenda,
+        totalCustosVenda: custosDaVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0)
       },
-      peca: {
-        ...peca,
-        quantidadeVendida: novaQuantidadeVendida,
-        status: novoStatus
-      }
+      peca: pecaAtualizada
     };
   }
 
@@ -454,6 +533,9 @@
     listarPecas,
     listarPecasPorOrigem,
     buscarPecaPorId,
+    listarVendas,
+    listarCustosPeca,
+    listarCustosVenda,
     salvarOrigem,
     salvarPeca,
     salvarCustoPeca,

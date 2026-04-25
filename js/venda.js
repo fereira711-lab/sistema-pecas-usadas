@@ -16,14 +16,15 @@ function salvarVendas(vendas) {
 
 function normalizarPeca(peca) {
   const quantidade = Number(peca.quantidade || 1);
-  const quantidadeVendida = Number(peca.quantidadeVendida || 0);
+  const quantidadeVendida = Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
   const quantidadeDisponivel = Math.max(quantidade - quantidadeVendida, 0);
 
   return {
     ...peca,
+    id: Number(peca.id),
     quantidade,
     quantidadeVendida,
-    origemId: Number(peca.origemId || 0),
+    origemId: Number(peca.origemId || peca.origem_id || 0),
     status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque"
   };
 }
@@ -104,7 +105,11 @@ function calcularLucroVenda(venda, peca) {
 async function buscarPecaParaVenda(pecaId) {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     const peca = await window.supabaseService.buscarPecaPorId(pecaId);
-    salvarPecaNoCache(peca);
+
+    if (peca) {
+      salvarPecaNoCache(peca);
+    }
+
     return peca;
   }
 
@@ -144,7 +149,7 @@ function renderizarDropdownPecas(pecas) {
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
     const opcao = document.createElement("option");
 
-    opcao.value = peca.id;
+    opcao.value = String(peca.id);
     opcao.textContent = `${peca.nome} - ${quantidadeDisponivel} disponíveis`;
     opcao.disabled = quantidadeDisponivel <= 0;
 
@@ -174,16 +179,33 @@ function atualizarLimiteQuantidadeSelecionada() {
 
 function obterPecaIdDaUrl() {
   const params = new URLSearchParams(window.location.search);
-  return params.get("pecaId");
+  const pecaIdUrl = Number(params.get("pecaId"));
+
+  return pecaIdUrl || null;
 }
 
 function selecionarPecaDaUrl() {
-  const pecaId = obterPecaIdDaUrl();
+  const pecaIdUrl = obterPecaIdDaUrl();
   const campoPeca = document.getElementById("pecaId");
 
-  if (pecaId && campoPeca) {
-    campoPeca.value = pecaId;
+  if (!campoPeca) {
+    return;
   }
+
+  if (!pecaIdUrl) {
+    campoPeca.value = "";
+    return;
+  }
+
+  const opcaoEncontrada = Array.from(campoPeca.options)
+    .find(opcao => Number(opcao.value) === pecaIdUrl);
+
+  if (!opcaoEncontrada) {
+    console.warn(`Peca com id ${pecaIdUrl} nao foi encontrada no dropdown de venda.`);
+    return;
+  }
+
+  campoPeca.value = opcaoEncontrada.value;
 }
 
 async function inicializarFormularioVenda() {
@@ -202,6 +224,7 @@ async function inicializarFormularioVenda() {
     console.error("Erro ao carregar peças para venda:", erro);
     renderizarDropdownPecas(buscarPecas().map(normalizarPeca));
     selecionarPecaDaUrl();
+    atualizarLimiteQuantidadeSelecionada();
     alert("Não foi possível carregar as peças do Supabase. Verifique a configuração e tente novamente.");
   }
 
@@ -236,6 +259,10 @@ function validarVenda(venda) {
 
   if (!venda.quantidadeVendida || venda.quantidadeVendida <= 0) {
     return "Informe uma quantidade vendida maior que zero.";
+  }
+
+  if (!Number.isFinite(venda.valorUnitario) || venda.valorUnitario < 0) {
+    return "Informe um valor unitario valido para a venda.";
   }
 
   if (existeCustoVendaNegativo()) {
@@ -310,7 +337,7 @@ async function salvarVenda() {
     window.location.href = "estoque.html";
   } catch (erro) {
     console.error("Erro ao cadastrar venda:", erro);
-    alert("Nao foi possivel salvar a venda no Supabase. Verifique se a peca existe e se a tabela vendas foi criada.");
+    alert(`Nao foi possivel salvar a venda no Supabase: ${erro.message || "erro desconhecido"}`);
   } finally {
     botaoSalvar.disabled = false;
   }

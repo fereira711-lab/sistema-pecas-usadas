@@ -39,7 +39,7 @@
       <div class="stock-header">
         <div>
           <h2>Vendas registradas</h2>
-          <p>Lista temporária salva no navegador usando localStorage.</p>
+          <p>Lista de vendas registradas no sistema.</p>
         </div>
         <a class="button-secondary" href="../index.html">Voltar para o painel</a>
       </div>
@@ -56,7 +56,7 @@
               <th>Quantidade</th>
               <th>Preço unitário</th>
               <th>Valor total</th>
-              <th>Cliente</th>
+              <th>Canal</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -66,6 +66,9 @@
     </section>
   </main>
 
-  <script src="../js/historico-vendas.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
+  <script src="../js/supabase-service.js?v=8"></script>
+  <script src="../js/historico-vendas.js?v=2"></script>
 </body>
 </html>

@@ -88,7 +88,14 @@ function abrirLancamentoCusto(pecaId) {
 }
 
 function abrirVenda(pecaId) {
-  window.location.href = `cadastro-venda.html?pecaId=${encodeURIComponent(pecaId)}`;
+  const id = Number(pecaId);
+
+  if (!id) {
+    alert("Nao foi possivel identificar a peca selecionada.");
+    return;
+  }
+
+  window.location.href = `cadastro-venda.html?pecaId=${encodeURIComponent(id)}`;
 }
 
 function renderizarProdutos(pecas, origens) {
@@ -124,7 +131,7 @@ function renderizarProdutos(pecas, origens) {
         <div class="table-actions">
           <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
           <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lancar custo</button>
-          <button type="button" data-acao="venda" data-peca-id="${peca.id}" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
+          <button type="button" data-acao="venda" data-peca-id="${peca.id}" onclick="abrirVenda(${peca.id})" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
           <button type="button" data-acao="editar" data-peca-id="${peca.id}">Editar peca</button>
         </div>
       </td>
@@ -148,14 +155,16 @@ tabelaProdutos.addEventListener("click", evento => {
 
   if (botao.dataset.acao === "origem" && botao.dataset.origemId) {
     abrirDetalhesOrigem(botao.dataset.origemId);
+    return;
   }
 
   if (botao.dataset.acao === "custo" && botao.dataset.pecaId) {
     abrirLancamentoCusto(botao.dataset.pecaId);
+    return;
   }
 
-  if (botao.dataset.acao === "venda" && botao.dataset.pecaId) {
-    abrirVenda(botao.dataset.pecaId);
+  if (botao.dataset.acao === "venda") {
+    return;
   }
 
   if (botao.dataset.acao === "editar") {

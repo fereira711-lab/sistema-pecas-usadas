@@ -12,6 +12,21 @@ function salvarVendas(vendas) {
   localStorage.setItem("vendas", JSON.stringify(vendas));
 }
 
+async function carregarVendas() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      const vendas = await window.supabaseService.listarVendas();
+      salvarVendas(vendas);
+      return vendas;
+    } catch (erro) {
+      console.error("Erro ao carregar vendas do Supabase:", erro);
+      mensagemHistorico.textContent = "Nao foi possivel carregar vendas do Supabase. Exibindo dados temporarios do navegador.";
+    }
+  }
+
+  return buscarVendas();
+}
+
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -33,8 +48,8 @@ function atualizarResumo(vendas) {
   faturamentoTotal.textContent = formatarMoeda(faturamento);
 }
 
-function renderizarHistorico() {
-  const vendas = buscarVendas();
+async function renderizarHistorico() {
+  const vendas = await carregarVendas();
   tabelaHistorico.innerHTML = "";
   atualizarResumo(vendas);
 
@@ -50,12 +65,12 @@ function renderizarHistorico() {
 
     linha.innerHTML = `
       <td data-label="Data">${venda.dataVenda}</td>
-      <td data-label="Produto">${venda.produtoNome}</td>
+      <td data-label="Produto">${venda.produtoNome || "-"}</td>
       <td data-label="SKU">${venda.sku || "-"}</td>
       <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</td>
       <td data-label="Preço unitário">${formatarMoeda(venda.precoUnitario)}</td>
       <td data-label="Valor total">${formatarMoeda(venda.valorTotal)}</td>
-      <td data-label="Cliente">${venda.cliente || "-"}</td>
+      <td data-label="Canal">${venda.canalVenda || venda.cliente || "-"}</td>
       <td data-label="Ações">
         <div class="table-actions">
           <button type="button" data-acao="detalhes" data-id="${venda.id || ""}" data-indice="${indice}">Ver detalhes</button>
