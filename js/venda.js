@@ -113,6 +113,85 @@ async function buscarPecaParaVenda(pecaId) {
     .find(item => Number(item.id) === Number(pecaId));
 }
 
+async function carregarPecasParaVenda() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    const pecas = await window.supabaseService.listarPecas();
+    salvarPecas(pecas.map(normalizarPeca));
+    return pecas.map(normalizarPeca);
+  }
+
+  return buscarPecas().map(normalizarPeca);
+}
+
+function renderizarDropdownPecas(pecas) {
+  const campoPeca = document.getElementById("pecaId");
+
+  if (!campoPeca) {
+    return;
+  }
+
+  campoPeca.innerHTML = '<option value="">Selecione uma peça</option>';
+
+  if (pecas.length === 0) {
+    campoPeca.innerHTML = '<option value="">Nenhuma peça cadastrada</option>';
+    campoPeca.disabled = true;
+    return;
+  }
+
+  campoPeca.disabled = false;
+
+  pecas.forEach(peca => {
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
+    const opcao = document.createElement("option");
+
+    opcao.value = peca.id;
+    opcao.textContent = `${peca.nome} - ${quantidadeDisponivel} disponíveis`;
+    opcao.disabled = quantidadeDisponivel <= 0;
+
+    campoPeca.appendChild(opcao);
+  });
+}
+
+function atualizarLimiteQuantidadeSelecionada() {
+  const campoPeca = document.getElementById("pecaId");
+  const campoQuantidade = document.getElementById("quantidadeVendidaNaVenda");
+
+  if (!campoPeca || !campoQuantidade) {
+    return;
+  }
+
+  const peca = buscarPecas()
+    .map(normalizarPeca)
+    .find(item => Number(item.id) === Number(campoPeca.value));
+
+  if (!peca) {
+    campoQuantidade.removeAttribute("max");
+    return;
+  }
+
+  campoQuantidade.max = calcularQuantidadeDisponivel(peca);
+}
+
+async function inicializarFormularioVenda() {
+  const campoPeca = document.getElementById("pecaId");
+
+  if (!campoPeca) {
+    return;
+  }
+
+  try {
+    const pecas = await carregarPecasParaVenda();
+    renderizarDropdownPecas(pecas);
+    atualizarLimiteQuantidadeSelecionada();
+  } catch (erro) {
+    console.error("Erro ao carregar peças para venda:", erro);
+    renderizarDropdownPecas(buscarPecas().map(normalizarPeca));
+    alert("Não foi possível carregar as peças do Supabase. Verifique a configuração e tente novamente.");
+  }
+
+  campoPeca.addEventListener("change", atualizarLimiteQuantidadeSelecionada);
+}
+
 function lerVendaDoFormulario() {
   const quantidadeVendida = Number(document.getElementById("quantidadeVendidaNaVenda").value);
   const valorUnitario = Number(document.getElementById("valorVenda").value);
@@ -136,7 +215,7 @@ function lerVendaDoFormulario() {
 
 function validarVenda(venda) {
   if (!venda.pecaId) {
-    return "Informe o ID da peca.";
+    return "Selecione uma peça.";
   }
 
   if (!venda.quantidadeVendida || venda.quantidadeVendida <= 0) {
@@ -220,3 +299,5 @@ async function salvarVenda() {
     botaoSalvar.disabled = false;
   }
 }
+
+document.addEventListener("DOMContentLoaded", inicializarFormularioVenda);
