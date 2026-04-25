@@ -1,0 +1,12 @@
+# Logs
+*.log
+
+# arquivos de erro
+*.err
+
+# servidor local
+server*
+servidor*
+
+# node (se usar no futuro)
+node_modules/
