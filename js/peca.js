@@ -24,6 +24,10 @@ function salvarPecaNoCache(peca) {
   localStorage.setItem("produtos", JSON.stringify(pecas));
 }
 
+function obterMensagemErroSupabase(erro) {
+  return erro?.message || erro?.details || erro?.hint || "erro desconhecido";
+}
+
 async function carregarOrigens() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
@@ -32,6 +36,8 @@ async function carregarOrigens() {
       return origens;
     } catch (erro) {
       console.error("Erro ao carregar origens do Supabase:", erro);
+      alert(`Nao foi possivel carregar as origens do Supabase: ${obterMensagemErroSupabase(erro)}`);
+      return [];
     }
   }
 
@@ -120,7 +126,7 @@ async function salvarPeca() {
     window.location.href = "estoque.html";
   } catch (erro) {
     console.error("Erro ao cadastrar peca:", erro);
-    alert("Nao foi possivel salvar a peca no Supabase. Verifique se a origem existe e se a tabela pecas esta atualizada.");
+    alert(`Nao foi possivel salvar a peca no Supabase: ${obterMensagemErroSupabase(erro)}`);
   } finally {
     botaoSalvar.disabled = false;
   }

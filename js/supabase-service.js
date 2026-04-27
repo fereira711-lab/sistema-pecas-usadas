@@ -110,16 +110,16 @@
 
     return {
       origem_id: Number(peca.origemId),
-      nome: peca.nome,
-      sku: peca.sku || null,
-      categoria: peca.categoria || "Sem categoria",
+      nome_peca: peca.nome,
       quantidade: Number(peca.quantidade || 1),
       quantidade_vendida: Number(peca.quantidadeVendida || 0),
       status: peca.status || "em_estoque",
       custo_total: Number(custoTotal || 0),
       custo: Number(custoTotal || 0),
-      tipo_custo: peca.tipoCusto || "real",
-      preco_venda: Number(peca.precoVenda || 0),
+      custo_atribuido: Number(custoTotal || 0),
+      tipo_custo_atribuido: peca.tipoCusto || "real",
+      preco_sugerido: Number(peca.precoVenda || 0),
+      preparada: Boolean(peca.preparada),
       observacoes: peca.observacoes || null
     };
   }
@@ -155,7 +155,7 @@
     return {
       id: Number(venda.id),
       pecaId: Number(venda.peca_id || 0),
-      produtoNome: venda.pecas?.nome || venda.produtoNome || "",
+      produtoNome: venda.pecas?.nome || venda.pecas?.nome_peca || venda.produtoNome || "",
       sku: venda.pecas?.sku || venda.sku || "",
       quantidadeVendida,
       quantidadeVendidaNaVenda: quantidadeVendida,
@@ -340,7 +340,7 @@
 
     const { data, error } = await cliente
       .from("vendas")
-      .select("*, pecas(nome, sku)")
+      .select("*, pecas(nome_peca)")
       .order("data_venda", { ascending: false })
       .order("id", { ascending: false });
 
