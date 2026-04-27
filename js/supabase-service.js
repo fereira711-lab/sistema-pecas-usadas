@@ -3,8 +3,16 @@
 
   function supabaseEstaConfigurado() {
     const config = window.SUPABASE_CONFIG || {};
+    const url = String(config.url || "").trim();
+    const anonKey = String(config.anonKey || "").trim();
 
-    return Boolean(config.url && config.anonKey);
+    return Boolean(
+      url &&
+      anonKey &&
+      url !== "https://SEU-PROJETO.supabase.co" &&
+      url !== "SUA_URL_AQUI" &&
+      anonKey !== "SUA_CHAVE_ANON_PUBLIC"
+    );
   }
 
   function obterCliente() {

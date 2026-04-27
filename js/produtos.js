@@ -1,6 +1,10 @@
 const tabelaProdutos = document.getElementById("tabelaProdutos");
 const mensagemProdutos = document.getElementById("mensagemProdutos");
 
+function primeiroValorPreenchido(...valores) {
+  return valores.find(valor => valor !== null && valor !== undefined);
+}
+
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -13,6 +17,7 @@ function normalizarPeca(peca) {
   const quantidadeVendida = Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
   const origemId = Number(peca.origemId || peca.origem_id || 0);
   const precoVenda = Number(peca.precoVenda || peca.preco_venda || peca.preco_sugerido || 0);
+  const custoTotal = primeiroValorPreenchido(peca.custoTotal, peca.custo_total, peca.custo, 0);
 
   return {
     ...peca,
@@ -24,7 +29,7 @@ function normalizarPeca(peca) {
     quantidadeVendida,
     status: peca.status || "em_estoque",
     custo: Number(peca.custo || 0),
-    custoTotal: Number(peca.custoTotal || peca.custo_total || peca.custo || 0),
+    custoTotal: Number(custoTotal || 0),
     precoVenda,
     preparada: Boolean(peca.preparada)
   };
@@ -116,35 +121,16 @@ function calcularReceitaPeca(vendasDaPeca) {
   }, 0);
 }
 
-function calcularCustoRateado(peca, pecas, origem) {
-  if (!origem) {
-    return Number(peca.custoTotal || peca.custo || 0);
-  }
-
-  const pecasDaOrigem = pecas.filter(item => Number(item.origemId || 0) === Number(peca.origemId || 0));
-  const quantidadeTotalOrigem = pecasDaOrigem.reduce((total, item) => total + Number(item.quantidade || 0), 0);
-
-  if (quantidadeTotalOrigem <= 0) {
-    return Number(peca.custoTotal || peca.custo || 0);
-  }
-
-  return (Number(origem.custoTotal || origem.valorPago || 0) / quantidadeTotalOrigem) * Number(peca.quantidade || 0);
-}
-
-function calcularCustoBasePeca(peca, pecas, origem) {
-  if (peca.tipoCusto === "rateado") {
-    return calcularCustoRateado(peca, pecas, origem);
-  }
-
+function calcularCustoBasePeca(peca) {
   return Number(peca.custoTotal || peca.custo || 0);
 }
 
-function calcularLucroPeca(peca, pecas, origem, vendas, custosPeca, custosVenda) {
+function calcularLucroPeca(peca, vendas, custosPeca, custosVenda) {
   const vendasDaPeca = filtrarPorPeca(vendas, peca.id);
   const idsVendasDaPeca = vendasDaPeca.map(venda => Number(venda.id));
   const custosVendaDaPeca = custosVenda.filter(custo => idsVendasDaPeca.includes(Number(custo.vendaId || 0)));
   const receita = calcularReceitaPeca(vendasDaPeca);
-  const custoBase = calcularCustoBasePeca(peca, pecas, origem);
+  const custoBase = calcularCustoBasePeca(peca);
   const totalCustosPeca = somarValores(filtrarPorPeca(custosPeca, peca.id));
   const totalCustosVenda = somarValores(custosVendaDaPeca);
 
@@ -175,7 +161,7 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
   pecas.forEach(peca => {
     const origem = mapaOrigens[Number(peca.origemId)];
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-    const lucro = calcularLucroPeca(peca, pecas, origem, vendas, custosPeca, custosVenda);
+    const lucro = calcularLucroPeca(peca, vendas, custosPeca, custosVenda);
     const classeLucro = obterClasseLucro(lucro);
     const linha = document.createElement("tr");
 

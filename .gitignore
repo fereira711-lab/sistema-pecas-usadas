@@ -10,3 +10,6 @@ servidor*
 
 # node (se usar no futuro)
 node_modules/
+
+# configuracao local do Supabase
+js/supabase-config.js
