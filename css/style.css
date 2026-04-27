@@ -600,6 +600,18 @@ textarea:focus {
   color: var(--cor-texto);
 }
 
+.profit-value {
+  white-space: nowrap;
+}
+
+.profit-value--positive {
+  color: #8ee6b2;
+}
+
+.profit-value--negative {
+  color: #ff8f8f;
+}
+
 .table-actions {
   display: flex;
   flex-wrap: wrap;
