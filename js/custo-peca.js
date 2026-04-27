@@ -82,7 +82,7 @@ async function salvarCusto() {
       alert("Custo da peca cadastrado no armazenamento temporario. Configure o Supabase para salvar no banco.");
     }
 
-    window.location.href = "estoque.html";
+    window.location.href = "produtos.html";
   } catch (erro) {
     console.error("Erro ao cadastrar custo da peca:", erro);
     try {
@@ -91,7 +91,7 @@ async function salvarCusto() {
         throw new Error("Falha ao salvar custo da peca no armazenamento temporario.");
       }
       alert("Nao foi possivel salvar no Supabase. O custo da peca foi cadastrado no armazenamento temporario.");
-      window.location.href = "estoque.html";
+      window.location.href = "produtos.html";
     } catch (erroFallback) {
       console.error("Erro ao salvar custo da peca no armazenamento temporario:", erroFallback);
       alert("Nao foi possivel salvar o custo da peca no Supabase nem no armazenamento temporario.");

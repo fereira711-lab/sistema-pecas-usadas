@@ -2,61 +2,29 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=produtos.html">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estoque de Peças</title>
+  <title>Redirecionando para Estoque / Produtos</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
   <header class="page-header">
     <div>
       <p class="hero__tag">Estoque</p>
-      <h1>Estoque de Peças</h1>
+      <h1>Estoque / Produtos</h1>
       <p class="hero__description">
-        Visualize as peças cadastradas no sistema.
+        Esta tela foi unificada. Redirecionando para Estoque / Produtos.
       </p>
     </div>
   </header>
 
-  <main class="container stock-layout">
-    <section class="stock-card">
-      <div class="stock-header">
-        <div>
-          <h2>Peças cadastradas</h2>
-          <p>Lista de pecas carregada do Supabase quando configurado.</p>
-        </div>
+  <main class="container form-layout">
+    <section class="form-card">
+      <div class="form-actions">
+        <a class="button-primary" href="produtos.html">Abrir Estoque / Produtos</a>
         <a class="button-secondary" href="../index.html">Voltar para o painel</a>
-      </div>
-
-      <p id="mensagemEstoque" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>Nome da peça</th>
-              <th>ID</th>
-              <th>Categoria</th>
-              <th>Origem</th>
-              <th>Qtd. total</th>
-              <th>Qtd. vendida</th>
-              <th>Qtd. disponível</th>
-              <th>Status</th>
-              <th>Custo base</th>
-              <th>Custos diversos</th>
-              <th>Custo total</th>
-              <th>Preço de venda</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaEstoque"></tbody>
-        </table>
       </div>
     </section>
   </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../js/supabase-config.js?v=4"></script>
-  <script src="../js/supabase-service.js?v=14"></script>
-  <script src="../js/estoque.js?v=5"></script>
 </body>
 </html>

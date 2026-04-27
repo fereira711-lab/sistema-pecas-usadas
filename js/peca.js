@@ -123,7 +123,7 @@ async function salvarPeca() {
       alert("Peca cadastrada no armazenamento temporario. Configure o Supabase para salvar no banco.");
     }
 
-    window.location.href = "estoque.html";
+    window.location.href = "produtos.html";
   } catch (erro) {
     console.error("Erro ao cadastrar peca:", erro);
     alert(`Nao foi possivel salvar a peca no Supabase: ${obterMensagemErroSupabase(erro)}`);

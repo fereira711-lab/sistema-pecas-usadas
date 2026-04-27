@@ -334,7 +334,7 @@ async function salvarVenda() {
       alert("Venda e custos da venda cadastrados no armazenamento temporario. Configure o Supabase para salvar no banco.");
     }
 
-    window.location.href = "estoque.html";
+    window.location.href = "produtos.html";
   } catch (erro) {
     console.error("Erro ao cadastrar venda:", erro);
     alert(`Nao foi possivel salvar a venda no Supabase: ${erro.message || "erro desconhecido"}`);
