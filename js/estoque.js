@@ -53,9 +53,9 @@ function formatarMoeda(valor) {
   });
 }
 
-function somarCustosPorSku(sku) {
+function somarCustosPorPeca(pecaId) {
   return buscarCustos()
-    .filter(custo => custo.sku === sku)
+    .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
@@ -97,7 +97,7 @@ async function renderizarEstoque() {
     const origem = origens.find(item => item.id === Number(produto.origemId || 0));
     const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
     const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
-    const custosDiversos = somarCustosPorSku(produto.sku);
+    const custosDiversos = somarCustosPorPeca(produto.id);
     const custoTotal = custoBase + custosDiversos;
     const quantidade = Number(produto.quantidade || 1);
     const quantidadeVendida = Number(produto.quantidadeVendida || 0);
@@ -107,7 +107,7 @@ async function renderizarEstoque() {
 
     linha.innerHTML = `
       <td data-label="Nome da peça">${produto.nome}</td>
-      <td data-label="SKU">${produto.sku || "-"}</td>
+      <td data-label="ID">${produto.id}</td>
       <td data-label="Categoria">${produto.categoria}</td>
       <td data-label="Origem">${produto.origem}</td>
       <td data-label="Qtd. total">${quantidade}</td>
@@ -120,7 +120,7 @@ async function renderizarEstoque() {
       <td data-label="Preço de venda">${formatarMoeda(produto.precoVenda)}</td>
       <td data-label="Ações">
         <div class="table-actions">
-          <button type="button" data-acao="detalhes" data-sku="${produto.sku}">Ver detalhes</button>
+          <button type="button" data-acao="detalhes" data-peca-id="${produto.id}">Ver detalhes</button>
           <button type="button" data-acao="editar" data-indice="${indice}">Editar</button>
           <button type="button" data-acao="remover" data-indice="${indice}">Remover</button>
         </div>
@@ -131,8 +131,8 @@ async function renderizarEstoque() {
   });
 }
 
-function abrirDetalhesProduto(sku) {
-  window.location.href = `detalhes-produto.html?sku=${encodeURIComponent(sku)}`;
+function abrirDetalhesProduto(pecaId) {
+  window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}`;
 }
 
 function removerProduto(indice) {
@@ -158,7 +158,7 @@ tabelaEstoque.addEventListener("click", function (evento) {
   const acao = botao.dataset.acao;
 
   if (acao === "detalhes") {
-    abrirDetalhesProduto(botao.dataset.sku);
+    abrirDetalhesProduto(botao.dataset.pecaId);
   }
 
   if (acao === "editar") {

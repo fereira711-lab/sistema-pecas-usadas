@@ -66,7 +66,7 @@ async function renderizarHistorico() {
     linha.innerHTML = `
       <td data-label="Data">${venda.dataVenda}</td>
       <td data-label="Produto">${venda.produtoNome || "-"}</td>
-      <td data-label="SKU">${venda.sku || "-"}</td>
+      <td data-label="ID da peca">${venda.pecaId || "-"}</td>
       <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</td>
       <td data-label="Preço unitário">${formatarMoeda(venda.precoUnitario)}</td>
       <td data-label="Valor total">${formatarMoeda(venda.valorTotal)}</td>

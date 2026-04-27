@@ -157,8 +157,8 @@ function renderizarDadosVenda(venda) {
       <strong>${venda.produtoNome}</strong>
     </article>
     <article class="detail-card">
-      <span>SKU</span>
-      <strong>${venda.sku || "-"}</strong>
+      <span>ID da peca</span>
+      <strong>${venda.pecaId || "-"}</strong>
     </article>
     <article class="detail-card">
       <span>Quantidade vendida</span>
@@ -221,7 +221,7 @@ function renderizarResumoFinanceiro(venda) {
 
 function renderizarProduto(venda) {
   const produtos = buscarProdutos();
-  const produto = produtos.find(item => item.sku === venda.sku);
+  const produto = produtos.find(item => Number(item.id) === Number(venda.pecaId));
 
   if (!produto) {
     mensagemProdutoVenda.textContent = "Produto não encontrado no estoque atual.";
@@ -240,7 +240,7 @@ function renderizarProduto(venda) {
   const status = obterStatusProduto(produto);
 
   acaoDetalhesProduto.innerHTML = `
-    <a class="button-primary" href="detalhes-produto.html?sku=${encodeURIComponent(produto.sku)}">Ver detalhes da peça</a>
+    <a class="button-primary" href="detalhes-produto.html?pecaId=${encodeURIComponent(produto.id)}">Ver detalhes da peça</a>
   `;
 
   dadosProdutoVenda.innerHTML = `
@@ -284,7 +284,7 @@ function renderizarProduto(venda) {
 }
 
 function renderizarCustos(venda) {
-  const custos = buscarCustos().filter(custo => custo.sku === venda.sku);
+  const custos = buscarCustos().filter(custo => Number(custo.pecaId || 0) === Number(venda.pecaId || 0));
   const custosVenda = normalizarCustosVenda(venda.custosVenda);
   tabelaCustosVenda.innerHTML = "";
 

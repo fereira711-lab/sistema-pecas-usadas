@@ -137,7 +137,7 @@ function renderizarResumoEstoque(produtos, custos, origens) {
 
     linha.innerHTML = `
       <td data-label="Produto">${produto.nome}</td>
-      <td data-label="SKU">${produto.sku || "-"}</td>
+      <td data-label="ID">${produto.id}</td>
       <td data-label="Categoria">${produto.categoria || "-"}</td>
       <td data-label="Qtd. total">${quantidade}</td>
       <td data-label="Qtd. vendida">${quantidadeVendida}</td>
@@ -170,7 +170,7 @@ function renderizarAlertasEstoque(produtos) {
 
     linha.innerHTML = `
       <td data-label="Produto">${produto.nome}</td>
-      <td data-label="SKU">${produto.sku || "-"}</td>
+      <td data-label="ID">${produto.id}</td>
       <td data-label="Quantidade">${quantidade}</td>
       <td data-label="Situação">${quantidade === 0 ? "Sem estoque" : "Estoque baixo"}</td>
     `;
@@ -204,7 +204,7 @@ function renderizarResumoVendas(vendas) {
     linha.innerHTML = `
       <td data-label="Data">${venda.dataVenda || "-"}</td>
       <td data-label="Produto">${venda.produtoNome || "-"}</td>
-      <td data-label="SKU">${venda.sku || "-"}</td>
+      <td data-label="ID da peca">${venda.pecaId || "-"}</td>
       <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0}</td>
       <td data-label="Valor total">${formatarMoeda(venda.valorTotal)}</td>
       <td data-label="Lucro bruto">${formatarMoeda(calcularLucroVenda(venda))}</td>
@@ -232,12 +232,12 @@ function renderizarProdutosMaisVendidos(vendas) {
   const agrupado = {};
 
   vendas.forEach(venda => {
-    const chave = venda.pecaId || venda.sku || venda.produtoNome || "sem-peca";
+    const chave = venda.pecaId || venda.produtoNome || "sem-peca";
 
     if (!agrupado[chave]) {
       agrupado[chave] = {
         produto: venda.produtoNome || "-",
-        sku: venda.sku || "-",
+        pecaId: venda.pecaId || "-",
         quantidade: 0,
         faturamento: 0,
         lucro: 0
@@ -256,7 +256,7 @@ function renderizarProdutosMaisVendidos(vendas) {
 
       linha.innerHTML = `
         <td data-label="Produto">${item.produto}</td>
-        <td data-label="SKU">${item.sku}</td>
+        <td data-label="ID da peca">${item.pecaId}</td>
         <td data-label="Quantidade vendida">${item.quantidade}</td>
         <td data-label="Faturamento">${formatarMoeda(item.faturamento)}</td>
         <td data-label="Lucro bruto">${formatarMoeda(item.lucro)}</td>
@@ -320,7 +320,7 @@ function prepararVendas(vendas, pecas, custosVenda) {
     return {
       ...venda,
       produtoNome: venda.produtoNome || peca?.nome || "-",
-      sku: venda.sku || peca?.sku || "",
+      pecaId: venda.pecaId || peca?.id || "",
       custoTotalVenda: custoUnitario * quantidade,
       custosVenda: custosDaVenda,
       totalCustosVenda: custosDaVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0)

@@ -53,9 +53,9 @@ function formatarMoeda(valor) {
   });
 }
 
-function somarCustosPorSku(sku) {
+function somarCustosPorPeca(pecaId) {
   return buscarCustos()
-    .filter(custo => custo.sku === sku)
+    .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
@@ -89,10 +89,10 @@ async function carregarProdutos() {
   produtos.forEach((produto, indice) => {
     const opcao = document.createElement("option");
     const nomeProduto = produto.nome || produto.nomePeca || produto.nomeProduto || produto.descricao || `Peca ${produto.id || indice + 1}`;
-    const skuProduto = produto.sku || produto.codigo || produto.codigoPeca || "sem SKU";
+    const idProduto = produto.id || indice + 1;
 
     opcao.value = indice;
-    opcao.textContent = `${nomeProduto} - ${skuProduto}`;
+    opcao.textContent = `${nomeProduto} - ID ${idProduto}`;
     selectProdutoCusto.appendChild(opcao);
   });
 
@@ -117,7 +117,7 @@ function renderizarResumoProduto() {
   const origem = buscarOrigens().find(item => item.id === Number(produto.origemId || 0));
   const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
   const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
-  const custosDiversos = somarCustosPorSku(produto.sku);
+  const custosDiversos = somarCustosPorPeca(produto.id);
   const custoTotal = custoBase + custosDiversos;
 
   resumoProdutoCusto.innerHTML = `
@@ -126,8 +126,8 @@ function renderizarResumoProduto() {
       <strong>${produto.nome}</strong>
     </article>
     <article class="summary-card">
-      <span>SKU</span>
-      <strong>${produto.sku || "-"}</strong>
+      <span>ID da peca</span>
+      <strong>${produto.id}</strong>
     </article>
     <article class="summary-card">
       <span>Custo base</span>
@@ -161,7 +161,7 @@ function renderizarCustos() {
     linha.innerHTML = `
       <td data-label="Data">${custo.data}</td>
       <td data-label="Produto">${custo.produtoNome}</td>
-      <td data-label="SKU">${custo.sku || "-"}</td>
+      <td data-label="ID da peca">${custo.pecaId || "-"}</td>
       <td data-label="Tipo">${custo.tipo}</td>
       <td data-label="Descricao">${custo.descricao}</td>
       <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
@@ -182,7 +182,7 @@ function verDetalhes(indice) {
 
   alert(
     `Produto: ${custo.produtoNome}\n` +
-    `SKU: ${custo.sku || "-"}\n` +
+    `ID da peca: ${custo.pecaId || "-"}\n` +
     `Tipo: ${custo.tipo}\n` +
     `Descricao: ${custo.descricao}\n` +
     `Valor: ${formatarMoeda(custo.valor)}\n` +
@@ -210,7 +210,6 @@ function montarCusto(produto, tipo, descricao, valor, data) {
     id: Date.now(),
     pecaId: Number(produto.id),
     produtoNome: produto.nome || produto.nomePeca || produto.nomeProduto || produto.descricao || `Peca ${produto.id}`,
-    sku: produto.sku || produto.codigo || produto.codigoPeca || "",
     tipo: tipo,
     tipoCusto: tipo,
     descricao: descricao,
@@ -229,7 +228,6 @@ async function salvarCustoNoSupabaseOuFallback(custo) {
         ...custo,
         ...custoSalvo,
         produtoNome: custo.produtoNome,
-        sku: custo.sku,
         observacoes: custo.observacoes
       };
 

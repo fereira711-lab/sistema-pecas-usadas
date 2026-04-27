@@ -31,17 +31,17 @@ function formatarMoeda(valor) {
   });
 }
 
-function obterSkuDaUrl() {
+function obterPecaIdDaUrl() {
   const parametros = new URLSearchParams(window.location.search);
-  return parametros.get("sku");
+  return Number(parametros.get("pecaId"));
 }
 
-function filtrarCustosPorSku(sku) {
-  return buscarCustos().filter(custo => custo.sku === sku);
+function filtrarCustosPorPeca(pecaId) {
+  return buscarCustos().filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0));
 }
 
-function filtrarVendasPorSku(sku) {
-  return buscarVendas().filter(venda => venda.sku === sku);
+function filtrarVendasPorPeca(pecaId) {
+  return buscarVendas().filter(venda => Number(venda.pecaId || 0) === Number(pecaId || 0));
 }
 
 function calcularLucroVenda(venda) {
@@ -89,7 +89,7 @@ function obterStatusProduto(produto) {
 
 function renderizarDadosProduto(produto, custoBase) {
   tituloProduto.textContent = produto.nome;
-  subtituloProduto.textContent = `SKU ${produto.sku || "-"} • ${produto.categoria || "Sem categoria"}`;
+  subtituloProduto.textContent = `ID ${produto.id} - ${produto.categoria || "Sem categoria"}`;
   const quantidade = Number(produto.quantidade || 1);
   const quantidadeVendida = Number(produto.quantidadeVendida || 0);
   const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
@@ -101,8 +101,8 @@ function renderizarDadosProduto(produto, custoBase) {
       <strong>${produto.nome}</strong>
     </article>
     <article class="detail-card">
-      <span>SKU</span>
-      <strong>${produto.sku || "-"}</strong>
+      <span>ID da peca</span>
+      <strong>${produto.id}</strong>
     </article>
     <article class="detail-card">
       <span>Categoria</span>
@@ -239,19 +239,19 @@ function renderizarVendas(vendas) {
 }
 
 function iniciarDetalhes() {
-  const sku = obterSkuDaUrl();
+  const pecaId = obterPecaIdDaUrl();
   const produtos = buscarProdutos();
-  const produto = produtos.find(item => item.sku === sku);
+  const produto = produtos.find(item => Number(item.id) === Number(pecaId));
 
-  if (!sku || !produto) {
+  if (!pecaId || !produto) {
     mensagemProdutoNaoEncontrado.textContent = "Produto não encontrado.";
     dadosProduto.innerHTML = "";
     resumoFinanceiro.innerHTML = "";
     return;
   }
 
-  const custos = filtrarCustosPorSku(sku);
-  const vendas = filtrarVendasPorSku(sku);
+  const custos = filtrarCustosPorPeca(pecaId);
+  const vendas = filtrarVendasPorPeca(pecaId);
   const origem = buscarOrigens().find(item => item.id === Number(produto.origemId || 0));
   const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
   const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);

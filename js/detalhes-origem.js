@@ -109,9 +109,9 @@ function formatarMoeda(valor) {
   });
 }
 
-function somarCustosPorSku(custos, sku) {
+function somarCustosPorPeca(custos, pecaId) {
   return custos
-    .filter(custo => custo.sku === sku)
+    .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
@@ -210,9 +210,9 @@ function renderizarDadosOrigem(origem) {
 }
 
 function renderizarResumo(origem, pecas, custos, vendas) {
-  const skus = pecas.map(peca => peca.sku);
-  const vendasDaOrigem = vendas.filter(venda => skus.includes(venda.sku));
-  const custosDosProdutos = pecas.reduce((total, peca) => total + somarCustosPorSku(custos, peca.sku), 0);
+  const idsPecas = pecas.map(peca => Number(peca.id));
+  const vendasDaOrigem = vendas.filter(venda => idsPecas.includes(Number(venda.pecaId || 0)));
+  const custosDosProdutos = pecas.reduce((total, peca) => total + somarCustosPorPeca(custos, peca.id), 0);
   const custoBaseProdutos = pecas.reduce((total, peca) => {
     return total + calcularCustoPeca(peca, pecas, origem);
   }, 0);
@@ -267,15 +267,15 @@ function renderizarPecas(origem, pecas, custos, vendas) {
     const quantidadeVendida = Number(peca.quantidadeVendida || 0);
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
     const status = obterStatusPeca(peca);
-    const custosDiversos = somarCustosPorSku(custos, peca.sku);
-    const vendasProduto = vendas.filter(venda => venda.sku === peca.sku);
+    const custosDiversos = somarCustosPorPeca(custos, peca.id);
+    const vendasProduto = vendas.filter(venda => Number(venda.pecaId || 0) === Number(peca.id));
     const faturamento = somarCampo(vendasProduto, "valorTotal");
     const lucroBruto = vendasProduto.reduce((total, venda) => total + lucroVenda(venda), 0);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
       <td data-label="Produto">${peca.nome}</td>
-      <td data-label="SKU">${peca.sku || "-"}</td>
+      <td data-label="ID">${peca.id}</td>
       <td data-label="Categoria">${peca.categoria || "-"}</td>
       <td data-label="Qtd. total">${quantidade}</td>
       <td data-label="Qtd. vendida">${quantidadeVendida}</td>
@@ -290,7 +290,7 @@ function renderizarPecas(origem, pecas, custos, vendas) {
       <td data-label="Lucro bruto">${formatarMoeda(lucroBruto)}</td>
       <td data-label="Ações">
         <div class="table-actions">
-          <a class="table-link" href="detalhes-produto.html?sku=${encodeURIComponent(peca.sku)}">Ver peça</a>
+          <a class="table-link" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}">Ver peça</a>
         </div>
       </td>
     `;
