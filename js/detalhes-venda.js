@@ -32,6 +32,17 @@ function formatarMoeda(valor) {
   });
 }
 
+function formatarNomePeca(peca) {
+  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.produtoNome || peca.descricao || `Peca ${peca.id || peca.pecaId}`;
+  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
+
+  return sku ? `${sku} - ${nome}` : nome;
+}
+
+function formatarSku(peca) {
+  return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
+}
+
 function formatarPorcentagem(valor) {
   return `${Number(valor || 0).toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
@@ -141,7 +152,14 @@ function obterStatusProduto(produto) {
 
 function renderizarDadosVenda(venda) {
   tituloVenda.textContent = venda.id || "Venda sem ID";
-  subtituloVenda.textContent = `${venda.produtoNome} • ${venda.dataVenda}`;
+  const produtoAtual = buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
+  const nomeVenda = formatarNomePeca({
+    id: venda.pecaId,
+    nome: venda.produtoNome || produtoAtual?.nome,
+    sku: venda.sku || produtoAtual?.sku
+  });
+
+  subtituloVenda.textContent = `${nomeVenda} • ${venda.dataVenda}`;
 
   dadosVenda.innerHTML = `
     <article class="detail-card">
@@ -154,7 +172,11 @@ function renderizarDadosVenda(venda) {
     </article>
     <article class="detail-card">
       <span>Produto</span>
-      <strong>${venda.produtoNome}</strong>
+      <strong>${nomeVenda}</strong>
+    </article>
+    <article class="detail-card">
+      <span>SKU</span>
+      <strong>${formatarSku({ sku: venda.sku || produtoAtual?.sku })}</strong>
     </article>
     <article class="detail-card">
       <span>ID da peca</span>
@@ -246,7 +268,11 @@ function renderizarProduto(venda) {
   dadosProdutoVenda.innerHTML = `
     <article class="detail-card">
       <span>Nome atual do produto</span>
-      <strong>${produto.nome}</strong>
+      <strong>${formatarNomePeca(produto)}</strong>
+    </article>
+    <article class="detail-card">
+      <span>SKU atual</span>
+      <strong>${formatarSku(produto)}</strong>
     </article>
     <article class="detail-card">
       <span>Categoria</span>

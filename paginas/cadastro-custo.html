@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastrar Custo Diverso</title>
+  <title>Cadastrar Custo da Peca</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
   <header class="page-header">
     <div>
       <p class="hero__tag">Custos</p>
-      <h1>Cadastrar Custo Diverso</h1>
+      <h1>Cadastrar Custo da Peca</h1>
       <p class="hero__description">
         Adicione custos extras de preparo, reparo, embalagem ou outros custos vinculados a uma peça.
       </p>
@@ -22,10 +22,10 @@
       <form id="formCusto">
         <div class="form-row">
           <div class="form-group">
-            <label for="produtoCusto">Produto *</label>
-            <select id="produtoCusto" name="produtoCusto" required>
-              <option value="">Selecione um produto</option>
-            </select>
+            <label for="buscaPecaCusto">Pesquisar peça</label>
+            <input id="buscaPecaCusto" type="search" placeholder="Pesquisar peça (nome ou SKU)">
+            <input id="produtoCusto" name="produtoCusto" type="hidden" required>
+            <div id="sugestoesPecaCusto" class="autocomplete-list" role="listbox"></div>
           </div>
 
           <div class="form-group">
@@ -44,7 +44,7 @@
           </div>
         </div>
 
-        <section id="resumoProdutoCusto" class="summary-grid summary-grid--compact" aria-label="Resumo de custos do produto"></section>
+        <section id="resumoProdutoCusto" class="summary-grid summary-grid--compact" aria-label="Resumo de custos da peca"></section>
 
         <div class="form-row">
           <div class="form-group">
@@ -111,7 +111,7 @@
           <thead>
             <tr>
               <th>Data</th>
-              <th>Produto</th>
+              <th>Peca</th>
               <th>ID da peça</th>
               <th>Tipo</th>
               <th>Descrição</th>
@@ -127,7 +127,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=4"></script>
-  <script src="../js/supabase-service.js?v=14"></script>
-  <script src="../js/custos.js?v=5"></script>
+  <script src="../js/supabase-service.js?v=16"></script>
+  <script src="../js/custos.js?v=10"></script>
 </body>
 </html>

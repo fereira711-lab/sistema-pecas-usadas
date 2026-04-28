@@ -29,11 +29,16 @@
 
       <p id="mensagemProdutos" class="empty-message"></p>
 
+      <div class="form-group">
+        <input id="buscaProdutos" type="search" placeholder="Pesquisar peça (nome ou SKU)">
+      </div>
+
       <div class="table-wrapper">
         <table class="stock-table">
           <thead>
             <tr>
               <th>ID</th>
+              <th>SKU</th>
               <th>Nome da peca</th>
               <th>Origem</th>
               <th>Tipo de custo</th>
@@ -55,7 +60,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
-  <script src="../js/supabase-service.js?v=14"></script>
-  <script src="../js/produtos.js?v=9"></script>
+  <script src="../js/supabase-service.js?v=16"></script>
+  <script src="../js/produtos.js?v=13"></script>
 </body>
 </html>

@@ -8,9 +8,11 @@ const dadosOrigem = document.getElementById("dadosOrigem");
 const resumoOrigem = document.getElementById("resumoOrigem");
 const mensagemProdutosOrigem = document.getElementById("mensagemProdutosOrigem");
 const tabelaProdutosOrigem = document.getElementById("tabelaProdutosOrigem");
+const campoBuscaPecasOrigem = document.getElementById("buscaPecasOrigem");
 
 const TIPOS_CUSTO_PECA = ["real", "rateado", "simbolico"];
 const TIPO_CUSTO_PADRAO = "real";
+let dadosDetalhesOrigem = { origem: null, pecas: [], custos: [], vendas: [] };
 
 function buscarLista(chave) {
   return JSON.parse(localStorage.getItem(chave)) || [];
@@ -106,6 +108,32 @@ function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL"
+  });
+}
+
+function formatarNomePeca(peca) {
+  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
+  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
+
+  return sku ? `${sku} - ${nome}` : nome;
+}
+
+function formatarSku(peca) {
+  return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
+}
+
+function filtrarPecasPorBusca(pecas) {
+  const termo = String(campoBuscaPecasOrigem?.value || "").trim().toLowerCase();
+
+  if (!termo) {
+    return pecas;
+  }
+
+  return pecas.filter(peca => {
+    const nome = String(peca.nome || peca.nome_peca || peca.nomeProduto || "").toLowerCase();
+    const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").toLowerCase();
+
+    return nome.includes(termo) || sku.includes(termo);
   });
 }
 
@@ -253,7 +281,9 @@ function renderizarPecas(origem, pecas, custos, vendas) {
   tabelaProdutosOrigem.innerHTML = "";
 
   if (pecas.length === 0) {
-    mensagemProdutosOrigem.textContent = "Nenhuma peça vinculada a esta origem.";
+    mensagemProdutosOrigem.textContent = campoBuscaPecasOrigem?.value
+      ? "Nenhuma peça encontrada para a busca."
+      : "Nenhuma peça vinculada a esta origem.";
     return;
   }
 
@@ -274,7 +304,8 @@ function renderizarPecas(origem, pecas, custos, vendas) {
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
-      <td data-label="Produto">${peca.nome}</td>
+      <td data-label="Produto">${formatarNomePeca(peca)}</td>
+      <td data-label="SKU">${formatarSku(peca)}</td>
       <td data-label="ID">${peca.id}</td>
       <td data-label="Categoria">${peca.categoria || "-"}</td>
       <td data-label="Qtd. total">${quantidade}</td>
@@ -313,9 +344,28 @@ async function iniciarDetalhesOrigem() {
   }
 
   mensagemOrigemNaoEncontrada.textContent = "";
+  dadosDetalhesOrigem = {
+    origem,
+    pecas: pecasDaOrigem,
+    custos,
+    vendas
+  };
   renderizarDadosOrigem(origem);
   renderizarResumo(origem, pecasDaOrigem, custos, vendas);
-  renderizarPecas(origem, pecasDaOrigem, custos, vendas);
+  renderizarPecas(origem, filtrarPecasPorBusca(pecasDaOrigem), custos, vendas);
 }
+
+campoBuscaPecasOrigem?.addEventListener("input", () => {
+  if (!dadosDetalhesOrigem.origem) {
+    return;
+  }
+
+  renderizarPecas(
+    dadosDetalhesOrigem.origem,
+    filtrarPecasPorBusca(dadosDetalhesOrigem.pecas),
+    dadosDetalhesOrigem.custos,
+    dadosDetalhesOrigem.vendas
+  );
+});
 
 iniciarDetalhesOrigem();

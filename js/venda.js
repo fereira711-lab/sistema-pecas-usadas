@@ -10,6 +10,12 @@ function buscarVendas() {
   return JSON.parse(localStorage.getItem("vendas")) || [];
 }
 
+const campoBuscaPecaVenda = document.getElementById("buscaPecaVenda");
+const sugestoesPecaVenda = document.getElementById("sugestoesPecaVenda");
+let pecasVendaCarregadas = [];
+let sugestoesVendaAtuais = [];
+let indiceSugestaoVenda = -1;
+
 function salvarVendas(vendas) {
   localStorage.setItem("vendas", JSON.stringify(vendas));
 }
@@ -22,6 +28,8 @@ function normalizarPeca(peca) {
   return {
     ...peca,
     id: Number(peca.id),
+    nome: peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`,
+    sku: peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "",
     quantidade,
     quantidadeVendida,
     origemId: Number(peca.origemId || peca.origem_id || 0),
@@ -29,8 +37,67 @@ function normalizarPeca(peca) {
   };
 }
 
+function formatarNomePeca(peca) {
+  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
+  const sku = String(peca.sku || "").trim();
+
+  return sku ? `${sku} - ${nome}` : nome;
+}
+
+function escaparHtml(texto) {
+  return String(texto || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escaparRegex(texto) {
+  return String(texto || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function destacarBusca(texto) {
+  const termo = String(campoBuscaPecaVenda?.value || "").trim();
+  const textoSeguro = escaparHtml(texto);
+
+  if (!termo) {
+    return textoSeguro;
+  }
+
+  return textoSeguro.replace(new RegExp(`(${escaparRegex(termo)})`, "gi"), "<mark>$1</mark>");
+}
+
+function formatarNomePecaDestacado(peca) {
+  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
+  const sku = String(peca.sku || "").trim();
+
+  return sku
+    ? `${destacarBusca(sku)} - ${destacarBusca(nome)}`
+    : destacarBusca(nome);
+}
+
+function filtrarPecasPorBusca(pecas) {
+  const termo = String(campoBuscaPecaVenda?.value || "").trim().toLowerCase();
+
+  if (!termo) {
+    return pecas;
+  }
+
+  return pecas.filter(peca => {
+    const nome = String(peca.nome || peca.nome_peca || peca.nomeProduto || "").toLowerCase();
+    const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").toLowerCase();
+
+    return nome.includes(termo) || sku.includes(termo);
+  });
+}
+
 function calcularQuantidadeDisponivel(peca) {
   return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
+}
+
+function obterCampoPeca() {
+  return document.getElementById("pecaId");
 }
 
 function salvarPecaNoCache(pecaAtualizada) {
@@ -128,37 +195,110 @@ async function carregarPecasParaVenda() {
   return buscarPecas().map(normalizarPeca);
 }
 
-function renderizarDropdownPecas(pecas) {
-  const campoPeca = document.getElementById("pecaId");
+function selecionarPeca(peca) {
+  const campoPeca = obterCampoPeca();
+  const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
 
-  if (!campoPeca) {
+  if (!campoPeca || quantidadeDisponivel <= 0) {
     return;
   }
 
-  campoPeca.innerHTML = '<option value="">Selecione uma peça</option>';
+  campoPeca.value = String(peca.id);
+  campoBuscaPecaVenda.value = formatarNomePeca(peca);
+  fecharSugestoesVenda();
+  atualizarLimiteQuantidadeSelecionada();
+}
+
+function fecharSugestoesVenda() {
+  sugestoesPecaVenda.innerHTML = "";
+  sugestoesPecaVenda.classList.remove("is-open");
+  indiceSugestaoVenda = -1;
+}
+
+function obterPrimeiroIndiceDisponivel(pecas) {
+  return pecas.findIndex(peca => calcularQuantidadeDisponivel(peca) > 0);
+}
+
+function renderizarSugestoesVenda(pecas) {
+  if (!String(campoBuscaPecaVenda?.value || "").trim()) {
+    fecharSugestoesVenda();
+    return;
+  }
+
+  sugestoesVendaAtuais = pecas;
+  sugestoesPecaVenda.innerHTML = "";
+  indiceSugestaoVenda = obterPrimeiroIndiceDisponivel(pecas);
 
   if (pecas.length === 0) {
-    campoPeca.innerHTML = '<option value="">Nenhuma peça cadastrada</option>';
-    campoPeca.disabled = true;
+    const item = document.createElement("div");
+    item.className = "autocomplete-option";
+    item.textContent = "Nenhuma peça encontrada";
+    sugestoesPecaVenda.appendChild(item);
+    sugestoesPecaVenda.classList.add("is-open");
     return;
   }
 
-  campoPeca.disabled = false;
-
-  pecas.forEach(peca => {
+  pecas.forEach((peca, indice) => {
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-    const opcao = document.createElement("option");
+    const botao = document.createElement("button");
+    const textoQuantidade = quantidadeDisponivel > 0
+      ? `${quantidadeDisponivel} disponível${quantidadeDisponivel === 1 ? "" : "s"}`
+      : "SEM ESTOQUE";
 
-    opcao.value = String(peca.id);
-    opcao.textContent = `${peca.nome} - ${quantidadeDisponivel} disponíveis`;
-    opcao.disabled = quantidadeDisponivel <= 0;
+    botao.type = "button";
+    botao.className = `autocomplete-option${indice === indiceSugestaoVenda ? " is-active" : ""}${quantidadeDisponivel <= 0 ? " autocomplete-option--unavailable" : ""}`;
+    botao.disabled = quantidadeDisponivel <= 0;
+    botao.innerHTML = `
+      <span>${formatarNomePecaDestacado(peca)}</span>
+      <span class="autocomplete-option__meta">${textoQuantidade}</span>
+    `;
+    botao.addEventListener("click", () => selecionarPeca(peca));
 
-    campoPeca.appendChild(opcao);
+    sugestoesPecaVenda.appendChild(botao);
+  });
+
+  sugestoesPecaVenda.classList.add("is-open");
+}
+
+function atualizarDestaqueSugestoesVenda() {
+  Array.from(sugestoesPecaVenda.querySelectorAll(".autocomplete-option")).forEach((item, indice) => {
+    item.classList.toggle("is-active", indice === indiceSugestaoVenda);
   });
 }
 
+function moverDestaqueSugestoesVenda(direcao) {
+  const indicesDisponiveis = sugestoesVendaAtuais
+    .map((peca, indice) => calcularQuantidadeDisponivel(peca) > 0 ? indice : -1)
+    .filter(indice => indice >= 0);
+
+  if (indicesDisponiveis.length === 0) {
+    indiceSugestaoVenda = -1;
+    atualizarDestaqueSugestoesVenda();
+    return;
+  }
+
+  const posicaoAtual = indicesDisponiveis.indexOf(indiceSugestaoVenda);
+  const proximaPosicao = posicaoAtual < 0
+    ? 0
+    : (posicaoAtual + direcao + indicesDisponiveis.length) % indicesDisponiveis.length;
+
+  indiceSugestaoVenda = indicesDisponiveis[proximaPosicao];
+  atualizarDestaqueSugestoesVenda();
+}
+
+function atualizarSugestoesVenda() {
+  const campoPeca = obterCampoPeca();
+
+  if (campoPeca) {
+    campoPeca.value = "";
+  }
+
+  renderizarSugestoesVenda(filtrarPecasPorBusca(pecasVendaCarregadas));
+  atualizarLimiteQuantidadeSelecionada();
+}
+
 function atualizarLimiteQuantidadeSelecionada() {
-  const campoPeca = document.getElementById("pecaId");
+  const campoPeca = obterCampoPeca();
   const campoQuantidade = document.getElementById("quantidadeVendidaNaVenda");
 
   if (!campoPeca || !campoQuantidade) {
@@ -186,7 +326,7 @@ function obterPecaIdDaUrl() {
 
 function selecionarPecaDaUrl() {
   const pecaIdUrl = obterPecaIdDaUrl();
-  const campoPeca = document.getElementById("pecaId");
+  const campoPeca = obterCampoPeca();
 
   if (!campoPeca) {
     return;
@@ -197,38 +337,72 @@ function selecionarPecaDaUrl() {
     return;
   }
 
-  const opcaoEncontrada = Array.from(campoPeca.options)
-    .find(opcao => Number(opcao.value) === pecaIdUrl);
+  const pecaEncontrada = pecasVendaCarregadas.find(peca => Number(peca.id) === pecaIdUrl);
 
-  if (!opcaoEncontrada) {
+  if (!pecaEncontrada) {
     console.warn(`Peca com id ${pecaIdUrl} nao foi encontrada no dropdown de venda.`);
     return;
   }
 
-  campoPeca.value = opcaoEncontrada.value;
+  selecionarPeca(pecaEncontrada);
 }
 
 async function inicializarFormularioVenda() {
-  const campoPeca = document.getElementById("pecaId");
+  const campoPeca = obterCampoPeca();
 
   if (!campoPeca) {
     return;
   }
 
   try {
-    const pecas = await carregarPecasParaVenda();
-    renderizarDropdownPecas(pecas);
+    pecasVendaCarregadas = await carregarPecasParaVenda();
     selecionarPecaDaUrl();
     atualizarLimiteQuantidadeSelecionada();
   } catch (erro) {
     console.error("Erro ao carregar peças para venda:", erro);
-    renderizarDropdownPecas(buscarPecas().map(normalizarPeca));
+    pecasVendaCarregadas = buscarPecas().map(normalizarPeca);
     selecionarPecaDaUrl();
     atualizarLimiteQuantidadeSelecionada();
     alert("Não foi possível carregar as peças do Supabase. Verifique a configuração e tente novamente.");
   }
 
-  campoPeca.addEventListener("change", atualizarLimiteQuantidadeSelecionada);
+  campoBuscaPecaVenda?.addEventListener("input", atualizarSugestoesVenda);
+
+  campoBuscaPecaVenda?.addEventListener("focus", () => {
+    if (!campoPeca.value && String(campoBuscaPecaVenda.value || "").trim()) {
+      renderizarSugestoesVenda(filtrarPecasPorBusca(pecasVendaCarregadas));
+    }
+  });
+
+  campoBuscaPecaVenda?.addEventListener("keydown", evento => {
+    if (evento.key === "ArrowDown") {
+      evento.preventDefault();
+      moverDestaqueSugestoesVenda(1);
+      return;
+    }
+
+    if (evento.key === "ArrowUp") {
+      evento.preventDefault();
+      moverDestaqueSugestoesVenda(-1);
+      return;
+    }
+
+    if (evento.key === "Escape") {
+      fecharSugestoesVenda();
+      return;
+    }
+
+    if (evento.key !== "Enter") {
+      return;
+    }
+
+    evento.preventDefault();
+    const peca = sugestoesVendaAtuais[indiceSugestaoVenda] || sugestoesVendaAtuais[0];
+
+    if (peca) {
+      selecionarPeca(peca);
+    }
+  });
 }
 
 function lerVendaDoFormulario() {

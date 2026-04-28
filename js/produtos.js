@@ -1,5 +1,7 @@
 const tabelaProdutos = document.getElementById("tabelaProdutos");
 const mensagemProdutos = document.getElementById("mensagemProdutos");
+const campoBuscaProdutos = document.getElementById("buscaProdutos");
+let dadosProdutos = { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [] };
 
 function primeiroValorPreenchido(...valores) {
   return valores.find(valor => valor !== null && valor !== undefined);
@@ -10,6 +12,17 @@ function formatarMoeda(valor) {
     style: "currency",
     currency: "BRL"
   });
+}
+
+function formatarNomePeca(peca) {
+  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
+  const sku = String(peca.sku || "").trim();
+
+  return sku ? `${sku} - ${nome}` : nome;
+}
+
+function formatarSku(peca) {
+  return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
 }
 
 function normalizarPeca(peca) {
@@ -23,6 +36,7 @@ function normalizarPeca(peca) {
     ...peca,
     id: Number(peca.id),
     nome: peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`,
+    sku: peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "",
     origemId,
     tipoCusto: peca.tipoCusto || peca.tipo_custo || peca.tipo_custo_atribuido || "-",
     quantidade,
@@ -90,7 +104,22 @@ function abrirDetalhesOrigem(origemId) {
 }
 
 function abrirLancamentoCusto(pecaId) {
-  window.location.href = `cadastro-custo-peca.html?pecaId=${encodeURIComponent(pecaId)}`;
+  window.location.href = `cadastro-custo.html?pecaId=${encodeURIComponent(pecaId)}`;
+}
+
+function filtrarPecasPorBusca(pecas) {
+  const termo = String(campoBuscaProdutos?.value || "").trim().toLowerCase();
+
+  if (!termo) {
+    return pecas;
+  }
+
+  return pecas.filter(peca => {
+    const nome = String(peca.nome || peca.nome_peca || "").toLowerCase();
+    const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").toLowerCase();
+
+    return nome.includes(termo) || sku.includes(termo);
+  });
 }
 
 function abrirVenda(pecaId) {
@@ -137,12 +166,24 @@ function calcularLucroPeca(peca, vendas, custosPeca, custosVenda) {
   return receita - custoBase - totalCustosPeca - totalCustosVenda;
 }
 
-function obterClasseLucro(lucro) {
-  if (lucro < 0) {
-    return "profit-value profit-value--negative";
+function obterClasseLucro(lucro, temVenda) {
+  if (!temVenda || lucro === 0) {
+    return "profit-value profit-value--neutral";
   }
 
-  return "profit-value profit-value--positive";
+  if (lucro > 0) {
+    return "profit-value profit-value--positive";
+  }
+
+  return "profit-value profit-value--negative";
+}
+
+function obterClasseStatus(status) {
+  if (status === "vendida") {
+    return "status-badge status-badge--sold";
+  }
+
+  return "status-badge status-badge--stock";
 }
 
 function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
@@ -150,38 +191,41 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
   tabelaProdutos.innerHTML = "";
 
   if (pecas.length === 0) {
-    mensagemProdutos.textContent = "Nenhuma peca cadastrada.";
+    mensagemProdutos.textContent = campoBuscaProdutos?.value
+      ? "Nenhuma peca encontrada para a busca."
+      : "Nenhuma peca cadastrada.";
     return;
   }
 
-  if (!mensagemProdutos.textContent) {
-    mensagemProdutos.textContent = "";
-  }
+  mensagemProdutos.textContent = "";
 
   pecas.forEach(peca => {
     const origem = mapaOrigens[Number(peca.origemId)];
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
     const lucro = calcularLucroPeca(peca, vendas, custosPeca, custosVenda);
-    const classeLucro = obterClasseLucro(lucro);
+    const temVenda = filtrarPorPeca(vendas, peca.id).length > 0;
+    const classeLucro = obterClasseLucro(lucro, temVenda);
+    const classeStatus = obterClasseStatus(peca.status);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
       <td data-label="ID">${peca.id}</td>
-      <td data-label="Nome da peca">${peca.nome}</td>
+      <td data-label="SKU">${formatarSku(peca)}</td>
+      <td data-label="Nome da peca"><strong class="product-name">${formatarNomePeca(peca)}</strong></td>
       <td data-label="Origem">${origem ? origem.descricao : "-"}</td>
       <td data-label="Tipo de custo">${peca.tipoCusto}</td>
       <td data-label="Qtd. total">${peca.quantidade}</td>
       <td data-label="Qtd. vendida">${peca.quantidadeVendida}</td>
       <td data-label="Qtd. disponivel">${quantidadeDisponivel}</td>
-      <td data-label="Status">${peca.status}</td>
+      <td data-label="Status"><span class="${classeStatus}">${peca.status}</span></td>
       <td data-label="Preco">${formatarMoeda(peca.precoVenda)}</td>
       <td data-label="Lucro"><strong class="${classeLucro}">${formatarMoeda(lucro)}</strong></td>
       <td data-label="Preparada">${peca.preparada ? "Sim" : "Nao"}</td>
       <td data-label="Acoes">
         <div class="table-actions">
-          <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
-          <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lancar custo</button>
           <button type="button" data-acao="venda" data-peca-id="${peca.id}" onclick="abrirVenda(${peca.id})" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
+          <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lancar custo</button>
+          <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
           <button type="button" data-acao="editar" data-peca-id="${peca.id}">Editar peca</button>
         </div>
       </td>
@@ -192,9 +236,25 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
 }
 
 async function inicializarProdutos() {
-  const { pecas, origens, vendas, custosPeca, custosVenda } = await carregarDados();
-  renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda);
+  dadosProdutos = await carregarDados();
+  renderizarProdutos(
+    filtrarPecasPorBusca(dadosProdutos.pecas),
+    dadosProdutos.origens,
+    dadosProdutos.vendas,
+    dadosProdutos.custosPeca,
+    dadosProdutos.custosVenda
+  );
 }
+
+campoBuscaProdutos?.addEventListener("input", () => {
+  renderizarProdutos(
+    filtrarPecasPorBusca(dadosProdutos.pecas),
+    dadosProdutos.origens,
+    dadosProdutos.vendas,
+    dadosProdutos.custosPeca,
+    dadosProdutos.custosVenda
+  );
+});
 
 tabelaProdutos.addEventListener("click", evento => {
   const botao = evento.target.closest("button[data-acao]");

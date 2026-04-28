@@ -67,6 +67,7 @@ function lerPecaDoFormulario() {
   return {
     id: Date.now(),
     nome: document.getElementById("nome").value.trim(),
+    sku: document.getElementById("sku").value.trim(),
     precoVenda: Number(precoDigitado || 0),
     quantidade,
     quantidadeVendida: 0,

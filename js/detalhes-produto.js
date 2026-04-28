@@ -31,6 +31,17 @@ function formatarMoeda(valor) {
   });
 }
 
+function formatarNomePeca(peca) {
+  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
+  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
+
+  return sku ? `${sku} - ${nome}` : nome;
+}
+
+function formatarSku(peca) {
+  return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
+}
+
 function obterPecaIdDaUrl() {
   const parametros = new URLSearchParams(window.location.search);
   return Number(parametros.get("pecaId"));
@@ -88,7 +99,9 @@ function obterStatusProduto(produto) {
 }
 
 function renderizarDadosProduto(produto, custoBase) {
-  tituloProduto.textContent = produto.nome;
+  const nomePeca = formatarNomePeca(produto);
+
+  tituloProduto.textContent = nomePeca;
   subtituloProduto.textContent = `ID ${produto.id} - ${produto.categoria || "Sem categoria"}`;
   const quantidade = Number(produto.quantidade || 1);
   const quantidadeVendida = Number(produto.quantidadeVendida || 0);
@@ -98,7 +111,11 @@ function renderizarDadosProduto(produto, custoBase) {
   dadosProduto.innerHTML = `
     <article class="detail-card">
       <span>Nome da peça</span>
-      <strong>${produto.nome}</strong>
+      <strong>${nomePeca}</strong>
+    </article>
+    <article class="detail-card">
+      <span>SKU</span>
+      <strong>${formatarSku(produto)}</strong>
     </article>
     <article class="detail-card">
       <span>ID da peca</span>

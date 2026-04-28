@@ -111,6 +111,7 @@
     return {
       origem_id: Number(peca.origemId),
       nome_peca: peca.nome,
+      sku: peca.sku || null,
       quantidade: Number(peca.quantidade || 1),
       quantidade_vendida: Number(peca.quantidadeVendida || 0),
       status: peca.status || "em_estoque",
@@ -340,7 +341,7 @@
 
     const { data, error } = await cliente
       .from("vendas")
-      .select("*, pecas(nome_peca)")
+      .select("*, pecas(nome_peca, sku)")
       .order("data_venda", { ascending: false })
       .order("id", { ascending: false });
 

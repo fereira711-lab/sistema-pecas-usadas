@@ -53,6 +53,17 @@ function formatarMoeda(valor) {
   });
 }
 
+function formatarNomePeca(peca) {
+  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
+  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
+
+  return sku ? `${sku} - ${nome}` : nome;
+}
+
+function formatarSku(peca) {
+  return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
+}
+
 function somarCustosPorPeca(pecaId) {
   return buscarCustos()
     .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
@@ -106,7 +117,8 @@ async function renderizarEstoque() {
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
-      <td data-label="Nome da peça">${produto.nome}</td>
+      <td data-label="SKU">${formatarSku(produto)}</td>
+      <td data-label="Nome da peça">${formatarNomePeca(produto)}</td>
       <td data-label="ID">${produto.id}</td>
       <td data-label="Categoria">${produto.categoria}</td>
       <td data-label="Origem">${produto.origem}</td>
@@ -137,7 +149,7 @@ function abrirDetalhesProduto(pecaId) {
 
 function removerProduto(indice) {
   const produtos = buscarProdutos();
-  const confirmarRemocao = confirm(`Deseja remover "${produtos[indice].nome}" do estoque?`);
+  const confirmarRemocao = confirm(`Deseja remover "${formatarNomePeca(produtos[indice])}" do estoque?`);
 
   if (!confirmarRemocao) {
     return;

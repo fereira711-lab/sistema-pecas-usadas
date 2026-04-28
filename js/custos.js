@@ -4,6 +4,11 @@ const resumoProdutoCusto = document.getElementById("resumoProdutoCusto");
 const tabelaCustos = document.getElementById("tabelaCustos");
 const mensagemCusto = document.getElementById("mensagemCusto");
 const mensagemListaCustos = document.getElementById("mensagemListaCustos");
+const campoBuscaPecaCusto = document.getElementById("buscaPecaCusto");
+const sugestoesPecaCusto = document.getElementById("sugestoesPecaCusto");
+let produtosCustoCarregados = [];
+let sugestoesCustoAtuais = [];
+let indiceSugestaoCusto = -1;
 
 function buscarProdutos() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
@@ -11,6 +16,68 @@ function buscarProdutos() {
 
 function salvarProdutos(produtos) {
   localStorage.setItem("produtos", JSON.stringify(produtos));
+}
+
+function obterPecaIdDaUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const pecaId = Number(params.get("pecaId"));
+
+  return pecaId || null;
+}
+
+function formatarNomePeca(peca) {
+  const nome = peca.nome || peca.nome_peca || peca.nomePeca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
+  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
+
+  return sku ? `${sku} - ${nome}` : nome;
+}
+
+function escaparHtml(texto) {
+  return String(texto || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escaparRegex(texto) {
+  return String(texto || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function destacarBusca(texto) {
+  const termo = String(campoBuscaPecaCusto?.value || "").trim();
+  const textoSeguro = escaparHtml(texto);
+
+  if (!termo) {
+    return textoSeguro;
+  }
+
+  return textoSeguro.replace(new RegExp(`(${escaparRegex(termo)})`, "gi"), "<mark>$1</mark>");
+}
+
+function formatarNomePecaDestacado(peca) {
+  const nome = peca.nome || peca.nome_peca || peca.nomePeca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
+  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
+
+  return sku
+    ? `${destacarBusca(sku)} - ${destacarBusca(nome)}`
+    : destacarBusca(nome);
+}
+
+function filtrarProdutosPorBusca(produtos) {
+  const termo = String(campoBuscaPecaCusto?.value || "").trim().toLowerCase();
+
+  if (!termo) {
+    return produtos;
+  }
+
+  return produtos.filter(produto => {
+    const nome = String(produto.nome || produto.nome_peca || produto.nomePeca || produto.nomeProduto || "").toLowerCase();
+    const sku = String(produto.sku || produto.codigo || produto.codigo_peca || produto.cod || "").toLowerCase();
+
+    return nome.includes(termo) || sku.includes(termo);
+  });
 }
 
 function buscarOrigens() {
@@ -33,6 +100,8 @@ function normalizarProduto(produto) {
   return {
     ...produto,
     id: Number(produto.id),
+    nome: produto.nome || produto.nome_peca || produto.nomePeca || produto.nomeProduto || produto.descricao || `Peca ${produto.id}`,
+    sku: produto.sku || produto.codigo || produto.codigo_peca || produto.cod || "",
     quantidade,
     quantidadeVendida,
     status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque",
@@ -71,6 +140,10 @@ function calcularCustoPeca(peca, pecasDaOrigem, origem) {
   return Number(origem.valorPago || 0) / pecasDaOrigem.length;
 }
 
+function calcularQuantidadeDisponivel(peca) {
+  return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
+}
+
 async function carregarProdutos() {
   let produtos = buscarProdutos();
   const supabaseConfigurado = window.supabaseService && window.supabaseService.estaConfigurado();
@@ -84,17 +157,17 @@ async function carregarProdutos() {
     }
   }
 
-  selectProdutoCusto.innerHTML = '<option value="">Selecione um produto</option>';
+  produtosCustoCarregados = produtos.map(normalizarProduto);
 
-  produtos.forEach((produto, indice) => {
-    const opcao = document.createElement("option");
-    const nomeProduto = produto.nome || produto.nomePeca || produto.nomeProduto || produto.descricao || `Peca ${produto.id || indice + 1}`;
-    const idProduto = produto.id || indice + 1;
+  const pecaIdUrl = obterPecaIdDaUrl();
 
-    opcao.value = indice;
-    opcao.textContent = `${nomeProduto} - ID ${idProduto}`;
-    selectProdutoCusto.appendChild(opcao);
-  });
+  if (pecaIdUrl) {
+    const produtoUrl = produtosCustoCarregados.find(produto => Number(produto.id) === pecaIdUrl);
+
+    if (produtoUrl) {
+      selecionarProdutoCusto(produtoUrl);
+    }
+  }
 
   if (produtos.length === 0) {
     mensagemCusto.textContent = supabaseConfigurado
@@ -104,16 +177,119 @@ async function carregarProdutos() {
   }
 }
 
+function fecharSugestoesCusto() {
+  sugestoesPecaCusto.innerHTML = "";
+  sugestoesPecaCusto.classList.remove("is-open");
+  indiceSugestaoCusto = -1;
+}
+
+function obterPrimeiroIndiceDisponivel(produtos) {
+  return produtos.findIndex(produto => calcularQuantidadeDisponivel(produto) > 0);
+}
+
+function selecionarProdutoCusto(produto) {
+  const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
+
+  if (quantidadeDisponivel <= 0) {
+    return;
+  }
+
+  selectProdutoCusto.value = String(produto.id);
+  campoBuscaPecaCusto.value = formatarNomePeca(produto);
+  fecharSugestoesCusto();
+  renderizarResumoProduto();
+}
+
+function renderizarSugestoesCusto(produtos) {
+  if (!String(campoBuscaPecaCusto?.value || "").trim()) {
+    fecharSugestoesCusto();
+    return;
+  }
+
+  sugestoesCustoAtuais = produtos;
+  sugestoesPecaCusto.innerHTML = "";
+  indiceSugestaoCusto = obterPrimeiroIndiceDisponivel(produtos);
+
+  if (produtos.length === 0) {
+    const item = document.createElement("div");
+    item.className = "autocomplete-option";
+    item.textContent = "Nenhuma peça encontrada";
+    sugestoesPecaCusto.appendChild(item);
+    sugestoesPecaCusto.classList.add("is-open");
+    return;
+  }
+
+  produtos.forEach((produto, indice) => {
+    const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
+    const botao = document.createElement("button");
+    const textoQuantidade = quantidadeDisponivel > 0
+      ? `${quantidadeDisponivel} disponível${quantidadeDisponivel === 1 ? "" : "s"}`
+      : "SEM ESTOQUE";
+
+    botao.type = "button";
+    botao.className = `autocomplete-option${indice === indiceSugestaoCusto ? " is-active" : ""}${quantidadeDisponivel <= 0 ? " autocomplete-option--unavailable" : ""}`;
+    botao.disabled = quantidadeDisponivel <= 0;
+    botao.innerHTML = `
+      <span>${formatarNomePecaDestacado(produto)}</span>
+      <span class="autocomplete-option__meta">${textoQuantidade}</span>
+    `;
+    botao.addEventListener("click", () => selecionarProdutoCusto(produto));
+
+    sugestoesPecaCusto.appendChild(botao);
+  });
+
+  sugestoesPecaCusto.classList.add("is-open");
+}
+
+function atualizarDestaqueSugestoesCusto() {
+  Array.from(sugestoesPecaCusto.querySelectorAll(".autocomplete-option")).forEach((item, indice) => {
+    item.classList.toggle("is-active", indice === indiceSugestaoCusto);
+  });
+}
+
+function moverDestaqueSugestoesCusto(direcao) {
+  const indicesDisponiveis = sugestoesCustoAtuais
+    .map((produto, indice) => calcularQuantidadeDisponivel(produto) > 0 ? indice : -1)
+    .filter(indice => indice >= 0);
+
+  if (indicesDisponiveis.length === 0) {
+    indiceSugestaoCusto = -1;
+    atualizarDestaqueSugestoesCusto();
+    return;
+  }
+
+  const posicaoAtual = indicesDisponiveis.indexOf(indiceSugestaoCusto);
+  const proximaPosicao = posicaoAtual < 0
+    ? 0
+    : (posicaoAtual + direcao + indicesDisponiveis.length) % indicesDisponiveis.length;
+
+  indiceSugestaoCusto = indicesDisponiveis[proximaPosicao];
+  atualizarDestaqueSugestoesCusto();
+}
+
+function atualizarSugestoesCusto() {
+  selectProdutoCusto.value = "";
+  renderizarSugestoesCusto(filtrarProdutosPorBusca(produtosCustoCarregados));
+  renderizarResumoProduto();
+}
+
 function renderizarResumoProduto() {
-  const indiceProduto = selectProdutoCusto.value;
+  const pecaId = Number(selectProdutoCusto.value);
   resumoProdutoCusto.innerHTML = "";
 
-  if (indiceProduto === "") {
+  if (!pecaId) {
     return;
   }
 
   const produtos = buscarProdutos();
-  const produto = produtos[Number(indiceProduto)];
+  const produto = produtos.find(item => Number(item.id) === pecaId);
+
+  if (!produto) {
+    mensagemCusto.textContent = "Nao foi possivel encontrar a peca selecionada. Atualize a lista e tente novamente.";
+    mensagemCusto.className = "form-message form-message--warning";
+    return;
+  }
+
   const origem = buscarOrigens().find(item => item.id === Number(produto.origemId || 0));
   const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
   const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
@@ -122,8 +298,8 @@ function renderizarResumoProduto() {
 
   resumoProdutoCusto.innerHTML = `
     <article class="summary-card">
-      <span>Produto</span>
-      <strong>${produto.nome}</strong>
+      <span>Peca</span>
+      <strong>${formatarNomePeca(produto)}</strong>
     </article>
     <article class="summary-card">
       <span>ID da peca</span>
@@ -160,7 +336,7 @@ function renderizarCustos() {
 
     linha.innerHTML = `
       <td data-label="Data">${custo.data}</td>
-      <td data-label="Produto">${custo.produtoNome}</td>
+      <td data-label="Peca">${custo.produtoNome}</td>
       <td data-label="ID da peca">${custo.pecaId || "-"}</td>
       <td data-label="Tipo">${custo.tipo}</td>
       <td data-label="Descricao">${custo.descricao}</td>
@@ -181,7 +357,7 @@ function verDetalhes(indice) {
   const custo = buscarCustos()[indice];
 
   alert(
-    `Produto: ${custo.produtoNome}\n` +
+    `Peca: ${custo.produtoNome}\n` +
     `ID da peca: ${custo.pecaId || "-"}\n` +
     `Tipo: ${custo.tipo}\n` +
     `Descricao: ${custo.descricao}\n` +
@@ -209,7 +385,7 @@ function montarCusto(produto, tipo, descricao, valor, data) {
   return {
     id: Date.now(),
     pecaId: Number(produto.id),
-    produtoNome: produto.nome || produto.nomePeca || produto.nomeProduto || produto.descricao || `Peca ${produto.id}`,
+    produtoNome: formatarNomePeca(produto),
     tipo: tipo,
     tipoCusto: tipo,
     descricao: descricao,
@@ -248,14 +424,14 @@ formularioCusto.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
   const produtos = buscarProdutos();
-  const indiceProduto = selectProdutoCusto.value;
+  const pecaId = Number(selectProdutoCusto.value);
   const tipo = document.getElementById("tipoCusto").value;
   const descricao = document.getElementById("descricaoCusto").value.trim();
   const valorDigitado = document.getElementById("valorCusto").value;
   const data = document.getElementById("dataCusto").value;
 
-  if (indiceProduto === "" || !tipo || !descricao || !valorDigitado || !data) {
-    mensagemCusto.textContent = "Preencha produto, tipo, descricao, valor e data do custo.";
+  if (!pecaId || !tipo || !descricao || !valorDigitado || !data) {
+    mensagemCusto.textContent = "Preencha peca, tipo, descricao, valor e data do custo.";
     mensagemCusto.className = "form-message form-message--warning";
     return;
   }
@@ -266,7 +442,14 @@ formularioCusto.addEventListener("submit", async function (evento) {
     return;
   }
 
-  const produto = produtos[Number(indiceProduto)];
+  const produto = produtos.find(item => Number(item.id) === pecaId);
+
+  if (!produto) {
+    mensagemCusto.textContent = "Nao foi possivel encontrar a peca selecionada. Atualize a lista e tente novamente.";
+    mensagemCusto.className = "form-message form-message--warning";
+    return;
+  }
+
   const custo = montarCusto(produto, tipo, descricao, valorDigitado, data);
 
   if (!custo.pecaId) {
@@ -300,6 +483,44 @@ formularioCusto.addEventListener("submit", async function (evento) {
 });
 
 selectProdutoCusto.addEventListener("change", renderizarResumoProduto);
+
+campoBuscaPecaCusto?.addEventListener("input", atualizarSugestoesCusto);
+
+campoBuscaPecaCusto?.addEventListener("focus", () => {
+  if (!selectProdutoCusto.value && String(campoBuscaPecaCusto.value || "").trim()) {
+    renderizarSugestoesCusto(filtrarProdutosPorBusca(produtosCustoCarregados));
+  }
+});
+
+campoBuscaPecaCusto?.addEventListener("keydown", evento => {
+  if (evento.key === "ArrowDown") {
+    evento.preventDefault();
+    moverDestaqueSugestoesCusto(1);
+    return;
+  }
+
+  if (evento.key === "ArrowUp") {
+    evento.preventDefault();
+    moverDestaqueSugestoesCusto(-1);
+    return;
+  }
+
+  if (evento.key === "Escape") {
+    fecharSugestoesCusto();
+    return;
+  }
+
+  if (evento.key !== "Enter") {
+    return;
+  }
+
+  evento.preventDefault();
+  const produto = sugestoesCustoAtuais[indiceSugestaoCusto] || sugestoesCustoAtuais[0];
+
+  if (produto) {
+    selecionarProdutoCusto(produto);
+  }
+});
 
 tabelaCustos.addEventListener("click", function (evento) {
   const botao = evento.target.closest("button");

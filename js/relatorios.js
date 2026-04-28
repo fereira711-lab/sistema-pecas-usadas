@@ -25,6 +25,13 @@ function formatarMoeda(valor) {
   });
 }
 
+function formatarNomePeca(peca) {
+  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.produtoNome || peca.descricao || `Peca ${peca.id || peca.pecaId}`;
+  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
+
+  return sku ? `${sku} - ${nome}` : nome;
+}
+
 function somar(lista, campo) {
   return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
 }
@@ -136,7 +143,7 @@ function renderizarResumoEstoque(produtos, custos, origens) {
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
-      <td data-label="Produto">${produto.nome}</td>
+      <td data-label="Produto">${formatarNomePeca(produto)}</td>
       <td data-label="ID">${produto.id}</td>
       <td data-label="Categoria">${produto.categoria || "-"}</td>
       <td data-label="Qtd. total">${quantidade}</td>
@@ -169,7 +176,7 @@ function renderizarAlertasEstoque(produtos) {
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
-      <td data-label="Produto">${produto.nome}</td>
+      <td data-label="Produto">${formatarNomePeca(produto)}</td>
       <td data-label="ID">${produto.id}</td>
       <td data-label="Quantidade">${quantidade}</td>
       <td data-label="Situação">${quantidade === 0 ? "Sem estoque" : "Estoque baixo"}</td>
@@ -203,7 +210,7 @@ function renderizarResumoVendas(vendas) {
 
     linha.innerHTML = `
       <td data-label="Data">${venda.dataVenda || "-"}</td>
-      <td data-label="Produto">${venda.produtoNome || "-"}</td>
+      <td data-label="Produto">${formatarNomePeca({ id: venda.pecaId, nome: venda.produtoNome, sku: venda.sku }) || "-"}</td>
       <td data-label="ID da peca">${venda.pecaId || "-"}</td>
       <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0}</td>
       <td data-label="Valor total">${formatarMoeda(venda.valorTotal)}</td>
@@ -236,7 +243,7 @@ function renderizarProdutosMaisVendidos(vendas) {
 
     if (!agrupado[chave]) {
       agrupado[chave] = {
-        produto: venda.produtoNome || "-",
+        produto: formatarNomePeca({ id: venda.pecaId, nome: venda.produtoNome, sku: venda.sku }) || "-",
         pecaId: venda.pecaId || "-",
         quantidade: 0,
         faturamento: 0,
@@ -320,6 +327,7 @@ function prepararVendas(vendas, pecas, custosVenda) {
     return {
       ...venda,
       produtoNome: venda.produtoNome || peca?.nome || "-",
+      sku: venda.sku || peca?.sku || "",
       pecaId: venda.pecaId || peca?.id || "",
       custoTotalVenda: custoUnitario * quantidade,
       custosVenda: custosDaVenda,

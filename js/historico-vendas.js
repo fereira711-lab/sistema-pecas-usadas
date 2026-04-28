@@ -8,6 +8,10 @@ function buscarVendas() {
   return JSON.parse(localStorage.getItem("vendas")) || [];
 }
 
+function buscarProdutos() {
+  return JSON.parse(localStorage.getItem("produtos")) || [];
+}
+
 function salvarVendas(vendas) {
   localStorage.setItem("vendas", JSON.stringify(vendas));
 }
@@ -34,6 +38,14 @@ function formatarMoeda(valor) {
   });
 }
 
+function formatarNomePecaVenda(venda, produtos = buscarProdutos()) {
+  const produto = produtos.find(item => Number(item.id) === Number(venda.pecaId));
+  const nome = venda.produtoNome || produto?.nome || venda.nome || `Peca ${venda.pecaId || ""}`.trim();
+  const sku = String(venda.sku || produto?.sku || "").trim();
+
+  return sku ? `${sku} - ${nome}` : nome;
+}
+
 function atualizarResumo(vendas) {
   const quantidadeVendida = vendas.reduce((total, venda) => {
     return total + Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
@@ -50,6 +62,7 @@ function atualizarResumo(vendas) {
 
 async function renderizarHistorico() {
   const vendas = await carregarVendas();
+  const produtos = buscarProdutos();
   tabelaHistorico.innerHTML = "";
   atualizarResumo(vendas);
 
@@ -65,7 +78,7 @@ async function renderizarHistorico() {
 
     linha.innerHTML = `
       <td data-label="Data">${venda.dataVenda}</td>
-      <td data-label="Produto">${venda.produtoNome || "-"}</td>
+      <td data-label="Produto">${formatarNomePecaVenda(venda, produtos) || "-"}</td>
       <td data-label="ID da peca">${venda.pecaId || "-"}</td>
       <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</td>
       <td data-label="Preço unitário">${formatarMoeda(venda.precoUnitario)}</td>
@@ -94,7 +107,7 @@ function abrirDetalhesVenda(botao) {
 
 function removerVenda(indice) {
   const vendas = buscarVendas();
-  const confirmou = confirm(`Deseja remover a venda de "${vendas[indice].produtoNome}"?`);
+  const confirmou = confirm(`Deseja remover a venda de "${formatarNomePecaVenda(vendas[indice])}"?`);
 
   if (!confirmou) {
     return;
