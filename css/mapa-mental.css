@@ -1,0 +1,270 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f6f3;
+  color: #202923;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.mindmap-page {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+
+.mindmap-header {
+  max-width: 780px;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #3f6b57;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mindmap-header h1 {
+  margin: 0;
+  color: #17211b;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.mindmap-header p:last-child {
+  margin: 12px 0 0;
+  color: #526058;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.mindmap {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.center-node,
+.branch,
+.flow-section {
+  border: 1px solid #d9ded7;
+  box-shadow: 0 16px 40px rgba(31, 45, 37, 0.08);
+}
+
+.center-node {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 12px;
+  background: #1f5e4a;
+  color: #ffffff;
+  padding: 28px;
+  text-align: center;
+}
+
+.center-node span {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.center-node strong {
+  margin-top: 8px;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.branch {
+  position: relative;
+  min-height: 260px;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.branch h2 {
+  margin: 0 0 14px;
+  font-size: 19px;
+}
+
+.branch--cadastros {
+  border-top: 6px solid #2f7d64;
+}
+
+.branch--estoque {
+  border-top: 6px solid #596f9f;
+}
+
+.branch--custos {
+  border-top: 6px solid #b06f2f;
+}
+
+.branch--lucro {
+  border-top: 6px solid #8d514f;
+}
+
+.branch--telas {
+  border-top: 6px solid #6e5b91;
+}
+
+.branch--dados {
+  border-top: 6px solid #4f7d87;
+}
+
+.branch--resultado {
+  border-top: 6px solid #3f8f61;
+}
+
+.node-list {
+  display: grid;
+  gap: 10px;
+}
+
+.node,
+.formula-card,
+.formula-large,
+.screen-grid span,
+.flow article {
+  border: 1px solid #e3e7e1;
+  border-radius: 8px;
+  background: #fbfcfa;
+}
+
+.node {
+  padding: 12px;
+}
+
+.node strong,
+.formula-card strong,
+.formula-large strong,
+.flow strong {
+  display: block;
+  color: #1f2c24;
+}
+
+.node span,
+.formula-card span,
+.formula-large span,
+.flow p {
+  color: #58655d;
+  line-height: 1.45;
+}
+
+.node span {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.formula-card,
+.formula-large {
+  margin-bottom: 10px;
+  padding: 14px;
+}
+
+.formula-card span,
+.formula-large span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.formula-large {
+  background: #fff8f5;
+}
+
+.screen-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.screen-grid span {
+  padding: 12px;
+  color: #2d2934;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.flow-section {
+  margin-top: 22px;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 22px;
+}
+
+.flow-section h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.flow article {
+  position: relative;
+  padding: 16px;
+}
+
+.flow article span {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 10px;
+  place-items: center;
+  border-radius: 999px;
+  background: #1f5e4a;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.flow p {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+
+@media (max-width: 920px) {
+  .mindmap {
+    grid-template-columns: 1fr;
+  }
+
+  .center-node {
+    grid-column: auto;
+    grid-row: auto;
+    min-height: 150px;
+  }
+
+  .flow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .mindmap-page {
+    width: min(100% - 20px, 1180px);
+    padding-top: 22px;
+  }
+
+  .mindmap-header h1 {
+    font-size: 27px;
+  }
+
+  .screen-grid {
+    grid-template-columns: 1fr;
+  }
+}

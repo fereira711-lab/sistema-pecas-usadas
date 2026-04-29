@@ -245,8 +245,12 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
   pecas.forEach(peca => {
     const origem = mapaOrigens[Number(peca.origemId)];
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
+    const vendasDaPeca = filtrarPorPeca(vendas, peca.id);
+    const quantidadeVendida = calcularQuantidadeVendidaPeca(vendasDaPeca);
+    const custoUnitario = calcularCustoBasePeca(peca, pecas, origem);
+    const custoTotalVendido = quantidadeVendida * custoUnitario;
     const lucro = calcularLucroPeca(peca, pecas, origem, vendas, custosPeca, custosVenda);
-    const temVenda = filtrarPorPeca(vendas, peca.id).length > 0;
+    const temVenda = vendasDaPeca.length > 0;
     const classeLucro = obterClasseLucro(lucro, temVenda);
     const classeStatus = obterClasseStatus(peca.status);
     const linha = document.createElement("tr");
@@ -258,9 +262,11 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
       <td data-label="Origem">${origem ? origem.descricao : "-"}</td>
       <td data-label="Tipo de custo">${peca.tipoCusto}</td>
       <td data-label="Qtd. total">${peca.quantidade}</td>
-      <td data-label="Qtd. vendida">${peca.quantidadeVendida}</td>
+      <td data-label="Qtd. vendida">Vendidos: ${quantidadeVendida}</td>
       <td data-label="Qtd. disponivel">${quantidadeDisponivel}</td>
       <td data-label="Status"><span class="${classeStatus}">${peca.status}</span></td>
+      <td data-label="Custo unitario">${formatarMoeda(custoUnitario)}</td>
+      <td data-label="Custo vendido">${formatarMoeda(custoTotalVendido)}</td>
       <td data-label="Preco">${formatarMoeda(peca.precoVenda)}</td>
       <td data-label="Lucro"><strong class="${classeLucro}">${formatarMoeda(lucro)}</strong></td>
       <td data-label="Preparada">${peca.preparada ? "Sim" : "Nao"}</td>

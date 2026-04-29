@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa mental do sistema</title>
+  <link rel="stylesheet" href="../css/mapa-mental.css">
+</head>
+<body>
+  <main class="mindmap-page">
+    <header class="mindmap-header">
+      <p class="eyebrow">Visao visual do projeto</p>
+      <h1>Mapa mental do sistema de pecas usadas</h1>
+      <p>
+        Use este mapa para entender como origem, pecas, custos, vendas, estoque e lucro se conectam.
+      </p>
+    </header>
+
+    <section class="mindmap" aria-label="Mapa mental visual do sistema">
+      <article class="center-node">
+        <span>Sistema</span>
+        <strong>Pecas usadas</strong>
+      </article>
+
+      <section class="branch branch--cadastros">
+        <h2>Cadastros</h2>
+        <div class="node-list">
+          <article class="node">
+            <strong>Origem</strong>
+            <span>Compra ou lote com valor pago.</span>
+          </article>
+          <article class="node">
+            <strong>Peca</strong>
+            <span>Item vinculado a uma origem.</span>
+          </article>
+          <article class="node">
+            <strong>Custo da peca</strong>
+            <span>Limpeza, reparo, preparo e outros.</span>
+          </article>
+          <article class="node">
+            <strong>Venda</strong>
+            <span>Saida de uma ou mais unidades.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="branch branch--estoque">
+        <h2>Estoque</h2>
+        <div class="node-list">
+          <article class="node">
+            <strong>Quantidade total</strong>
+            <span>Unidades cadastradas para a peca.</span>
+          </article>
+          <article class="node">
+            <strong>Vendidos</strong>
+            <span>Quantidade que ja saiu em vendas.</span>
+          </article>
+          <article class="node">
+            <strong>Disponivel</strong>
+            <span>Total menos vendidos.</span>
+          </article>
+          <article class="node">
+            <strong>Status</strong>
+            <span>Em estoque ou vendida.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="branch branch--custos">
+        <h2>Custo base</h2>
+        <div class="formula-card">
+          <span>Total de unidades</span>
+          <strong>soma das quantidades da origem</strong>
+        </div>
+        <div class="formula-card">
+          <span>Custo unitario</span>
+          <strong>valor da origem / total de unidades</strong>
+        </div>
+        <div class="formula-card">
+          <span>Custo vendido</span>
+          <strong>vendidos x custo unitario</strong>
+        </div>
+      </section>
+
+      <section class="branch branch--lucro">
+        <h2>Lucro</h2>
+        <div class="formula-large">
+          <span>lucro</span>
+          <strong>receita - custo vendido - custos da peca - custos da venda</strong>
+        </div>
+        <div class="node-list">
+          <article class="node">
+            <strong>Receita</strong>
+            <span>Quantidade vendida x valor unitario.</span>
+          </article>
+          <article class="node">
+            <strong>Custos da venda</strong>
+            <span>Frete, embalagem, comissao e outros.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="branch branch--telas">
+        <h2>Telas</h2>
+        <div class="screen-grid">
+          <span>Inicio</span>
+          <span>Produtos</span>
+          <span>Origens</span>
+          <span>Detalhes da origem e resultado</span>
+          <span>Detalhes da peca</span>
+          <span>Cadastro de venda</span>
+          <span>Historico</span>
+          <span>Relatorios</span>
+        </div>
+      </section>
+
+      <section class="branch branch--dados">
+        <h2>Dados</h2>
+        <div class="node-list">
+          <article class="node">
+            <strong>Supabase</strong>
+            <span>Guarda os dados online.</span>
+          </article>
+          <article class="node">
+            <strong>PostgreSQL</strong>
+            <span>Tabelas, relacionamentos e funcoes.</span>
+          </article>
+          <article class="node">
+            <strong>LocalStorage</strong>
+            <span>Apoio temporario no navegador.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="branch branch--resultado">
+        <h2>Resultado da origem</h2>
+        <div class="node-list">
+          <article class="node">
+            <strong>Investimento</strong>
+            <span>Valor pago na origem.</span>
+          </article>
+          <article class="node">
+            <strong>Total vendido</strong>
+            <span>Soma das vendas das pecas da origem.</span>
+          </article>
+          <article class="node">
+            <strong>Lucro atual</strong>
+            <span>Receita menos investimento, custos da peca e custos da venda.</span>
+          </article>
+          <article class="node">
+            <strong>Status</strong>
+            <span>Deu lucro ou ainda nao pagou.</span>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <section class="flow-section" aria-label="Fluxo principal do sistema">
+      <h2>Fluxo principal</h2>
+      <div class="flow">
+        <article>
+          <span>1</span>
+          <strong>Cadastrar origem</strong>
+          <p>Registra a compra e o valor pago.</p>
+        </article>
+        <article>
+          <span>2</span>
+          <strong>Cadastrar pecas</strong>
+          <p>Vincula pecas a origem e informa quantidade.</p>
+        </article>
+        <article>
+          <span>3</span>
+          <strong>Calcular rateio</strong>
+          <p>Divide o valor da origem pelo total de unidades.</p>
+        </article>
+        <article>
+          <span>4</span>
+          <strong>Vender</strong>
+          <p>Registra quantidade vendida e valor unitario.</p>
+        </article>
+        <article>
+          <span>5</span>
+          <strong>Ver resultado</strong>
+          <p>Produtos, detalhes e relatorios mostram custo e lucro.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

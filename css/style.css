@@ -558,6 +558,28 @@ textarea:focus {
   line-height: 1;
 }
 
+.summary-card--profit {
+  border-color: rgba(142, 230, 178, 0.28);
+  background:
+    linear-gradient(145deg, rgba(142, 230, 178, 0.10), transparent),
+    var(--cor-card);
+}
+
+.summary-card--loss {
+  border-color: rgba(255, 143, 143, 0.28);
+  background:
+    linear-gradient(145deg, rgba(255, 143, 143, 0.10), transparent),
+    var(--cor-card);
+}
+
+.summary-card strong.profit-value {
+  display: inline-flex;
+  width: fit-content;
+  min-width: 132px;
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  line-height: 1.2;
+}
+
 .summary-grid--compact .summary-card strong {
   font-size: clamp(1rem, 2vw, 1.45rem);
   line-height: 1.2;

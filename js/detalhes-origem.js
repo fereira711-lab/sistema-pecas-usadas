@@ -10,99 +10,75 @@ const mensagemProdutosOrigem = document.getElementById("mensagemProdutosOrigem")
 const tabelaProdutosOrigem = document.getElementById("tabelaProdutosOrigem");
 const campoBuscaPecasOrigem = document.getElementById("buscaPecasOrigem");
 
-const TIPOS_CUSTO_PECA = ["real", "rateado", "simbolico"];
-const TIPO_CUSTO_PADRAO = "real";
 let dadosDetalhesOrigem = { origem: null, pecas: [], custos: [], vendas: [] };
-
-function buscarLista(chave) {
-  return JSON.parse(localStorage.getItem(chave)) || [];
-}
 
 async function carregarOrigem(origemId) {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
-      const origem = await window.supabaseService.buscarOrigemPorId(origemId);
-      salvarOrigemNoCache(origem);
-      return origem;
+      return await window.supabaseService.buscarOrigemPorId(origemId);
     } catch (erro) {
       console.error("Erro ao carregar origem do Supabase:", erro);
-      mensagemOrigemNaoEncontrada.textContent = "Nao foi possivel carregar a origem do Supabase. Exibindo dados temporarios do navegador.";
+      mensagemOrigemNaoEncontrada.textContent = "Nao foi possivel carregar a origem do Supabase.";
     }
   }
 
-  return garantirIdsDasOrigens(buscarLista("origens")).find(o => Number(o.id) === Number(origemId));
+  mensagemOrigemNaoEncontrada.textContent = "Configure o Supabase para carregar os detalhes da origem.";
+  return null;
 }
 
 async function carregarPecasDaOrigem(origemId) {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
-      const pecas = await window.supabaseService.listarPecasPorOrigem(origemId);
-      salvarPecasNoCache(pecas);
-      return pecas;
+      return await window.supabaseService.listarPecasPorOrigem(origemId);
     } catch (erro) {
       console.error("Erro ao carregar pecas da origem do Supabase:", erro);
     }
   }
 
-  return garantirDadosDasPecas(buscarLista("produtos"))
-    .filter(p => Number(p.origemId) === Number(origemId));
+  return [];
 }
 
-function salvarLista(chave, lista) {
-  localStorage.setItem(chave, JSON.stringify(lista));
-}
-
-function salvarOrigemNoCache(origem) {
-  if (!origem) {
-    return;
+async function carregarFinanceiroDaOrigem(pecasDaOrigem) {
+  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
+    mensagemOrigemNaoEncontrada.textContent = "Configure o Supabase para calcular o resultado financeiro da origem sem usar dados temporarios do navegador.";
+    return { custos: [], vendas: [] };
   }
 
-  const origens = buscarLista("origens").filter(item => Number(item.id) !== Number(origem.id));
-  origens.push(origem);
-  salvarLista("origens", origens);
-}
+  const idsPecas = pecasDaOrigem.map(peca => Number(peca.id));
 
-function salvarPecasNoCache(pecas) {
-  const idsDasPecas = pecas.map(peca => Number(peca.id));
-  const pecasAntigas = buscarLista("produtos").filter(peca => !idsDasPecas.includes(Number(peca.id)));
+  try {
+    const [vendas, custosPeca, custosVenda] = await Promise.all([
+      window.supabaseService.listarVendas(),
+      window.supabaseService.listarCustosPeca(),
+      window.supabaseService.listarCustosVenda()
+    ]);
 
-  salvarLista("produtos", [...pecasAntigas, ...pecas]);
-}
+    const vendasDaOrigem = vendas.filter(venda => idsPecas.includes(Number(venda.pecaId || 0)));
+    const idsVendasDaOrigem = vendasDaOrigem.map(venda => Number(venda.id));
+    const custosPecaDaOrigem = custosPeca.filter(custo => idsPecas.includes(Number(custo.pecaId || 0)));
+    const custosVendaDaOrigem = custosVenda.filter(custo => idsVendasDaOrigem.includes(Number(custo.vendaId || 0)));
+    const custosVendaPorVenda = agruparCustosVendaPorVenda(custosVendaDaOrigem);
+    const vendasComCustos = vendasDaOrigem.map(venda => {
+      const custosDaVenda = custosVendaPorVenda[Number(venda.id)] || [];
 
-function garantirIdsDasOrigens(origens) {
-  const origensComId = origens.map((origem, indice) => ({
-    ...origem,
-    id: origem.id || Date.now() + indice
-  }));
-
-  salvarLista("origens", origensComId);
-  return origensComId;
-}
-
-function normalizarTipoCusto(tipoCusto) {
-  return TIPOS_CUSTO_PECA.includes(tipoCusto) ? tipoCusto : TIPO_CUSTO_PADRAO;
-}
-
-function garantirDadosDasPecas(pecas) {
-  const pecasNormalizadas = pecas.map((peca, indice) => {
-    const quantidade = Number(peca.quantidade || 1);
-    const quantidadeVendida = Number(peca.quantidadeVendida || 0);
-    const quantidadeDisponivel = Math.max(quantidade - quantidadeVendida, 0);
+      return {
+        ...venda,
+        custosVenda: custosDaVenda,
+        totalCustosVenda: somarCampo(custosDaVenda, "valor")
+      };
+    });
 
     return {
-      ...peca,
-      id: peca.id || Date.now() + indice,
-      quantidade,
-      quantidadeVendida,
-      status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque",
-      origemId: Number(peca.origemId || 0),
-      tipoCusto: normalizarTipoCusto(peca.tipoCusto)
+      custos: custosPecaDaOrigem,
+      vendas: vendasComCustos
     };
-  });
-
-  salvarLista("produtos", pecasNormalizadas);
-  return pecasNormalizadas;
+  } catch (erro) {
+    console.error("Erro ao carregar resultado financeiro da origem:", erro);
+    mensagemOrigemNaoEncontrada.textContent = "Nao foi possivel carregar vendas e custos do Supabase para calcular o resultado da origem.";
+    return { custos: [], vendas: [] };
+  }
 }
+
 
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
@@ -147,6 +123,19 @@ function somarCampo(lista, campo) {
   return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
 }
 
+function agruparCustosVendaPorVenda(custosVenda) {
+  return custosVenda.reduce((mapa, custo) => {
+    const vendaId = Number(custo.vendaId || 0);
+
+    if (!mapa[vendaId]) {
+      mapa[vendaId] = [];
+    }
+
+    mapa[vendaId].push(custo);
+    return mapa;
+  }, {});
+}
+
 function calcularCustoPeca(peca, pecasDaOrigem, origem) {
   if (!origem || pecasDaOrigem.length === 0) {
     return Number(peca.custo || 0);
@@ -180,6 +169,17 @@ function calcularLucroOrigem(origem, faturamento, custosAdicionaisOrigem, custos
 
 function obterQuantidadeVendidaNaVenda(venda) {
   return Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
+}
+
+function calcularValorVenda(venda) {
+  const quantidadeVendida = obterQuantidadeVendidaNaVenda(venda);
+  const valorUnitario = Number(venda.valorUnitario || venda.valor_unitario || venda.precoUnitario || 0);
+
+  if (valorUnitario > 0) {
+    return valorUnitario * quantidadeVendida;
+  }
+
+  return Number(venda.valorTotal || venda.valor_total || 0);
 }
 
 function lucroVenda(venda, pecasDaOrigem = [], origem = null, custos = []) {
@@ -257,44 +257,41 @@ function renderizarDadosOrigem(origem) {
 function renderizarResumo(origem, pecas, custos, vendas) {
   const idsPecas = pecas.map(peca => Number(peca.id));
   const vendasDaOrigem = vendas.filter(venda => idsPecas.includes(Number(venda.pecaId || 0)));
+  const investimento = Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0);
+  const receita = vendasDaOrigem.reduce((total, venda) => total + calcularValorVenda(venda), 0);
   const custosDosProdutos = pecas.reduce((total, peca) => total + somarCustosPorPeca(custos, peca.id), 0);
-  const custoBaseProdutos = pecas.reduce((total, peca) => {
-    return total + (calcularCustoPeca(peca, pecas, origem) * Number(peca.quantidade || 0));
-  }, 0);
-  const faturamento = somarCampo(vendasDaOrigem, "valorTotal");
-  const custoBaseVendido = vendasDaOrigem.reduce((total, venda) => {
-    const peca = pecas.find(item => Number(item.id) === Number(venda.pecaId));
-    const custoUnitario = peca ? calcularCustoPeca(peca, pecas, origem) : 0;
-
-    return total + (obterQuantidadeVendidaNaVenda(venda) * custoUnitario);
-  }, 0);
   const custosDasVendas = vendasDaOrigem.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
-  const lucroOrigem = faturamento - custoBaseVendido - custosDosProdutos - custosDasVendas;
+  const totalCustos = investimento + custosDosProdutos + custosDasVendas;
+  const lucroOrigem = receita - totalCustos;
+  const deuLucro = lucroOrigem > 0;
+  const classeResultado = deuLucro ? "profit-value profit-value--positive" : "profit-value profit-value--negative";
+  const classeCardResultado = deuLucro ? "summary-card summary-card--profit" : "summary-card summary-card--loss";
+  const textoStatus = deuLucro ? "Deu lucro" : "Ainda nao pagou";
 
   resumoOrigem.innerHTML = `
     <article class="summary-card">
-      <span>Valor pago na origem</span>
-      <strong>${formatarMoeda(origem.valorPago)}</strong>
+      <span>Investimento</span>
+      <strong>${formatarMoeda(investimento)}</strong>
     </article>
     <article class="summary-card">
-      <span>Peças vinculadas</span>
-      <strong>${pecas.length}</strong>
+      <span>Total vendido</span>
+      <strong>${formatarMoeda(receita)}</strong>
+    </article>
+    <article class="${classeCardResultado}">
+      <span>Lucro atual</span>
+      <strong class="${classeResultado}">${formatarMoeda(lucroOrigem)}</strong>
+    </article>
+    <article class="${classeCardResultado}">
+      <span>Status</span>
+      <strong class="${classeResultado}">${textoStatus}</strong>
     </article>
     <article class="summary-card">
-      <span>Custo base das peças</span>
-      <strong>${formatarMoeda(custoBaseProdutos)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custos diversos</span>
+      <span>Custos de pecas</span>
       <strong>${formatarMoeda(custosDosProdutos)}</strong>
     </article>
     <article class="summary-card">
-      <span>Faturamento da origem</span>
-      <strong>${formatarMoeda(faturamento)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Lucro bruto da origem</span>
-      <strong>${formatarMoeda(lucroOrigem)}</strong>
+      <span>Custos de venda</span>
+      <strong>${formatarMoeda(custosDasVendas)}</strong>
     </article>
   `;
 }
@@ -359,8 +356,6 @@ function renderizarPecas(origem, pecas, custos, vendas) {
 async function iniciarDetalhesOrigem() {
   const origem = await carregarOrigem(origemId);
   const pecasDaOrigem = await carregarPecasDaOrigem(origemId);
-  const custos = buscarLista("custosDiversos");
-  const vendas = buscarLista("vendas");
 
   if (!origem) {
     mensagemOrigemNaoEncontrada.textContent = "Origem não encontrada.";
@@ -370,6 +365,10 @@ async function iniciarDetalhesOrigem() {
   }
 
   mensagemOrigemNaoEncontrada.textContent = "";
+  const financeiroOrigem = await carregarFinanceiroDaOrigem(pecasDaOrigem);
+  const custos = financeiroOrigem.custos;
+  const vendas = financeiroOrigem.vendas;
+
   dadosDetalhesOrigem = {
     origem,
     pecas: pecasDaOrigem,
