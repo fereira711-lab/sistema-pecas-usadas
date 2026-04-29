@@ -54,6 +54,8 @@ function normalizarOrigem(origem) {
     ...origem,
     id: Number(origem.id),
     descricao: origem.descricao || origem.nome || `Origem ${origem.id}`,
+    produtoSku: origem.produtoSku || origem.produto_sku || "",
+    quantidadeTotal: Number(origem.quantidadeTotal || origem.quantidade_total || 0),
     custoTotal: Number(origem.custoTotal || origem.custo_total || origem.valorPago || origem.valor_pago || 0),
     valorPago: Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0)
   };
@@ -141,26 +143,34 @@ function filtrarPorPeca(lista, pecaId) {
   return lista.filter(item => Number(item.pecaId || 0) === Number(pecaId || 0));
 }
 
-function obterPecasDaOrigem(peca, pecas) {
-  return pecas.filter(item => Number(item.origemId || 0) === Number(peca.origemId || 0));
+function normalizarSku(sku) {
+  return String(sku || "").trim().toUpperCase();
 }
 
-function calcularCustoBasePeca(peca, pecas, origem) {
-  const pecasDaOrigem = obterPecasDaOrigem(peca, pecas);
+function obterOrigensDoProduto(peca, origens) {
+  const sku = normalizarSku(peca.sku);
+  const origensPorSku = origens.filter(origem => normalizarSku(origem.produtoSku) === sku);
 
-  if (!origem || pecasDaOrigem.length === 0) {
-    return Number(peca.custoTotal || peca.custo || 0);
-  }
+  return origensPorSku.length > 0
+    ? origensPorSku
+    : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
+}
 
-  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
-    return total + Number(item.quantidade || 0);
+function calcularCustoBasePeca(peca, origens) {
+  const origensDoProduto = obterOrigensDoProduto(peca, origens);
+
+  const totalUnidades = origensDoProduto.reduce((total, origem) => {
+    return total + Number(origem.quantidadeTotal || 0);
+  }, 0);
+  const totalInvestido = origensDoProduto.reduce((total, origem) => {
+    return total + Number(origem.valorPago || origem.custoTotal || 0);
   }, 0);
 
-  if (totalUnidades <= 0) {
+  if (totalUnidades <= 0 || totalInvestido <= 0) {
     return Number(peca.custoTotal || peca.custo || 0);
   }
 
-  return Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0) / totalUnidades;
+  return totalInvestido / totalUnidades;
 }
 
 function calcularReceitaPeca(vendasDaPeca) {
@@ -196,12 +206,12 @@ function calcularQuantidadeVendidaPeca(vendasDaPeca) {
   }, 0);
 }
 
-function calcularLucroPeca(peca, pecas, origem, vendas, custosPeca, custosVenda) {
+function calcularLucroPeca(peca, origens, vendas, custosPeca, custosVenda) {
   const vendasDaPeca = filtrarPorPeca(vendas, peca.id);
   const idsVendasDaPeca = vendasDaPeca.map(venda => Number(venda.id));
   const custosVendaDaPeca = custosVenda.filter(custo => idsVendasDaPeca.includes(Number(custo.vendaId || 0)));
   const receita = calcularReceitaPeca(vendasDaPeca);
-  const custoUnitario = calcularCustoBasePeca(peca, pecas, origem);
+  const custoUnitario = calcularCustoBasePeca(peca, origens);
   const quantidadeVendida = calcularQuantidadeVendidaPeca(vendasDaPeca);
   const totalCustosPeca = somarValores(filtrarPorPeca(custosPeca, peca.id));
   const totalCustosVenda = somarValores(custosVendaDaPeca) || somarCustosEmbutidosDasVendas(vendasDaPeca);
@@ -247,9 +257,9 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
     const vendasDaPeca = filtrarPorPeca(vendas, peca.id);
     const quantidadeVendida = calcularQuantidadeVendidaPeca(vendasDaPeca);
-    const custoUnitario = calcularCustoBasePeca(peca, pecas, origem);
+    const custoUnitario = calcularCustoBasePeca(peca, origens);
     const custoTotalVendido = quantidadeVendida * custoUnitario;
-    const lucro = calcularLucroPeca(peca, pecas, origem, vendas, custosPeca, custosVenda);
+    const lucro = calcularLucroPeca(peca, origens, vendas, custosPeca, custosVenda);
     const temVenda = vendasDaPeca.length > 0;
     const classeLucro = obterClasseLucro(lucro, temVenda);
     const classeStatus = obterClasseStatus(peca.status);
@@ -261,9 +271,8 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
       <td data-label="Nome da peca"><strong class="product-name">${formatarNomePeca(peca)}</strong></td>
       <td data-label="Origem">${origem ? origem.descricao : "-"}</td>
       <td data-label="Tipo de custo">${peca.tipoCusto}</td>
-      <td data-label="Qtd. total">${peca.quantidade}</td>
-      <td data-label="Qtd. vendida">Vendidos: ${quantidadeVendida}</td>
-      <td data-label="Qtd. disponivel">${quantidadeDisponivel}</td>
+      <td data-label="Estoque">${quantidadeDisponivel}</td>
+      <td data-label="Vendidos">${quantidadeVendida}</td>
       <td data-label="Status"><span class="${classeStatus}">${peca.status}</span></td>
       <td data-label="Custo unitario">${formatarMoeda(custoUnitario)}</td>
       <td data-label="Custo vendido">${formatarMoeda(custoTotalVendido)}</td>

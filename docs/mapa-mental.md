@@ -14,11 +14,15 @@ mindmap
 
     Cadastros
       Origem
-        Representa uma compra ou lote
-        Guarda valor pago
-        Exemplo: lote de pecas comprado por R$ 500
+        Representa uma entrada de estoque
+        Guarda SKU do produto
+        Guarda quantidade total
+        Guarda valor total
+        Calcula custo unitario da entrada
+        Exemplo: entrada de 5 unidades por R$ 500
       Peca
-        Pertence a uma origem
+        Produto identificado por SKU
+        Pode receber varias entradas
         Tem quantidade total
         Tem quantidade vendida
         Tem preco de venda
@@ -36,6 +40,12 @@ mindmap
     Telas
       Inicio
         Atalhos para as areas principais
+      Painel geral
+        Mostra total investido
+        Mostra total vendido
+        Mostra lucro geral
+        Mostra estoque e pecas vendidas
+        Conta origens no lucro e no prejuizo
       Cadastro de origem
         Cria uma origem
         Salva valor pago
@@ -97,6 +107,17 @@ mindmap
           quantidade vendida
           valor unitario
           valor total
+        entradas estoque
+          peca id
+          origem id
+          quantidade total
+          quantidade consumida
+          custo unitario
+        venda consumos estoque
+          venda id
+          entrada estoque id
+          quantidade consumida
+          custo total
         custos venda
           venda id
           tipo
@@ -114,19 +135,28 @@ mindmap
         Vendida
 
     Logica de custo base
-      Origem tem valor pago
-      Pecas pertencem a origem
-      Cada peca tem quantidade
-      Total de unidades
-        Soma das quantidades das pecas da origem
-      Custo unitario
-        valor pago da origem dividido pelo total de unidades
+      Produto tem SKU
+      Origens viram entradas do SKU
+      Cada entrada tem quantidade total
+      Cada entrada tem valor total
+      Custo unitario da entrada
+        valor total da entrada dividido pela quantidade total
+      Custo medio temporario
+        soma dos valores das entradas dividido pela soma das quantidades das entradas
       Custo vendido
-        quantidade vendida vezes custo unitario
+        quantidade vendida vezes custo medio
+      FIFO
+        Venda consome entradas antigas primeiro
+        Registra quais lotes foram consumidos
+        Bloqueia venda se nao houver saldo nas entradas
 
     Logica de lucro
       Receita
         quantidade vendida vezes valor unitario de venda
+      Painel geral
+        total investido igual soma das origens
+        total vendido igual soma das vendas
+        lucro geral igual total vendido menos investimento e custos
       Resultado da origem
         investimento igual valor pago da origem
         total vendido igual vendas das pecas da origem
@@ -147,16 +177,18 @@ mindmap
 
     Fluxo principal
       Cadastrar origem
-        Informa valor pago
+        Informa SKU
+        Informa quantidade da entrada
+        Informa valor total
       Cadastrar pecas
-        Vincula cada peca a origem
-        Informa quantidade
+        Cria o produto base com SKU
       Sistema calcula rateio
-        Divide valor da origem pelo total de unidades
+        Usa custo medio das entradas do SKU
       Lancar custos
         Adiciona gastos extras da peca
       Vender peca
         Informa quantidade e valor
+        Funcao FIFO consome entradas antigas
         Sistema atualiza quantidade vendida
       Conferir resultado
         Produtos

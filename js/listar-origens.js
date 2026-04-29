@@ -67,12 +67,19 @@ async function renderizarOrigens() {
 
   origens.forEach(origem => {
     const linha = document.createElement("tr");
+    const quantidadeTotal = Number(origem.quantidadeTotal || origem.quantidade_total || 0);
+    const custoUnitario = quantidadeTotal > 0
+      ? Number(origem.valorPago || 0) / quantidadeTotal
+      : 0;
 
     linha.innerHTML = `
       <td data-label="Data da compra">${origem.dataCompra}</td>
       <td data-label="Tipo">${origem.tipo}</td>
+      <td data-label="SKU">${origem.produtoSku || "-"}</td>
+      <td data-label="Quantidade">${quantidadeTotal}</td>
       <td data-label="Descrição">${origem.descricao}</td>
       <td data-label="Valor pago">${formatarMoeda(origem.valorPago)}</td>
+      <td data-label="Custo unitario">${formatarMoeda(custoUnitario)}</td>
       <td data-label="Observações">${origem.observacoes || "-"}</td>
       <td data-label="Ações">
         <div class="table-actions">

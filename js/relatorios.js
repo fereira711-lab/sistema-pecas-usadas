@@ -42,20 +42,33 @@ function somarCustosPorPeca(custos, pecaId) {
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
-function calcularCustoPeca(peca, pecasDaOrigem, origem) {
-  if (!origem || pecasDaOrigem.length === 0) {
-    return Number(peca.custo || 0);
-  }
+function normalizarSku(sku) {
+  return String(sku || "").trim().toUpperCase();
+}
 
-  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
-    return total + Number(item.quantidade || 0);
+function obterOrigensDoProduto(peca, origens) {
+  const sku = normalizarSku(peca.sku);
+  const origensPorSku = origens.filter(origem => normalizarSku(origem.produtoSku || origem.produto_sku) === sku);
+
+  return origensPorSku.length > 0
+    ? origensPorSku
+    : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
+}
+
+function calcularCustoPeca(peca, origens) {
+  const origensDoProduto = obterOrigensDoProduto(peca, origens);
+  const totalUnidades = origensDoProduto.reduce((total, origem) => {
+    return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
+  }, 0);
+  const totalInvestido = origensDoProduto.reduce((total, origem) => {
+    return total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
   }, 0);
 
-  if (totalUnidades <= 0) {
+  if (totalUnidades <= 0 || totalInvestido <= 0) {
     return Number(peca.custo || 0);
   }
 
-  return Number(origem.valorPago || origem.valor_total || 0) / totalUnidades;
+  return totalInvestido / totalUnidades;
 }
 
 function calcularLucroVenda(venda) {
@@ -137,9 +150,7 @@ function renderizarResumoEstoque(produtos, custos, origens) {
   mensagemEstoqueRelatorio.textContent = "";
 
   produtos.forEach(produto => {
-    const origem = origens.find(item => Number(item.id) === Number(produto.origemId || 0));
-    const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
-    const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
+    const custoBase = calcularCustoPeca(produto, origens);
     const custosDiversos = somarCustosPorPeca(custos, produto.id);
     const custoTotal = custoBase + custosDiversos;
     const quantidade = Number(produto.quantidade || 1);
@@ -326,10 +337,8 @@ function prepararVendas(vendas, pecas, custosVenda, origens = buscarLista("orige
 
   return vendas.map(venda => {
     const peca = pecas.find(item => Number(item.id) === Number(venda.pecaId));
-    const pecasDaOrigem = pecas.filter(item => Number(item.origemId || 0) === Number(peca?.origemId || 0));
-    const origem = origens.find(item => Number(item.id) === Number(peca?.origemId || 0));
     const quantidade = Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0);
-    const custoUnitario = peca ? calcularCustoPeca(peca, pecasDaOrigem, origem) : 0;
+    const custoUnitario = peca ? calcularCustoPeca(peca, origens) : 0;
     const custosDaVenda = custosPorVenda[Number(venda.id)] || venda.custosVenda || [];
 
     return {

@@ -8,6 +8,8 @@ create table if not exists public.origens (
   fornecedor_id bigint,
   custo_total numeric(12, 2),
   custo_tipo text,
+  produto_sku text,
+  quantidade_total integer not null default 0,
   data_entrada date,
   observacoes text,
   created_at timestamptz not null default now(),
@@ -23,6 +25,8 @@ alter table public.origens add column if not exists descricao text;
 alter table public.origens add column if not exists fornecedor_id bigint;
 alter table public.origens add column if not exists custo_total numeric(12, 2);
 alter table public.origens add column if not exists custo_tipo text;
+alter table public.origens add column if not exists produto_sku text;
+alter table public.origens add column if not exists quantidade_total integer default 0;
 alter table public.origens add column if not exists data_entrada date;
 alter table public.origens add column if not exists valor_pago numeric(12, 2) default 0;
 alter table public.origens add column if not exists data_compra date default current_date;
@@ -39,10 +43,15 @@ set valor_pago = coalesce(valor_pago, custo_total, 0)
 where valor_pago is null;
 
 update public.origens
+set quantidade_total = 0
+where quantidade_total is null;
+
+update public.origens
 set data_compra = current_date
 where data_compra is null;
 
 alter table public.origens alter column valor_pago set default 0;
+alter table public.origens alter column quantidade_total set default 0;
 alter table public.origens alter column data_compra set default current_date;
 
 create table if not exists public.pecas (
@@ -50,6 +59,7 @@ create table if not exists public.pecas (
   origem_id bigint not null references public.origens(id),
   produto_id bigint,
   nome_peca text not null,
+  sku text,
   custo_atribuido numeric(12, 2),
   tipo_custo_atribuido text not null default 'real',
   preco_sugerido numeric(12, 2) not null default 0,
@@ -69,6 +79,7 @@ create table if not exists public.pecas (
 alter table public.pecas add column if not exists origem_id bigint;
 alter table public.pecas add column if not exists produto_id bigint;
 alter table public.pecas add column if not exists nome_peca text;
+alter table public.pecas add column if not exists sku text;
 alter table public.pecas add column if not exists custo_atribuido numeric(12, 2);
 alter table public.pecas add column if not exists tipo_custo_atribuido text default 'real';
 alter table public.pecas add column if not exists preco_sugerido numeric(12, 2) default 0;

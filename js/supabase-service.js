@@ -45,8 +45,13 @@
       tipo: tipoOrigem,
       tipoOrigem,
       descricao: origem.descricao,
+      produtoSku: origem.produto_sku || origem.produtoSku || "",
+      quantidadeTotal: Number(origem.quantidade_total || origem.quantidadeTotal || 0),
       valorPago: Number(custoTotal || 0),
       custoTotal: Number(custoTotal || 0),
+      custoUnitario: Number(origem.quantidade_total || 0) > 0
+        ? Number(custoTotal || 0) / Number(origem.quantidade_total || 0)
+        : 0,
       custoTipo: origem.custo_tipo || "",
       dataCompra: origem.data_compra,
       observacoes: origem.observacoes || ""
@@ -63,6 +68,8 @@
       tipo_origem: tipoOrigem,
       tipo: tipoOrigem,
       descricao: origem.descricao,
+      produto_sku: origem.produtoSku || origem.produto_sku || null,
+      quantidade_total: Number(origem.quantidadeTotal || origem.quantidade_total || 0),
       custo_total: Number(custoTotal || 0),
       custo_tipo: origem.custoTipo || null,
       valor_pago: Number(custoTotal || 0),
@@ -113,6 +120,28 @@
       nome_peca: peca.nome,
       sku: peca.sku || null,
       quantidade: Number(peca.quantidade || 1),
+      quantidade_vendida: Number(peca.quantidadeVendida || 0),
+      status: peca.status || "em_estoque",
+      custo_total: Number(custoTotal || 0),
+      custo: Number(custoTotal || 0),
+      custo_atribuido: Number(custoTotal || 0),
+      tipo_custo_atribuido: peca.tipoCusto || "real",
+      preco_sugerido: Number(peca.precoVenda || 0),
+      preparada: Boolean(peca.preparada),
+      observacoes: peca.observacoes || null
+    };
+  }
+
+  function mapearPecaParaAtualizacaoBanco(peca) {
+    const custoTotal = peca.custoTotal !== undefined
+      ? peca.custoTotal
+      : peca.custo;
+
+    return {
+      origem_id: Number(peca.origemId),
+      nome_peca: peca.nome,
+      sku: peca.sku || null,
+      quantidade: Number(peca.quantidade || 0),
       quantidade_vendida: Number(peca.quantidadeVendida || 0),
       status: peca.status || "em_estoque",
       custo_total: Number(custoTotal || 0),
@@ -216,6 +245,30 @@
       descricao: custo.descricao || null,
       valor: Number(custo.valor || 0),
       data_custo: custo.dataCusto || custo.data || new Date().toISOString().slice(0, 10)
+    };
+  }
+
+  function mapearEntradaEstoqueDoBanco(entrada) {
+    return {
+      id: Number(entrada.id),
+      pecaId: Number(entrada.peca_id),
+      origemId: Number(entrada.origem_id || 0),
+      quantidadeTotal: Number(entrada.quantidade_total || 0),
+      quantidadeConsumida: Number(entrada.quantidade_consumida || 0),
+      custoUnitario: Number(entrada.custo_unitario || 0),
+      dataEntrada: entrada.data_entrada,
+      createdAt: entrada.created_at
+    };
+  }
+
+  function mapearEntradaEstoqueParaBanco(entrada) {
+    return {
+      peca_id: Number(entrada.pecaId),
+      origem_id: Number(entrada.origemId),
+      quantidade_total: Number(entrada.quantidadeTotal),
+      quantidade_consumida: Number(entrada.quantidadeConsumida || 0),
+      custo_unitario: Number(entrada.custoUnitario || 0),
+      data_entrada: entrada.dataEntrada || new Date().toISOString().slice(0, 10)
     };
   }
 
@@ -430,6 +483,47 @@
     return mapearPecaDoBanco(data);
   }
 
+  async function atualizarPeca(peca) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("pecas")
+      .update(mapearPecaParaAtualizacaoBanco(peca))
+      .eq("id", peca.id)
+      .select("*, origens(descricao)")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearPecaDoBanco(data);
+  }
+
+  async function salvarEntradaEstoque(entrada) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("entradas_estoque")
+      .insert(mapearEntradaEstoqueParaBanco(entrada))
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearEntradaEstoqueDoBanco(data);
+  }
+
   async function salvarCustoPeca(custo) {
     const cliente = obterCliente();
 
@@ -494,14 +588,15 @@
     }
 
     const vendaParaBanco = mapearVendaParaBanco(venda);
-    const { data: vendaId, error } = await cliente.rpc("registrar_venda", {
+    const { data: vendaId, error } = await cliente.rpc("registrar_venda_fifo", {
       p_peca_id: vendaParaBanco.peca_id,
-      p_quantidade_vendida: vendaParaBanco.quantidade_vendida,
+      p_quantidade: vendaParaBanco.quantidade_vendida,
       p_valor_unitario: vendaParaBanco.valor_unitario,
       p_canal_venda: vendaParaBanco.canal_venda,
       p_custo_embalagem: obterCustoVendaPorTipo(venda.custosVenda, "embalagem"),
       p_custo_comissao: obterCustoVendaPorTipo(venda.custosVenda, "comissao"),
-      p_custo_frete: obterCustoVendaPorTipo(venda.custosVenda, "frete")
+      p_custo_frete: obterCustoVendaPorTipo(venda.custosVenda, "frete"),
+      p_custo_outros: obterCustoVendaPorTipo(venda.custosVenda, "outros")
     });
 
     if (error) {
@@ -547,6 +642,8 @@
     listarCustosVenda,
     salvarOrigem,
     salvarPeca,
+    atualizarPeca,
+    salvarEntradaEstoque,
     salvarCustoPeca,
     salvarCustosVenda,
     salvarVenda

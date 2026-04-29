@@ -67,7 +67,7 @@ function lerPecaDoFormulario() {
   return {
     id: Date.now(),
     nome: document.getElementById("nome").value.trim(),
-    sku: document.getElementById("sku").value.trim(),
+    sku: document.getElementById("sku").value.trim().toUpperCase(),
     precoVenda: Number(precoDigitado || 0),
     quantidade,
     quantidadeVendida: 0,
@@ -82,6 +82,10 @@ function lerPecaDoFormulario() {
 function validarPeca(peca) {
   if (!peca.nome) {
     return "Informe o nome da peca.";
+  }
+
+  if (!peca.sku) {
+    return "Informe o SKU da peca. Ele sera usado para somar entradas de estoque.";
   }
 
   if (!peca.origemId) {

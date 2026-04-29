@@ -70,16 +70,27 @@ function somarCustosPorPeca(pecaId) {
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
-function calcularCustoPeca(peca, pecasDaOrigem, origem) {
-  if (peca.tipoCusto !== "rateado") {
-    return Number(peca.custo || 0);
-  }
+function normalizarSku(sku) {
+  return String(sku || "").trim().toUpperCase();
+}
 
-  if (!origem || pecasDaOrigem.length === 0) {
-    return Number(peca.custo || 0);
-  }
+function obterOrigensDoProduto(peca, origens) {
+  const sku = normalizarSku(peca.sku);
+  const origensPorSku = origens.filter(origem => normalizarSku(origem.produtoSku || origem.produto_sku) === sku);
 
-  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+  return origensPorSku.length > 0
+    ? origensPorSku
+    : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
+}
+
+function calcularCustoPeca(peca, origens) {
+  const origensDoProduto = obterOrigensDoProduto(peca, origens);
+  const totalUnidades = origensDoProduto.reduce((total, origem) => total + Number(origem.quantidadeTotal || origem.quantidade_total || 0), 0);
+  const totalInvestido = origensDoProduto.reduce((total, origem) => total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0), 0);
+
+  return totalUnidades > 0 && totalInvestido > 0
+    ? totalInvestido / totalUnidades
+    : Number(peca.custo || 0);
 }
 
 function calcularQuantidadeDisponivel(produto) {
@@ -105,9 +116,7 @@ async function renderizarEstoque() {
   mensagemEstoque.textContent = "";
 
   produtos.forEach((produto, indice) => {
-    const origem = origens.find(item => item.id === Number(produto.origemId || 0));
-    const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
-    const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
+    const custoBase = calcularCustoPeca(produto, origens);
     const custosDiversos = somarCustosPorPeca(produto.id);
     const custoTotal = custoBase + custosDiversos;
     const quantidade = Number(produto.quantidade || 1);

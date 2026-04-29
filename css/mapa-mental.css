@@ -125,6 +125,10 @@ body {
   border-top: 6px solid #3f8f61;
 }
 
+.branch--painel {
+  border-top: 6px solid #2e6fa3;
+}
+
 .node-list {
   display: grid;
   gap: 10px;

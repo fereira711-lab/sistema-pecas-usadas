@@ -169,23 +169,34 @@ function existeCustoVendaNegativo() {
     .some(id => lerValorCampo(id) < 0);
 }
 
+function normalizarSku(sku) {
+  return String(sku || "").trim().toUpperCase();
+}
+
+function obterOrigensDoProduto(peca) {
+  const sku = normalizarSku(peca.sku);
+  const origensPorSku = origensVendaCarregadas.filter(origem => normalizarSku(origem.produtoSku || origem.produto_sku) === sku);
+
+  return origensPorSku.length > 0
+    ? origensPorSku
+    : origensVendaCarregadas.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
+}
+
 function calcularCustoBasePeca(peca) {
-  const origem = origensVendaCarregadas.find(item => Number(item.id) === Number(peca.origemId || 0));
-  const pecasDaOrigem = pecasVendaCarregadas.filter(item => Number(item.origemId || 0) === Number(peca.origemId || 0));
+  const origensDoProduto = obterOrigensDoProduto(peca);
 
-  if (!origem || pecasDaOrigem.length === 0) {
-    return Number(peca.custoTotal || peca.custo || 0);
-  }
-
-  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
-    return total + Number(item.quantidade || 0);
+  const totalUnidades = origensDoProduto.reduce((total, origem) => {
+    return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
+  }, 0);
+  const totalInvestido = origensDoProduto.reduce((total, origem) => {
+    return total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
   }, 0);
 
-  if (totalUnidades <= 0) {
+  if (totalUnidades <= 0 || totalInvestido <= 0) {
     return Number(peca.custoTotal || peca.custo || 0);
   }
 
-  return Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0) / totalUnidades;
+  return totalInvestido / totalUnidades;
 }
 
 function calcularLucroVenda(venda, peca) {

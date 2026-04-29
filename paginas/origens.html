@@ -43,6 +43,49 @@
 
         <div class="form-row">
           <div class="form-group">
+            <label for="produtoSku">SKU do produto *</label>
+            <input
+              id="produtoSku"
+              name="produtoSku"
+              type="text"
+              placeholder="Ex: FAR-UNO-001"
+              autocomplete="off"
+              required
+            >
+            <div id="sugestoesSkuOrigem" class="autocomplete-list" role="listbox"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="nomePeca">Nome da peÃ§a *</label>
+            <input
+              id="nomePeca"
+              name="nomePeca"
+              type="text"
+              placeholder="Ex: Farol Fiat Uno 2012"
+              autocomplete="off"
+              required
+            >
+            <div id="sugestoesNomeOrigem" class="autocomplete-list" role="listbox"></div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="quantidadeTotal">Quantidade da entrada *</label>
+            <input
+              id="quantidadeTotal"
+              name="quantidadeTotal"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Ex: 5"
+              required
+            >
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
             <label for="valorPago">Valor pago *</label>
             <input
               id="valorPago"
@@ -83,7 +126,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=4"></script>
-  <script src="../js/supabase-service.js?v=14"></script>
-  <script src="../js/origens.js?v=4"></script>
+  <script src="../js/supabase-service.js?v=18"></script>
+  <script src="../js/origens.js?v=8"></script>
 </body>
 </html>

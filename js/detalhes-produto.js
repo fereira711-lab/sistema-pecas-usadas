@@ -67,20 +67,33 @@ function calcularTotalCustosVenda(venda) {
   return venda.custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
-function calcularCustoPeca(peca, pecasDaOrigem, origem) {
-  if (!origem || pecasDaOrigem.length === 0) {
-    return Number(peca.custo || 0);
-  }
+function normalizarSku(sku) {
+  return String(sku || "").trim().toUpperCase();
+}
 
-  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
-    return total + Number(item.quantidade || 0);
+function obterOrigensDoProduto(peca, origens) {
+  const sku = normalizarSku(peca.sku);
+  const origensPorSku = origens.filter(origem => normalizarSku(origem.produtoSku || origem.produto_sku) === sku);
+
+  return origensPorSku.length > 0
+    ? origensPorSku
+    : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
+}
+
+function calcularCustoPeca(peca, origens) {
+  const origensDoProduto = obterOrigensDoProduto(peca, origens);
+  const totalUnidades = origensDoProduto.reduce((total, origem) => {
+    return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
+  }, 0);
+  const totalInvestido = origensDoProduto.reduce((total, origem) => {
+    return total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
   }, 0);
 
-  if (totalUnidades <= 0) {
+  if (totalUnidades <= 0 || totalInvestido <= 0) {
     return Number(peca.custo || 0);
   }
 
-  return Number(origem.valorPago || origem.valor_total || 0) / totalUnidades;
+  return totalInvestido / totalUnidades;
 }
 
 function calcularQuantidadeVendidaVenda(venda) {
@@ -281,9 +294,7 @@ function iniciarDetalhes() {
 
   const custos = filtrarCustosPorPeca(pecaId);
   const vendas = filtrarVendasPorPeca(pecaId);
-  const origem = buscarOrigens().find(item => Number(item.id) === Number(produto.origemId || 0));
-  const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
-  const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
+  const custoBase = calcularCustoPeca(produto, buscarOrigens());
   const totalCustosDiversos = custos.reduce((total, custo) => total + Number(custo.valor || 0), 0);
 
   mensagemProdutoNaoEncontrado.textContent = "";

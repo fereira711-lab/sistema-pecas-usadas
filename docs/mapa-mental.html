@@ -27,11 +27,11 @@
         <div class="node-list">
           <article class="node">
             <strong>Origem</strong>
-            <span>Compra ou lote com valor pago.</span>
+            <span>Entrada de estoque com SKU, quantidade e valor total.</span>
           </article>
           <article class="node">
             <strong>Peca</strong>
-            <span>Item vinculado a uma origem.</span>
+            <span>Produto base identificado por SKU.</span>
           </article>
           <article class="node">
             <strong>Custo da peca</strong>
@@ -70,15 +70,19 @@
         <h2>Custo base</h2>
         <div class="formula-card">
           <span>Total de unidades</span>
-          <strong>soma das quantidades da origem</strong>
+          <strong>soma das quantidades das entradas do SKU</strong>
         </div>
         <div class="formula-card">
-          <span>Custo unitario</span>
-          <strong>valor da origem / total de unidades</strong>
+          <span>Custo medio</span>
+          <strong>soma dos valores das entradas / soma das quantidades</strong>
         </div>
         <div class="formula-card">
           <span>Custo vendido</span>
-          <strong>vendidos x custo unitario</strong>
+          <strong>vendidos x custo medio</strong>
+        </div>
+        <div class="formula-card">
+          <span>FIFO</span>
+          <strong>venda consome primeiro as entradas mais antigas</strong>
         </div>
       </section>
 
@@ -104,6 +108,7 @@
         <h2>Telas</h2>
         <div class="screen-grid">
           <span>Inicio</span>
+          <span>Painel geral</span>
           <span>Produtos</span>
           <span>Origens</span>
           <span>Detalhes da origem e resultado</span>
@@ -123,7 +128,7 @@
           </article>
           <article class="node">
             <strong>PostgreSQL</strong>
-            <span>Tabelas, relacionamentos e funcoes.</span>
+            <span>Tabelas, relacionamentos, funcoes e FIFO.</span>
           </article>
           <article class="node">
             <strong>LocalStorage</strong>
@@ -153,6 +158,28 @@
           </article>
         </div>
       </section>
+
+      <section class="branch branch--painel">
+        <h2>Painel geral</h2>
+        <div class="node-list">
+          <article class="node">
+            <strong>Total investido</strong>
+            <span>Soma dos valores pagos nas origens.</span>
+          </article>
+          <article class="node">
+            <strong>Total vendido</strong>
+            <span>Soma das vendas realizadas.</span>
+          </article>
+          <article class="node">
+            <strong>Lucro geral</strong>
+            <span>Total vendido menos investimento e custos.</span>
+          </article>
+          <article class="node">
+            <strong>Operacao</strong>
+            <span>Pecas em estoque, vendidas e origens por resultado.</span>
+          </article>
+        </div>
+      </section>
     </section>
 
     <section class="flow-section" aria-label="Fluxo principal do sistema">
@@ -176,7 +203,7 @@
         <article>
           <span>4</span>
           <strong>Vender</strong>
-          <p>Registra quantidade vendida e valor unitario.</p>
+          <p>Registra a venda e a funcao FIFO consome os lotes antigos.</p>
         </article>
         <article>
           <span>5</span>

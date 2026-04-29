@@ -26,10 +26,21 @@ async function carregarOrigem(origemId) {
   return null;
 }
 
-async function carregarPecasDaOrigem(origemId) {
+function normalizarSku(sku) {
+  return String(sku || "").trim().toUpperCase();
+}
+
+async function carregarPecasDaOrigem(origem) {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
-      return await window.supabaseService.listarPecasPorOrigem(origemId);
+      if (origem.produtoSku) {
+        const pecas = await window.supabaseService.listarPecas();
+        const skuOrigem = normalizarSku(origem.produtoSku);
+
+        return pecas.filter(peca => normalizarSku(peca.sku) === skuOrigem);
+      }
+
+      return await window.supabaseService.listarPecasPorOrigem(origem.id);
     } catch (erro) {
       console.error("Erro ao carregar pecas da origem do Supabase:", erro);
     }
@@ -141,7 +152,7 @@ function calcularCustoPeca(peca, pecasDaOrigem, origem) {
     return Number(peca.custo || 0);
   }
 
-  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
+  const totalUnidades = Number(origem.quantidadeTotal || origem.quantidade_total || 0) || pecasDaOrigem.reduce((total, item) => {
     return total + Number(item.quantidade || 0);
   }, 0);
 
@@ -355,7 +366,6 @@ function renderizarPecas(origem, pecas, custos, vendas) {
 
 async function iniciarDetalhesOrigem() {
   const origem = await carregarOrigem(origemId);
-  const pecasDaOrigem = await carregarPecasDaOrigem(origemId);
 
   if (!origem) {
     mensagemOrigemNaoEncontrada.textContent = "Origem não encontrada.";
@@ -365,6 +375,7 @@ async function iniciarDetalhesOrigem() {
   }
 
   mensagemOrigemNaoEncontrada.textContent = "";
+  const pecasDaOrigem = await carregarPecasDaOrigem(origem);
   const financeiroOrigem = await carregarFinanceiroDaOrigem(pecasDaOrigem);
   const custos = financeiroOrigem.custos;
   const vendas = financeiroOrigem.vendas;

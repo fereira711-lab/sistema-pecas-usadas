@@ -2,44 +2,66 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Painel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Geral do Negocio</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Painel geral</p>
+      <h1>Painel Geral do Negocio</h1>
+      <p class="hero__description">
+        Visao financeira e operacional de origens, pecas, vendas e custos.
+      </p>
+    </div>
+  </header>
 
-  <h1>Painel do Sistema</h1>
+  <main class="container stock-layout">
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2>Resumo do negocio</h2>
+          <p>Cards calculados no front-end com dados carregados do Supabase.</p>
+        </div>
+        <div class="form-actions">
+          <a class="button-secondary" href="index.html">Voltar para o inicio</a>
+        </div>
+      </div>
 
-  <div id="totalInvestido"></div>
-  <div id="totalVendido"></div>
-  <div id="lucroGeral"></div>
+      <p id="mensagemPainelGeral" class="empty-message"></p>
+      <section id="cardsPainelGeral" class="summary-grid" aria-label="Cards do painel geral"></section>
+    </section>
 
-  <h2>Origens</h2>
-  <table border="1">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Descrição</th>
-        <th>Lucro</th>
-      </tr>
-    </thead>
-    <tbody id="tabelaOrigens"></tbody>
-  </table>
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Resultado por origem</h2>
+          <p>Acompanhe quais origens ja deram lucro e quais ainda nao se pagaram.</p>
+        </div>
+      </div>
 
-  <h2>Peças</h2>
-  <table border="1">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Peça</th>
-        <th>Status</th>
-        <th>Lucro</th>
-      </tr>
-    </thead>
-    <tbody id="tabelaPecas"></tbody>
-  </table>
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Origem</th>
+              <th>Investimento</th>
+              <th>Total vendido</th>
+              <th>Custos</th>
+              <th>Lucro</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaResultadoOrigens"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
-  <!-- AQUI É O IMPORTANTE -->
-  <script type="module" src="js/app.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js?v=6"></script>
+  <script src="js/supabase-service.js?v=17"></script>
+  <script src="js/painel-geral.js?v=1"></script>
 </body>
 </html>
