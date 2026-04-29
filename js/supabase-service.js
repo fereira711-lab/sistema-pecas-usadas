@@ -253,6 +253,9 @@
       id: Number(entrada.id),
       pecaId: Number(entrada.peca_id),
       origemId: Number(entrada.origem_id || 0),
+      sku: entrada.pecas?.sku || "",
+      nomePeca: entrada.pecas?.nome_peca || entrada.pecas?.nome || "",
+      origemDescricao: entrada.origens?.descricao || "",
       quantidadeTotal: Number(entrada.quantidade_total || 0),
       quantidadeConsumida: Number(entrada.quantidade_consumida || 0),
       custoUnitario: Number(entrada.custo_unitario || 0),
@@ -269,6 +272,22 @@
       quantidade_consumida: Number(entrada.quantidadeConsumida || 0),
       custo_unitario: Number(entrada.custoUnitario || 0),
       data_entrada: entrada.dataEntrada || new Date().toISOString().slice(0, 10)
+    };
+  }
+
+  function mapearConsumoEstoqueDoBanco(consumo) {
+    const entrada = consumo.entradas_estoque || {};
+
+    return {
+      id: Number(consumo.id),
+      vendaId: Number(consumo.venda_id),
+      entradaEstoqueId: Number(consumo.entrada_estoque_id),
+      pecaId: Number(entrada.peca_id || 0),
+      origemId: Number(entrada.origem_id || 0),
+      quantidadeConsumida: Number(consumo.quantidade_consumida || 0),
+      custoUnitario: Number(consumo.custo_unitario || 0),
+      custoTotal: Number(consumo.custo_total || 0),
+      createdAt: consumo.created_at
     };
   }
 
@@ -441,6 +460,45 @@
     }
 
     return data.map(mapearCustoVendaDoBanco);
+  }
+
+  async function listarEntradasEstoque() {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("entradas_estoque")
+      .select("*, pecas(nome_peca, sku), origens(descricao)")
+      .order("data_entrada", { ascending: true })
+      .order("id", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return data.map(mapearEntradaEstoqueDoBanco);
+  }
+
+  async function listarConsumosEstoque() {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("venda_consumos_estoque")
+      .select("*, entradas_estoque(peca_id, origem_id)")
+      .order("id", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return data.map(mapearConsumoEstoqueDoBanco);
   }
 
   async function salvarOrigem(origem) {
@@ -640,6 +698,8 @@
     listarVendas,
     listarCustosPeca,
     listarCustosVenda,
+    listarEntradasEstoque,
+    listarConsumosEstoque,
     salvarOrigem,
     salvarPeca,
     atualizarPeca,

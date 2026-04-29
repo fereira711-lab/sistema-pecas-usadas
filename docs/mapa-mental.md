@@ -46,6 +46,12 @@ mindmap
         Mostra lucro geral
         Mostra estoque e pecas vendidas
         Conta origens no lucro e no prejuizo
+      Analise por produto
+        Mostra receita por peca
+        Mostra custo da venda
+        Mostra custos adicionais
+        Mostra lucro por peca
+        Mostra quantidade vendida
       Cadastro de origem
         Cria uma origem
         Salva valor pago
@@ -58,6 +64,11 @@ mindmap
         Mostra custo unitario
         Mostra custo vendido
         Mostra lucro
+      Entradas de estoque
+        Lista entradas de estoque
+        Mostra quantidade consumida
+        Mostra saldo disponivel
+        Mostra status do lote
       Detalhes da origem
         Mostra pecas da origem
         Mostra rateio
@@ -72,6 +83,10 @@ mindmap
         Mostra custos
         Mostra vendas
         Mostra lucro da peca
+      Detalhes da venda
+        Mostra custo detalhado da venda
+        Mostra lotes consumidos
+        Mostra custo total da venda
       Cadastro de venda
         Registra venda
         Baixa quantidade disponivel
@@ -141,12 +156,12 @@ mindmap
       Cada entrada tem valor total
       Custo unitario da entrada
         valor total da entrada dividido pela quantidade total
-      Custo medio temporario
-        soma dos valores das entradas dividido pela soma das quantidades das entradas
-      Custo vendido
-        quantidade vendida vezes custo medio
-      FIFO
+      Custo da venda
+        soma dos lotes consumidos na venda
+      Regra interna de consumo
+        Entrada por lote
         Venda consome entradas antigas primeiro
+        Lucro real por venda
         Registra quais lotes foram consumidos
         Bloqueia venda se nao houver saldo nas entradas
 
@@ -173,7 +188,7 @@ mindmap
         frete
         outros
       Formula
-        lucro igual receita menos custo vendido menos custos da peca menos custos da venda
+        lucro igual receita menos custo da venda menos custos da peca menos custos extras
 
     Fluxo principal
       Cadastrar origem
@@ -182,13 +197,13 @@ mindmap
         Informa valor total
       Cadastrar pecas
         Cria o produto base com SKU
-      Sistema calcula rateio
-        Usa custo medio das entradas do SKU
+      Sistema gera entrada de estoque
+        Usa quantidade e valor da entrada
       Lancar custos
         Adiciona gastos extras da peca
       Vender peca
         Informa quantidade e valor
-        Funcao FIFO consome entradas antigas
+        Sistema consome entradas antigas primeiro
         Sistema atualiza quantidade vendida
       Conferir resultado
         Produtos

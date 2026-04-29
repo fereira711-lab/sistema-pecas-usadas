@@ -8,6 +8,15 @@ const dadosProdutoVenda = document.getElementById("dadosProdutoVenda");
 const acaoDetalhesProduto = document.getElementById("acaoDetalhesProduto");
 const mensagemCustosVenda = document.getElementById("mensagemCustosVenda");
 const tabelaCustosVenda = document.getElementById("tabelaCustosVenda");
+const mensagemCustoFifoVenda = document.getElementById("mensagemCustoFifoVenda");
+const tabelaCustoFifoVenda = document.getElementById("tabelaCustoFifoVenda");
+let contextoVenda = {
+  produto: null,
+  origens: [],
+  custosPeca: [],
+  custosVenda: [],
+  consumosFifo: []
+};
 
 function buscarVendas() {
   return JSON.parse(localStorage.getItem("vendas")) || [];
@@ -57,7 +66,7 @@ function encontrarVenda() {
   const index = parametros.get("index");
 
   if (id) {
-    const vendaPorId = vendas.find(venda => venda.id === id);
+    const vendaPorId = vendas.find(venda => String(venda.id) === String(id));
 
     if (vendaPorId) {
       return vendaPorId;
@@ -69,6 +78,18 @@ function encontrarVenda() {
   }
 
   return null;
+}
+
+async function encontrarVendaSupabase() {
+  const parametros = new URLSearchParams(window.location.search);
+  const id = parametros.get("id");
+
+  if (!id || !window.supabaseService || !window.supabaseService.estaConfigurado()) {
+    return null;
+  }
+
+  const vendas = await window.supabaseService.listarVendas();
+  return vendas.find(venda => String(venda.id) === String(id)) || null;
 }
 
 function calcularCustoUnitario(venda) {
@@ -158,26 +179,34 @@ function calcularCustoPeca(peca, origens) {
 }
 
 function calcularCustoUnitarioAtualDaPeca(peca) {
-  return calcularCustoPeca(peca, buscarOrigens());
+  const origens = contextoVenda.origens.length > 0 ? contextoVenda.origens : buscarOrigens();
+  return calcularCustoPeca(peca, origens);
 }
 
 function calcularCustosPeca(pecaId) {
-  return buscarCustos()
+  const custos = contextoVenda.custosPeca.length > 0 ? contextoVenda.custosPeca : buscarCustos();
+
+  return custos
     .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
+function calcularCustoFifoVenda(consumosFifo) {
+  return consumosFifo.reduce((total, consumo) => total + Number(consumo.custoTotal || 0), 0);
+}
+
 function recalcularVendaComCustoAtual(venda) {
-  const peca = buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
+  const peca = contextoVenda.produto || buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
   const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
   const custoUnitario = peca ? calcularCustoUnitarioAtualDaPeca(peca) : calcularCustoUnitario(venda);
-  const custoTotal = custoUnitario * quantidade;
+  const custoFifo = calcularCustoFifoVenda(contextoVenda.consumosFifo);
+  const custoTotal = custoFifo > 0 ? custoFifo : custoUnitario * quantidade;
   const custosPeca = calcularCustosPeca(venda.pecaId);
   const custosVenda = calcularTotalCustosVenda(venda);
   const lucroBruto = Number(venda.valorTotal || 0) - custoTotal - custosPeca - custosVenda;
 
   return {
-    custoUnitario,
+    custoUnitario: quantidade > 0 ? custoTotal / quantidade : custoUnitario,
     custoTotal,
     custosPeca,
     custosVenda,
@@ -197,7 +226,7 @@ function obterStatusProduto(produto) {
 
 function renderizarDadosVenda(venda) {
   tituloVenda.textContent = venda.id || "Venda sem ID";
-  const produtoAtual = buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
+  const produtoAtual = contextoVenda.produto || buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
   const nomeVenda = formatarNomePeca({
     id: venda.pecaId,
     nome: venda.produtoNome || produtoAtual?.nome,
@@ -289,7 +318,7 @@ function renderizarResumoFinanceiro(venda) {
 
 function renderizarProduto(venda) {
   const produtos = buscarProdutos();
-  const produto = produtos.find(item => Number(item.id) === Number(venda.pecaId));
+  const produto = contextoVenda.produto || produtos.find(item => Number(item.id) === Number(venda.pecaId));
 
   if (!produto) {
     mensagemProdutoVenda.textContent = "Produto não encontrado no estoque atual.";
@@ -299,7 +328,7 @@ function renderizarProduto(venda) {
   }
 
   mensagemProdutoVenda.textContent = "";
-  const custoBase = calcularCustoPeca(produto, buscarOrigens());
+  const custoBase = calcularCustoPeca(produto, contextoVenda.origens.length > 0 ? contextoVenda.origens : buscarOrigens());
   const quantidade = Number(produto.quantidade || 1);
   const quantidadeVendida = Number(produto.quantidadeVendida || 0);
   const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
@@ -354,8 +383,11 @@ function renderizarProduto(venda) {
 }
 
 function renderizarCustos(venda) {
-  const custos = buscarCustos().filter(custo => Number(custo.pecaId || 0) === Number(venda.pecaId || 0));
-  const custosVenda = normalizarCustosVenda(venda.custosVenda);
+  const custos = (contextoVenda.custosPeca.length > 0 ? contextoVenda.custosPeca : buscarCustos())
+    .filter(custo => Number(custo.pecaId || 0) === Number(venda.pecaId || 0));
+  const custosVenda = contextoVenda.custosVenda.length > 0
+    ? contextoVenda.custosVenda
+    : normalizarCustosVenda(venda.custosVenda);
   tabelaCustosVenda.innerHTML = "";
 
   if (custos.length === 0 && custosVenda.length === 0) {
@@ -380,10 +412,11 @@ function renderizarCustos(venda) {
 
   custosVenda.forEach(custo => {
     const linha = document.createElement("tr");
+    const tipoCusto = custo.tipo || custo.tipoCusto;
 
     linha.innerHTML = `
       <td data-label="Data">${venda.dataVenda || "-"}</td>
-      <td data-label="Tipo">Venda - ${custo.tipo}</td>
+      <td data-label="Tipo">Venda - ${tipoCusto}</td>
       <td data-label="Descrição">${custo.descricao || "-"}</td>
       <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
     `;
@@ -392,19 +425,98 @@ function renderizarCustos(venda) {
   });
 }
 
-function iniciarDetalhesVenda() {
-  const venda = encontrarVenda();
+function obterDescricaoOrigem(origemId) {
+  const origem = contextoVenda.origens.find(item => Number(item.id) === Number(origemId));
+
+  return origem?.descricao || "-";
+}
+
+function renderizarCustoFifo() {
+  tabelaCustoFifoVenda.innerHTML = "";
+
+  if (!contextoVenda.consumosFifo.length) {
+    mensagemCustoFifoVenda.textContent = "Esta venda ainda nao possui custo calculado por lote. O resumo usa fallback temporario.";
+    return;
+  }
+
+  mensagemCustoFifoVenda.textContent = "";
+
+  contextoVenda.consumosFifo.forEach(consumo => {
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Lote">Lote ${consumo.entradaEstoqueId}</td>
+      <td data-label="Origem">${obterDescricaoOrigem(consumo.origemId)}</td>
+      <td data-label="Quantidade">${consumo.quantidadeConsumida}x</td>
+      <td data-label="Custo unitario">${formatarMoeda(consumo.custoUnitario)}</td>
+      <td data-label="Custo total">${formatarMoeda(consumo.custoTotal)}</td>
+    `;
+
+    tabelaCustoFifoVenda.appendChild(linha);
+  });
+
+  const linhaTotal = document.createElement("tr");
+  linhaTotal.innerHTML = `
+    <td data-label="Lote" colspan="4"><strong>Custo total da venda</strong></td>
+    <td data-label="Custo total"><strong>${formatarMoeda(calcularCustoFifoVenda(contextoVenda.consumosFifo))}</strong></td>
+  `;
+  tabelaCustoFifoVenda.appendChild(linhaTotal);
+}
+
+async function carregarContextoSupabase(venda) {
+  if (!window.supabaseService || !window.supabaseService.estaConfigurado() || !venda?.id) {
+    return venda;
+  }
+
+  const [produto, origens, custosPeca, custosVenda, consumosEstoque] = await Promise.all([
+    window.supabaseService.buscarPecaPorId(venda.pecaId),
+    window.supabaseService.listarOrigens(),
+    window.supabaseService.listarCustosPeca(),
+    window.supabaseService.listarCustosVenda(),
+    window.supabaseService.listarConsumosEstoque()
+  ]);
+  const custosVendaDaVenda = custosVenda.filter(custo => Number(custo.vendaId || 0) === Number(venda.id));
+
+  contextoVenda = {
+    produto,
+    origens,
+    custosPeca,
+    custosVenda: custosVendaDaVenda,
+    consumosFifo: consumosEstoque.filter(consumo => Number(consumo.vendaId || 0) === Number(venda.id))
+  };
+
+  return {
+    ...venda,
+    custosVenda: custosVendaDaVenda,
+    totalCustosVenda: custosVendaDaVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0)
+  };
+}
+
+async function iniciarDetalhesVenda() {
+  let venda = null;
+
+  try {
+    venda = await encontrarVendaSupabase();
+  } catch (erro) {
+    console.error("Erro ao carregar venda do Supabase:", erro);
+    mensagemVendaNaoEncontrada.textContent = "Nao foi possivel carregar a venda do Supabase. Tentando dados temporarios.";
+  }
+
+  venda = venda || encontrarVenda();
 
   if (!venda) {
     mensagemVendaNaoEncontrada.textContent = "Venda não encontrada.";
     dadosVenda.innerHTML = "";
     resumoFinanceiroVenda.innerHTML = "";
+    tabelaCustoFifoVenda.innerHTML = "";
     return;
   }
 
+  venda = await carregarContextoSupabase(venda);
   mensagemVendaNaoEncontrada.textContent = "";
   renderizarDadosVenda(venda);
   renderizarResumoFinanceiro(venda);
+  renderizarCustoFifo();
   renderizarProduto(venda);
   renderizarCustos(venda);
 }

@@ -10,7 +10,7 @@ const mensagemProdutosOrigem = document.getElementById("mensagemProdutosOrigem")
 const tabelaProdutosOrigem = document.getElementById("tabelaProdutosOrigem");
 const campoBuscaPecasOrigem = document.getElementById("buscaPecasOrigem");
 
-let dadosDetalhesOrigem = { origem: null, pecas: [], custos: [], vendas: [] };
+let dadosDetalhesOrigem = { origem: null, pecas: [], custos: [], vendas: [], consumosEstoque: [] };
 
 async function carregarOrigem(origemId) {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
@@ -52,16 +52,17 @@ async function carregarPecasDaOrigem(origem) {
 async function carregarFinanceiroDaOrigem(pecasDaOrigem) {
   if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
     mensagemOrigemNaoEncontrada.textContent = "Configure o Supabase para calcular o resultado financeiro da origem sem usar dados temporarios do navegador.";
-    return { custos: [], vendas: [] };
+    return { custos: [], vendas: [], consumosEstoque: [] };
   }
 
   const idsPecas = pecasDaOrigem.map(peca => Number(peca.id));
 
   try {
-    const [vendas, custosPeca, custosVenda] = await Promise.all([
+    const [vendas, custosPeca, custosVenda, consumosEstoque] = await Promise.all([
       window.supabaseService.listarVendas(),
       window.supabaseService.listarCustosPeca(),
-      window.supabaseService.listarCustosVenda()
+      window.supabaseService.listarCustosVenda(),
+      window.supabaseService.listarConsumosEstoque()
     ]);
 
     const vendasDaOrigem = vendas.filter(venda => idsPecas.includes(Number(venda.pecaId || 0)));
@@ -81,12 +82,13 @@ async function carregarFinanceiroDaOrigem(pecasDaOrigem) {
 
     return {
       custos: custosPecaDaOrigem,
-      vendas: vendasComCustos
+      vendas: vendasComCustos,
+      consumosEstoque: consumosEstoque || []
     };
   } catch (erro) {
     console.error("Erro ao carregar resultado financeiro da origem:", erro);
     mensagemOrigemNaoEncontrada.textContent = "Nao foi possivel carregar vendas e custos do Supabase para calcular o resultado da origem.";
-    return { custos: [], vendas: [] };
+    return { custos: [], vendas: [], consumosEstoque: [] };
   }
 }
 
@@ -143,6 +145,19 @@ function agruparCustosVendaPorVenda(custosVenda) {
     }
 
     mapa[vendaId].push(custo);
+    return mapa;
+  }, {});
+}
+
+function agruparConsumosPorVenda(consumosEstoque) {
+  return consumosEstoque.reduce((mapa, consumo) => {
+    const vendaId = Number(consumo.vendaId || 0);
+
+    if (!mapa[vendaId]) {
+      mapa[vendaId] = [];
+    }
+
+    mapa[vendaId].push(consumo);
     return mapa;
   }, {});
 }
@@ -223,6 +238,34 @@ function calcularTotalCustosVenda(venda) {
   return venda.custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
+function calcularCustoFifoComFallback(vendas, consumosPorVenda, custoUnitarioFallback) {
+  return vendas.reduce((total, venda) => {
+    const consumosDaVenda = consumosPorVenda[Number(venda.id)] || [];
+
+    if (consumosDaVenda.length > 0) {
+      return total + somarCampo(consumosDaVenda, "custoTotal");
+    }
+
+    return total + (obterQuantidadeVendidaNaVenda(venda) * custoUnitarioFallback);
+  }, 0);
+}
+
+function calcularReceitaFifoDaOrigem(vendasDaOrigem, consumosDaOrigem, vendasSemConsumo) {
+  const vendasPorId = vendasDaOrigem.reduce((mapa, venda) => {
+    mapa[Number(venda.id)] = venda;
+    return mapa;
+  }, {});
+  const receitaFifo = consumosDaOrigem.reduce((total, consumo) => {
+    const venda = vendasPorId[Number(consumo.vendaId)];
+    const valorUnitario = Number(venda?.valorUnitario || venda?.precoUnitario || 0);
+
+    return total + (Number(consumo.quantidadeConsumida || 0) * valorUnitario);
+  }, 0);
+  const receitaFallback = vendasSemConsumo.reduce((total, venda) => total + calcularValorVenda(venda), 0);
+
+  return receitaFifo + receitaFallback;
+}
+
 function calcularQuantidadeDisponivel(peca) {
   return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
 }
@@ -265,14 +308,20 @@ function renderizarDadosOrigem(origem) {
   `;
 }
 
-function renderizarResumo(origem, pecas, custos, vendas) {
+function renderizarResumo(origem, pecas, custos, vendas, consumosEstoque) {
   const idsPecas = pecas.map(peca => Number(peca.id));
   const vendasDaOrigem = vendas.filter(venda => idsPecas.includes(Number(venda.pecaId || 0)));
   const investimento = Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0);
-  const receita = vendasDaOrigem.reduce((total, venda) => total + calcularValorVenda(venda), 0);
   const custosDosProdutos = pecas.reduce((total, peca) => total + somarCustosPorPeca(custos, peca.id), 0);
   const custosDasVendas = vendasDaOrigem.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
-  const totalCustos = investimento + custosDosProdutos + custosDasVendas;
+  const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
+  const consumosDaOrigem = consumosEstoque.filter(consumo => Number(consumo.origemId || 0) === Number(origem.id));
+  const vendasSemConsumo = vendasDaOrigem.filter(venda => !(consumosPorVenda[Number(venda.id)] || []).length);
+  const receita = calcularReceitaFifoDaOrigem(vendasDaOrigem, consumosDaOrigem, vendasSemConsumo);
+  const custoFallback = calcularCustoPeca(pecas[0] || {}, pecas, origem);
+  const custoFifoConsumido = somarCampo(consumosDaOrigem, "custoTotal");
+  const custoFallbackTemporario = calcularCustoFifoComFallback(vendasSemConsumo, {}, custoFallback);
+  const totalCustos = custoFifoConsumido + custoFallbackTemporario + custosDosProdutos + custosDasVendas;
   const lucroOrigem = receita - totalCustos;
   const deuLucro = lucroOrigem > 0;
   const classeResultado = deuLucro ? "profit-value profit-value--positive" : "profit-value profit-value--negative";
@@ -297,18 +346,23 @@ function renderizarResumo(origem, pecas, custos, vendas) {
       <strong class="${classeResultado}">${textoStatus}</strong>
     </article>
     <article class="summary-card">
-      <span>Custos de pecas</span>
-      <strong>${formatarMoeda(custosDosProdutos)}</strong>
+      <span>Custo da venda</span>
+      <strong>${formatarMoeda(custoFifoConsumido + custoFallbackTemporario)}</strong>
     </article>
     <article class="summary-card">
       <span>Custos de venda</span>
       <strong>${formatarMoeda(custosDasVendas)}</strong>
     </article>
+    <article class="summary-card">
+      <span>Custos de pecas</span>
+      <strong>${formatarMoeda(custosDosProdutos)}</strong>
+    </article>
   `;
 }
 
-function renderizarPecas(origem, pecas, custos, vendas) {
+function renderizarPecas(origem, pecas, custos, vendas, consumosEstoque) {
   tabelaProdutosOrigem.innerHTML = "";
+  const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
 
   if (pecas.length === 0) {
     mensagemProdutosOrigem.textContent = campoBuscaPecasOrigem?.value
@@ -322,7 +376,6 @@ function renderizarPecas(origem, pecas, custos, vendas) {
   pecas.forEach(peca => {
     const custoCalculado = calcularCustoPeca(peca, pecas, origem);
     const precoVenda = Number(peca.precoVenda || 0);
-    const lucro = precoVenda - custoCalculado;
     const quantidade = Number(peca.quantidade || 1);
     const quantidadeVendida = Number(peca.quantidadeVendida || 0);
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
@@ -334,7 +387,9 @@ function renderizarPecas(origem, pecas, custos, vendas) {
       return total + obterQuantidadeVendidaNaVenda(venda);
     }, 0);
     const custosDasVendasProduto = vendasProduto.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
-    const lucroBruto = faturamento - (quantidadeVendidaTotal * custoCalculado) - custosDiversos - custosDasVendasProduto;
+    const custoFifoProduto = calcularCustoFifoComFallback(vendasProduto, consumosPorVenda, custoCalculado);
+    const lucroBruto = faturamento - custoFifoProduto - custosDiversos - custosDasVendasProduto;
+    const lucro = faturamento > 0 ? lucroBruto : precoVenda - custoCalculado;
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -347,7 +402,7 @@ function renderizarPecas(origem, pecas, custos, vendas) {
       <td data-label="Qtd. disponível">${quantidadeDisponivel}</td>
       <td data-label="Status">${status}</td>
       <td data-label="Tipo de custo">${peca.tipoCusto}</td>
-      <td data-label="Custo calculado">${formatarMoeda(custoCalculado)}</td>
+      <td data-label="Custo da venda">${formatarMoeda(custoFifoProduto || custoCalculado)}</td>
       <td data-label="Preço de venda">${formatarMoeda(precoVenda)}</td>
       <td data-label="Lucro">${formatarMoeda(lucro)}</td>
       <td data-label="Custos diversos">${formatarMoeda(custosDiversos)}</td>
@@ -379,16 +434,18 @@ async function iniciarDetalhesOrigem() {
   const financeiroOrigem = await carregarFinanceiroDaOrigem(pecasDaOrigem);
   const custos = financeiroOrigem.custos;
   const vendas = financeiroOrigem.vendas;
+  const consumosEstoque = financeiroOrigem.consumosEstoque;
 
   dadosDetalhesOrigem = {
     origem,
     pecas: pecasDaOrigem,
     custos,
-    vendas
+    vendas,
+    consumosEstoque
   };
   renderizarDadosOrigem(origem);
-  renderizarResumo(origem, pecasDaOrigem, custos, vendas);
-  renderizarPecas(origem, filtrarPecasPorBusca(pecasDaOrigem), custos, vendas);
+  renderizarResumo(origem, pecasDaOrigem, custos, vendas, consumosEstoque);
+  renderizarPecas(origem, filtrarPecasPorBusca(pecasDaOrigem), custos, vendas, consumosEstoque);
 }
 
 campoBuscaPecasOrigem?.addEventListener("input", () => {
@@ -400,7 +457,8 @@ campoBuscaPecasOrigem?.addEventListener("input", () => {
     dadosDetalhesOrigem.origem,
     filtrarPecasPorBusca(dadosDetalhesOrigem.pecas),
     dadosDetalhesOrigem.custos,
-    dadosDetalhesOrigem.vendas
+    dadosDetalhesOrigem.vendas,
+    dadosDetalhesOrigem.consumosEstoque
   );
 });
 

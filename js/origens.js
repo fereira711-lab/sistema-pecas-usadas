@@ -306,7 +306,7 @@ formularioOrigem.addEventListener("submit", async function (evento) {
     console.log("Entrada cadastrada no Supabase:", origemSalva);
     console.log("Entrada FIFO cadastrada:", entradaFifo);
     console.log("Estoque atualizado:", pecaAtualizada);
-    mostrarMensagem("Entrada cadastrada, FIFO gerado e estoque atualizado.", "success");
+    mostrarMensagem("Entrada cadastrada e estoque atualizado.", "success");
     alert("Entrada de estoque cadastrada com sucesso.");
     formularioOrigem.reset();
     pecaSelecionadaOrigem = null;

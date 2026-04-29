@@ -39,6 +39,32 @@
     <section class="stock-card section-spaced">
       <div class="stock-header">
         <div>
+          <h2>Custo da venda</h2>
+          <p>Mostra de quais lotes veio o custo real desta venda.</p>
+        </div>
+      </div>
+
+      <p id="mensagemCustoFifoVenda" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Lote</th>
+              <th>Origem</th>
+              <th>Quantidade</th>
+              <th>Custo unitario</th>
+              <th>Custo total</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaCustoFifoVenda"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
           <h2>Produto vendido</h2>
           <p>Dados atuais do produto no estoque.</p>
         </div>
@@ -75,6 +101,9 @@
     </section>
   </main>
 
-  <script src="../js/detalhes-venda.js?v=5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
+  <script src="../js/supabase-service.js?v=21"></script>
+  <script src="../js/detalhes-venda.js?v=6"></script>
 </body>
 </html>

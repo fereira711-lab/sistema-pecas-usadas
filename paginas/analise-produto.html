@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analise por Produto</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Analise</p>
+      <h1>Analise por Produto</h1>
+      <p class="hero__description">
+        Veja receita, custo, lucro e quantidade vendida de cada peca.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2>Desempenho das pecas</h2>
+          <p>Resumo calculado no front-end com dados do Supabase.</p>
+        </div>
+        <div class="form-actions">
+          <a class="button-secondary" href="../index.html">Voltar para o inicio</a>
+          <a class="button-secondary" href="produtos.html">Ver produtos</a>
+        </div>
+      </div>
+
+      <p id="mensagemAnaliseProduto" class="empty-message"></p>
+      <section id="resumoAnaliseProduto" class="summary-grid summary-grid--compact" aria-label="Resumo da analise por produto"></section>
+
+      <div class="form-group">
+        <input id="buscaAnaliseProduto" type="search" placeholder="Pesquisar por SKU ou nome da peca">
+      </div>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Nome</th>
+              <th>Receita</th>
+              <th>Custo</th>
+              <th>Custos adicionais</th>
+              <th>Lucro</th>
+              <th>Qtd. vendida</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaAnaliseProduto"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
+  <script src="../js/supabase-service.js?v=21"></script>
+  <script src="../js/analise-produto.js?v=1"></script>
+</body>
+</html>

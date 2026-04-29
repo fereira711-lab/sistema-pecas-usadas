@@ -73,16 +73,12 @@
           <strong>soma das quantidades das entradas do SKU</strong>
         </div>
         <div class="formula-card">
-          <span>Custo medio</span>
-          <strong>soma dos valores das entradas / soma das quantidades</strong>
+          <span>Custo da entrada</span>
+          <strong>valor da entrada / quantidade da entrada</strong>
         </div>
         <div class="formula-card">
-          <span>Custo vendido</span>
-          <strong>vendidos x custo medio</strong>
-        </div>
-        <div class="formula-card">
-          <span>FIFO</span>
-          <strong>venda consome primeiro as entradas mais antigas</strong>
+          <span>Custo da venda</span>
+          <strong>venda consome os lotes mais antigos primeiro</strong>
         </div>
       </section>
 
@@ -90,7 +86,7 @@
         <h2>Lucro</h2>
         <div class="formula-large">
           <span>lucro</span>
-          <strong>receita - custo vendido - custos da peca - custos da venda</strong>
+          <strong>receita - custo da venda - custos da peca - custos extras</strong>
         </div>
         <div class="node-list">
           <article class="node">
@@ -109,10 +105,13 @@
         <div class="screen-grid">
           <span>Inicio</span>
           <span>Painel geral</span>
+          <span>Analise por produto</span>
           <span>Produtos</span>
+          <span>Entradas de estoque</span>
           <span>Origens</span>
           <span>Detalhes da origem e resultado</span>
           <span>Detalhes da peca</span>
+          <span>Detalhes da venda e custo</span>
           <span>Cadastro de venda</span>
           <span>Historico</span>
           <span>Relatorios</span>
@@ -128,7 +127,7 @@
           </article>
           <article class="node">
             <strong>PostgreSQL</strong>
-            <span>Tabelas, relacionamentos, funcoes e FIFO.</span>
+            <span>Tabelas, relacionamentos e funcoes do sistema.</span>
           </article>
           <article class="node">
             <strong>LocalStorage</strong>
@@ -197,13 +196,13 @@
         </article>
         <article>
           <span>3</span>
-          <strong>Calcular rateio</strong>
-          <p>Divide o valor da origem pelo total de unidades.</p>
+          <strong>Gerar entrada</strong>
+          <p>Cria o lote de estoque com quantidade, saldo e custo unitario.</p>
         </article>
         <article>
           <span>4</span>
           <strong>Vender</strong>
-          <p>Registra a venda e a funcao FIFO consome os lotes antigos.</p>
+          <p>Registra a venda e consome primeiro os lotes mais antigos.</p>
         </article>
         <article>
           <span>5</span>

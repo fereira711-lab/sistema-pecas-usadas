@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estoque / Produtos</title>
+  <title>Entradas de estoque</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
   <header class="page-header">
     <div>
       <p class="hero__tag">Estoque</p>
-      <h1>Estoque / Produtos</h1>
+      <h1>Entradas de estoque</h1>
       <p class="hero__description">
-        Visualize pecas, estoque, custos, vendas e lucro.
+        Acompanhe cada entrada de estoque, o consumo e o saldo disponivel por lote.
       </p>
     </div>
   </header>
@@ -21,40 +21,38 @@
     <section class="stock-card">
       <div class="stock-header">
         <div>
-          <h2>Pecas cadastradas</h2>
-          <p>Lista consolidada de pecas, estoque, custos, vendas e lucro.</p>
+          <h2>Entradas de estoque</h2>
+          <p>Consulta dos lotes de compra e seus saldos disponiveis.</p>
         </div>
-        <a class="button-secondary" href="cadastro-peca.html">Cadastrar peca</a>
+        <div class="form-actions">
+          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+          <a class="button-primary" href="origens.html">Cadastrar entrada</a>
+        </div>
       </div>
 
-      <p id="mensagemProdutos" class="empty-message"></p>
+      <p id="mensagemLotes" class="empty-message"></p>
 
       <div class="form-group">
-        <input id="buscaProdutos" type="search" placeholder="Pesquisar peça (nome ou SKU)">
+        <input id="buscaLotes" type="search" placeholder="Pesquisar por SKU, peca ou origem">
       </div>
 
       <div class="table-wrapper">
         <table class="stock-table">
           <thead>
             <tr>
-              <th>ID</th>
               <th>SKU</th>
               <th>Nome da peca</th>
               <th>Origem</th>
-              <th>Tipo de custo</th>
-              <th>Estoque</th>
-              <th>Vendidos</th>
-              <th>Status</th>
+              <th>Data da entrada</th>
+              <th>Qtd. total</th>
+              <th>Qtd. consumida</th>
+              <th>Saldo disponivel</th>
               <th>Custo unitario</th>
-              <th>Custo vendido</th>
-              <th>Preco</th>
-              <th>Lucro</th>
-              <th>Preparada</th>
+              <th>Status do lote</th>
               <th>Alertas</th>
-              <th>Acoes</th>
             </tr>
           </thead>
-          <tbody id="tabelaProdutos"></tbody>
+          <tbody id="tabelaLotes"></tbody>
         </table>
       </div>
     </section>
@@ -63,6 +61,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/supabase-service.js?v=21"></script>
-  <script src="../js/produtos.js?v=17"></script>
+  <script src="../js/lotes.js?v=2"></script>
 </body>
 </html>

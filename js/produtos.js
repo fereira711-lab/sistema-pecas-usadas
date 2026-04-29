@@ -1,7 +1,7 @@
 const tabelaProdutos = document.getElementById("tabelaProdutos");
 const mensagemProdutos = document.getElementById("mensagemProdutos");
 const campoBuscaProdutos = document.getElementById("buscaProdutos");
-let dadosProdutos = { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [] };
+let dadosProdutos = { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [], consumosEstoque: [], entradasEstoque: [] };
 
 function primeiroValorPreenchido(...valores) {
   return valores.find(valor => valor !== null && valor !== undefined);
@@ -75,16 +75,18 @@ function criarMapaOrigens(origens) {
 async function carregarDados() {
   if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
     mensagemProdutos.textContent = "Configure o Supabase para carregar a lista de pecas.";
-    return { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [] };
+    return { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [], consumosEstoque: [], entradasEstoque: [] };
   }
 
   try {
-    const [pecasSupabase, origensSupabase, vendasSupabase, custosPecaSupabase, custosVendaSupabase] = await Promise.all([
+    const [pecasSupabase, origensSupabase, vendasSupabase, custosPecaSupabase, custosVendaSupabase, consumosEstoqueSupabase, entradasEstoqueSupabase] = await Promise.all([
       window.supabaseService.listarPecas(),
       window.supabaseService.listarOrigens(),
       window.supabaseService.listarVendas(),
       window.supabaseService.listarCustosPeca(),
-      window.supabaseService.listarCustosVenda()
+      window.supabaseService.listarCustosVenda(),
+      window.supabaseService.listarConsumosEstoque(),
+      window.supabaseService.listarEntradasEstoque()
     ]);
 
     return {
@@ -92,12 +94,14 @@ async function carregarDados() {
       origens: origensSupabase.map(normalizarOrigem),
       vendas: vendasSupabase,
       custosPeca: custosPecaSupabase,
-      custosVenda: custosVendaSupabase
+      custosVenda: custosVendaSupabase,
+      consumosEstoque: consumosEstoqueSupabase || [],
+      entradasEstoque: entradasEstoqueSupabase || []
     };
   } catch (erro) {
     console.error("Erro ao carregar produtos do Supabase:", erro);
     mensagemProdutos.textContent = "Nao foi possivel carregar os dados do Supabase.";
-    return { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [] };
+    return { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [], consumosEstoque: [], entradasEstoque: [] };
   }
 }
 
@@ -206,17 +210,43 @@ function calcularQuantidadeVendidaPeca(vendasDaPeca) {
   }, 0);
 }
 
-function calcularLucroPeca(peca, origens, vendas, custosPeca, custosVenda) {
+function agruparConsumosPorVenda(consumosEstoque) {
+  return consumosEstoque.reduce((mapa, consumo) => {
+    const vendaId = Number(consumo.vendaId || 0);
+
+    if (!mapa[vendaId]) {
+      mapa[vendaId] = [];
+    }
+
+    mapa[vendaId].push(consumo);
+    return mapa;
+  }, {});
+}
+
+function calcularCustoFifoComFallback(vendasDaPeca, consumosPorVenda, custoUnitarioFallback) {
+  return vendasDaPeca.reduce((total, venda) => {
+    const consumosDaVenda = consumosPorVenda[Number(venda.id)] || [];
+
+    if (consumosDaVenda.length > 0) {
+      return total + somarValores(consumosDaVenda, "custoTotal");
+    }
+
+    return total + (Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0) * custoUnitarioFallback);
+  }, 0);
+}
+
+function calcularLucroPeca(peca, origens, vendas, custosPeca, custosVenda, consumosEstoque) {
   const vendasDaPeca = filtrarPorPeca(vendas, peca.id);
   const idsVendasDaPeca = vendasDaPeca.map(venda => Number(venda.id));
   const custosVendaDaPeca = custosVenda.filter(custo => idsVendasDaPeca.includes(Number(custo.vendaId || 0)));
   const receita = calcularReceitaPeca(vendasDaPeca);
   const custoUnitario = calcularCustoBasePeca(peca, origens);
-  const quantidadeVendida = calcularQuantidadeVendidaPeca(vendasDaPeca);
+  const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
+  const custoFifo = calcularCustoFifoComFallback(vendasDaPeca, consumosPorVenda, custoUnitario);
   const totalCustosPeca = somarValores(filtrarPorPeca(custosPeca, peca.id));
   const totalCustosVenda = somarValores(custosVendaDaPeca) || somarCustosEmbutidosDasVendas(vendasDaPeca);
 
-  return receita - (quantidadeVendida * custoUnitario) - totalCustosPeca - totalCustosVenda;
+  return receita - custoFifo - totalCustosPeca - totalCustosVenda;
 }
 
 function obterClasseLucro(lucro, temVenda) {
@@ -239,8 +269,47 @@ function obterClasseStatus(status) {
   return "status-badge status-badge--stock";
 }
 
-function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
+function criarAlerta(tipo, texto) {
+  return { tipo, texto };
+}
+
+function obterAlertasProduto(peca, quantidadeDisponivel, vendasDaPeca, entradasEstoque, consumosPorVenda) {
+  const alertas = [];
+  const entradasDaPeca = entradasEstoque.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id));
+  const vendasSemConsumo = vendasDaPeca.filter(venda => !(consumosPorVenda[Number(venda.id)] || []).length);
+
+  if (quantidadeDisponivel <= 0) {
+    alertas.push(criarAlerta("danger", "Sem estoque"));
+  } else if (quantidadeDisponivel <= 2) {
+    alertas.push(criarAlerta("warning", "Estoque baixo"));
+  }
+
+  if (entradasDaPeca.length === 0) {
+    alertas.push(criarAlerta("info", "Sem entrada de estoque"));
+  }
+
+  if (vendasSemConsumo.length > 0) {
+    alertas.push(criarAlerta("warning", "Venda sem custo calculado"));
+  }
+
+  return alertas;
+}
+
+function renderizarAlertas(alertas) {
+  if (!alertas.length) {
+    return `<span class="alert-pill alert-pill--ok">OK</span>`;
+  }
+
+  return `
+    <div class="alert-list">
+      ${alertas.map(alerta => `<span class="alert-pill alert-pill--${alerta.tipo}">${alerta.texto}</span>`).join("")}
+    </div>
+  `;
+}
+
+function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda, consumosEstoque, entradasEstoque) {
   const mapaOrigens = criarMapaOrigens(origens);
+  const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
   tabelaProdutos.innerHTML = "";
 
   if (pecas.length === 0) {
@@ -258,11 +327,12 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
     const vendasDaPeca = filtrarPorPeca(vendas, peca.id);
     const quantidadeVendida = calcularQuantidadeVendidaPeca(vendasDaPeca);
     const custoUnitario = calcularCustoBasePeca(peca, origens);
-    const custoTotalVendido = quantidadeVendida * custoUnitario;
-    const lucro = calcularLucroPeca(peca, origens, vendas, custosPeca, custosVenda);
+    const custoTotalVendido = calcularCustoFifoComFallback(vendasDaPeca, consumosPorVenda, custoUnitario);
+    const lucro = calcularLucroPeca(peca, origens, vendas, custosPeca, custosVenda, consumosEstoque);
     const temVenda = vendasDaPeca.length > 0;
     const classeLucro = obterClasseLucro(lucro, temVenda);
     const classeStatus = obterClasseStatus(peca.status);
+    const alertas = obterAlertasProduto(peca, quantidadeDisponivel, vendasDaPeca, entradasEstoque, consumosPorVenda);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -279,6 +349,7 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
       <td data-label="Preco">${formatarMoeda(peca.precoVenda)}</td>
       <td data-label="Lucro"><strong class="${classeLucro}">${formatarMoeda(lucro)}</strong></td>
       <td data-label="Preparada">${peca.preparada ? "Sim" : "Nao"}</td>
+      <td data-label="Alertas">${renderizarAlertas(alertas)}</td>
       <td data-label="Acoes">
         <div class="table-actions">
           <button type="button" data-acao="venda" data-peca-id="${peca.id}" onclick="abrirVenda(${peca.id})" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
@@ -300,7 +371,9 @@ async function inicializarProdutos() {
     dadosProdutos.origens,
     dadosProdutos.vendas,
     dadosProdutos.custosPeca,
-    dadosProdutos.custosVenda
+    dadosProdutos.custosVenda,
+    dadosProdutos.consumosEstoque,
+    dadosProdutos.entradasEstoque
   );
 }
 
@@ -310,7 +383,9 @@ campoBuscaProdutos?.addEventListener("input", () => {
     dadosProdutos.origens,
     dadosProdutos.vendas,
     dadosProdutos.custosPeca,
-    dadosProdutos.custosVenda
+    dadosProdutos.custosVenda,
+    dadosProdutos.consumosEstoque,
+    dadosProdutos.entradasEstoque
   );
 });
 

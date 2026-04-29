@@ -1,5 +1,6 @@
 const mensagemPainelGeral = document.getElementById("mensagemPainelGeral");
 const cardsPainelGeral = document.getElementById("cardsPainelGeral");
+const alertasPainelGeral = document.getElementById("alertasPainelGeral");
 const tabelaResultadoOrigens = document.getElementById("tabelaResultadoOrigens");
 
 function formatarMoeda(valor) {
@@ -57,27 +58,101 @@ function filtrarCustosVendaPorVendas(custosVenda, vendas) {
   return custosVenda.filter(custo => idsVendas.includes(Number(custo.vendaId || 0)));
 }
 
+function agruparConsumosPorVenda(consumosEstoque) {
+  return consumosEstoque.reduce((mapa, consumo) => {
+    const vendaId = Number(consumo.vendaId || 0);
+
+    if (!mapa[vendaId]) {
+      mapa[vendaId] = [];
+    }
+
+    mapa[vendaId].push(consumo);
+    return mapa;
+  }, {});
+}
+
+function obterOrigensDoProduto(peca, origens) {
+  const sku = normalizarSku(peca.sku);
+  const origensPorSku = sku
+    ? origens.filter(origem => normalizarSku(origem.produtoSku || origem.produto_sku) === sku)
+    : [];
+
+  return origensPorSku.length > 0
+    ? origensPorSku
+    : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
+}
+
+function calcularCustoUnitarioFallback(peca, origens) {
+  const origensDoProduto = obterOrigensDoProduto(peca, origens);
+  const totalUnidades = origensDoProduto.reduce((total, origem) => {
+    return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
+  }, 0);
+  const totalInvestido = origensDoProduto.reduce((total, origem) => {
+    return total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
+  }, 0);
+
+  if (totalUnidades <= 0 || totalInvestido <= 0) {
+    return Number(peca.custoTotal || peca.custo || 0);
+  }
+
+  return totalInvestido / totalUnidades;
+}
+
+function calcularCustoFifoComFallback(vendas, pecas, origens, consumosPorVenda) {
+  return vendas.reduce((total, venda) => {
+    const consumosDaVenda = consumosPorVenda[Number(venda.id)] || [];
+
+    if (consumosDaVenda.length > 0) {
+      return total + somar(consumosDaVenda, "custoTotal");
+    }
+
+    const peca = pecas.find(item => Number(item.id) === Number(venda.pecaId || 0));
+    const custoUnitario = peca ? calcularCustoUnitarioFallback(peca, origens) : 0;
+    const quantidade = Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0);
+
+    return total + (quantidade * custoUnitario);
+  }, 0);
+}
+
+function calcularReceitaFifoDaOrigem(vendasDaOrigem, consumosDaOrigem, vendasSemConsumo) {
+  const vendasPorId = vendasDaOrigem.reduce((mapa, venda) => {
+    mapa[Number(venda.id)] = venda;
+    return mapa;
+  }, {});
+  const receitaFifo = consumosDaOrigem.reduce((total, consumo) => {
+    const venda = vendasPorId[Number(consumo.vendaId)];
+    const valorUnitario = Number(venda?.valorUnitario || venda?.precoUnitario || 0);
+
+    return total + (Number(consumo.quantidadeConsumida || 0) * valorUnitario);
+  }, 0);
+  const receitaFallback = vendasSemConsumo.reduce((total, venda) => total + calcularValorVenda(venda), 0);
+
+  return receitaFifo + receitaFallback;
+}
+
 function normalizarSku(sku) {
   return String(sku || "").trim().toUpperCase();
 }
 
-function calcularResultadoOrigem(origem, origens, pecas, vendas, custosPeca, custosVenda) {
+function calcularResultadoOrigem(origem, origens, pecas, vendas, custosPeca, custosVenda, consumosEstoque) {
   const skuOrigem = normalizarSku(origem.produtoSku || origem.produto_sku);
   const pecasDaOrigem = skuOrigem
     ? pecas.filter(peca => normalizarSku(peca.sku) === skuOrigem)
     : pecas.filter(peca => Number(peca.origemId || 0) === Number(origem.id));
-  const origensDoMesmoSku = skuOrigem
-    ? origens.filter(item => normalizarSku(item.produtoSku || item.produto_sku) === skuOrigem)
-    : [origem];
   const idsPecas = pecasDaOrigem.map(peca => Number(peca.id));
   const vendasDaOrigem = filtrarPorPeca(vendas, idsPecas);
   const custosPecaDaOrigem = filtrarPorPeca(custosPeca, idsPecas);
   const custosVendaDaOrigem = filtrarCustosVendaPorVendas(custosVenda, vendasDaOrigem);
-  const investimento = somar(origensDoMesmoSku, "valorPago");
-  const totalVendido = vendasDaOrigem.reduce((total, venda) => total + calcularValorVenda(venda), 0);
+  const investimento = Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
   const totalCustosPeca = somar(custosPecaDaOrigem);
   const totalCustosVenda = somar(custosVendaDaOrigem);
-  const totalCustos = investimento + totalCustosPeca + totalCustosVenda;
+  const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
+  const consumosDaOrigem = consumosEstoque.filter(consumo => Number(consumo.origemId || 0) === Number(origem.id));
+  const vendasSemConsumo = vendasDaOrigem.filter(venda => !(consumosPorVenda[Number(venda.id)] || []).length);
+  const totalVendido = calcularReceitaFifoDaOrigem(vendasDaOrigem, consumosDaOrigem, vendasSemConsumo);
+  const custoFifoConsumido = somar(consumosDaOrigem, "custoTotal");
+  const custoFallback = calcularCustoFifoComFallback(vendasSemConsumo, pecas, origens, {});
+  const totalCustos = custoFifoConsumido + custoFallback + totalCustosPeca + totalCustosVenda;
   const lucro = totalVendido - totalCustos;
 
   return {
@@ -85,6 +160,7 @@ function calcularResultadoOrigem(origem, origens, pecas, vendas, custosPeca, cus
     investimento,
     totalVendido,
     totalCustos,
+    custoVendido: custoFifoConsumido + custoFallback,
     lucro,
     status: lucro > 0 ? "Deu lucro" : "Ainda nao pagou"
   };
@@ -97,17 +173,19 @@ async function carregarDadosPainel() {
   }
 
   try {
-    const [origens, pecas, vendas, custosPeca, custosVenda] = await Promise.all([
+    const [origens, pecas, vendas, custosPeca, custosVenda, consumosEstoque, entradasEstoque] = await Promise.all([
       window.supabaseService.listarOrigens(),
       window.supabaseService.listarPecas(),
       window.supabaseService.listarVendas(),
       window.supabaseService.listarCustosPeca(),
-      window.supabaseService.listarCustosVenda()
+      window.supabaseService.listarCustosVenda(),
+      window.supabaseService.listarConsumosEstoque(),
+      window.supabaseService.listarEntradasEstoque()
     ]);
 
     mensagemPainelGeral.textContent = "";
 
-    return { origens, pecas, vendas, custosPeca, custosVenda };
+    return { origens, pecas, vendas, custosPeca, custosVenda, consumosEstoque: consumosEstoque || [], entradasEstoque: entradasEstoque || [] };
   } catch (erro) {
     console.error("Erro ao carregar painel geral:", erro);
     mensagemPainelGeral.textContent = "Nao foi possivel carregar os dados do Supabase.";
@@ -115,12 +193,97 @@ async function carregarDadosPainel() {
   }
 }
 
+function calcularQuantidadeDisponivelPeca(peca) {
+  return Math.max(Number(peca.quantidade || 0) - Number(peca.quantidadeVendida || peca.quantidade_vendida || 0), 0);
+}
+
+function calcularSaldoEntrada(entrada) {
+  return Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
+}
+
+function calcularAlertasPainel(dados) {
+  const idsPecasComEntrada = new Set(dados.entradasEstoque.map(entrada => Number(entrada.pecaId || 0)));
+  const consumosPorVenda = agruparConsumosPorVenda(dados.consumosEstoque);
+
+  return {
+    produtosSemEstoque: dados.pecas.filter(peca => calcularQuantidadeDisponivelPeca(peca) <= 0).length,
+    produtosComEstoqueBaixo: dados.pecas.filter(peca => {
+      const disponivel = calcularQuantidadeDisponivelPeca(peca);
+      return disponivel > 0 && disponivel <= 2;
+    }).length,
+    produtosSemEntradaFifo: dados.pecas.filter(peca => !idsPecasComEntrada.has(Number(peca.id))).length,
+    lotesEsgotados: dados.entradasEstoque.filter(entrada => Number(entrada.quantidadeConsumida || 0) >= Number(entrada.quantidadeTotal || 0)).length,
+    lotesComEstoqueBaixo: dados.entradasEstoque.filter(entrada => {
+      const saldo = calcularSaldoEntrada(entrada);
+      return saldo > 0 && saldo <= 2;
+    }).length,
+    vendasSemConsumoFifo: dados.vendas.filter(venda => !(consumosPorVenda[Number(venda.id)] || []).length).length
+  };
+}
+
+function criarItemAlerta(tipo, titulo, valor, descricao) {
+  return `
+    <article class="alert-card alert-card--${tipo}">
+      <span>${titulo}</span>
+      <strong>${valor}</strong>
+      <small>${descricao}</small>
+    </article>
+  `;
+}
+
+function renderizarAlertasPainel(dados) {
+  if (!alertasPainelGeral) {
+    return;
+  }
+
+  const alertas = calcularAlertasPainel(dados);
+  const totalAlertas =
+    alertas.produtosSemEstoque +
+    alertas.produtosComEstoqueBaixo +
+    alertas.produtosSemEntradaFifo +
+    alertas.lotesEsgotados +
+    alertas.lotesComEstoqueBaixo +
+    alertas.vendasSemConsumoFifo;
+
+  if (totalAlertas === 0) {
+    alertasPainelGeral.innerHTML = `
+      <div class="alert-panel">
+        <div class="alert-panel__header">
+          <h3>Alertas inteligentes</h3>
+          <span class="alert-pill alert-pill--ok">Tudo certo</span>
+        </div>
+        <p>Nenhum problema importante encontrado no estoque.</p>
+      </div>
+    `;
+    return;
+  }
+
+  alertasPainelGeral.innerHTML = `
+    <div class="alert-panel">
+      <div class="alert-panel__header">
+        <h3>Alertas inteligentes</h3>
+        <span class="alert-pill alert-pill--warning">${totalAlertas} alerta(s)</span>
+      </div>
+      <div class="alert-grid">
+        ${criarItemAlerta("danger", "Produtos sem estoque", alertas.produtosSemEstoque, "Quantidade disponivel igual a zero.")}
+        ${criarItemAlerta("warning", "Estoque baixo", alertas.produtosComEstoqueBaixo, "Produtos com saldo entre 1 e 2.")}
+        ${criarItemAlerta("info", "Produtos sem entrada", alertas.produtosSemEntradaFifo, "Pecas sem entrada de estoque cadastrada.")}
+        ${criarItemAlerta("danger", "Lotes esgotados", alertas.lotesEsgotados, "Entradas totalmente consumidas.")}
+        ${criarItemAlerta("warning", "Lotes baixos", alertas.lotesComEstoqueBaixo, "Lotes com saldo entre 1 e 2.")}
+        ${criarItemAlerta("warning", "Vendas sem custo calculado", alertas.vendasSemConsumoFifo, "Vendas sem custo de estoque registrado.")}
+      </div>
+    </div>
+  `;
+}
+
 function renderizarCards(dados, resultadosOrigens) {
   const totalInvestido = somar(dados.origens, "valorPago");
   const totalVendido = dados.vendas.reduce((total, venda) => total + calcularValorVenda(venda), 0);
+  const consumosPorVenda = agruparConsumosPorVenda(dados.consumosEstoque);
+  const totalCustoFifo = calcularCustoFifoComFallback(dados.vendas, dados.pecas, dados.origens, consumosPorVenda);
   const totalCustosPeca = somar(dados.custosPeca);
   const totalCustosVenda = somar(dados.custosVenda);
-  const lucroGeral = totalVendido - totalInvestido - totalCustosPeca - totalCustosVenda;
+  const lucroGeral = totalVendido - totalCustoFifo - totalCustosPeca - totalCustosVenda;
   const pecasEmEstoque = dados.pecas.reduce((total, peca) => {
     return total + Math.max(Number(peca.quantidade || 0) - Number(peca.quantidadeVendida || 0), 0);
   }, 0);
@@ -136,6 +299,7 @@ function renderizarCards(dados, resultadosOrigens) {
     criarCard("Total investido", formatarMoeda(totalInvestido)) +
     criarCard("Total vendido", formatarMoeda(totalVendido)) +
     criarCard("Lucro geral", `<span class="${classeLucroTexto}">${formatarMoeda(lucroGeral)}</span>`, classeLucroCard) +
+    criarCard("Custo da venda", formatarMoeda(totalCustoFifo)) +
     criarCard("Pecas em estoque", pecasEmEstoque) +
     criarCard("Pecas vendidas", pecasVendidas) +
     criarCard("Origens no lucro", origensNoLucro, "summary-card--profit") +
@@ -176,15 +340,19 @@ async function iniciarPainelGeral() {
 
   if (!dados) {
     cardsPainelGeral.innerHTML = "";
+    if (alertasPainelGeral) {
+      alertasPainelGeral.innerHTML = "";
+    }
     tabelaResultadoOrigens.innerHTML = "";
     return;
   }
 
   const resultadosOrigens = dados.origens.map(origem => {
-    return calcularResultadoOrigem(origem, dados.origens, dados.pecas, dados.vendas, dados.custosPeca, dados.custosVenda);
+    return calcularResultadoOrigem(origem, dados.origens, dados.pecas, dados.vendas, dados.custosPeca, dados.custosVenda, dados.consumosEstoque);
   });
 
   renderizarCards(dados, resultadosOrigens);
+  renderizarAlertasPainel(dados);
   renderizarTabelaOrigens(resultadosOrigens);
 }
 
