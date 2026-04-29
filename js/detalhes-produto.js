@@ -55,15 +55,6 @@ function filtrarVendasPorPeca(pecaId) {
   return buscarVendas().filter(venda => Number(venda.pecaId || 0) === Number(pecaId || 0));
 }
 
-function calcularLucroVenda(venda) {
-  if (venda.valorTotal !== undefined) {
-    const custoTotal = Number(venda.custoTotal || venda.custoTotalVenda || 0);
-    return Number(venda.valorTotal || 0) - custoTotal - calcularTotalCustosVenda(venda);
-  }
-
-  return Number(venda.lucroBruto || 0);
-}
-
 function calcularTotalCustosVenda(venda) {
   if (venda.totalCustosVenda !== undefined) {
     return Number(venda.totalCustosVenda || 0);
@@ -77,15 +68,34 @@ function calcularTotalCustosVenda(venda) {
 }
 
 function calcularCustoPeca(peca, pecasDaOrigem, origem) {
-  if (peca.tipoCusto !== "rateado") {
-    return Number(peca.custo || 0);
-  }
-
   if (!origem || pecasDaOrigem.length === 0) {
     return Number(peca.custo || 0);
   }
 
-  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
+    return total + Number(item.quantidade || 0);
+  }, 0);
+
+  if (totalUnidades <= 0) {
+    return Number(peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || origem.valor_total || 0) / totalUnidades;
+}
+
+function calcularQuantidadeVendidaVenda(venda) {
+  return Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
+}
+
+function calcularLucroVenda(venda, custoUnitario = 0, custosPeca = 0) {
+  if (venda.valorTotal === undefined && venda.lucroBruto !== undefined) {
+    return Number(venda.lucroBruto || 0);
+  }
+
+  return Number(venda.valorTotal || 0) -
+    (calcularQuantidadeVendidaVenda(venda) * Number(custoUnitario || 0)) -
+    Number(custosPeca || 0) -
+    calcularTotalCustosVenda(venda);
 }
 
 function calcularQuantidadeDisponivel(produto) {
@@ -167,7 +177,8 @@ function renderizarResumo(produto, custos, vendas, custoBase) {
     return total + Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
   }, 0);
   const faturamentoTotal = vendas.reduce((total, venda) => total + Number(venda.valorTotal || 0), 0);
-  const lucroBruto = vendas.reduce((total, venda) => total + calcularLucroVenda(venda), 0);
+  const totalCustosVenda = vendas.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
+  const lucroBruto = faturamentoTotal - (quantidadeVendida * custoBase) - totalCustosDiversos - totalCustosVenda;
 
   resumoFinanceiro.innerHTML = `
     <article class="summary-card">
@@ -226,7 +237,7 @@ function renderizarCustos(custos) {
   });
 }
 
-function renderizarVendas(vendas) {
+function renderizarVendas(vendas, custoBase, totalCustosDiversos) {
   tabelaVendasProduto.innerHTML = "";
 
   if (vendas.length === 0) {
@@ -237,8 +248,9 @@ function renderizarVendas(vendas) {
   mensagemVendasProduto.textContent = "";
 
   vendas.forEach(venda => {
-    const custoTotal = Number(venda.custoTotalVenda || venda.custoTotal || 0) + calcularTotalCustosVenda(venda);
-    const lucroBruto = calcularLucroVenda(venda);
+    const quantidadeVendida = calcularQuantidadeVendidaVenda(venda);
+    const custoTotal = (quantidadeVendida * custoBase) + totalCustosDiversos + calcularTotalCustosVenda(venda);
+    const lucroBruto = calcularLucroVenda(venda, custoBase, totalCustosDiversos);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -269,15 +281,16 @@ function iniciarDetalhes() {
 
   const custos = filtrarCustosPorPeca(pecaId);
   const vendas = filtrarVendasPorPeca(pecaId);
-  const origem = buscarOrigens().find(item => item.id === Number(produto.origemId || 0));
+  const origem = buscarOrigens().find(item => Number(item.id) === Number(produto.origemId || 0));
   const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
   const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
+  const totalCustosDiversos = custos.reduce((total, custo) => total + Number(custo.valor || 0), 0);
 
   mensagemProdutoNaoEncontrado.textContent = "";
   renderizarDadosProduto(produto, custoBase);
   renderizarResumo(produto, custos, vendas, custoBase);
   renderizarCustos(custos);
-  renderizarVendas(vendas);
+  renderizarVendas(vendas, custoBase, totalCustosDiversos);
 }
 
 iniciarDetalhes();

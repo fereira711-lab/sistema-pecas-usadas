@@ -105,7 +105,7 @@ function normalizarProduto(produto) {
     quantidade,
     quantidadeVendida,
     status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque",
-    origemId: Number(produto.origemId || 0)
+    origemId: Number(produto.origemId || produto.origem_id || 0)
   };
 }
 
@@ -129,15 +129,19 @@ function somarCustosPorPeca(pecaId) {
 }
 
 function calcularCustoPeca(peca, pecasDaOrigem, origem) {
-  if (peca.tipoCusto !== "rateado") {
-    return Number(peca.custo || 0);
-  }
-
   if (!origem || pecasDaOrigem.length === 0) {
     return Number(peca.custo || 0);
   }
 
-  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
+    return total + Number(item.quantidade || 0);
+  }, 0);
+
+  if (totalUnidades <= 0) {
+    return Number(peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || origem.valor_total || 0) / totalUnidades;
 }
 
 function calcularQuantidadeDisponivel(peca) {
@@ -290,7 +294,7 @@ function renderizarResumoProduto() {
     return;
   }
 
-  const origem = buscarOrigens().find(item => item.id === Number(produto.origemId || 0));
+  const origem = buscarOrigens().find(item => Number(item.id) === Number(produto.origemId || 0));
   const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(produto.origemId || 0));
   const custoBase = calcularCustoPeca(produto, pecasDaOrigem, origem);
   const custosDiversos = somarCustosPorPeca(produto.id);

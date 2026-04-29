@@ -141,8 +141,34 @@ function filtrarPorPeca(lista, pecaId) {
   return lista.filter(item => Number(item.pecaId || 0) === Number(pecaId || 0));
 }
 
+function obterPecasDaOrigem(peca, pecas) {
+  return pecas.filter(item => Number(item.origemId || 0) === Number(peca.origemId || 0));
+}
+
+function calcularCustoBasePeca(peca, pecas, origem) {
+  const pecasDaOrigem = obterPecasDaOrigem(peca, pecas);
+
+  if (!origem || pecasDaOrigem.length === 0) {
+    return Number(peca.custoTotal || peca.custo || 0);
+  }
+
+  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
+    return total + Number(item.quantidade || 0);
+  }, 0);
+
+  if (totalUnidades <= 0) {
+    return Number(peca.custoTotal || peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0) / totalUnidades;
+}
+
 function calcularReceitaPeca(vendasDaPeca) {
   return vendasDaPeca.reduce((total, venda) => {
+    if (venda.valorTotal !== undefined || venda.valor_total !== undefined) {
+      return total + Number(venda.valorTotal || venda.valor_total || 0);
+    }
+
     const quantidadeVendida = Number(venda.quantidadeVendida || venda.quantidade_vendida || 0);
     const valorUnitario = Number(venda.valorUnitario || venda.valor_unitario || 0);
 
@@ -150,20 +176,37 @@ function calcularReceitaPeca(vendasDaPeca) {
   }, 0);
 }
 
-function calcularCustoBasePeca(peca) {
-  return Number(peca.custoTotal || peca.custo || 0);
+function somarCustosEmbutidosDasVendas(vendasDaPeca) {
+  return vendasDaPeca.reduce((total, venda) => {
+    if (venda.totalCustosVenda !== undefined) {
+      return total + Number(venda.totalCustosVenda || 0);
+    }
+
+    if (!Array.isArray(venda.custosVenda)) {
+      return total;
+    }
+
+    return total + somarValores(venda.custosVenda);
+  }, 0);
 }
 
-function calcularLucroPeca(peca, vendas, custosPeca, custosVenda) {
+function calcularQuantidadeVendidaPeca(vendasDaPeca) {
+  return vendasDaPeca.reduce((total, venda) => {
+    return total + Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0);
+  }, 0);
+}
+
+function calcularLucroPeca(peca, pecas, origem, vendas, custosPeca, custosVenda) {
   const vendasDaPeca = filtrarPorPeca(vendas, peca.id);
   const idsVendasDaPeca = vendasDaPeca.map(venda => Number(venda.id));
   const custosVendaDaPeca = custosVenda.filter(custo => idsVendasDaPeca.includes(Number(custo.vendaId || 0)));
   const receita = calcularReceitaPeca(vendasDaPeca);
-  const custoBase = calcularCustoBasePeca(peca);
+  const custoUnitario = calcularCustoBasePeca(peca, pecas, origem);
+  const quantidadeVendida = calcularQuantidadeVendidaPeca(vendasDaPeca);
   const totalCustosPeca = somarValores(filtrarPorPeca(custosPeca, peca.id));
-  const totalCustosVenda = somarValores(custosVendaDaPeca);
+  const totalCustosVenda = somarValores(custosVendaDaPeca) || somarCustosEmbutidosDasVendas(vendasDaPeca);
 
-  return receita - custoBase - totalCustosPeca - totalCustosVenda;
+  return receita - (quantidadeVendida * custoUnitario) - totalCustosPeca - totalCustosVenda;
 }
 
 function obterClasseLucro(lucro, temVenda) {
@@ -202,7 +245,7 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda) {
   pecas.forEach(peca => {
     const origem = mapaOrigens[Number(peca.origemId)];
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-    const lucro = calcularLucroPeca(peca, vendas, custosPeca, custosVenda);
+    const lucro = calcularLucroPeca(peca, pecas, origem, vendas, custosPeca, custosVenda);
     const temVenda = filtrarPorPeca(vendas, peca.id).length > 0;
     const classeLucro = obterClasseLucro(lucro, temVenda);
     const classeStatus = obterClasseStatus(peca.status);

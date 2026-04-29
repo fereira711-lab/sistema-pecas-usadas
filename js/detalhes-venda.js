@@ -129,15 +129,51 @@ function calcularLucroBruto(venda) {
 }
 
 function calcularCustoPeca(peca, pecasDaOrigem, origem) {
-  if (peca.tipoCusto !== "rateado") {
-    return Number(peca.custo || 0);
-  }
-
   if (!origem || pecasDaOrigem.length === 0) {
     return Number(peca.custo || 0);
   }
 
-  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
+    return total + Number(item.quantidade || 0);
+  }, 0);
+
+  if (totalUnidades <= 0) {
+    return Number(peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || origem.valor_total || 0) / totalUnidades;
+}
+
+function calcularCustoUnitarioAtualDaPeca(peca) {
+  const produtos = buscarProdutos();
+  const origem = buscarOrigens().find(item => Number(item.id) === Number(peca.origemId || 0));
+  const pecasDaOrigem = produtos.filter(item => Number(item.origemId || 0) === Number(peca.origemId || 0));
+
+  return calcularCustoPeca(peca, pecasDaOrigem, origem);
+}
+
+function calcularCustosPeca(pecaId) {
+  return buscarCustos()
+    .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
+    .reduce((total, custo) => total + Number(custo.valor || 0), 0);
+}
+
+function recalcularVendaComCustoAtual(venda) {
+  const peca = buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
+  const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
+  const custoUnitario = peca ? calcularCustoUnitarioAtualDaPeca(peca) : calcularCustoUnitario(venda);
+  const custoTotal = custoUnitario * quantidade;
+  const custosPeca = calcularCustosPeca(venda.pecaId);
+  const custosVenda = calcularTotalCustosVenda(venda);
+  const lucroBruto = Number(venda.valorTotal || 0) - custoTotal - custosPeca - custosVenda;
+
+  return {
+    custoUnitario,
+    custoTotal,
+    custosPeca,
+    custosVenda,
+    lucroBruto
+  };
 }
 
 function calcularQuantidadeDisponivel(produto) {
@@ -207,10 +243,11 @@ function renderizarDadosVenda(venda) {
 
 function renderizarResumoFinanceiro(venda) {
   const valorTotal = Number(venda.valorTotal || 0);
-  const custoUnitario = calcularCustoUnitario(venda);
-  const custoTotal = calcularCustoTotal(venda);
-  const totalCustosVenda = calcularTotalCustosVenda(venda);
-  const lucroBruto = calcularLucroBruto(venda);
+  const resultado = recalcularVendaComCustoAtual(venda);
+  const custoUnitario = resultado.custoUnitario;
+  const custoTotal = resultado.custoTotal;
+  const totalCustosVenda = resultado.custosVenda;
+  const lucroBruto = resultado.lucroBruto;
   const margem = valorTotal > 0 ? (lucroBruto / valorTotal) * 100 : 0;
 
   resumoFinanceiroVenda.innerHTML = `

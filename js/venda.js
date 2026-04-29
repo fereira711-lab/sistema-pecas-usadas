@@ -10,9 +10,18 @@ function buscarVendas() {
   return JSON.parse(localStorage.getItem("vendas")) || [];
 }
 
+function buscarOrigens() {
+  return JSON.parse(localStorage.getItem("origens")) || [];
+}
+
+function salvarOrigens(origens) {
+  localStorage.setItem("origens", JSON.stringify(origens));
+}
+
 const campoBuscaPecaVenda = document.getElementById("buscaPecaVenda");
 const sugestoesPecaVenda = document.getElementById("sugestoesPecaVenda");
 let pecasVendaCarregadas = [];
+let origensVendaCarregadas = [];
 let sugestoesVendaAtuais = [];
 let indiceSugestaoVenda = -1;
 
@@ -160,9 +169,28 @@ function existeCustoVendaNegativo() {
     .some(id => lerValorCampo(id) < 0);
 }
 
+function calcularCustoBasePeca(peca) {
+  const origem = origensVendaCarregadas.find(item => Number(item.id) === Number(peca.origemId || 0));
+  const pecasDaOrigem = pecasVendaCarregadas.filter(item => Number(item.origemId || 0) === Number(peca.origemId || 0));
+
+  if (!origem || pecasDaOrigem.length === 0) {
+    return Number(peca.custoTotal || peca.custo || 0);
+  }
+
+  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
+    return total + Number(item.quantidade || 0);
+  }, 0);
+
+  if (totalUnidades <= 0) {
+    return Number(peca.custoTotal || peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0) / totalUnidades;
+}
+
 function calcularLucroVenda(venda, peca) {
   const valorTotal = Number(venda.valorTotal || venda.valorVenda || 0);
-  const custoUnitario = Number(peca.custoTotal || peca.custo || 0);
+  const custoUnitario = calcularCustoBasePeca(peca);
   const custoPeca = custoUnitario * Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0);
   const totalCustosVenda = somarCustosVenda(venda.custosVenda || []);
 
@@ -193,6 +221,16 @@ async function carregarPecasParaVenda() {
   }
 
   return buscarPecas().map(normalizarPeca);
+}
+
+async function carregarOrigensParaVenda() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    const origens = await window.supabaseService.listarOrigens();
+    salvarOrigens(origens);
+    return origens;
+  }
+
+  return buscarOrigens();
 }
 
 function selecionarPeca(peca) {
@@ -355,12 +393,19 @@ async function inicializarFormularioVenda() {
   }
 
   try {
-    pecasVendaCarregadas = await carregarPecasParaVenda();
+    const [pecas, origens] = await Promise.all([
+      carregarPecasParaVenda(),
+      carregarOrigensParaVenda()
+    ]);
+
+    pecasVendaCarregadas = pecas;
+    origensVendaCarregadas = origens;
     selecionarPecaDaUrl();
     atualizarLimiteQuantidadeSelecionada();
   } catch (erro) {
     console.error("Erro ao carregar peças para venda:", erro);
     pecasVendaCarregadas = buscarPecas().map(normalizarPeca);
+    origensVendaCarregadas = buscarOrigens();
     selecionarPecaDaUrl();
     atualizarLimiteQuantidadeSelecionada();
     alert("Não foi possível carregar as peças do Supabase. Verifique a configuração e tente novamente.");

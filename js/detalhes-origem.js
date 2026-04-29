@@ -147,25 +147,20 @@ function somarCampo(lista, campo) {
   return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
 }
 
-function lucroVenda(venda) {
-  if (venda.valorTotal !== undefined) {
-    const custoTotal = Number(venda.custoTotal || venda.custoTotalVenda || 0);
-    return Number(venda.valorTotal || 0) - custoTotal - calcularTotalCustosVenda(venda);
-  }
-
-  return Number(venda.lucroBruto || 0);
-}
-
 function calcularCustoPeca(peca, pecasDaOrigem, origem) {
-  if (peca.tipoCusto !== "rateado") {
-    return Number(peca.custo || 0);
-  }
-
   if (!origem || pecasDaOrigem.length === 0) {
     return Number(peca.custo || 0);
   }
 
-  return Number(origem.valorPago || 0) / pecasDaOrigem.length;
+  const totalUnidades = pecasDaOrigem.reduce((total, item) => {
+    return total + Number(item.quantidade || 0);
+  }, 0);
+
+  if (totalUnidades <= 0) {
+    return Number(peca.custo || 0);
+  }
+
+  return Number(origem.valorPago || origem.valor_total || 0) / totalUnidades;
 }
 
 function somarCustosReaisDasPecas(pecas) {
@@ -181,6 +176,28 @@ function calcularLucroOrigem(origem, faturamento, custosAdicionaisOrigem, custos
     Number(custosAdicionaisOrigem || 0) -
     Number(custosReaisDasPecas || 0)
   );
+}
+
+function obterQuantidadeVendidaNaVenda(venda) {
+  return Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
+}
+
+function lucroVenda(venda, pecasDaOrigem = [], origem = null, custos = []) {
+  if (venda.valorTotal === undefined && venda.lucroBruto !== undefined) {
+    return Number(venda.lucroBruto || 0);
+  }
+
+  const peca = pecasDaOrigem.find(item => Number(item.id) === Number(venda.pecaId));
+  const custoUnitario = peca
+    ? calcularCustoPeca(peca, pecasDaOrigem, origem)
+    : 0;
+  const custosPeca = somarCustosPorPeca(custos, venda.pecaId);
+  const custosVenda = calcularTotalCustosVenda(venda);
+
+  return Number(venda.valorTotal || 0) -
+    (obterQuantidadeVendidaNaVenda(venda) * custoUnitario) -
+    custosPeca -
+    custosVenda;
 }
 
 function calcularTotalCustosVenda(venda) {
@@ -242,12 +259,17 @@ function renderizarResumo(origem, pecas, custos, vendas) {
   const vendasDaOrigem = vendas.filter(venda => idsPecas.includes(Number(venda.pecaId || 0)));
   const custosDosProdutos = pecas.reduce((total, peca) => total + somarCustosPorPeca(custos, peca.id), 0);
   const custoBaseProdutos = pecas.reduce((total, peca) => {
-    return total + calcularCustoPeca(peca, pecas, origem);
+    return total + (calcularCustoPeca(peca, pecas, origem) * Number(peca.quantidade || 0));
   }, 0);
   const faturamento = somarCampo(vendasDaOrigem, "valorTotal");
-  const custosReaisDasPecas = somarCustosReaisDasPecas(pecas) + custosDosProdutos;
+  const custoBaseVendido = vendasDaOrigem.reduce((total, venda) => {
+    const peca = pecas.find(item => Number(item.id) === Number(venda.pecaId));
+    const custoUnitario = peca ? calcularCustoPeca(peca, pecas, origem) : 0;
+
+    return total + (obterQuantidadeVendidaNaVenda(venda) * custoUnitario);
+  }, 0);
   const custosDasVendas = vendasDaOrigem.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
-  const lucroOrigem = calcularLucroOrigem(origem, faturamento, custosDasVendas, custosReaisDasPecas);
+  const lucroOrigem = faturamento - custoBaseVendido - custosDosProdutos - custosDasVendas;
 
   resumoOrigem.innerHTML = `
     <article class="summary-card">
@@ -300,7 +322,11 @@ function renderizarPecas(origem, pecas, custos, vendas) {
     const custosDiversos = somarCustosPorPeca(custos, peca.id);
     const vendasProduto = vendas.filter(venda => Number(venda.pecaId || 0) === Number(peca.id));
     const faturamento = somarCampo(vendasProduto, "valorTotal");
-    const lucroBruto = vendasProduto.reduce((total, venda) => total + lucroVenda(venda), 0);
+    const quantidadeVendidaTotal = vendasProduto.reduce((total, venda) => {
+      return total + obterQuantidadeVendidaNaVenda(venda);
+    }, 0);
+    const custosDasVendasProduto = vendasProduto.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
+    const lucroBruto = faturamento - (quantidadeVendidaTotal * custoCalculado) - custosDiversos - custosDasVendasProduto;
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
