@@ -327,7 +327,7 @@ function renderizarCards(dados, resultadosOrigens) {
     criarCard("Origens no prejuizo", origensNoPrejuizo, "summary-card--loss");
 }
 
-function obterUltimasVendas(vendas, limite = 10) {
+function obterUltimasVendas(vendas, limite = 20) {
   return [...vendas]
     .sort((a, b) => {
       const dataA = new Date(obterDataVenda(a) || 0).getTime();
