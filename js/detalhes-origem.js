@@ -1,97 +1,39 @@
 const params = new URLSearchParams(window.location.search);
-const origemId = Number(params.get("origemId"));
+const origemId = Number(params.get("origemId") || params.get("id"));
 
 const tituloOrigem = document.getElementById("tituloOrigem");
 const subtituloOrigem = document.getElementById("subtituloOrigem");
 const mensagemOrigemNaoEncontrada = document.getElementById("mensagemOrigemNaoEncontrada");
 const dadosOrigem = document.getElementById("dadosOrigem");
 const resumoOrigem = document.getElementById("resumoOrigem");
+const mensagemEntradasOrigem = document.getElementById("mensagemEntradasOrigem");
+const tabelaEntradasOrigem = document.getElementById("tabelaEntradasOrigem");
 const mensagemProdutosOrigem = document.getElementById("mensagemProdutosOrigem");
 const tabelaProdutosOrigem = document.getElementById("tabelaProdutosOrigem");
 const campoBuscaPecasOrigem = document.getElementById("buscaPecasOrigem");
+const mensagemVendasOrigem = document.getElementById("mensagemVendasOrigem");
+const tabelaVendasOrigem = document.getElementById("tabelaVendasOrigem");
+const mensagemCustosOrigem = document.getElementById("mensagemCustosOrigem");
+const tabelaCustosOrigem = document.getElementById("tabelaCustosOrigem");
 
-let dadosDetalhesOrigem = { origem: null, pecas: [], custos: [], vendas: [], consumosEstoque: [] };
+let dadosDetalhesOrigem = {
+  origem: null,
+  entradas: [],
+  pecas: [],
+  vendas: [],
+  consumosOrigem: [],
+  custosPeca: [],
+  custosVenda: []
+};
 
-async function carregarOrigem(origemId) {
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    try {
-      return await window.supabaseService.buscarOrigemPorId(origemId);
-    } catch (erro) {
-      console.error("Erro ao carregar origem do Supabase:", erro);
-      mensagemOrigemNaoEncontrada.textContent = "Nao foi possivel carregar a origem do Supabase.";
-    }
-  }
-
-  mensagemOrigemNaoEncontrada.textContent = "Configure o Supabase para carregar os detalhes da origem.";
-  return null;
+function escaparHtml(valor) {
+  return String(valor ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
-
-function normalizarSku(sku) {
-  return String(sku || "").trim().toUpperCase();
-}
-
-async function carregarPecasDaOrigem(origem) {
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    try {
-      if (origem.produtoSku) {
-        const pecas = await window.supabaseService.listarPecas();
-        const skuOrigem = normalizarSku(origem.produtoSku);
-
-        return pecas.filter(peca => normalizarSku(peca.sku) === skuOrigem);
-      }
-
-      return await window.supabaseService.listarPecasPorOrigem(origem.id);
-    } catch (erro) {
-      console.error("Erro ao carregar pecas da origem do Supabase:", erro);
-    }
-  }
-
-  return [];
-}
-
-async function carregarFinanceiroDaOrigem(pecasDaOrigem) {
-  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
-    mensagemOrigemNaoEncontrada.textContent = "Configure o Supabase para calcular o resultado financeiro da origem sem usar dados temporarios do navegador.";
-    return { custos: [], vendas: [], consumosEstoque: [] };
-  }
-
-  const idsPecas = pecasDaOrigem.map(peca => Number(peca.id));
-
-  try {
-    const [vendas, custosPeca, custosVenda, consumosEstoque] = await Promise.all([
-      window.supabaseService.listarVendas(),
-      window.supabaseService.listarCustosPeca(),
-      window.supabaseService.listarCustosVenda(),
-      window.supabaseService.listarConsumosEstoque()
-    ]);
-
-    const vendasDaOrigem = vendas.filter(venda => idsPecas.includes(Number(venda.pecaId || 0)));
-    const idsVendasDaOrigem = vendasDaOrigem.map(venda => Number(venda.id));
-    const custosPecaDaOrigem = custosPeca.filter(custo => idsPecas.includes(Number(custo.pecaId || 0)));
-    const custosVendaDaOrigem = custosVenda.filter(custo => idsVendasDaOrigem.includes(Number(custo.vendaId || 0)));
-    const custosVendaPorVenda = agruparCustosVendaPorVenda(custosVendaDaOrigem);
-    const vendasComCustos = vendasDaOrigem.map(venda => {
-      const custosDaVenda = custosVendaPorVenda[Number(venda.id)] || [];
-
-      return {
-        ...venda,
-        custosVenda: custosDaVenda,
-        totalCustosVenda: somarCampo(custosDaVenda, "valor")
-      };
-    });
-
-    return {
-      custos: custosPecaDaOrigem,
-      vendas: vendasComCustos,
-      consumosEstoque: consumosEstoque || []
-    };
-  } catch (erro) {
-    console.error("Erro ao carregar resultado financeiro da origem:", erro);
-    mensagemOrigemNaoEncontrada.textContent = "Nao foi possivel carregar vendas e custos do Supabase para calcular o resultado da origem.";
-    return { custos: [], vendas: [], consumosEstoque: [] };
-  }
-}
-
 
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
@@ -100,15 +42,56 @@ function formatarMoeda(valor) {
   });
 }
 
-function formatarNomePeca(peca) {
-  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
-  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
+function formatarNumero(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
+}
 
-  return sku ? `${sku} - ${nome}` : nome;
+function formatarData(data) {
+  if (!data) {
+    return "-";
+  }
+
+  const dataIso = String(data).slice(0, 10);
+  const partes = dataIso.split("-");
+
+  if (partes.length !== 3) {
+    return dataIso;
+  }
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function obterDataVenda(venda) {
+  return String(venda.dataVenda || venda.data_venda || "").slice(0, 10);
+}
+
+function formatarNomePeca(peca) {
+  return peca?.nome || peca?.nome_peca || peca?.nomeProduto || peca?.produtoNome || peca?.descricao || `Peça ${peca?.id || peca?.pecaId || ""}`.trim();
 }
 
 function formatarSku(peca) {
-  return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
+  return String(peca?.sku || peca?.codigo || peca?.codigo_peca || peca?.cod || "").trim() || "-";
+}
+
+function valorVenda(venda) {
+  const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || venda.quantidade_vendida || 0);
+  const unitario = Number(venda.valorUnitario || venda.precoUnitario || venda.valor_unitario || 0);
+  return Number(venda.valorTotal || venda.valor_total || venda.valorVenda || unitario * quantidade || 0);
+}
+
+function valorUnitarioVenda(venda) {
+  const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || venda.quantidade_vendida || 0);
+  const total = valorVenda(venda);
+  const unitario = Number(venda.valorUnitario || venda.precoUnitario || venda.valor_unitario || 0);
+
+  return unitario > 0 ? unitario : quantidade > 0 ? total / quantidade : 0;
+}
+
+function somarCampo(lista, campo) {
+  return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
 }
 
 function filtrarPecasPorBusca(pecas) {
@@ -119,21 +102,64 @@ function filtrarPecasPorBusca(pecas) {
   }
 
   return pecas.filter(peca => {
-    const nome = String(peca.nome || peca.nome_peca || peca.nomeProduto || "").toLowerCase();
-    const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").toLowerCase();
+    const nome = formatarNomePeca(peca).toLowerCase();
+    const sku = formatarSku(peca).toLowerCase();
 
     return nome.includes(termo) || sku.includes(termo);
   });
 }
 
-function somarCustosPorPeca(custos, pecaId) {
-  return custos
-    .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
-    .reduce((total, custo) => total + Number(custo.valor || 0), 0);
+function obterStatusEntrada(entrada) {
+  const total = Number(entrada.quantidadeTotal || 0);
+  const consumida = Number(entrada.quantidadeConsumida || 0);
+  const saldo = Math.max(total - consumida, 0);
+
+  if (saldo <= 0 && total > 0) {
+    return "esgotada";
+  }
+
+  if (consumida > 0) {
+    return "parcial";
+  }
+
+  return "disponível";
 }
 
-function somarCampo(lista, campo) {
-  return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
+function obterStatusPeca(peca, entradasDaPeca) {
+  if (peca.status) {
+    return peca.status;
+  }
+
+  const saldo = entradasDaPeca.reduce((total, entrada) => {
+    return total + Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
+  }, 0);
+
+  return saldo > 0 ? "em_estoque" : "vendida";
+}
+
+function obterVendaPorId(vendaId) {
+  return dadosDetalhesOrigem.vendas.find(venda => Number(venda.id) === Number(vendaId));
+}
+
+function obterPecaPorId(pecaId) {
+  return dadosDetalhesOrigem.pecas.find(peca => Number(peca.id) === Number(pecaId));
+}
+
+function obterEntradaPorId(entradaId) {
+  return dadosDetalhesOrigem.entradas.find(entrada => Number(entrada.id) === Number(entradaId));
+}
+
+function agruparConsumosPorVenda(consumos) {
+  return consumos.reduce((mapa, consumo) => {
+    const vendaId = Number(consumo.vendaId || 0);
+
+    if (!mapa[vendaId]) {
+      mapa[vendaId] = [];
+    }
+
+    mapa[vendaId].push(consumo);
+    return mapa;
+  }, {});
 }
 
 function agruparCustosVendaPorVenda(custosVenda) {
@@ -149,222 +175,156 @@ function agruparCustosVendaPorVenda(custosVenda) {
   }, {});
 }
 
-function agruparConsumosPorVenda(consumosEstoque) {
-  return consumosEstoque.reduce((mapa, consumo) => {
-    const vendaId = Number(consumo.vendaId || 0);
+function calcularResumoOrigem() {
+  const origem = dadosDetalhesOrigem.origem || {};
+  const consumosPorVenda = agruparConsumosPorVenda(dadosDetalhesOrigem.consumosOrigem);
+  const custosVendaPorVenda = agruparCustosVendaPorVenda(dadosDetalhesOrigem.custosVenda);
+  const vendaIds = Object.keys(consumosPorVenda).map(Number);
+  const receitaTotal = vendaIds.reduce((total, vendaId) => {
+    const venda = obterVendaPorId(vendaId);
+    const valorUnitario = valorUnitarioVenda(venda || {});
+    const quantidadeConsumida = somarCampo(consumosPorVenda[vendaId] || [], "quantidadeConsumida");
 
-    if (!mapa[vendaId]) {
-      mapa[vendaId] = [];
-    }
-
-    mapa[vendaId].push(consumo);
-    return mapa;
-  }, {});
-}
-
-function calcularCustoPeca(peca, pecasDaOrigem, origem) {
-  if (!origem || pecasDaOrigem.length === 0) {
-    return Number(peca.custo || 0);
-  }
-
-  const totalUnidades = Number(origem.quantidadeTotal || origem.quantidade_total || 0) || pecasDaOrigem.reduce((total, item) => {
-    return total + Number(item.quantidade || 0);
+    return total + (quantidadeConsumida * valorUnitario);
   }, 0);
-
-  if (totalUnidades <= 0) {
-    return Number(peca.custo || 0);
-  }
-
-  return Number(origem.valorPago || origem.valor_total || 0) / totalUnidades;
-}
-
-function somarCustosReaisDasPecas(pecas) {
-  return pecas
-    .filter(peca => peca.tipoCusto === "real")
-    .reduce((total, peca) => total + Number(peca.custo || 0), 0);
-}
-
-function calcularLucroOrigem(origem, faturamento, custosAdicionaisOrigem, custosReaisDasPecas) {
-  return (
-    faturamento -
-    Number(origem.valorPago || 0) -
-    Number(custosAdicionaisOrigem || 0) -
-    Number(custosReaisDasPecas || 0)
-  );
-}
-
-function obterQuantidadeVendidaNaVenda(venda) {
-  return Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
-}
-
-function calcularValorVenda(venda) {
-  const quantidadeVendida = obterQuantidadeVendidaNaVenda(venda);
-  const valorUnitario = Number(venda.valorUnitario || venda.valor_unitario || venda.precoUnitario || 0);
-
-  if (valorUnitario > 0) {
-    return valorUnitario * quantidadeVendida;
-  }
-
-  return Number(venda.valorTotal || venda.valor_total || 0);
-}
-
-function lucroVenda(venda, pecasDaOrigem = [], origem = null, custos = []) {
-  if (venda.valorTotal === undefined && venda.lucroBruto !== undefined) {
-    return Number(venda.lucroBruto || 0);
-  }
-
-  const peca = pecasDaOrigem.find(item => Number(item.id) === Number(venda.pecaId));
-  const custoUnitario = peca
-    ? calcularCustoPeca(peca, pecasDaOrigem, origem)
-    : 0;
-  const custosPeca = somarCustosPorPeca(custos, venda.pecaId);
-  const custosVenda = calcularTotalCustosVenda(venda);
-
-  return Number(venda.valorTotal || 0) -
-    (obterQuantidadeVendidaNaVenda(venda) * custoUnitario) -
-    custosPeca -
-    custosVenda;
-}
-
-function calcularTotalCustosVenda(venda) {
-  if (venda.totalCustosVenda !== undefined) {
-    return Number(venda.totalCustosVenda || 0);
-  }
-
-  if (!Array.isArray(venda.custosVenda)) {
-    return 0;
-  }
-
-  return venda.custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
-}
-
-function calcularCustoFifoComFallback(vendas, consumosPorVenda, custoUnitarioFallback) {
-  return vendas.reduce((total, venda) => {
-    const consumosDaVenda = consumosPorVenda[Number(venda.id)] || [];
-
-    if (consumosDaVenda.length > 0) {
-      return total + somarCampo(consumosDaVenda, "custoTotal");
-    }
-
-    return total + (obterQuantidadeVendidaNaVenda(venda) * custoUnitarioFallback);
+  const custoConsumidoDaOrigem = somarCampo(dadosDetalhesOrigem.consumosOrigem, "custoTotal");
+  const custosDaPeca = somarCampo(dadosDetalhesOrigem.custosPeca, "valor");
+  const custosDaVenda = somarCampo(dadosDetalhesOrigem.custosVenda, "valor");
+  const resultadoOrigem = receitaTotal - custoConsumidoDaOrigem - custosDaPeca - custosDaVenda;
+  const valorInvestido = Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0);
+  const saldoAindaEmEstoque = dadosDetalhesOrigem.entradas.reduce((total, entrada) => {
+    const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
+    return total + (saldo * Number(entrada.custoUnitario || 0));
   }, 0);
-}
+  const status = resultadoOrigem > 0
+    ? "lucro"
+    : receitaTotal < valorInvestido
+      ? "ainda recuperando investimento"
+      : "prejuízo";
 
-function calcularReceitaFifoDaOrigem(vendasDaOrigem, consumosDaOrigem, vendasSemConsumo) {
-  const vendasPorId = vendasDaOrigem.reduce((mapa, venda) => {
-    mapa[Number(venda.id)] = venda;
-    return mapa;
-  }, {});
-  const receitaFifo = consumosDaOrigem.reduce((total, consumo) => {
-    const venda = vendasPorId[Number(consumo.vendaId)];
-    const valorUnitario = Number(venda?.valorUnitario || venda?.precoUnitario || 0);
-
-    return total + (Number(consumo.quantidadeConsumida || 0) * valorUnitario);
-  }, 0);
-  const receitaFallback = vendasSemConsumo.reduce((total, venda) => total + calcularValorVenda(venda), 0);
-
-  return receitaFifo + receitaFallback;
-}
-
-function calcularQuantidadeDisponivel(peca) {
-  return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
-}
-
-function obterStatusPeca(peca) {
-  return Number(peca.quantidadeVendida || 0) >= Number(peca.quantidade || 1)
-    ? "vendida"
-    : "em_estoque";
+  return {
+    receitaTotal,
+    custoConsumidoDaOrigem,
+    custosDaPeca,
+    custosDaVenda,
+    resultadoOrigem,
+    valorInvestido,
+    saldoAindaEmEstoque,
+    status,
+    custosVendaPorVenda
+  };
 }
 
 function renderizarDadosOrigem(origem) {
-  tituloOrigem.textContent = origem.descricao;
-  subtituloOrigem.textContent = `${origem.tipo} - ${origem.dataCompra}`;
+  tituloOrigem.textContent = origem.descricao || `Origem ${origem.id}`;
+  subtituloOrigem.textContent = `${origem.tipoOrigem || origem.tipo || "Origem"} - ${formatarData(origem.dataCompra)}`;
 
   dadosOrigem.innerHTML = `
     <article class="detail-card">
       <span>ID</span>
-      <strong>${origem.id}</strong>
+      <strong>${escaparHtml(origem.id || "-")}</strong>
     </article>
     <article class="detail-card">
-      <span>Tipo</span>
-      <strong>${origem.tipo}</strong>
+      <span>Tipo da origem</span>
+      <strong>${escaparHtml(origem.tipoOrigem || origem.tipo || "-")}</strong>
     </article>
     <article class="detail-card">
       <span>Descrição</span>
-      <strong>${origem.descricao}</strong>
+      <strong>${escaparHtml(origem.descricao || "-")}</strong>
     </article>
     <article class="detail-card">
-      <span>Valor pago</span>
-      <strong>${formatarMoeda(origem.valorPago)}</strong>
+      <span>Valor total</span>
+      <strong>${formatarMoeda(origem.valorPago || origem.valor_total || origem.custoTotal)}</strong>
     </article>
     <article class="detail-card">
-      <span>Data da compra</span>
-      <strong>${origem.dataCompra}</strong>
+      <span>Data da origem</span>
+      <strong>${formatarData(origem.dataCompra || origem.data_origem)}</strong>
     </article>
     <article class="detail-card">
       <span>Observações</span>
-      <strong>${origem.observacoes || "-"}</strong>
+      <strong>${escaparHtml(origem.observacoes || "-")}</strong>
     </article>
   `;
 }
 
-function renderizarResumo(origem, pecas, custos, vendas, consumosEstoque) {
-  const idsPecas = pecas.map(peca => Number(peca.id));
-  const vendasDaOrigem = vendas.filter(venda => idsPecas.includes(Number(venda.pecaId || 0)));
-  const investimento = Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0);
-  const custosDosProdutos = pecas.reduce((total, peca) => total + somarCustosPorPeca(custos, peca.id), 0);
-  const custosDasVendas = vendasDaOrigem.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
-  const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
-  const consumosDaOrigem = consumosEstoque.filter(consumo => Number(consumo.origemId || 0) === Number(origem.id));
-  const vendasSemConsumo = vendasDaOrigem.filter(venda => !(consumosPorVenda[Number(venda.id)] || []).length);
-  const receita = calcularReceitaFifoDaOrigem(vendasDaOrigem, consumosDaOrigem, vendasSemConsumo);
-  const custoFallback = calcularCustoPeca(pecas[0] || {}, pecas, origem);
-  const custoFifoConsumido = somarCampo(consumosDaOrigem, "custoTotal");
-  const custoFallbackTemporario = calcularCustoFifoComFallback(vendasSemConsumo, {}, custoFallback);
-  const totalCustos = custoFifoConsumido + custoFallbackTemporario + custosDosProdutos + custosDasVendas;
-  const lucroOrigem = receita - totalCustos;
-  const deuLucro = lucroOrigem > 0;
-  const classeResultado = deuLucro ? "profit-value profit-value--positive" : "profit-value profit-value--negative";
-  const classeCardResultado = deuLucro ? "summary-card summary-card--profit" : "summary-card summary-card--loss";
-  const textoStatus = deuLucro ? "Deu lucro" : "Ainda nao pagou";
+function renderizarResumoOrigem() {
+  const resumo = calcularResumoOrigem();
+  const resultadoPositivo = resumo.resultadoOrigem > 0;
+  const classeResultado = resultadoPositivo ? "profit-value profit-value--positive" : "profit-value profit-value--negative";
+  const classeCardResultado = resultadoPositivo ? "summary-card summary-card--profit" : "summary-card summary-card--loss";
 
   resumoOrigem.innerHTML = `
     <article class="summary-card">
-      <span>Investimento</span>
-      <strong>${formatarMoeda(investimento)}</strong>
+      <span>Valor investido</span>
+      <strong>${formatarMoeda(resumo.valorInvestido)}</strong>
     </article>
     <article class="summary-card">
-      <span>Total vendido</span>
-      <strong>${formatarMoeda(receita)}</strong>
+      <span>Valor recuperado em vendas</span>
+      <strong>${formatarMoeda(resumo.receitaTotal)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Custo consumido da origem</span>
+      <strong>${formatarMoeda(resumo.custoConsumidoDaOrigem)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Saldo ainda em estoque</span>
+      <strong>${formatarMoeda(resumo.saldoAindaEmEstoque)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Custos das peças</span>
+      <strong>${formatarMoeda(resumo.custosDaPeca)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Custos das vendas</span>
+      <strong>${formatarMoeda(resumo.custosDaVenda)}</strong>
     </article>
     <article class="${classeCardResultado}">
-      <span>Lucro atual</span>
-      <strong class="${classeResultado}">${formatarMoeda(lucroOrigem)}</strong>
+      <span>Resultado atual</span>
+      <strong class="${classeResultado}">${formatarMoeda(resumo.resultadoOrigem)}</strong>
     </article>
     <article class="${classeCardResultado}">
       <span>Status</span>
-      <strong class="${classeResultado}">${textoStatus}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custo da venda</span>
-      <strong>${formatarMoeda(custoFifoConsumido + custoFallbackTemporario)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custos de venda</span>
-      <strong>${formatarMoeda(custosDasVendas)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custos de pecas</span>
-      <strong>${formatarMoeda(custosDosProdutos)}</strong>
+      <strong class="${classeResultado}">${escaparHtml(resumo.status)}</strong>
     </article>
   `;
 }
 
-function renderizarPecas(origem, pecas, custos, vendas, consumosEstoque) {
-  tabelaProdutosOrigem.innerHTML = "";
-  const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
+function renderizarEntradas() {
+  tabelaEntradasOrigem.innerHTML = "";
 
-  if (pecas.length === 0) {
+  if (dadosDetalhesOrigem.entradas.length === 0) {
+    mensagemEntradasOrigem.textContent = "Nenhuma entrada de estoque encontrada para esta origem.";
+    return;
+  }
+
+  mensagemEntradasOrigem.textContent = "";
+
+  dadosDetalhesOrigem.entradas.forEach(entrada => {
+    const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
+    const peca = obterPecaPorId(entrada.pecaId) || entrada;
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="ID peça">${escaparHtml(entrada.pecaId || "-")}</td>
+      <td data-label="SKU">${escaparHtml(formatarSku(peca))}</td>
+      <td data-label="Peça">${escaparHtml(formatarNomePeca(peca))}</td>
+      <td data-label="Qtd. total">${formatarNumero(entrada.quantidadeTotal)}</td>
+      <td data-label="Qtd. consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
+      <td data-label="Saldo disponível">${formatarNumero(saldo)}</td>
+      <td data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
+      <td data-label="Data entrada">${formatarData(entrada.dataEntrada)}</td>
+      <td data-label="Status">${escaparHtml(obterStatusEntrada(entrada))}</td>
+    `;
+
+    tabelaEntradasOrigem.appendChild(linha);
+  });
+}
+
+function renderizarPecas() {
+  tabelaProdutosOrigem.innerHTML = "";
+  const pecasFiltradas = filtrarPecasPorBusca(dadosDetalhesOrigem.pecas);
+
+  if (pecasFiltradas.length === 0) {
     mensagemProdutosOrigem.textContent = campoBuscaPecasOrigem?.value
       ? "Nenhuma peça encontrada para a busca."
       : "Nenhuma peça vinculada a esta origem.";
@@ -373,41 +333,20 @@ function renderizarPecas(origem, pecas, custos, vendas, consumosEstoque) {
 
   mensagemProdutosOrigem.textContent = "";
 
-  pecas.forEach(peca => {
-    const custoCalculado = calcularCustoPeca(peca, pecas, origem);
-    const precoVenda = Number(peca.precoVenda || 0);
-    const quantidade = Number(peca.quantidade || 1);
-    const quantidadeVendida = Number(peca.quantidadeVendida || 0);
-    const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-    const status = obterStatusPeca(peca);
-    const custosDiversos = somarCustosPorPeca(custos, peca.id);
-    const vendasProduto = vendas.filter(venda => Number(venda.pecaId || 0) === Number(peca.id));
-    const faturamento = somarCampo(vendasProduto, "valorTotal");
-    const quantidadeVendidaTotal = vendasProduto.reduce((total, venda) => {
-      return total + obterQuantidadeVendidaNaVenda(venda);
-    }, 0);
-    const custosDasVendasProduto = vendasProduto.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
-    const custoFifoProduto = calcularCustoFifoComFallback(vendasProduto, consumosPorVenda, custoCalculado);
-    const lucroBruto = faturamento - custoFifoProduto - custosDiversos - custosDasVendasProduto;
-    const lucro = faturamento > 0 ? lucroBruto : precoVenda - custoCalculado;
+  pecasFiltradas.forEach(peca => {
+    const entradasDaPeca = dadosDetalhesOrigem.entradas.filter(entrada => Number(entrada.pecaId) === Number(peca.id));
+    const quantidadeTotal = somarCampo(entradasDaPeca, "quantidadeTotal") || Number(peca.quantidade || 0);
+    const quantidadeVendida = somarCampo(entradasDaPeca, "quantidadeConsumida") || Number(peca.quantidadeVendida || 0);
+    const quantidadeDisponivel = Math.max(quantidadeTotal - quantidadeVendida, 0);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
-      <td data-label="Produto">${formatarNomePeca(peca)}</td>
-      <td data-label="SKU">${formatarSku(peca)}</td>
-      <td data-label="ID">${peca.id}</td>
-      <td data-label="Categoria">${peca.categoria || "-"}</td>
-      <td data-label="Qtd. total">${quantidade}</td>
-      <td data-label="Qtd. vendida">${quantidadeVendida}</td>
-      <td data-label="Qtd. disponível">${quantidadeDisponivel}</td>
-      <td data-label="Status">${status}</td>
-      <td data-label="Tipo de custo">${peca.tipoCusto}</td>
-      <td data-label="Custo da venda">${formatarMoeda(custoFifoProduto || custoCalculado)}</td>
-      <td data-label="Preço de venda">${formatarMoeda(precoVenda)}</td>
-      <td data-label="Lucro">${formatarMoeda(lucro)}</td>
-      <td data-label="Custos diversos">${formatarMoeda(custosDiversos)}</td>
-      <td data-label="Faturamento">${formatarMoeda(faturamento)}</td>
-      <td data-label="Lucro bruto">${formatarMoeda(lucroBruto)}</td>
+      <td data-label="SKU">${escaparHtml(formatarSku(peca))}</td>
+      <td data-label="Peça">${escaparHtml(formatarNomePeca(peca))}</td>
+      <td data-label="Qtd. total">${formatarNumero(quantidadeTotal)}</td>
+      <td data-label="Qtd. vendida">${formatarNumero(quantidadeVendida)}</td>
+      <td data-label="Qtd. disponível">${formatarNumero(quantidadeDisponivel)}</td>
+      <td data-label="Status">${escaparHtml(obterStatusPeca(peca, entradasDaPeca))}</td>
       <td data-label="Ações">
         <div class="table-actions">
           <a class="table-link" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}">Ver peça</a>
@@ -419,47 +358,223 @@ function renderizarPecas(origem, pecas, custos, vendas, consumosEstoque) {
   });
 }
 
-async function iniciarDetalhesOrigem() {
-  const origem = await carregarOrigem(origemId);
+function montarLinhasVendasOrigem() {
+  const consumosPorVenda = agruparConsumosPorVenda(dadosDetalhesOrigem.consumosOrigem);
+  const custosVendaPorVenda = agruparCustosVendaPorVenda(dadosDetalhesOrigem.custosVenda);
 
-  if (!origem) {
-    mensagemOrigemNaoEncontrada.textContent = "Origem não encontrada.";
-    dadosOrigem.innerHTML = "";
-    resumoOrigem.innerHTML = "";
+  return Object.keys(consumosPorVenda).map(vendaIdTexto => {
+    const vendaId = Number(vendaIdTexto);
+    const venda = obterVendaPorId(vendaId);
+    const consumos = consumosPorVenda[vendaId] || [];
+    const primeiroConsumo = consumos[0] || {};
+    const entrada = obterEntradaPorId(primeiroConsumo.entradaEstoqueId);
+    const peca = obterPecaPorId(entrada?.pecaId || venda?.pecaId);
+    const quantidadeConsumida = somarCampo(consumos, "quantidadeConsumida");
+    const custoConsumido = somarCampo(consumos, "custoTotal");
+    const valorUnitario = valorUnitarioVenda(venda || {});
+    const valorAtribuido = quantidadeConsumida * valorUnitario;
+    const custosVenda = somarCampo(custosVendaPorVenda[vendaId] || [], "valor");
+
+    return {
+      venda,
+      peca,
+      quantidadeConsumida,
+      custoConsumido,
+      valorUnitario,
+      valorAtribuido,
+      custosVenda,
+      lucroVenda: valorAtribuido - custoConsumido - custosVenda
+    };
+  }).sort((a, b) => {
+    const dataA = obterDataVenda(a.venda || {});
+    const dataB = obterDataVenda(b.venda || {});
+
+    if (dataA !== dataB) {
+      return dataB.localeCompare(dataA);
+    }
+
+    return Number(b.venda?.id || 0) - Number(a.venda?.id || 0);
+  });
+}
+
+function renderizarVendas() {
+  tabelaVendasOrigem.innerHTML = "";
+  const linhas = montarLinhasVendasOrigem();
+
+  if (linhas.length === 0) {
+    mensagemVendasOrigem.textContent = "Nenhuma venda relacionada ao consumo das entradas desta origem.";
     return;
   }
 
-  mensagemOrigemNaoEncontrada.textContent = "";
-  const pecasDaOrigem = await carregarPecasDaOrigem(origem);
-  const financeiroOrigem = await carregarFinanceiroDaOrigem(pecasDaOrigem);
-  const custos = financeiroOrigem.custos;
-  const vendas = financeiroOrigem.vendas;
-  const consumosEstoque = financeiroOrigem.consumosEstoque;
+  mensagemVendasOrigem.textContent = "";
 
-  dadosDetalhesOrigem = {
+  linhas.forEach(item => {
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Data venda">${formatarData(obterDataVenda(item.venda || {}))}</td>
+      <td data-label="SKU">${escaparHtml(formatarSku(item.peca || item.venda))}</td>
+      <td data-label="Peça">${escaparHtml(formatarNomePeca(item.peca || item.venda))}</td>
+      <td data-label="Qtd. consumida">${formatarNumero(item.quantidadeConsumida)}</td>
+      <td data-label="Valor unitário">${formatarMoeda(item.valorUnitario)}</td>
+      <td data-label="Valor atribuído">${formatarMoeda(item.valorAtribuido)}</td>
+      <td data-label="Custo consumido">${formatarMoeda(item.custoConsumido)}</td>
+      <td data-label="Custos venda">${formatarMoeda(item.custosVenda)}</td>
+      <td data-label="Lucro venda">${formatarMoeda(item.lucroVenda)}</td>
+    `;
+
+    tabelaVendasOrigem.appendChild(linha);
+  });
+}
+
+function renderizarCustos() {
+  tabelaCustosOrigem.innerHTML = "";
+  const custosPeca = dadosDetalhesOrigem.custosPeca.map(custo => {
+    const peca = obterPecaPorId(custo.pecaId);
+
+    return {
+      origem: "Custo da peça",
+      data: custo.dataCusto || custo.data,
+      tipo: custo.tipoCusto || custo.tipo,
+      descricao: custo.descricao,
+      valor: custo.valor,
+      referencia: `${formatarSku(peca)} - ${formatarNomePeca(peca)}`
+    };
+  });
+  const custosVenda = dadosDetalhesOrigem.custosVenda.map(custo => {
+    const venda = obterVendaPorId(custo.vendaId);
+    const peca = obterPecaPorId(venda?.pecaId);
+
+    return {
+      origem: "Custo da venda",
+      data: custo.dataCusto || custo.data,
+      tipo: custo.tipoCusto || custo.tipo,
+      descricao: custo.descricao,
+      valor: custo.valor,
+      referencia: `Venda ${custo.vendaId || "-"} - ${formatarSku(peca)}`
+    };
+  });
+  const custos = [...custosPeca, ...custosVenda];
+
+  if (custos.length === 0) {
+    mensagemCustosOrigem.textContent = "Nenhum custo de peça ou venda encontrado para esta origem.";
+    return;
+  }
+
+  mensagemCustosOrigem.textContent = "";
+
+  custos.forEach(custo => {
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Origem do custo">${escaparHtml(custo.origem)}</td>
+      <td data-label="Data">${formatarData(custo.data)}</td>
+      <td data-label="Tipo">${escaparHtml(custo.tipo || "-")}</td>
+      <td data-label="Descrição">${escaparHtml(custo.descricao || "-")}</td>
+      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
+      <td data-label="Referência">${escaparHtml(custo.referencia || "-")}</td>
+    `;
+
+    tabelaCustosOrigem.appendChild(linha);
+  });
+}
+
+async function carregarContextoSupabase(idOrigem) {
+  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
+    throw new Error("Configure o Supabase para carregar os detalhes da origem.");
+  }
+
+  const [
     origem,
-    pecas: pecasDaOrigem,
-    custos,
+    entradas,
+    pecas,
     vendas,
-    consumosEstoque
+    consumosEstoque,
+    custosPeca,
+    custosVenda
+  ] = await Promise.all([
+    window.supabaseService.buscarOrigemPorId(idOrigem),
+    window.supabaseService.listarEntradasEstoque(),
+    window.supabaseService.listarPecas(),
+    window.supabaseService.listarVendas(),
+    window.supabaseService.listarConsumosEstoque(),
+    window.supabaseService.listarCustosPeca(),
+    window.supabaseService.listarCustosVenda()
+  ]);
+
+  const entradasOrigem = (entradas || []).filter(entrada => Number(entrada.origemId || 0) === Number(idOrigem));
+  const idsPecasOrigem = new Set(entradasOrigem.map(entrada => Number(entrada.pecaId)));
+  const skuOrigem = String(origem?.produtoSku || "").trim().toUpperCase();
+  const pecasOrigem = (pecas || []).filter(peca => {
+    const skuPeca = String(peca.sku || "").trim().toUpperCase();
+
+    return idsPecasOrigem.has(Number(peca.id)) ||
+      Number(peca.origemId || 0) === Number(idOrigem) ||
+      Boolean(skuOrigem && skuPeca === skuOrigem);
+  });
+  pecasOrigem.forEach(peca => idsPecasOrigem.add(Number(peca.id)));
+
+  const idsEntradasOrigem = new Set(entradasOrigem.map(entrada => Number(entrada.id)));
+  const consumosOrigem = (consumosEstoque || []).filter(consumo => idsEntradasOrigem.has(Number(consumo.entradaEstoqueId)));
+  const idsVendasOrigem = new Set(consumosOrigem.map(consumo => Number(consumo.vendaId)));
+  const vendasOrigem = (vendas || []).filter(venda => idsVendasOrigem.has(Number(venda.id)));
+  const custosPecaOrigem = (custosPeca || []).filter(custo => idsPecasOrigem.has(Number(custo.pecaId)));
+  const custosVendaOrigem = (custosVenda || []).filter(custo => idsVendasOrigem.has(Number(custo.vendaId)));
+
+  return {
+    origem,
+    entradas: entradasOrigem,
+    pecas: pecasOrigem,
+    vendas: vendasOrigem,
+    consumosOrigem,
+    custosPeca: custosPecaOrigem,
+    custosVenda: custosVendaOrigem
   };
-  renderizarDadosOrigem(origem);
-  renderizarResumo(origem, pecasDaOrigem, custos, vendas, consumosEstoque);
-  renderizarPecas(origem, filtrarPecasPorBusca(pecasDaOrigem), custos, vendas, consumosEstoque);
+}
+
+function renderizarTela() {
+  renderizarDadosOrigem(dadosDetalhesOrigem.origem);
+  renderizarResumoOrigem();
+  renderizarEntradas();
+  renderizarPecas();
+  renderizarVendas();
+  renderizarCustos();
+}
+
+function limparTela(mensagem) {
+  mensagemOrigemNaoEncontrada.textContent = mensagem;
+  dadosOrigem.innerHTML = "";
+  resumoOrigem.innerHTML = "";
+  tabelaEntradasOrigem.innerHTML = "";
+  tabelaProdutosOrigem.innerHTML = "";
+  tabelaVendasOrigem.innerHTML = "";
+  tabelaCustosOrigem.innerHTML = "";
+}
+
+async function iniciarDetalhesOrigem() {
+  if (!origemId) {
+    limparTela("Origem não encontrada.");
+    return;
+  }
+
+  try {
+    dadosDetalhesOrigem = await carregarContextoSupabase(origemId);
+
+    if (!dadosDetalhesOrigem.origem) {
+      limparTela("Origem não encontrada.");
+      return;
+    }
+
+    mensagemOrigemNaoEncontrada.textContent = "";
+    renderizarTela();
+  } catch (erro) {
+    console.error(erro);
+    limparTela(erro.message || "Não foi possível carregar os detalhes da origem pelo Supabase.");
+  }
 }
 
 campoBuscaPecasOrigem?.addEventListener("input", () => {
-  if (!dadosDetalhesOrigem.origem) {
-    return;
-  }
-
-  renderizarPecas(
-    dadosDetalhesOrigem.origem,
-    filtrarPecasPorBusca(dadosDetalhesOrigem.pecas),
-    dadosDetalhesOrigem.custos,
-    dadosDetalhesOrigem.vendas,
-    dadosDetalhesOrigem.consumosEstoque
-  );
+  renderizarPecas();
 });
 
 iniciarDetalhesOrigem();
