@@ -28,7 +28,7 @@ function calcularValorVenda(venda) {
 }
 
 function obterDataVenda(venda) {
-  return String(venda.dataVenda || venda.data_venda || venda.createdAt || venda.created_at || "").slice(0, 10);
+  return String(venda.dataVenda || venda.data_venda || "").slice(0, 10);
 }
 
 function formatarData(data) {
@@ -327,11 +327,11 @@ function renderizarCards(dados, resultadosOrigens) {
     criarCard("Origens no prejuizo", origensNoPrejuizo, "summary-card--loss");
 }
 
-function obterUltimasVendas(vendas, limite = 5) {
+function obterUltimasVendas(vendas, limite = 10) {
   return [...vendas]
     .sort((a, b) => {
-      const dataA = new Date(a.dataVenda || a.createdAt || 0).getTime();
-      const dataB = new Date(b.dataVenda || b.createdAt || 0).getTime();
+      const dataA = new Date(obterDataVenda(a) || 0).getTime();
+      const dataB = new Date(obterDataVenda(b) || 0).getTime();
 
       if (dataA !== dataB) {
         return dataB - dataA;
