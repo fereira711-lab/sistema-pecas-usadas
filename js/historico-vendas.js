@@ -3,7 +3,17 @@ const mensagemHistorico = document.getElementById("mensagemHistorico");
 const totalVendas = document.getElementById("totalVendas");
 const pecasVendidas = document.getElementById("pecasVendidas");
 const faturamentoTotal = document.getElementById("faturamentoTotal");
+const formFiltrosHistorico = document.getElementById("formFiltrosHistorico");
+const dataInicialHistorico = document.getElementById("dataInicialHistorico");
+const dataFinalHistorico = document.getElementById("dataFinalHistorico");
+const filtroSkuHistorico = document.getElementById("filtroSkuHistorico");
+const filtroNomeHistorico = document.getElementById("filtroNomeHistorico");
+const filtroCanalHistorico = document.getElementById("filtroCanalHistorico");
+const limparFiltrosHistorico = document.getElementById("limparFiltrosHistorico");
+
 let historicoCarregadoDoSupabase = false;
+let vendasHistoricoCarregadas = [];
+let produtosHistoricoCarregados = [];
 
 function buscarVendas() {
   return JSON.parse(localStorage.getItem("vendas")) || [];
@@ -17,12 +27,19 @@ function salvarVendas(vendas) {
   localStorage.setItem("vendas", JSON.stringify(vendas));
 }
 
-async function carregarVendas() {
+async function carregarDadosHistorico() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
-      const vendas = await window.supabaseService.listarVendas();
+      const [vendas, pecas] = await Promise.all([
+        window.supabaseService.listarVendas(),
+        window.supabaseService.listarPecas()
+      ]);
+
       historicoCarregadoDoSupabase = true;
-      return vendas;
+      vendasHistoricoCarregadas = vendas || [];
+      produtosHistoricoCarregados = pecas || [];
+      mensagemHistorico.textContent = "";
+      return;
     } catch (erro) {
       console.error("Erro ao carregar vendas do Supabase:", erro);
       mensagemHistorico.textContent = "Nao foi possivel carregar vendas do Supabase. Exibindo dados temporarios do navegador.";
@@ -30,7 +47,8 @@ async function carregarVendas() {
   }
 
   historicoCarregadoDoSupabase = false;
-  return buscarVendas();
+  vendasHistoricoCarregadas = buscarVendas();
+  produtosHistoricoCarregados = buscarProdutos();
 }
 
 function formatarMoeda(valor) {
@@ -40,12 +58,98 @@ function formatarMoeda(valor) {
   });
 }
 
-function formatarNomePecaVenda(venda, produtos = buscarProdutos()) {
-  const produto = produtos.find(item => Number(item.id) === Number(venda.pecaId));
-  const nome = venda.produtoNome || produto?.nome || venda.nome || `Peca ${venda.pecaId || ""}`.trim();
-  const sku = String(venda.sku || produto?.sku || "").trim();
+function obterDataVenda(venda) {
+  return String(venda.dataVenda || venda.data_venda || "").slice(0, 10);
+}
+
+function formatarData(data) {
+  if (!data) {
+    return "-";
+  }
+
+  const dataIso = String(data).slice(0, 10);
+  const partes = dataIso.split("-");
+
+  if (partes.length !== 3) {
+    return dataIso;
+  }
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function normalizarTexto(texto) {
+  return String(texto || "").trim().toLowerCase();
+}
+
+function buscarProdutoDaVenda(venda) {
+  return produtosHistoricoCarregados.find(item => Number(item.id) === Number(venda.pecaId));
+}
+
+function obterSkuVenda(venda) {
+  const produto = buscarProdutoDaVenda(venda);
+  return String(venda.sku || produto?.sku || "").trim();
+}
+
+function obterNomePecaVenda(venda) {
+  const produto = buscarProdutoDaVenda(venda);
+  return venda.produtoNome || produto?.nome || venda.nome || `Peca ${venda.pecaId || ""}`.trim();
+}
+
+function formatarNomePecaVenda(venda) {
+  const nome = obterNomePecaVenda(venda);
+  const sku = obterSkuVenda(venda);
 
   return sku ? `${sku} - ${nome}` : nome;
+}
+
+function filtrarVendas(vendas) {
+  const dataInicial = dataInicialHistorico?.value || "";
+  const dataFinal = dataFinalHistorico?.value || "";
+  const skuBusca = normalizarTexto(filtroSkuHistorico?.value);
+  const nomeBusca = normalizarTexto(filtroNomeHistorico?.value);
+  const canalBusca = normalizarTexto(filtroCanalHistorico?.value);
+
+  return vendas.filter(venda => {
+    const dataVenda = obterDataVenda(venda);
+    const sku = normalizarTexto(obterSkuVenda(venda));
+    const nome = normalizarTexto(obterNomePecaVenda(venda));
+    const canal = normalizarTexto(venda.canalVenda || venda.cliente);
+
+    if (dataInicial && (!dataVenda || dataVenda < dataInicial)) {
+      return false;
+    }
+
+    if (dataFinal && (!dataVenda || dataVenda > dataFinal)) {
+      return false;
+    }
+
+    if (skuBusca && !sku.includes(skuBusca)) {
+      return false;
+    }
+
+    if (nomeBusca && !nome.includes(nomeBusca)) {
+      return false;
+    }
+
+    if (canalBusca && !canal.includes(canalBusca)) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+function ordenarVendasPorData(vendas) {
+  return [...vendas].sort((a, b) => {
+    const dataA = new Date(obterDataVenda(a) || 0).getTime();
+    const dataB = new Date(obterDataVenda(b) || 0).getTime();
+
+    if (dataA !== dataB) {
+      return dataB - dataA;
+    }
+
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
 }
 
 function atualizarResumo(vendas) {
@@ -74,18 +178,18 @@ function renderizarAcoesVenda(venda, indice) {
 
   return `
     ${botaoDetalhes}
-    <button type="button" data-acao="remover-local" data-indice="${indice}">Remover local</button>
+    <button type="button" data-acao="remover-local" data-id="${venda.id || ""}" data-indice="${indice}">Remover local</button>
   `;
 }
 
-async function renderizarHistorico() {
-  const vendas = await carregarVendas();
-  const produtos = buscarProdutos();
+function renderizarHistorico() {
+  const vendas = ordenarVendasPorData(filtrarVendas(vendasHistoricoCarregadas));
+
   tabelaHistorico.innerHTML = "";
   atualizarResumo(vendas);
 
   if (vendas.length === 0) {
-    mensagemHistorico.textContent = "Nenhuma venda registrada.";
+    mensagemHistorico.textContent = "Nenhuma venda encontrada para os filtros informados.";
     return;
   }
 
@@ -95,8 +199,8 @@ async function renderizarHistorico() {
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
-      <td data-label="Data">${venda.dataVenda}</td>
-      <td data-label="Produto">${formatarNomePecaVenda(venda, produtos) || "-"}</td>
+      <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
+      <td data-label="Produto">${formatarNomePecaVenda(venda) || "-"}</td>
       <td data-label="ID da peça">${venda.pecaId || "-"}</td>
       <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</td>
       <td data-label="Preço unitário">${formatarMoeda(venda.precoUnitario)}</td>
@@ -122,9 +226,19 @@ function abrirDetalhesVenda(botao) {
   window.location.href = `detalhes-venda.html?index=${botao.dataset.indice}`;
 }
 
-function removerVendaLocal(indice) {
+function removerVendaLocal(botao) {
   const vendas = buscarVendas();
-  const confirmou = confirm(`Deseja remover a venda de "${formatarNomePecaVenda(vendas[indice])}"?`);
+  const vendaId = Number(botao.dataset.id || 0);
+  const indice = vendaId
+    ? vendas.findIndex(venda => Number(venda.id) === vendaId)
+    : Number(botao.dataset.indice);
+  const venda = vendas[indice];
+
+  if (!venda) {
+    return;
+  }
+
+  const confirmou = confirm(`Deseja remover a venda de "${formatarNomePecaVenda(venda)}"?`);
 
   if (!confirmou) {
     return;
@@ -132,6 +246,7 @@ function removerVendaLocal(indice) {
 
   vendas.splice(indice, 1);
   salvarVendas(vendas);
+  vendasHistoricoCarregadas = buscarVendas();
   renderizarHistorico();
 }
 
@@ -149,10 +264,35 @@ tabelaHistorico.addEventListener("click", function (evento) {
   }
 
   if (acao === "remover-local") {
-    removerVendaLocal(Number(botao.dataset.indice));
+    removerVendaLocal(botao);
   }
 });
 
-renderizarHistorico();
+formFiltrosHistorico?.addEventListener("submit", function (evento) {
+  evento.preventDefault();
+  renderizarHistorico();
+});
 
-window.addEventListener("focus", renderizarHistorico);
+[
+  dataInicialHistorico,
+  dataFinalHistorico,
+  filtroSkuHistorico,
+  filtroNomeHistorico,
+  filtroCanalHistorico
+].forEach(campo => {
+  campo?.addEventListener("input", renderizarHistorico);
+});
+
+limparFiltrosHistorico?.addEventListener("click", function () {
+  formFiltrosHistorico.reset();
+  renderizarHistorico();
+});
+
+async function iniciarHistoricoVendas() {
+  await carregarDadosHistorico();
+  renderizarHistorico();
+}
+
+iniciarHistoricoVendas();
+
+window.addEventListener("focus", iniciarHistoricoVendas);
