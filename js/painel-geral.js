@@ -2,6 +2,8 @@ const mensagemPainelGeral = document.getElementById("mensagemPainelGeral");
 const cardsPainelGeral = document.getElementById("cardsPainelGeral");
 const alertasPainelGeral = document.getElementById("alertasPainelGeral");
 const tabelaResultadoOrigens = document.getElementById("tabelaResultadoOrigens");
+const tabelaUltimasVendas = document.getElementById("tabelaUltimasVendas");
+const mensagemUltimasVendas = document.getElementById("mensagemUltimasVendas");
 
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
@@ -23,6 +25,25 @@ function calcularValorVenda(venda) {
   }
 
   return Number(venda.valorTotal || 0);
+}
+
+function obterDataVenda(venda) {
+  return String(venda.dataVenda || venda.data_venda || venda.createdAt || venda.created_at || "").slice(0, 10);
+}
+
+function formatarData(data) {
+  if (!data) {
+    return "-";
+  }
+
+  const dataIso = String(data).slice(0, 10);
+  const partes = dataIso.split("-");
+
+  if (partes.length !== 3) {
+    return dataIso;
+  }
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
 function criarCard(titulo, valor, classe = "") {
@@ -306,6 +327,55 @@ function renderizarCards(dados, resultadosOrigens) {
     criarCard("Origens no prejuizo", origensNoPrejuizo, "summary-card--loss");
 }
 
+function obterUltimasVendas(vendas, limite = 5) {
+  return [...vendas]
+    .sort((a, b) => {
+      const dataA = new Date(a.dataVenda || a.createdAt || 0).getTime();
+      const dataB = new Date(b.dataVenda || b.createdAt || 0).getTime();
+
+      if (dataA !== dataB) {
+        return dataB - dataA;
+      }
+
+      return Number(b.id || 0) - Number(a.id || 0);
+    })
+    .slice(0, limite);
+}
+
+function renderizarUltimasVendas(vendas) {
+  if (!tabelaUltimasVendas) {
+    return;
+  }
+
+  const ultimasVendas = obterUltimasVendas(vendas);
+  tabelaUltimasVendas.innerHTML = "";
+
+  if (ultimasVendas.length === 0) {
+    if (mensagemUltimasVendas) {
+      mensagemUltimasVendas.textContent = "Nenhuma venda registrada.";
+    }
+    return;
+  }
+
+  if (mensagemUltimasVendas) {
+    mensagemUltimasVendas.textContent = "";
+  }
+
+  ultimasVendas.forEach(venda => {
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
+      <td data-label="SKU">${venda.sku || "-"}</td>
+      <td data-label="Nome da peca"><strong class="product-name">${venda.produtoNome || `Peca ${venda.pecaId || ""}`.trim()}</strong></td>
+      <td data-label="Quantidade">${venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0}</td>
+      <td data-label="Valor total">${formatarMoeda(calcularValorVenda(venda))}</td>
+    `;
+
+    tabelaUltimasVendas.appendChild(linha);
+  });
+}
+
 function renderizarTabelaOrigens(resultadosOrigens) {
   tabelaResultadoOrigens.innerHTML = "";
 
@@ -343,6 +413,9 @@ async function iniciarPainelGeral() {
     if (alertasPainelGeral) {
       alertasPainelGeral.innerHTML = "";
     }
+    if (tabelaUltimasVendas) {
+      tabelaUltimasVendas.innerHTML = "";
+    }
     tabelaResultadoOrigens.innerHTML = "";
     return;
   }
@@ -353,6 +426,7 @@ async function iniciarPainelGeral() {
 
   renderizarCards(dados, resultadosOrigens);
   renderizarAlertasPainel(dados);
+  renderizarUltimasVendas(dados.vendas);
   renderizarTabelaOrigens(resultadosOrigens);
 }
 
