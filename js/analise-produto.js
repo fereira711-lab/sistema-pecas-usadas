@@ -2,6 +2,8 @@ const mensagemAnaliseProduto = document.getElementById("mensagemAnaliseProduto")
 const resumoAnaliseProduto = document.getElementById("resumoAnaliseProduto");
 const tabelaAnaliseProduto = document.getElementById("tabelaAnaliseProduto");
 const buscaAnaliseProduto = document.getElementById("buscaAnaliseProduto");
+const mensagemRankingProduto = document.getElementById("mensagemRankingProduto");
+const tabelaRankingProduto = document.getElementById("tabelaRankingProduto");
 
 let analisesCarregadas = [];
 
@@ -187,10 +189,59 @@ function renderizarTabela(analises) {
   });
 }
 
+function obterRankingMaisVendidos(analises, limite = 10) {
+  return [...analises]
+    .filter(analise => Number(analise.quantidadeVendida || 0) > 0)
+    .sort((a, b) => {
+      if (b.quantidadeVendida !== a.quantidadeVendida) {
+        return b.quantidadeVendida - a.quantidadeVendida;
+      }
+
+      return b.receita - a.receita;
+    })
+    .slice(0, limite);
+}
+
+function renderizarRanking(analises) {
+  if (!tabelaRankingProduto) {
+    return;
+  }
+
+  const ranking = obterRankingMaisVendidos(analises);
+  tabelaRankingProduto.innerHTML = "";
+
+  if (ranking.length === 0) {
+    if (mensagemRankingProduto) {
+      mensagemRankingProduto.textContent = "Nenhuma venda encontrada para montar o ranking.";
+    }
+    return;
+  }
+
+  if (mensagemRankingProduto) {
+    mensagemRankingProduto.textContent = "";
+  }
+
+  ranking.forEach((analise, indice) => {
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Posicao">${indice + 1}</td>
+      <td data-label="SKU">${analise.sku}</td>
+      <td data-label="Nome"><strong class="product-name">${analise.nome}</strong></td>
+      <td data-label="Qtd. vendida">${analise.quantidadeVendida}</td>
+      <td data-label="Receita total">${formatarMoeda(analise.receita)}</td>
+      <td data-label="Lucro"><strong class="${obterClasseLucro(analise.lucro)}">${formatarMoeda(analise.lucro)}</strong></td>
+    `;
+
+    tabelaRankingProduto.appendChild(linha);
+  });
+}
+
 function renderizarAnalises() {
   const analisesFiltradas = filtrarAnalises(analisesCarregadas);
 
   renderizarResumo(analisesFiltradas);
+  renderizarRanking(analisesCarregadas);
   renderizarTabela(analisesFiltradas);
 }
 
@@ -199,6 +250,9 @@ async function iniciarAnaliseProduto() {
 
   if (!dados) {
     resumoAnaliseProduto.innerHTML = "";
+    if (tabelaRankingProduto) {
+      tabelaRankingProduto.innerHTML = "";
+    }
     tabelaAnaliseProduto.innerHTML = "";
     return;
   }

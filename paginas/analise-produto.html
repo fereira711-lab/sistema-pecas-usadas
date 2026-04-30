@@ -32,6 +32,42 @@
 
       <p id="mensagemAnaliseProduto" class="empty-message"></p>
       <section id="resumoAnaliseProduto" class="summary-grid summary-grid--compact" aria-label="Resumo da analise por produto"></section>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Produtos mais vendidos</h2>
+          <p>Ranking das pecas com maior quantidade vendida.</p>
+        </div>
+      </div>
+
+      <p id="mensagemRankingProduto" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Posicao</th>
+              <th>SKU</th>
+              <th>Nome</th>
+              <th>Qtd. vendida</th>
+              <th>Receita total</th>
+              <th>Lucro</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaRankingProduto"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Lista completa</h2>
+          <p>Todos os produtos analisados com receita, custos e lucro.</p>
+        </div>
+      </div>
 
       <div class="form-group">
         <input id="buscaAnaliseProduto" type="search" placeholder="Pesquisar por SKU ou nome da peca">
