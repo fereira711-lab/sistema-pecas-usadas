@@ -43,7 +43,7 @@ function formatarDataInput(data) {
 }
 
 function obterDataVenda(venda) {
-  return String(venda.dataVenda || venda.data_venda || venda.createdAt || venda.created_at || "").slice(0, 10);
+  return String(venda.dataVenda || venda.data_venda || "").slice(0, 10);
 }
 
 function calcularValorVenda(venda) {
