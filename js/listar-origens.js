@@ -6,6 +6,8 @@ const totalCarros = document.getElementById("totalCarros");
 const totalLotes = document.getElementById("totalLotes");
 const totalComprasAvulsas = document.getElementById("totalComprasAvulsas");
 
+let origensCarregadasDoSupabase = false;
+
 function buscarOrigens() {
   const origens = JSON.parse(localStorage.getItem("origens")) || [];
   const origensComId = origens.map((origem, indice) => ({
@@ -17,23 +19,25 @@ function buscarOrigens() {
   return origensComId;
 }
 
+function salvarOrigens(origens) {
+  localStorage.setItem("origens", JSON.stringify(origens));
+}
+
 async function carregarOrigens() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
       const origens = await window.supabaseService.listarOrigens();
       salvarOrigens(origens);
+      origensCarregadasDoSupabase = true;
       return origens;
     } catch (erro) {
       console.error("Erro ao carregar origens do Supabase:", erro);
-      mensagemOrigens.textContent = "Nao foi possivel carregar do Supabase. Exibindo dados temporarios do navegador.";
+      mensagemOrigens.textContent = "Não foi possível carregar do Supabase. Exibindo dados temporários do navegador.";
     }
   }
 
+  origensCarregadasDoSupabase = false;
   return buscarOrigens();
-}
-
-function salvarOrigens(origens) {
-  localStorage.setItem("origens", JSON.stringify(origens));
 }
 
 function formatarMoeda(valor) {
@@ -51,6 +55,22 @@ function atualizarResumo(origens) {
   totalCarros.textContent = origens.filter(origem => origem.tipo === "Carro para desmonte").length;
   totalLotes.textContent = origens.filter(origem => origem.tipo === "Lote").length;
   totalComprasAvulsas.textContent = origens.filter(origem => origem.tipo === "Compra avulsa").length;
+}
+
+function renderizarAcoesOrigem(origem) {
+  const botaoDetalhes = `<button type="button" data-acao="detalhes" data-origem-id="${origem.id}">Ver detalhes</button>`;
+
+  if (origensCarregadasDoSupabase) {
+    return `
+      ${botaoDetalhes}
+      <button type="button" disabled>Remoção não disponível</button>
+    `;
+  }
+
+  return `
+    ${botaoDetalhes}
+    <button type="button" data-acao="remover-local" data-origem-id="${origem.id}">Remover local</button>
+  `;
 }
 
 async function renderizarOrigens() {
@@ -73,18 +93,17 @@ async function renderizarOrigens() {
       : 0;
 
     linha.innerHTML = `
-      <td data-label="Data da compra">${origem.dataCompra}</td>
-      <td data-label="Tipo">${origem.tipo}</td>
+      <td data-label="Data da compra">${origem.dataCompra || "-"}</td>
+      <td data-label="Tipo">${origem.tipo || "-"}</td>
       <td data-label="SKU">${origem.produtoSku || "-"}</td>
       <td data-label="Quantidade">${quantidadeTotal}</td>
-      <td data-label="Descrição">${origem.descricao}</td>
+      <td data-label="Descrição">${origem.descricao || "-"}</td>
       <td data-label="Valor pago">${formatarMoeda(origem.valorPago)}</td>
-      <td data-label="Custo unitario">${formatarMoeda(custoUnitario)}</td>
+      <td data-label="Custo unitário">${formatarMoeda(custoUnitario)}</td>
       <td data-label="Observações">${origem.observacoes || "-"}</td>
       <td data-label="Ações">
         <div class="table-actions">
-          <button type="button" data-acao="detalhes" data-origem-id="${origem.id}">Ver detalhes</button>
-          <button type="button" data-acao="remover" data-origem-id="${origem.id}">Remover</button>
+          ${renderizarAcoesOrigem(origem)}
         </div>
       </td>
     `;
@@ -94,25 +113,25 @@ async function renderizarOrigens() {
 }
 
 function abrirDetalhesOrigem(origemId) {
-  window.location.href = `detalhes-origem.html?origemId=${origemId}`;
+  window.location.href = `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}`;
 }
 
-function removerOrigem(origemId) {
+function removerOrigemLocal(origemId) {
   const origens = buscarOrigens();
-  const origem = origens.find(item => item.id === origemId);
+  const origem = origens.find(item => Number(item.id) === Number(origemId));
 
   if (!origem) {
     mensagemOrigens.textContent = "Origem não encontrada para remoção.";
     return;
   }
 
-  const confirmou = confirm(`Deseja remover a origem "${origem.descricao}"?`);
+  const confirmou = confirm(`Deseja remover a origem "${origem.descricao}" apenas do armazenamento local?`);
 
   if (!confirmou) {
     return;
   }
 
-  salvarOrigens(origens.filter(item => item.id !== origemId));
+  salvarOrigens(origens.filter(item => Number(item.id) !== Number(origemId)));
   renderizarOrigens();
 }
 
@@ -127,8 +146,8 @@ tabelaOrigensLista.addEventListener("click", function (evento) {
     abrirDetalhesOrigem(botao.dataset.origemId);
   }
 
-  if (botao.dataset.acao === "remover") {
-    removerOrigem(Number(botao.dataset.origemId));
+  if (botao.dataset.acao === "remover-local") {
+    removerOrigemLocal(Number(botao.dataset.origemId));
   }
 });
 
