@@ -80,7 +80,7 @@ function formatarPorcentagem(valor) {
 function encontrarVenda() {
   const vendas = buscarVendas();
   const parametros = new URLSearchParams(window.location.search);
-  const id = parametros.get("id");
+  const id = parametros.get("vendaId") || parametros.get("id");
   const index = parametros.get("index");
 
   if (id) {
@@ -100,7 +100,7 @@ function encontrarVenda() {
 
 async function encontrarVendaSupabase() {
   const parametros = new URLSearchParams(window.location.search);
-  const id = parametros.get("id");
+  const id = parametros.get("vendaId") || parametros.get("id");
 
   if (!id || !window.supabaseService || !window.supabaseService.estaConfigurado()) {
     return null;

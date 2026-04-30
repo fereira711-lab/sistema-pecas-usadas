@@ -421,6 +421,11 @@ function renderizarVendas() {
       <td data-label="Custo consumido">${formatarMoeda(item.custoConsumido)}</td>
       <td data-label="Custos venda">${formatarMoeda(item.custosVenda)}</td>
       <td data-label="Lucro venda">${formatarMoeda(item.lucroVenda)}</td>
+      <td data-label="Ações">
+        <div class="table-actions">
+          <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(item.venda?.id || "")}">Ver detalhes</a>
+        </div>
+      </td>
     `;
 
     tabelaVendasOrigem.appendChild(linha);

@@ -219,7 +219,7 @@ function renderizarHistorico() {
 
 function abrirDetalhesVenda(botao) {
   if (botao.dataset.id) {
-    window.location.href = `detalhes-venda.html?id=${encodeURIComponent(botao.dataset.id)}`;
+    window.location.href = `detalhes-venda.html?vendaId=${encodeURIComponent(botao.dataset.id)}`;
     return;
   }
 

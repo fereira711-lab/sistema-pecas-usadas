@@ -205,7 +205,7 @@ function renderizarAlertasEstoque(produtos) {
 
 function abrirDetalhesVenda(venda, index) {
   if (venda.id) {
-    return `detalhes-venda.html?id=${encodeURIComponent(venda.id)}`;
+    return `detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}`;
   }
 
   return `detalhes-venda.html?index=${index}`;
