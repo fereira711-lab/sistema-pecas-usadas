@@ -13,7 +13,6 @@ const tabelaCustoFifoVenda = document.getElementById("tabelaCustoFifoVenda");
 let contextoVenda = {
   produto: null,
   origens: [],
-  custosPeca: [],
   custosVenda: [],
   consumosFifo: []
 };
@@ -39,6 +38,25 @@ function formatarMoeda(valor) {
     style: "currency",
     currency: "BRL"
   });
+}
+
+function formatarData(data) {
+  if (!data) {
+    return "-";
+  }
+
+  const dataIso = String(data).slice(0, 10);
+  const partes = dataIso.split("-");
+
+  if (partes.length !== 3) {
+    return dataIso;
+  }
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function obterDataVenda(venda) {
+  return String(venda.dataVenda || venda.data_venda || "").slice(0, 10);
 }
 
 function formatarNomePeca(peca) {
@@ -141,14 +159,6 @@ function calcularTotalCustosVenda(venda) {
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
-function calcularLucroBruto(venda) {
-  if (venda.valorTotal !== undefined) {
-    return Number(venda.valorTotal || 0) - calcularCustoTotal(venda) - calcularTotalCustosVenda(venda);
-  }
-
-  return Number(venda.lucroBruto || 0);
-}
-
 function normalizarSku(sku) {
   return String(sku || "").trim().toUpperCase();
 }
@@ -183,14 +193,6 @@ function calcularCustoUnitarioAtualDaPeca(peca) {
   return calcularCustoPeca(peca, origens);
 }
 
-function calcularCustosPeca(pecaId) {
-  const custos = contextoVenda.custosPeca.length > 0 ? contextoVenda.custosPeca : buscarCustos();
-
-  return custos
-    .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
-    .reduce((total, custo) => total + Number(custo.valor || 0), 0);
-}
-
 function calcularCustoFifoVenda(consumosFifo) {
   return consumosFifo.reduce((total, consumo) => total + Number(consumo.custoTotal || 0), 0);
 }
@@ -201,16 +203,14 @@ function recalcularVendaComCustoAtual(venda) {
   const custoUnitario = peca ? calcularCustoUnitarioAtualDaPeca(peca) : calcularCustoUnitario(venda);
   const custoFifo = calcularCustoFifoVenda(contextoVenda.consumosFifo);
   const custoTotal = custoFifo > 0 ? custoFifo : custoUnitario * quantidade;
-  const custosPeca = calcularCustosPeca(venda.pecaId);
   const custosVenda = calcularTotalCustosVenda(venda);
-  const lucroBruto = Number(venda.valorTotal || 0) - custoTotal - custosPeca - custosVenda;
+  const lucroVenda = Number(venda.valorTotal || 0) - custoTotal - custosVenda;
 
   return {
     custoUnitario: quantidade > 0 ? custoTotal / quantidade : custoUnitario,
     custoTotal,
-    custosPeca,
     custosVenda,
-    lucroBruto
+    lucroVenda
   };
 }
 
@@ -227,13 +227,14 @@ function obterStatusProduto(produto) {
 function renderizarDadosVenda(venda) {
   tituloVenda.textContent = venda.id || "Venda sem ID";
   const produtoAtual = contextoVenda.produto || buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
+  const dataVenda = obterDataVenda(venda);
   const nomeVenda = formatarNomePeca({
     id: venda.pecaId,
     nome: venda.produtoNome || produtoAtual?.nome,
     sku: venda.sku || produtoAtual?.sku
   });
 
-  subtituloVenda.textContent = `${nomeVenda} • ${venda.dataVenda}`;
+  subtituloVenda.textContent = `${nomeVenda} • ${formatarData(dataVenda)}`;
 
   dadosVenda.innerHTML = `
     <article class="detail-card">
@@ -242,7 +243,7 @@ function renderizarDadosVenda(venda) {
     </article>
     <article class="detail-card">
       <span>Data da venda</span>
-      <strong>${venda.dataVenda || "-"}</strong>
+      <strong>${formatarData(dataVenda)}</strong>
     </article>
     <article class="detail-card">
       <span>Produto</span>
@@ -253,7 +254,7 @@ function renderizarDadosVenda(venda) {
       <strong>${formatarSku({ sku: venda.sku || produtoAtual?.sku })}</strong>
     </article>
     <article class="detail-card">
-      <span>ID da peca</span>
+      <span>ID da peça</span>
       <strong>${venda.pecaId || "-"}</strong>
     </article>
     <article class="detail-card">
@@ -269,12 +270,8 @@ function renderizarDadosVenda(venda) {
       <strong>${formatarMoeda(venda.valorTotal)}</strong>
     </article>
     <article class="detail-card">
-      <span>Cliente</span>
-      <strong>${venda.cliente || "-"}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Observações</span>
-      <strong>${venda.observacoes || "-"}</strong>
+      <span>Canal de venda</span>
+      <strong>${venda.canalVenda || venda.canal_venda || venda.cliente || "-"}</strong>
     </article>
   `;
 }
@@ -285,8 +282,8 @@ function renderizarResumoFinanceiro(venda) {
   const custoUnitario = resultado.custoUnitario;
   const custoTotal = resultado.custoTotal;
   const totalCustosVenda = resultado.custosVenda;
-  const lucroBruto = resultado.lucroBruto;
-  const margem = valorTotal > 0 ? (lucroBruto / valorTotal) * 100 : 0;
+  const lucroVenda = resultado.lucroVenda;
+  const margem = valorTotal > 0 ? (lucroVenda / valorTotal) * 100 : 0;
 
   resumoFinanceiroVenda.innerHTML = `
     <article class="summary-card">
@@ -298,7 +295,7 @@ function renderizarResumoFinanceiro(venda) {
       <strong>${formatarMoeda(custoUnitario)}</strong>
     </article>
     <article class="summary-card">
-      <span>Custo total</span>
+      <span>Custo das entradas consumidas</span>
       <strong>${formatarMoeda(custoTotal)}</strong>
     </article>
     <article class="summary-card">
@@ -306,8 +303,8 @@ function renderizarResumoFinanceiro(venda) {
       <strong>${formatarMoeda(totalCustosVenda)}</strong>
     </article>
     <article class="summary-card">
-      <span>Lucro bruto</span>
-      <strong>${formatarMoeda(lucroBruto)}</strong>
+      <span>Lucro da venda</span>
+      <strong>${formatarMoeda(lucroVenda)}</strong>
     </article>
     <article class="summary-card">
       <span>Margem de lucro</span>
@@ -383,46 +380,38 @@ function renderizarProduto(venda) {
 }
 
 function renderizarCustos(venda) {
-  const custos = (contextoVenda.custosPeca.length > 0 ? contextoVenda.custosPeca : buscarCustos())
-    .filter(custo => Number(custo.pecaId || 0) === Number(venda.pecaId || 0));
   const custosVenda = contextoVenda.custosVenda.length > 0
     ? contextoVenda.custosVenda
     : normalizarCustosVenda(venda.custosVenda);
   tabelaCustosVenda.innerHTML = "";
 
-  if (custos.length === 0 && custosVenda.length === 0) {
-    mensagemCustosVenda.textContent = "Nenhum custo diverso vinculado a este produto.";
+  if (custosVenda.length === 0) {
+    mensagemCustosVenda.textContent = "Nenhum custo vinculado diretamente a esta venda.";
     return;
   }
 
   mensagemCustosVenda.textContent = "";
-
-  custos.forEach(custo => {
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td data-label="Data">${custo.data}</td>
-      <td data-label="Tipo">${custo.tipo}</td>
-      <td data-label="Descrição">${custo.descricao}</td>
-      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
-    `;
-
-    tabelaCustosVenda.appendChild(linha);
-  });
 
   custosVenda.forEach(custo => {
     const linha = document.createElement("tr");
     const tipoCusto = custo.tipo || custo.tipoCusto;
 
     linha.innerHTML = `
-      <td data-label="Data">${venda.dataVenda || "-"}</td>
-      <td data-label="Tipo">Venda - ${tipoCusto}</td>
+      <td data-label="Data">${formatarData(custo.data || custo.dataCusto || obterDataVenda(venda))}</td>
+      <td data-label="Tipo">${tipoCusto || "-"}</td>
       <td data-label="Descrição">${custo.descricao || "-"}</td>
       <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
     `;
 
     tabelaCustosVenda.appendChild(linha);
   });
+
+  const linhaTotal = document.createElement("tr");
+  linhaTotal.innerHTML = `
+    <td data-label="Data" colspan="3"><strong>Total de custos da venda</strong></td>
+    <td data-label="Valor"><strong>${formatarMoeda(calcularTotalCustosVenda(venda))}</strong></td>
+  `;
+  tabelaCustosVenda.appendChild(linhaTotal);
 }
 
 function obterDescricaoOrigem(origemId) {
@@ -445,7 +434,7 @@ function renderizarCustoFifo() {
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
-      <td data-label="Lote">Lote ${consumo.entradaEstoqueId}</td>
+      <td data-label="Lote">Entrada ${consumo.entradaEstoqueId}</td>
       <td data-label="Origem">${obterDescricaoOrigem(consumo.origemId)}</td>
       <td data-label="Quantidade">${consumo.quantidadeConsumida}x</td>
       <td data-label="Custo unitario">${formatarMoeda(consumo.custoUnitario)}</td>
@@ -468,10 +457,9 @@ async function carregarContextoSupabase(venda) {
     return venda;
   }
 
-  const [produto, origens, custosPeca, custosVenda, consumosEstoque] = await Promise.all([
+  const [produto, origens, custosVenda, consumosEstoque] = await Promise.all([
     window.supabaseService.buscarPecaPorId(venda.pecaId),
     window.supabaseService.listarOrigens(),
-    window.supabaseService.listarCustosPeca(),
     window.supabaseService.listarCustosVenda(),
     window.supabaseService.listarConsumosEstoque()
   ]);
@@ -480,7 +468,6 @@ async function carregarContextoSupabase(venda) {
   contextoVenda = {
     produto,
     origens,
-    custosPeca,
     custosVenda: custosVendaDaVenda,
     consumosFifo: consumosEstoque.filter(consumo => Number(consumo.vendaId || 0) === Number(venda.id))
   };
