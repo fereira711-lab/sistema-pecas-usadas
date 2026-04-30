@@ -25,6 +25,36 @@ function formatarSku(peca) {
   return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
 }
 
+function escaparHtml(valor) {
+  return String(valor ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function obterIniciaisProduto(peca) {
+  const sku = formatarSku(peca);
+
+  if (sku !== "-") {
+    return sku
+      .split("-")
+      .map(parte => parte[0])
+      .join("")
+      .slice(0, 3)
+      .toUpperCase();
+  }
+
+  return String(peca.nome || "P")
+    .split(" ")
+    .filter(Boolean)
+    .map(parte => parte[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+}
+
 function normalizarPeca(peca) {
   const quantidade = Number(peca.quantidade || 1);
   const quantidadeVendida = Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
@@ -312,8 +342,6 @@ function renderizarAlertas(alertas) {
 }
 
 function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda, consumosEstoque, entradasEstoque) {
-  const mapaOrigens = criarMapaOrigens(origens);
-  const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
   tabelaProdutos.innerHTML = "";
 
   if (pecas.length === 0) {
@@ -326,46 +354,40 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda, con
   mensagemProdutos.textContent = "";
 
   pecas.forEach(peca => {
-    const origem = mapaOrigens[Number(peca.origemId)];
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-    const vendasDaPeca = filtrarPorPeca(vendas, peca.id);
-    const quantidadeVendida = calcularQuantidadeVendidaPeca(vendasDaPeca);
-    const custoUnitario = calcularCustoBasePeca(peca, origens);
-    const custoTotalVendido = calcularCustoFifoComFallback(vendasDaPeca, consumosPorVenda, custoUnitario);
-    const lucro = calcularLucroPeca(peca, origens, vendas, custosPeca, custosVenda, consumosEstoque);
-    const temVenda = vendasDaPeca.length > 0;
-    const classeLucro = obterClasseLucro(lucro, temVenda);
     const classeStatus = obterClasseStatus(peca.status);
-    const alertas = obterAlertasProduto(peca, quantidadeDisponivel, vendasDaPeca, entradasEstoque, consumosPorVenda);
-    const linha = document.createElement("tr");
+    const card = document.createElement("article");
+    card.className = "product-card";
 
-    linha.innerHTML = `
-      <td data-label="ID">${peca.id}</td>
-      <td data-label="SKU">${formatarSku(peca)}</td>
-      <td data-label="Nome da peca"><strong class="product-name">${formatarNomePeca(peca)}</strong></td>
-      <td data-label="Origem">${origem ? origem.descricao : "-"}</td>
-      <td data-label="Tipo de custo">${peca.tipoCusto}</td>
-      <td data-label="Estoque">${quantidadeDisponivel}</td>
-      <td data-label="Vendidos">${quantidadeVendida}</td>
-      <td data-label="Status"><span class="${classeStatus}">${peca.status}</span></td>
-      <td data-label="Custo unitario">${formatarMoeda(custoUnitario)}</td>
-      <td data-label="Custo vendido">${formatarMoeda(custoTotalVendido)}</td>
-      <td data-label="Preco">${formatarMoeda(peca.precoVenda)}</td>
-      <td data-label="Lucro"><strong class="${classeLucro}">${formatarMoeda(lucro)}</strong></td>
-      <td data-label="Preparada">${peca.preparada ? "Sim" : "Nao"}</td>
-      <td data-label="Alertas">${renderizarAlertas(alertas)}</td>
-      <td data-label="Acoes">
-        <div class="table-actions">
-          <button type="button" data-acao="venda" data-peca-id="${peca.id}" onclick="abrirVenda(${peca.id})" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
-          <button type="button" data-acao="detalhes" data-peca-id="${peca.id}">Ver detalhes</button>
-          <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lancar custo</button>
-          <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
-          <button type="button" data-acao="editar" data-peca-id="${peca.id}">Editar peca</button>
+    card.innerHTML = `
+      <div class="product-card__media" aria-hidden="true">
+        <span>${escaparHtml(obterIniciaisProduto(peca))}</span>
+      </div>
+
+      <div class="product-card__body">
+        <div class="product-card__header">
+          <div>
+            <p class="product-card__sku">${escaparHtml(formatarSku(peca))}</p>
+            <h3>${escaparHtml(formatarNomePeca(peca))}</h3>
+          </div>
+          <span class="${classeStatus}">${escaparHtml(peca.status)}</span>
         </div>
-      </td>
+
+        <div class="product-card__stock">
+          <span>Estoque disponível</span>
+          <strong>${quantidadeDisponivel}</strong>
+        </div>
+
+        <div class="product-card__actions">
+          <button type="button" data-acao="detalhes" data-peca-id="${peca.id}">Ver detalhes</button>
+          <button type="button" data-acao="venda" data-peca-id="${peca.id}" onclick="abrirVenda(${peca.id})" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
+          <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lançar custo</button>
+          <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
+        </div>
+      </div>
     `;
 
-    tabelaProdutos.appendChild(linha);
+    tabelaProdutos.appendChild(card);
   });
 }
 

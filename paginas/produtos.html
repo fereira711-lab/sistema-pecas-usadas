@@ -12,7 +12,7 @@
       <p class="hero__tag">Estoque</p>
       <h1>Estoque / Produtos</h1>
       <p class="hero__description">
-        Visualize pecas, estoque, custos, vendas e lucro.
+        Visualize peças, estoque, custos, vendas e lucro.
       </p>
     </div>
   </header>
@@ -21,10 +21,10 @@
     <section class="stock-card">
       <div class="stock-header">
         <div>
-          <h2>Pecas cadastradas</h2>
-          <p>Lista consolidada de pecas, estoque, custos, vendas e lucro.</p>
+          <h2>Peças cadastradas</h2>
+          <p>Lista consolidada de peças, estoque, custos, vendas e lucro.</p>
         </div>
-        <a class="button-secondary" href="cadastro-peca.html">Cadastrar peca</a>
+        <a class="button-secondary" href="cadastro-peca.html">Cadastrar peça</a>
       </div>
 
       <p id="mensagemProdutos" class="empty-message"></p>
@@ -33,36 +33,13 @@
         <input id="buscaProdutos" type="search" placeholder="Pesquisar peça (nome ou SKU)">
       </div>
 
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>SKU</th>
-              <th>Nome da peca</th>
-              <th>Origem</th>
-              <th>Tipo de custo</th>
-              <th>Estoque</th>
-              <th>Vendidos</th>
-              <th>Status</th>
-              <th>Custo unitario</th>
-              <th>Custo vendido</th>
-              <th>Preco</th>
-              <th>Lucro</th>
-              <th>Preparada</th>
-              <th>Alertas</th>
-              <th>Acoes</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaProdutos"></tbody>
-        </table>
-      </div>
+      <div id="tabelaProdutos" class="product-card-grid" aria-label="Produtos cadastrados"></div>
     </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
-  <script src="../js/supabase-service.js?v=21"></script>
-  <script src="../js/produtos.js?v=18"></script>
+  <script src="../js/supabase-service.js?v=22"></script>
+  <script src="../js/produtos.js?v=19"></script>
 </body>
 </html>
