@@ -46,12 +46,34 @@ mindmap
         Mostra lucro geral
         Mostra estoque e pecas vendidas
         Conta origens no lucro e no prejuizo
+        Mostra ultimas vendas
+        Mostra alertas inteligentes
       Analise por produto
         Mostra receita por peca
         Mostra custo da venda
         Mostra custos adicionais
         Mostra lucro por peca
         Mostra quantidade vendida
+        Mostra ranking de produtos mais vendidos
+      Analise por periodo
+        Filtra vendas por data inicial e data final
+        Mostra total vendido
+        Mostra custo dos produtos vendidos
+        Mostra custos de venda
+        Mostra lucro do periodo
+      Giro de estoque
+        Mostra pecas rapidas
+        Mostra pecas em atencao
+        Mostra pecas paradas
+        Mostra pecas sem venda
+      Alertas
+        Mostra pecas sem estoque
+        Mostra estoque baixo
+        Mostra lotes esgotados
+        Mostra lotes com saldo baixo
+        Mostra pecas sem entrada de estoque
+        Mostra vendas sem custo calculado
+        Mostra vendas com lucro negativo
       Cadastro de origem
         Cria uma origem
         Salva valor pago
@@ -93,7 +115,8 @@ mindmap
       Historico de vendas
         Lista vendas feitas
       Relatorios
-        Resumo geral do sistema
+        Pagina legada mantida como apoio
+        Contem blocos antigos que podem ser migrados depois
 
     Banco de dados
       Supabase
@@ -148,6 +171,11 @@ mindmap
       Status
         Em estoque
         Vendida
+      Giro
+        Rapido vendeu nos ultimos 15 dias
+        Atencao sem venda entre 16 e 30 dias
+        Parado sem venda ha mais de 30 dias
+        Sem venda nunca vendeu
 
     Logica de custo base
       Produto tem SKU
@@ -208,7 +236,9 @@ mindmap
       Conferir resultado
         Produtos
         Detalhes
-        Relatorios
+        Painel geral
+        Analises
+        Alertas
 
     Arquivos do projeto
       paginas
@@ -256,6 +286,14 @@ O lucro aparece depois que o sistema compara o dinheiro que entrou com os custos
 lucro = receita - custo vendido - custos da peca - custos da venda
 ```
 
+O sistema tambem tem telas de acompanhamento:
+
+- **Painel geral** mostra resumo do negocio, resultado por origem e ultimas vendas.
+- **Analise por produto** mostra lucro por peca e ranking dos produtos mais vendidos.
+- **Analise por periodo** mostra resultado financeiro filtrado por datas.
+- **Giro de estoque** mostra pecas rapidas, em atencao, paradas ou sem venda.
+- **Alertas** mostra pontos de atencao, como falta de estoque, lotes baixos e vendas sem custo calculado.
+
 ## Como pensar no projeto
 
 Pense no sistema em quatro partes:
@@ -270,7 +308,7 @@ Pense no sistema em quatro partes:
    A venda registra quantas unidades foram vendidas e por quanto.
 
 4. **Resultado**
-   Produtos, detalhes e relatorios mostram estoque, custo e lucro.
+   Produtos, detalhes, painel, analises e alertas mostram estoque, custo, lucro e pontos de atencao.
 
 ## Onde olhar quando tiver duvida
 
