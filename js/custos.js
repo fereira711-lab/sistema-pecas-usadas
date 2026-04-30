@@ -7,8 +7,14 @@ const mensagemListaCustos = document.getElementById("mensagemListaCustos");
 const campoBuscaPecaCusto = document.getElementById("buscaPecaCusto");
 const sugestoesPecaCusto = document.getElementById("sugestoesPecaCusto");
 let produtosCustoCarregados = [];
+let custosCustoCarregados = [];
+let origensCustoCarregadas = [];
 let sugestoesCustoAtuais = [];
 let indiceSugestaoCusto = -1;
+
+function supabaseEstaConfigurado() {
+  return window.supabaseService && window.supabaseService.estaConfigurado();
+}
 
 function buscarProdutos() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
@@ -123,7 +129,7 @@ function formatarMoeda(valor) {
 }
 
 function somarCustosPorPeca(pecaId) {
-  return buscarCustos()
+  return custosCustoCarregados
     .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
     .reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
@@ -162,8 +168,8 @@ function calcularQuantidadeDisponivel(peca) {
 }
 
 async function carregarProdutos() {
-  let produtos = buscarProdutos();
-  const supabaseConfigurado = window.supabaseService && window.supabaseService.estaConfigurado();
+  let produtos = [];
+  const supabaseConfigurado = supabaseEstaConfigurado();
 
   if (supabaseConfigurado) {
     try {
@@ -171,7 +177,11 @@ async function carregarProdutos() {
       salvarProdutos(produtos.map(normalizarProduto));
     } catch (erro) {
       console.error("Erro ao carregar pecas do Supabase para custos:", erro);
+      mensagemCusto.textContent = "Nao foi possivel carregar as pecas do Supabase.";
+      mensagemCusto.className = "form-message form-message--warning";
     }
+  } else {
+    produtos = buscarProdutos();
   }
 
   produtosCustoCarregados = produtos.map(normalizarProduto);
@@ -192,6 +202,25 @@ async function carregarProdutos() {
       : "Supabase nao configurado. Preencha js/supabase-config.js para carregar as pecas do banco.";
     mensagemCusto.className = "form-message form-message--warning";
   }
+}
+
+async function carregarOrigensParaCustos() {
+  if (supabaseEstaConfigurado()) {
+    try {
+      origensCustoCarregadas = await window.supabaseService.listarOrigens() || [];
+      return;
+    } catch (erro) {
+      console.error("Erro ao carregar origens do Supabase para custos:", erro);
+      origensCustoCarregadas = [];
+      return;
+    }
+  }
+
+  origensCustoCarregadas = buscarOrigens();
+}
+
+function buscarProdutoPorId(pecaId) {
+  return produtosCustoCarregados.find(item => Number(item.id) === Number(pecaId));
 }
 
 function fecharSugestoesCusto() {
@@ -298,8 +327,7 @@ function renderizarResumoProduto() {
     return;
   }
 
-  const produtos = buscarProdutos();
-  const produto = produtos.find(item => Number(item.id) === pecaId);
+  const produto = buscarProdutoPorId(pecaId);
 
   if (!produto) {
     mensagemCusto.textContent = "Nao foi possivel encontrar a peca selecionada. Atualize a lista e tente novamente.";
@@ -307,7 +335,7 @@ function renderizarResumoProduto() {
     return;
   }
 
-  const custoBase = calcularCustoPeca(produto, buscarOrigens());
+  const custoBase = calcularCustoPeca(produto, origensCustoCarregadas);
   const custosDiversos = somarCustosPorPeca(produto.id);
   const custoTotal = custoBase + custosDiversos;
 
@@ -335,12 +363,58 @@ function renderizarResumoProduto() {
   `;
 }
 
-function renderizarCustos() {
-  const custos = buscarCustos();
+async function carregarCustos() {
+  if (supabaseEstaConfigurado()) {
+    try {
+      custosCustoCarregados = await window.supabaseService.listarCustosPeca() || [];
+      mensagemListaCustos.textContent = "";
+      return "supabase";
+    } catch (erro) {
+      console.error("Erro ao carregar custos da peca no Supabase:", erro);
+      custosCustoCarregados = [];
+      mensagemListaCustos.textContent = "Nao foi possivel carregar os custos do Supabase.";
+      return "erro";
+    }
+  }
+
+  custosCustoCarregados = buscarCustos();
+  return "local";
+}
+
+function formatarData(data) {
+  if (!data) {
+    return "-";
+  }
+
+  const dataIso = String(data).slice(0, 10);
+  const partes = dataIso.split("-");
+
+  if (partes.length !== 3) {
+    return dataIso;
+  }
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function obterDadosProdutoDoCusto(custo) {
+  const produto = buscarProdutoPorId(custo.pecaId);
+
+  return {
+    sku: produto?.sku || custo.sku || "-",
+    nome: produto ? formatarNomePeca(produto) : custo.produtoNome || `Peca ${custo.pecaId || ""}`.trim()
+  };
+}
+
+function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" : "local") {
+  const custos = custosCustoCarregados;
   tabelaCustos.innerHTML = "";
 
   if (custos.length === 0) {
-    mensagemListaCustos.textContent = "Nenhum custo diverso cadastrado.";
+    mensagemListaCustos.textContent = origemDados === "erro"
+      ? "Nao foi possivel carregar os custos do Supabase."
+      : origemDados === "supabase"
+        ? "Nenhum custo cadastrado no Supabase."
+        : "Nenhum custo local cadastrado.";
     return;
   }
 
@@ -348,18 +422,25 @@ function renderizarCustos() {
 
   custos.forEach((custo, indice) => {
     const linha = document.createElement("tr");
+    const produto = obterDadosProdutoDoCusto(custo);
+    const acoes = origemDados === "supabase"
+      ? `<button type="button" data-acao="detalhes" data-indice="${indice}">Ver detalhes</button>`
+      : `
+          <button type="button" data-acao="detalhes" data-indice="${indice}">Ver detalhes</button>
+          <button type="button" data-acao="remover-local" data-indice="${indice}">Remover local</button>
+        `;
 
     linha.innerHTML = `
-      <td data-label="Data">${custo.data}</td>
-      <td data-label="Peca">${custo.produtoNome}</td>
+      <td data-label="Data">${formatarData(custo.data || custo.dataCusto)}</td>
+      <td data-label="SKU">${produto.sku}</td>
+      <td data-label="Nome da peca"><strong class="product-name">${produto.nome}</strong></td>
       <td data-label="ID da peca">${custo.pecaId || "-"}</td>
-      <td data-label="Tipo">${custo.tipo}</td>
-      <td data-label="Descricao">${custo.descricao}</td>
+      <td data-label="Tipo">${custo.tipoCusto || custo.tipo || "-"}</td>
+      <td data-label="Descricao">${custo.descricao || custo.observacoes || "-"}</td>
       <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
       <td data-label="Acoes">
         <div class="table-actions">
-          <button type="button" data-acao="detalhes" data-indice="${indice}">Ver detalhes</button>
-          <button type="button" data-acao="remover" data-indice="${indice}">Remover</button>
+          ${acoes}
         </div>
       </td>
     `;
@@ -369,20 +450,22 @@ function renderizarCustos() {
 }
 
 function verDetalhes(indice) {
-  const custo = buscarCustos()[indice];
+  const custo = custosCustoCarregados[indice];
+  const produto = obterDadosProdutoDoCusto(custo);
 
   alert(
-    `Peca: ${custo.produtoNome}\n` +
+    `SKU: ${produto.sku}\n` +
+    `Peca: ${produto.nome}\n` +
     `ID da peca: ${custo.pecaId || "-"}\n` +
-    `Tipo: ${custo.tipo}\n` +
-    `Descricao: ${custo.descricao}\n` +
+    `Tipo: ${custo.tipoCusto || custo.tipo || "-"}\n` +
+    `Descricao: ${custo.descricao || "-"}\n` +
     `Valor: ${formatarMoeda(custo.valor)}\n` +
-    `Data: ${custo.data}\n` +
+    `Data: ${formatarData(custo.data || custo.dataCusto)}\n` +
     `Observacoes: ${custo.observacoes || "-"}`
   );
 }
 
-function removerCusto(indice) {
+async function removerCustoLocal(indice) {
   const custos = buscarCustos();
   const confirmou = confirm(`Deseja remover o custo "${custos[indice].descricao}"?`);
 
@@ -392,7 +475,8 @@ function removerCusto(indice) {
 
   custos.splice(indice, 1);
   salvarCustos(custos);
-  renderizarCustos();
+  await carregarCustos();
+  renderizarCustos("local");
   renderizarResumoProduto();
 }
 
@@ -412,22 +496,10 @@ function montarCusto(produto, tipo, descricao, valor, data) {
 }
 
 async function salvarCustoNoSupabaseOuFallback(custo) {
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    try {
-      const custoSalvo = await window.supabaseService.salvarCustoPeca(custo);
-      const custoComDadosProduto = {
-        ...custo,
-        ...custoSalvo,
-        produtoNome: custo.produtoNome,
-        observacoes: custo.observacoes
-      };
-
-      salvarCustoNoCache(custoComDadosProduto);
-      console.log("Custo cadastrado no Supabase:", custoComDadosProduto);
-      return "supabase";
-    } catch (erro) {
-      console.error("Erro ao salvar custo da peca no Supabase:", erro);
-    }
+  if (supabaseEstaConfigurado()) {
+    const custoSalvo = await window.supabaseService.salvarCustoPeca(custo);
+    console.log("Custo cadastrado no Supabase:", custoSalvo);
+    return "supabase";
   }
 
   salvarCustoNoCache(custo);
@@ -438,7 +510,6 @@ async function salvarCustoNoSupabaseOuFallback(custo) {
 formularioCusto.addEventListener("submit", async function (evento) {
   evento.preventDefault();
 
-  const produtos = buscarProdutos();
   const pecaId = Number(selectProdutoCusto.value);
   const tipo = document.getElementById("tipoCusto").value;
   const descricao = document.getElementById("descricaoCusto").value.trim();
@@ -457,7 +528,7 @@ formularioCusto.addEventListener("submit", async function (evento) {
     return;
   }
 
-  const produto = produtos.find(item => Number(item.id) === pecaId);
+  const produto = buscarProdutoPorId(pecaId);
 
   if (!produto) {
     mensagemCusto.textContent = "Nao foi possivel encontrar a peca selecionada. Atualize a lista e tente novamente.";
@@ -486,8 +557,9 @@ formularioCusto.addEventListener("submit", async function (evento) {
     mensagemCusto.textContent = mensagemSucesso;
     mensagemCusto.className = "form-message form-message--success";
     formularioCusto.reset();
+    await carregarCustos();
     renderizarResumoProduto();
-    renderizarCustos();
+    renderizarCustos(destino);
   } catch (erro) {
     console.error("Erro ao cadastrar custo da peca:", erro);
     mensagemCusto.textContent = "Nao foi possivel salvar o custo da peca.";
@@ -550,10 +622,17 @@ tabelaCustos.addEventListener("click", function (evento) {
     verDetalhes(indice);
   }
 
-  if (botao.dataset.acao === "remover") {
-    removerCusto(indice);
+  if (botao.dataset.acao === "remover-local") {
+    removerCustoLocal(indice);
   }
 });
 
-carregarProdutos();
-renderizarCustos();
+async function iniciarTelaCustos() {
+  await carregarProdutos();
+  await carregarOrigensParaCustos();
+  const origemDados = await carregarCustos();
+  renderizarCustos(origemDados);
+  renderizarResumoProduto();
+}
+
+iniciarTelaCustos();
