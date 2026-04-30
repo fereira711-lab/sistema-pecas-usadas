@@ -12,7 +12,7 @@
       <p class="hero__tag">Estoque</p>
       <h1>Detalhes da Peça</h1>
       <p class="hero__description">
-        Visualize os dados completos da peça, custos diversos, vendas e resultado.
+        Visualize os dados completos da peça, entradas, custos, vendas e resultado.
       </p>
     </div>
   </header>
@@ -39,8 +39,36 @@
     <section class="stock-card section-spaced">
       <div class="stock-header">
         <div>
+          <h2>Entradas de estoque</h2>
+          <p>Lotes vinculados à peça, com saldo, consumo e custo unitário.</p>
+        </div>
+      </div>
+
+      <p id="mensagemEntradasProduto" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Origem</th>
+              <th>Data entrada</th>
+              <th>Quantidade total</th>
+              <th>Quantidade consumida</th>
+              <th>Saldo disponível</th>
+              <th>Custo unitário</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaEntradasProduto"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
           <h2>Custos diversos da peça</h2>
-          <p>Custos vinculados ao ID da peça.</p>
+          <p>Custos cadastrados diretamente para esta peça.</p>
         </div>
       </div>
 
@@ -66,7 +94,7 @@
       <div class="stock-header">
         <div>
           <h2>Vendas desta peça</h2>
-          <p>Vendas registradas para o ID da peça.</p>
+          <p>Vendas registradas para esta peça usando a data da venda.</p>
         </div>
       </div>
 
@@ -78,11 +106,12 @@
             <tr>
               <th>Data</th>
               <th>Quantidade</th>
-              <th>Preço unitário</th>
+              <th>Valor unitário</th>
               <th>Valor total</th>
-              <th>Custo total</th>
-              <th>Lucro bruto</th>
-              <th>Cliente</th>
+              <th>Canal</th>
+              <th>Custo entradas</th>
+              <th>Custos venda</th>
+              <th>Lucro venda</th>
             </tr>
           </thead>
           <tbody id="tabelaVendasProduto"></tbody>
@@ -91,6 +120,9 @@
     </section>
   </main>
 
-  <script src="../js/detalhes-produto.js?v=5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
+  <script src="../js/supabase-service.js?v=22"></script>
+  <script src="../js/detalhes-produto.js?v=6"></script>
 </body>
 </html>
