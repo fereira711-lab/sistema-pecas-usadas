@@ -155,35 +155,56 @@ function normalizarSku(sku) {
   return String(sku || "").trim().toUpperCase();
 }
 
-function calcularResultadoOrigem(origem, origens, pecas, vendas, custosPeca, custosVenda, consumosEstoque) {
+function calcularResultadoOrigem(origem, dados) {
+  const entradasDaOrigem = dados.entradasEstoque.filter(entrada => Number(entrada.origemId || 0) === Number(origem.id));
+  const idsEntradasOrigem = new Set(entradasDaOrigem.map(entrada => Number(entrada.id)));
+  const idsPecasOrigem = new Set(entradasDaOrigem.map(entrada => Number(entrada.pecaId || 0)));
   const skuOrigem = normalizarSku(origem.produtoSku || origem.produto_sku);
-  const pecasDaOrigem = skuOrigem
-    ? pecas.filter(peca => normalizarSku(peca.sku) === skuOrigem)
-    : pecas.filter(peca => Number(peca.origemId || 0) === Number(origem.id));
-  const idsPecas = pecasDaOrigem.map(peca => Number(peca.id));
-  const vendasDaOrigem = filtrarPorPeca(vendas, idsPecas);
-  const custosPecaDaOrigem = filtrarPorPeca(custosPeca, idsPecas);
-  const custosVendaDaOrigem = filtrarCustosVendaPorVendas(custosVenda, vendasDaOrigem);
+  const pecasDaOrigem = dados.pecas.filter(peca => {
+    const skuPeca = normalizarSku(peca.sku);
+
+    return idsPecasOrigem.has(Number(peca.id)) ||
+      Number(peca.origemId || 0) === Number(origem.id) ||
+      Boolean(skuOrigem && skuPeca === skuOrigem);
+  });
+
+  pecasDaOrigem.forEach(peca => idsPecasOrigem.add(Number(peca.id)));
+
+  const consumosDaOrigem = dados.consumosEstoque.filter(consumo => idsEntradasOrigem.has(Number(consumo.entradaEstoqueId || 0)));
+  const idsVendasOrigem = new Set(consumosDaOrigem.map(consumo => Number(consumo.vendaId || 0)));
+  const vendasDaOrigem = dados.vendas.filter(venda => idsVendasOrigem.has(Number(venda.id)));
+  const custosPecaDaOrigem = dados.custosPeca.filter(custo => idsPecasOrigem.has(Number(custo.pecaId || 0)));
+  const custosVendaDaOrigem = dados.custosVenda.filter(custo => idsVendasOrigem.has(Number(custo.vendaId || 0)));
+  const vendasPorId = vendasDaOrigem.reduce((mapa, venda) => {
+    mapa[Number(venda.id)] = venda;
+    return mapa;
+  }, {});
+  const totalVendido = consumosDaOrigem.reduce((total, consumo) => {
+    const venda = vendasPorId[Number(consumo.vendaId)];
+    const valorUnitario = Number(venda?.valorUnitario || venda?.precoUnitario || 0);
+
+    return total + (Number(consumo.quantidadeConsumida || 0) * valorUnitario);
+  }, 0);
   const investimento = Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
+  const custoConsumido = somar(consumosDaOrigem, "custoTotal");
   const totalCustosPeca = somar(custosPecaDaOrigem);
   const totalCustosVenda = somar(custosVendaDaOrigem);
-  const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
-  const consumosDaOrigem = consumosEstoque.filter(consumo => Number(consumo.origemId || 0) === Number(origem.id));
-  const vendasSemConsumo = vendasDaOrigem.filter(venda => !(consumosPorVenda[Number(venda.id)] || []).length);
-  const totalVendido = calcularReceitaFifoDaOrigem(vendasDaOrigem, consumosDaOrigem, vendasSemConsumo);
-  const custoFifoConsumido = somar(consumosDaOrigem, "custoTotal");
-  const custoFallback = calcularCustoFifoComFallback(vendasSemConsumo, pecas, origens, {});
-  const totalCustos = custoFifoConsumido + custoFallback + totalCustosPeca + totalCustosVenda;
+  const totalCustos = custoConsumido + totalCustosPeca + totalCustosVenda;
   const lucro = totalVendido - totalCustos;
+  const status = lucro > 0
+    ? "lucro"
+    : totalVendido < investimento
+      ? "ainda recuperando investimento"
+      : "prejuízo";
 
   return {
     origem,
     investimento,
     totalVendido,
     totalCustos,
-    custoVendido: custoFifoConsumido + custoFallback,
+    custoVendido: custoConsumido,
     lucro,
-    status: lucro > 0 ? "Deu lucro" : "Ainda nao pagou"
+    status
   };
 }
 
@@ -397,7 +418,7 @@ function renderizarTabelaOrigens(resultadosOrigens) {
       <td data-label="Investimento">${formatarMoeda(resultado.investimento)}</td>
       <td data-label="Total vendido">${formatarMoeda(resultado.totalVendido)}</td>
       <td data-label="Custos">${formatarMoeda(resultado.totalCustos)}</td>
-      <td data-label="Lucro"><strong class="${classeLucro}">${formatarMoeda(resultado.lucro)}</strong></td>
+      <td data-label="Resultado"><strong class="${classeLucro}">${formatarMoeda(resultado.lucro)}</strong></td>
       <td data-label="Status">${resultado.status}</td>
     `;
 
@@ -421,7 +442,7 @@ async function iniciarPainelGeral() {
   }
 
   const resultadosOrigens = dados.origens.map(origem => {
-    return calcularResultadoOrigem(origem, dados.origens, dados.pecas, dados.vendas, dados.custosPeca, dados.custosVenda, dados.consumosEstoque);
+    return calcularResultadoOrigem(origem, dados);
   });
 
   renderizarCards(dados, resultadosOrigens);
