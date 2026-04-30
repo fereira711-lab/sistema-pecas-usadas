@@ -773,6 +773,30 @@ textarea:focus {
   color: #ffb0b0;
 }
 
+.status-badge--fast {
+  border-color: rgba(142, 230, 178, 0.24);
+  background: rgba(142, 230, 178, 0.12);
+  color: #b9edce;
+}
+
+.status-badge--attention {
+  border-color: rgba(255, 202, 112, 0.28);
+  background: rgba(255, 202, 112, 0.12);
+  color: #ffd48a;
+}
+
+.status-badge--stopped {
+  border-color: rgba(255, 143, 143, 0.28);
+  background: rgba(255, 143, 143, 0.12);
+  color: #ffb0b0;
+}
+
+.status-badge--no-sale {
+  border-color: rgba(170, 182, 197, 0.24);
+  background: rgba(170, 182, 197, 0.12);
+  color: #c4ceda;
+}
+
 .alert-list {
   display: flex;
   flex-wrap: wrap;

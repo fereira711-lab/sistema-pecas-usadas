@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giro de Estoque</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Estoque</p>
+      <h1>Giro de Estoque</h1>
+      <p class="hero__description">
+        Veja quais pecas venderam recentemente, quais estao paradas e quais precisam de atencao.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2>Analise de giro</h2>
+          <p>Classificacao calculada com pecas, vendas e entradas de estoque do Supabase.</p>
+        </div>
+        <div class="form-actions">
+          <a class="button-secondary" href="../index.html">Voltar para o inicio</a>
+          <a class="button-secondary" href="produtos.html">Ver produtos</a>
+        </div>
+      </div>
+
+      <p id="mensagemGiroEstoque" class="empty-message"></p>
+      <section id="resumoGiroEstoque" class="summary-grid summary-grid--compact" aria-label="Resumo do giro de estoque"></section>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Pecas analisadas</h2>
+          <p>Lista de pecas com estoque disponivel, vendas e dias sem venda.</p>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Nome da peca</th>
+              <th>Estoque disponivel</th>
+              <th>Qtd. vendida</th>
+              <th>Ultima venda</th>
+              <th>Dias sem venda</th>
+              <th>Classificacao</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaGiroEstoque"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
+  <script src="../js/supabase-service.js?v=23"></script>
+  <script src="../js/giro-estoque.js?v=1"></script>
+</body>
+</html>

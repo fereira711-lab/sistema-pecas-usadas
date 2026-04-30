@@ -36,19 +36,19 @@
         <div class="accordion-panel" id="grupo-cadastros" hidden>
           <div class="menu-grid menu-grid--module">
             <article class="menu-card">
-              <h3>Cadastrar Origem</h3>
-              <p>Cadastre compras avulsas, carros para desmonte ou lotes.</p>
+              <h3>Cadastro de Origem / Entrada</h3>
+              <p>Cadastre compras avulsas, carros para desmonte ou lotes com entrada de estoque.</p>
               <button type="button" data-url="paginas/origens.html">Acessar</button>
             </article>
 
             <article class="menu-card">
-              <h3>Cadastrar Peca</h3>
+              <h3>Cadastro de Peca</h3>
               <p>Cadastre pecas usadas vinculadas a uma origem.</p>
               <button type="button" data-url="paginas/cadastro-peca.html">Acessar</button>
             </article>
 
             <article class="menu-card">
-              <h3>Cadastrar Custo da Peca</h3>
+              <h3>Cadastro de Custo da Peca</h3>
               <p>Adicione custos de limpeza, preparo, conserto, embalagem e outros.</p>
               <button type="button" data-url="paginas/cadastro-custo.html">Acessar</button>
             </article>
@@ -68,33 +68,21 @@
         <div class="accordion-panel" id="grupo-operacoes" hidden>
           <div class="menu-grid menu-grid--module">
             <article class="menu-card">
+              <h3>Produtos / Pecas</h3>
+              <p>Veja pecas cadastradas, estoque, custos, vendas e lucro.</p>
+              <button type="button" data-url="paginas/produtos.html">Acessar</button>
+            </article>
+
+            <article class="menu-card">
               <h3>Venda de Peca</h3>
               <p>Registre uma venda e atualize o estoque.</p>
               <button type="button" data-url="paginas/cadastro-venda.html">Acessar</button>
             </article>
 
             <article class="menu-card">
-              <h3>Estoque / Produtos</h3>
-              <p>Liste as pecas com origem, estoque, custos, status, preco e lucro.</p>
-              <button type="button" data-url="paginas/produtos.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Entradas de estoque</h3>
+              <h3>Entradas de Estoque</h3>
               <p>Visualize entradas de estoque, consumo e saldo disponivel por lote.</p>
               <button type="button" data-url="paginas/lotes.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Listar Origens</h3>
-              <p>Visualize compras avulsas, carros para desmonte e lotes cadastrados.</p>
-              <button type="button" data-url="paginas/listar-origens.html">Acessar</button>
-            </article>
-
-            <article class="menu-card menu-card--future">
-              <h3>Detalhes da Origem</h3>
-              <p>Veja pecas, custos, vendas e resultado de uma origem.</p>
-              <button type="button" data-alert="Para ver os detalhes de uma origem, acesse Listar Origens e clique em Ver detalhes.">Como acessar</button>
             </article>
 
             <article class="menu-card">
@@ -102,33 +90,59 @@
               <p>Visualize vendas registradas, faturamento, custos e lucro.</p>
               <button type="button" data-url="paginas/historico-vendas.html">Acessar</button>
             </article>
+          </div>
+        </div>
+      </article>
 
-            <article class="menu-card menu-card--future">
-              <h3>Detalhes da Venda</h3>
-              <p>Veja os dados completos de uma venda especifica.</p>
-              <button type="button" data-alert="Para ver os detalhes de uma venda, acesse o Historico de Vendas e clique em Ver detalhes.">Como acessar</button>
+      <article class="accordion-group">
+        <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="grupo-estoque">
+          <span>
+            <small>Grupo</small>
+            Estoque
+          </span>
+          <span class="accordion-icon" aria-hidden="true">+</span>
+        </button>
+
+        <div class="accordion-panel" id="grupo-estoque" hidden>
+          <div class="menu-grid menu-grid--module">
+            <article class="menu-card">
+              <h3>Estoque / Produtos</h3>
+              <p>Controle pecas disponiveis, vendidas, custos e resultado por produto.</p>
+              <button type="button" data-url="paginas/produtos.html">Acessar</button>
+            </article>
+
+            <article class="menu-card">
+              <h3>Entradas / Lotes</h3>
+              <p>Acompanhe entradas de estoque, consumo e saldo disponivel por lote.</p>
+              <button type="button" data-url="paginas/lotes.html">Acessar</button>
+            </article>
+
+            <article class="menu-card">
+              <h3>Giro de Estoque</h3>
+              <p>Identifique pecas rapidas, paradas, sem venda ou que precisam de atencao.</p>
+              <button type="button" data-url="paginas/giro-estoque.html">Acessar</button>
+            </article>
+
+            <article class="menu-card">
+              <h3>Alertas</h3>
+              <p>Veja produtos sem estoque, estoque baixo e outros pontos de acompanhamento.</p>
+              <button type="button" data-url="paginas/relatorios.html">Acessar</button>
             </article>
           </div>
         </div>
       </article>
 
       <article class="accordion-group">
-        <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="grupo-relatorios">
+        <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="grupo-analises">
           <span>
             <small>Grupo</small>
-            Relatorios
+            Analises
           </span>
           <span class="accordion-icon" aria-hidden="true">+</span>
         </button>
 
-        <div class="accordion-panel" id="grupo-relatorios" hidden>
+        <div class="accordion-panel" id="grupo-analises" hidden>
           <div class="menu-grid menu-grid--module">
-            <article class="menu-card">
-              <h3>Painel Geral</h3>
-              <p>Veja a visao financeira e operacional do negocio.</p>
-              <button type="button" data-url="painel.html">Acessar</button>
-            </article>
-
             <article class="menu-card">
               <h3>Analise por Produto</h3>
               <p>Compare receita, custos, lucro e quantidade vendida de cada peca.</p>
@@ -141,28 +155,60 @@
               <button type="button" data-url="paginas/analise-periodo.html">Acessar</button>
             </article>
 
-            <article class="menu-card menu-card--future">
-              <h3>Lucro da Peca</h3>
-              <p>Acesse o resultado de uma peca pela tela Estoque / Produtos.</p>
-              <button type="button" data-alert="Para ver o lucro da peca, acesse Estoque / Produtos.">Como acessar</button>
+            <article class="menu-card">
+              <h3>Resultado por Origem</h3>
+              <p>Veja quais origens ja deram lucro e quais ainda precisam vender mais.</p>
+              <button type="button" data-url="painel.html">Acessar</button>
             </article>
 
-            <article class="menu-card menu-card--future">
-              <h3>Lucro da Origem</h3>
-              <p>Acesse o resultado de uma origem pela listagem de origens.</p>
-              <button type="button" data-alert="Para ver o lucro da origem, acesse Listar Origens e clique em Ver detalhes.">Como acessar</button>
+            <article class="menu-card">
+              <h3>Painel Geral do Negocio</h3>
+              <p>Veja a visao financeira e operacional do negocio.</p>
+              <button type="button" data-url="painel.html">Acessar</button>
             </article>
 
             <article class="menu-card">
               <h3>Lucro Geral</h3>
               <p>Veja resumo geral de estoque, vendas, custos e lucro bruto.</p>
-              <button type="button" data-url="paginas/relatorios.html">Acessar</button>
+              <button type="button" data-url="painel.html">Acessar</button>
+            </article>
+          </div>
+        </div>
+      </article>
+
+      <article class="accordion-group">
+        <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="grupo-administracao">
+          <span>
+            <small>Grupo</small>
+            Administracao / Configuracoes
+          </span>
+          <span class="accordion-icon" aria-hidden="true">+</span>
+        </button>
+
+        <div class="accordion-panel" id="grupo-administracao" hidden>
+          <div class="menu-grid menu-grid--module">
+            <article class="menu-card">
+              <h3>Listar Origens</h3>
+              <p>Pagina de apoio para consultar origens e abrir detalhes por origem.</p>
+              <button type="button" data-url="paginas/listar-origens.html">Acessar</button>
             </article>
 
             <article class="menu-card">
               <h3>Mapa Mental</h3>
               <p>Abra uma visao visual para entender telas, dados, custos, vendas e lucro.</p>
               <button type="button" data-url="docs/mapa-mental.html">Acessar</button>
+            </article>
+
+            <article class="menu-card menu-card--future">
+              <h3>Detalhes da Origem</h3>
+              <p>Tela secundaria aberta pela listagem de origens.</p>
+              <button type="button" data-alert="Para ver os detalhes de uma origem, acesse Listar Origens e clique em Ver detalhes.">Como acessar</button>
+            </article>
+
+            <article class="menu-card menu-card--future">
+              <h3>Detalhes da Venda</h3>
+              <p>Tela secundaria aberta pelo historico de vendas.</p>
+              <button type="button" data-alert="Para ver os detalhes de uma venda, acesse Historico de Vendas e clique em Ver detalhes.">Como acessar</button>
             </article>
           </div>
         </div>

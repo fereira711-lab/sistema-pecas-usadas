@@ -106,6 +106,7 @@
       custoTotal: Number(custoTotal || 0),
       tipoCusto: peca.tipo_custo || peca.tipo_custo_atribuido || "real",
       precoVenda: Number(peca.preco_venda || peca.preco_sugerido || 0),
+      createdAt: peca.created_at,
       observacoes: peca.observacoes || ""
     };
   }
