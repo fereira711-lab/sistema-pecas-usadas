@@ -3,11 +3,23 @@
 -- No PostgreSQL, a funcao roda dentro da transacao da chamada.
 -- Se qualquer erro acontecer, venda, consumos e atualizacoes sao desfeitos juntos.
 
+drop function if exists public.registrar_venda_fifo(
+  bigint,
+  integer,
+  numeric,
+  text,
+  numeric,
+  numeric,
+  numeric,
+  numeric
+);
+
 create or replace function public.registrar_venda_fifo(
   p_peca_id bigint,
   p_quantidade integer,
   p_valor_unitario numeric,
   p_canal_venda text default null,
+  p_data_venda date default current_date,
   p_custo_embalagem numeric default 0,
   p_custo_comissao numeric default 0,
   p_custo_frete numeric default 0,
@@ -66,14 +78,16 @@ begin
     quantidade_vendida,
     valor_unitario,
     valor_total,
-    canal_venda
+    canal_venda,
+    data_venda
   )
   values (
     p_peca_id,
     p_quantidade,
     p_valor_unitario,
     p_quantidade * p_valor_unitario,
-    nullif(trim(coalesce(p_canal_venda, '')), '')
+    nullif(trim(coalesce(p_canal_venda, '')), ''),
+    coalesce(p_data_venda, current_date)
   )
   returning id into v_venda_id;
 

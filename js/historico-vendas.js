@@ -3,6 +3,7 @@ const mensagemHistorico = document.getElementById("mensagemHistorico");
 const totalVendas = document.getElementById("totalVendas");
 const pecasVendidas = document.getElementById("pecasVendidas");
 const faturamentoTotal = document.getElementById("faturamentoTotal");
+let historicoCarregadoDoSupabase = false;
 
 function buscarVendas() {
   return JSON.parse(localStorage.getItem("vendas")) || [];
@@ -20,7 +21,7 @@ async function carregarVendas() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
       const vendas = await window.supabaseService.listarVendas();
-      salvarVendas(vendas);
+      historicoCarregadoDoSupabase = true;
       return vendas;
     } catch (erro) {
       console.error("Erro ao carregar vendas do Supabase:", erro);
@@ -28,6 +29,7 @@ async function carregarVendas() {
     }
   }
 
+  historicoCarregadoDoSupabase = false;
   return buscarVendas();
 }
 
@@ -60,6 +62,22 @@ function atualizarResumo(vendas) {
   faturamentoTotal.textContent = formatarMoeda(faturamento);
 }
 
+function renderizarAcoesVenda(venda, indice) {
+  const botaoDetalhes = `<button type="button" data-acao="detalhes" data-id="${venda.id || ""}" data-indice="${indice}">Ver detalhes</button>`;
+
+  if (historicoCarregadoDoSupabase) {
+    return `
+      ${botaoDetalhes}
+      <button type="button" disabled>Remoção não disponível</button>
+    `;
+  }
+
+  return `
+    ${botaoDetalhes}
+    <button type="button" data-acao="remover-local" data-indice="${indice}">Remover local</button>
+  `;
+}
+
 async function renderizarHistorico() {
   const vendas = await carregarVendas();
   const produtos = buscarProdutos();
@@ -79,15 +97,14 @@ async function renderizarHistorico() {
     linha.innerHTML = `
       <td data-label="Data">${venda.dataVenda}</td>
       <td data-label="Produto">${formatarNomePecaVenda(venda, produtos) || "-"}</td>
-      <td data-label="ID da peca">${venda.pecaId || "-"}</td>
+      <td data-label="ID da peça">${venda.pecaId || "-"}</td>
       <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</td>
       <td data-label="Preço unitário">${formatarMoeda(venda.precoUnitario)}</td>
       <td data-label="Valor total">${formatarMoeda(venda.valorTotal)}</td>
       <td data-label="Canal">${venda.canalVenda || venda.cliente || "-"}</td>
       <td data-label="Ações">
         <div class="table-actions">
-          <button type="button" data-acao="detalhes" data-id="${venda.id || ""}" data-indice="${indice}">Ver detalhes</button>
-          <button type="button" data-acao="remover" data-indice="${indice}">Remover</button>
+          ${renderizarAcoesVenda(venda, indice)}
         </div>
       </td>
     `;
@@ -105,7 +122,7 @@ function abrirDetalhesVenda(botao) {
   window.location.href = `detalhes-venda.html?index=${botao.dataset.indice}`;
 }
 
-function removerVenda(indice) {
+function removerVendaLocal(indice) {
   const vendas = buscarVendas();
   const confirmou = confirm(`Deseja remover a venda de "${formatarNomePecaVenda(vendas[indice])}"?`);
 
@@ -131,8 +148,8 @@ tabelaHistorico.addEventListener("click", function (evento) {
     abrirDetalhesVenda(botao);
   }
 
-  if (acao === "remover") {
-    removerVenda(Number(botao.dataset.indice));
+  if (acao === "remover-local") {
+    removerVendaLocal(Number(botao.dataset.indice));
   }
 });
 

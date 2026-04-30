@@ -20,6 +20,7 @@ function salvarOrigens(origens) {
 
 const campoBuscaPecaVenda = document.getElementById("buscaPecaVenda");
 const sugestoesPecaVenda = document.getElementById("sugestoesPecaVenda");
+const campoDataVenda = document.getElementById("dataVenda");
 let pecasVendaCarregadas = [];
 let origensVendaCarregadas = [];
 let sugestoesVendaAtuais = [];
@@ -136,6 +137,21 @@ function lerValorCampo(id) {
   }
 
   return Number(campo.value);
+}
+
+function obterDataHoje() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+function preencherDataVendaPadrao() {
+  if (campoDataVenda && !campoDataVenda.value) {
+    campoDataVenda.value = obterDataHoje();
+  }
 }
 
 function criarCustoVenda(tipo, descricao, valor) {
@@ -399,6 +415,8 @@ function selecionarPecaDaUrl() {
 async function inicializarFormularioVenda() {
   const campoPeca = obterCampoPeca();
 
+  preencherDataVendaPadrao();
+
   if (!campoPeca) {
     return;
   }
@@ -477,6 +495,7 @@ function lerVendaDoFormulario() {
     valorVenda: quantidadeVendida * valorUnitario,
     valorTotal: quantidadeVendida * valorUnitario,
     canalVenda: document.getElementById("canalVenda").value.trim(),
+    dataVenda: campoDataVenda?.value || obterDataHoje(),
     custosVenda,
     totalCustosVenda
   };
@@ -493,6 +512,10 @@ function validarVenda(venda) {
 
   if (!Number.isFinite(venda.valorUnitario) || venda.valorUnitario < 0) {
     return "Informe um valor unitario valido para a venda.";
+  }
+
+  if (!venda.dataVenda) {
+    return "Informe a data da venda.";
   }
 
   if (existeCustoVendaNegativo()) {

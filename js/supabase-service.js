@@ -653,6 +653,7 @@
       p_quantidade: vendaParaBanco.quantidade_vendida,
       p_valor_unitario: vendaParaBanco.valor_unitario,
       p_canal_venda: vendaParaBanco.canal_venda,
+      p_data_venda: vendaParaBanco.data_venda,
       p_custo_embalagem: obterCustoVendaPorTipo(venda.custosVenda, "embalagem"),
       p_custo_comissao: obterCustoVendaPorTipo(venda.custosVenda, "comissao"),
       p_custo_frete: obterCustoVendaPorTipo(venda.custosVenda, "frete"),
@@ -682,7 +683,7 @@
         valorTotal: vendaParaBanco.quantidade_vendida * vendaParaBanco.valor_unitario,
         valorVenda: vendaParaBanco.quantidade_vendida * vendaParaBanco.valor_unitario,
         canalVenda: vendaParaBanco.canal_venda || "",
-        dataVenda: new Date().toISOString().slice(0, 10),
+        dataVenda: vendaParaBanco.data_venda,
         custosVenda: custosDaVenda,
         totalCustosVenda: custosDaVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0)
       },
