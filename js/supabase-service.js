@@ -195,7 +195,8 @@
       valorTotal,
       valorVenda: valorTotal,
       canalVenda: venda.canal_venda || "",
-      dataVenda: venda.data_venda
+      dataVenda: venda.data_venda,
+      createdAt: venda.created_at
     };
   }
 
