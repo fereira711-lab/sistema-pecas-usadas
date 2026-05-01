@@ -25,6 +25,7 @@
           <p id="subtituloVenda">Dados detalhados da venda selecionada.</p>
         </div>
         <div class="form-actions">
+          <button type="button" id="botaoEditarVenda" class="button-secondary">Editar venda</button>
           <a class="button-secondary" href="historico-vendas.html">Voltar para histórico de vendas</a>
           <a class="button-secondary" href="../index.html">Voltar para o painel</a>
         </div>
@@ -32,6 +33,49 @@
 
       <p id="mensagemVendaNaoEncontrada" class="empty-message"></p>
       <div id="dadosVenda" class="detail-grid"></div>
+
+      <form id="formEditarVenda" class="edit-panel" hidden>
+        <p class="form-note">A quantidade vendida e o consumo FIFO ficam bloqueados para preservar o estoque.</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editarVendaData">Data da venda</label>
+            <input id="editarVendaData" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="editarVendaCanal">Canal de venda</label>
+            <input id="editarVendaCanal" type="text">
+          </div>
+        </div>
+
+        <div class="form-row form-row--four">
+          <div class="form-group">
+            <label for="editarVendaCustoEmbalagem">Embalagem</label>
+            <input id="editarVendaCustoEmbalagem" type="number" min="0" step="0.01">
+          </div>
+
+          <div class="form-group">
+            <label for="editarVendaCustoComissao">Comissão</label>
+            <input id="editarVendaCustoComissao" type="number" min="0" step="0.01">
+          </div>
+
+          <div class="form-group">
+            <label for="editarVendaCustoFrete">Frete</label>
+            <input id="editarVendaCustoFrete" type="number" min="0" step="0.01">
+          </div>
+
+          <div class="form-group">
+            <label for="editarVendaCustoOutros">Outros custos</label>
+            <input id="editarVendaCustoOutros" type="number" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="button-primary">Salvar venda</button>
+          <button type="button" id="cancelarEdicaoVenda" class="button-secondary">Cancelar</button>
+        </div>
+      </form>
     </section>
 
     <section class="summary-grid section-spaced" id="resumoFinanceiroVenda" aria-label="Resumo financeiro da venda"></section>
@@ -103,7 +147,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
-  <script src="../js/supabase-service.js?v=21"></script>
-  <script src="../js/detalhes-venda.js?v=8"></script>
+  <script src="../js/supabase-service.js?v=24"></script>
+  <script src="../js/detalhes-venda.js?v=9"></script>
 </body>
 </html>

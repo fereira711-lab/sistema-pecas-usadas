@@ -10,6 +10,16 @@ const mensagemCustosVenda = document.getElementById("mensagemCustosVenda");
 const tabelaCustosVenda = document.getElementById("tabelaCustosVenda");
 const mensagemCustoFifoVenda = document.getElementById("mensagemCustoFifoVenda");
 const tabelaCustoFifoVenda = document.getElementById("tabelaCustoFifoVenda");
+const botaoEditarVenda = document.getElementById("botaoEditarVenda");
+const formEditarVenda = document.getElementById("formEditarVenda");
+const editarVendaData = document.getElementById("editarVendaData");
+const editarVendaCanal = document.getElementById("editarVendaCanal");
+const editarVendaCustoEmbalagem = document.getElementById("editarVendaCustoEmbalagem");
+const editarVendaCustoComissao = document.getElementById("editarVendaCustoComissao");
+const editarVendaCustoFrete = document.getElementById("editarVendaCustoFrete");
+const editarVendaCustoOutros = document.getElementById("editarVendaCustoOutros");
+const cancelarEdicaoVenda = document.getElementById("cancelarEdicaoVenda");
+let vendaAtual = null;
 let contextoVenda = {
   produto: null,
   origens: [],
@@ -38,6 +48,10 @@ function formatarMoeda(valor) {
     style: "currency",
     currency: "BRL"
   });
+}
+
+function converterNumero(valor) {
+  return Number(String(valor || "0").replace(",", "."));
 }
 
 function formatarData(data) {
@@ -276,6 +290,149 @@ function renderizarDadosVenda(venda) {
   `;
 }
 
+function normalizarTipoCusto(tipo) {
+  return String(tipo || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replaceAll(" ", "_");
+}
+
+function obterCustoVendaPorTipo(tipo) {
+  const tipoNormalizado = normalizarTipoCusto(tipo);
+  return contextoVenda.custosVenda.find(custo => {
+    const tipoCusto = normalizarTipoCusto(custo.tipo || custo.tipoCusto);
+    return tipoCusto === tipoNormalizado || (tipoNormalizado === "outros" && tipoCusto.startsWith("outro"));
+  });
+}
+
+function preencherCampoCusto(campo, tipo) {
+  const custo = obterCustoVendaPorTipo(tipo);
+  campo.value = custo ? Number(custo.valor || 0) : "";
+}
+
+function abrirFormularioEdicaoVenda() {
+  if (!vendaAtual || !formEditarVenda) {
+    return;
+  }
+
+  editarVendaData.value = obterDataVenda(vendaAtual);
+  editarVendaCanal.value = vendaAtual.canalVenda || vendaAtual.canal_venda || vendaAtual.cliente || "";
+  preencherCampoCusto(editarVendaCustoEmbalagem, "embalagem");
+  preencherCampoCusto(editarVendaCustoComissao, "comissao");
+  preencherCampoCusto(editarVendaCustoFrete, "frete");
+  preencherCampoCusto(editarVendaCustoOutros, "outros");
+  formEditarVenda.hidden = false;
+  editarVendaData.focus();
+}
+
+function fecharFormularioEdicaoVenda() {
+  if (formEditarVenda) {
+    formEditarVenda.hidden = true;
+  }
+}
+
+function montarCustoVendaEditado(tipo, campo, descricaoPadrao) {
+  const valor = converterNumero(campo.value);
+  const custoExistente = obterCustoVendaPorTipo(tipo);
+
+  if (Number.isNaN(valor) || valor < 0) {
+    throw new Error("Valor de custo inválido.");
+  }
+
+  if (valor <= 0) {
+    return null;
+  }
+
+  return {
+    tipo,
+    tipoCusto: tipo,
+    descricao: custoExistente?.descricao || descricaoPadrao,
+    valor
+  };
+}
+
+function montarCustosVendaEditados() {
+  const tiposEditados = new Set(["embalagem", "comissao", "frete", "outros"]);
+  const custosMantidos = contextoVenda.custosVenda
+    .filter(custo => {
+      const tipo = normalizarTipoCusto(custo.tipo || custo.tipoCusto);
+      const tipoPadrao = tipo.startsWith("outro") ? "outros" : tipo;
+      return !tiposEditados.has(tipoPadrao);
+    })
+    .map(custo => ({
+      tipo: custo.tipo || custo.tipoCusto,
+      tipoCusto: custo.tipoCusto || custo.tipo,
+      descricao: custo.descricao || "",
+      valor: Number(custo.valor || 0)
+    }));
+
+  return [
+    ...custosMantidos,
+    montarCustoVendaEditado("embalagem", editarVendaCustoEmbalagem, "Custo de embalagem"),
+    montarCustoVendaEditado("comissao", editarVendaCustoComissao, "Comissão da venda"),
+    montarCustoVendaEditado("frete", editarVendaCustoFrete, "Frete da venda"),
+    montarCustoVendaEditado("outros", editarVendaCustoOutros, "Outros custos da venda")
+  ].filter(Boolean);
+}
+
+async function salvarEdicaoVenda(evento) {
+  evento.preventDefault();
+
+  if (!vendaAtual?.id || !window.supabaseService?.estaConfigurado()) {
+    mensagemVendaNaoEncontrada.textContent = "Configure o Supabase antes de editar a venda.";
+    return;
+  }
+
+  if (!editarVendaData.value) {
+    mensagemVendaNaoEncontrada.textContent = "Informe a data da venda.";
+    return;
+  }
+
+  let custosVendaEditados = [];
+
+  try {
+    custosVendaEditados = montarCustosVendaEditados();
+  } catch (erro) {
+    mensagemVendaNaoEncontrada.textContent = erro.message;
+    return;
+  }
+
+  const botaoSalvar = formEditarVenda.querySelector("button[type='submit']");
+  botaoSalvar.disabled = true;
+  mensagemVendaNaoEncontrada.textContent = "Salvando venda...";
+
+  try {
+    const vendaAtualizada = await window.supabaseService.atualizarVendaBasica({
+      id: vendaAtual.id,
+      dataVenda: editarVendaData.value,
+      canalVenda: editarVendaCanal.value.trim()
+    });
+    const custosAtualizados = await window.supabaseService.substituirCustosVenda(vendaAtual.id, custosVendaEditados);
+    const totalCustosVenda = custosAtualizados.reduce((total, custo) => total + Number(custo.valor || 0), 0);
+
+    contextoVenda.custosVenda = custosAtualizados;
+    vendaAtual = {
+      ...vendaAtual,
+      ...vendaAtualizada,
+      custosVenda: custosAtualizados,
+      totalCustosVenda
+    };
+
+    fecharFormularioEdicaoVenda();
+    renderizarDadosVenda(vendaAtual);
+    renderizarResumoFinanceiro(vendaAtual);
+    renderizarCustos(vendaAtual);
+    mensagemVendaNaoEncontrada.textContent = "Venda atualizada com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao editar venda:", erro);
+    mensagemVendaNaoEncontrada.textContent = "Não foi possível atualizar a venda.";
+  } finally {
+    botaoSalvar.disabled = false;
+  }
+}
+
 function renderizarResumoFinanceiro(venda) {
   const valorTotal = Number(venda.valorTotal || 0);
   const resultado = recalcularVendaComCustoAtual(venda);
@@ -500,6 +657,7 @@ async function iniciarDetalhesVenda() {
   }
 
   venda = await carregarContextoSupabase(venda);
+  vendaAtual = venda;
   mensagemVendaNaoEncontrada.textContent = "";
   renderizarDadosVenda(venda);
   renderizarResumoFinanceiro(venda);
@@ -507,5 +665,9 @@ async function iniciarDetalhesVenda() {
   renderizarProduto(venda);
   renderizarCustos(venda);
 }
+
+botaoEditarVenda?.addEventListener("click", abrirFormularioEdicaoVenda);
+cancelarEdicaoVenda?.addEventListener("click", fecharFormularioEdicaoVenda);
+formEditarVenda?.addEventListener("submit", salvarEdicaoVenda);
 
 iniciarDetalhesVenda();

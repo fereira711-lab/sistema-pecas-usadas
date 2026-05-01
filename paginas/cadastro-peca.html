@@ -30,6 +30,12 @@
       </div>
 
       <div class="form-group">
+        <label for="imagemPeca">Imagem da peça</label>
+        <input id="imagemPeca" type="file" accept="image/*">
+        <p class="field-hint">A imagem sera enviada para o bucket pecas no Supabase Storage.</p>
+      </div>
+
+      <div class="form-group">
         <input id="preco" type="number" placeholder="Preço de venda">
       </div>
 
@@ -64,7 +70,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=4"></script>
-  <script src="../js/supabase-service.js?v=17"></script>
-  <script src="../js/peca.js?v=6"></script>
+  <script src="../js/supabase-service.js?v=23"></script>
+  <script src="../js/peca.js?v=7"></script>
 </body>
 </html>

@@ -4,13 +4,6 @@ const campoBuscaLotes = document.getElementById("buscaLotes");
 
 let lotesCarregados = [];
 
-function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
-}
-
 function formatarData(data) {
   if (!data) {
     return "-";
@@ -141,7 +134,6 @@ function renderizarLotes(lotes) {
       <td data-label="Qtd. total">${lote.quantidadeTotal}</td>
       <td data-label="Qtd. consumida">${lote.quantidadeConsumida}</td>
       <td data-label="Saldo disponivel">${saldo}</td>
-      <td data-label="Custo unitario">${formatarMoeda(lote.custoUnitario)}</td>
       <td data-label="Status do lote"><span class="${obterClasseStatus(status)}">${status}</span></td>
       <td data-label="Alertas">${renderizarAlertas(alertas)}</td>
     `;

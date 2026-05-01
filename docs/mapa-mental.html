@@ -12,7 +12,7 @@
       <p class="eyebrow">Visao visual do projeto</p>
       <h1>Mapa mental do sistema de pecas usadas</h1>
       <p>
-        Use este mapa para entender como origem, pecas, custos, vendas, estoque e lucro se conectam.
+        Use este mapa para entender como origem, pecas, imagens, custos, vendas, estoque, analises e detalhes se conectam.
       </p>
     </header>
 
@@ -31,7 +31,7 @@
           </article>
           <article class="node">
             <strong>Peca</strong>
-            <span>Produto base identificado por SKU.</span>
+            <span>Produto base identificado por SKU, quantidade, origem e imagem.</span>
           </article>
           <article class="node">
             <strong>Custo da peca</strong>
@@ -66,6 +66,32 @@
           <article class="node">
             <strong>Giro</strong>
             <span>Mostra pecas rapidas, em atencao, paradas ou sem venda.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="branch branch--imagens">
+        <h2>Imagens</h2>
+        <div class="node-list">
+          <article class="node">
+            <strong>Cadastro novo</strong>
+            <span>A imagem pode ser enviada ao cadastrar uma peca.</span>
+          </article>
+          <article class="node">
+            <strong>Pecas existentes</strong>
+            <span>Cards e detalhes permitem adicionar ou trocar imagem.</span>
+          </article>
+          <article class="node">
+            <strong>Storage</strong>
+            <span>Arquivo vai para o bucket pecas no Supabase Storage.</span>
+          </article>
+          <article class="node">
+            <strong>URL salva</strong>
+            <span>O link publico fica em pecas.imagem_url.</span>
+          </article>
+          <article class="node">
+            <strong>Placeholder</strong>
+            <span>Sem imagem, o card mostra as iniciais da peca.</span>
           </article>
         </div>
       </section>
@@ -108,9 +134,10 @@
         <h2>Telas</h2>
         <div class="screen-grid">
           <span>Inicio</span>
-          <span>Painel geral</span>
+          <span>Painel operacional</span>
           <span>Analise por produto</span>
           <span>Analise por periodo</span>
+          <span>Analise de custos</span>
           <span>Giro de estoque</span>
           <span>Alertas</span>
           <span>Produtos</span>
@@ -120,8 +147,31 @@
           <span>Detalhes da peca</span>
           <span>Detalhes da venda e custo</span>
           <span>Cadastro de venda</span>
+          <span>Cadastro de custo</span>
           <span>Historico</span>
-          <span>Relatorios legados</span>
+          <span>Lotes</span>
+        </div>
+      </section>
+
+      <section class="branch branch--ux">
+        <h2>UX das telas</h2>
+        <div class="node-list">
+          <article class="node">
+            <strong>Operacionais</strong>
+            <span>Mostram apenas dados para agir: estoque, venda, imagem, origem e alertas.</span>
+          </article>
+          <article class="node">
+            <strong>Analises</strong>
+            <span>Concentram dinheiro, custo, lucro, margem e resultado.</span>
+          </article>
+          <article class="node">
+            <strong>Detalhes</strong>
+            <span>Mostram informacao completa da peca, origem ou venda.</span>
+          </article>
+          <article class="node">
+            <strong>Layout compacto</strong>
+            <span>Padrao global com fontes, botoes, tabelas e cards menores no desktop.</span>
+          </article>
         </div>
       </section>
 
@@ -130,15 +180,19 @@
         <div class="node-list">
           <article class="node">
             <strong>Supabase</strong>
-            <span>Guarda os dados online.</span>
+            <span>Guarda os dados online e integra com Storage.</span>
           </article>
           <article class="node">
             <strong>PostgreSQL</strong>
-            <span>Tabelas, relacionamentos e funcoes do sistema.</span>
+            <span>Tabelas, relacionamentos, funcoes e coluna imagem_url.</span>
           </article>
           <article class="node">
             <strong>LocalStorage</strong>
             <span>Apoio temporario no navegador.</span>
+          </article>
+          <article class="node">
+            <strong>Storage</strong>
+            <span>Bucket pecas guarda as imagens publicas das pecas.</span>
           </article>
         </div>
       </section>
@@ -169,24 +223,20 @@
         <h2>Painel geral</h2>
         <div class="node-list">
           <article class="node">
-            <strong>Total investido</strong>
-            <span>Soma dos valores pagos nas origens.</span>
-          </article>
-          <article class="node">
-            <strong>Total vendido</strong>
-            <span>Soma das vendas realizadas.</span>
-          </article>
-          <article class="node">
-            <strong>Lucro geral</strong>
-            <span>Total vendido menos investimento e custos.</span>
-          </article>
-          <article class="node">
-            <strong>Operacao</strong>
-            <span>Pecas em estoque, vendidas e origens por resultado.</span>
+            <strong>Operacional</strong>
+            <span>Mostra origens, pecas em estoque, pecas vendidas, vendas e lotes ativos.</span>
           </article>
           <article class="node">
             <strong>Ultimas vendas</strong>
-            <span>Mostra as vendas mais recentes carregadas do Supabase.</span>
+            <span>Lista vendas recentes sem transformar o painel em tela financeira.</span>
+          </article>
+          <article class="node">
+            <strong>Alertas</strong>
+            <span>Destaca estoque baixo, lotes baixos e vendas sem custo calculado.</span>
+          </article>
+          <article class="node">
+            <strong>Atalhos financeiros</strong>
+            <span>Leva para analise por produto, periodo e custos.</span>
           </article>
         </div>
       </section>
@@ -214,6 +264,97 @@
       </section>
     </section>
 
+    <section class="connection-section" aria-label="Conexoes entre as paginas do sistema">
+      <h2>Conexoes das paginas</h2>
+      <p>
+        Este desenho mostra para onde cada tela leva e quais partes do sistema ela alimenta.
+      </p>
+
+      <div class="connection-map">
+        <article class="connection-node connection-node--source">
+          <strong>Inicio</strong>
+          <span>index.html</span>
+        </article>
+
+        <div class="connection-line connection-line--down"></div>
+
+        <article class="connection-node connection-node--hub">
+          <strong>Painel operacional</strong>
+          <span>painel.html</span>
+        </article>
+
+        <div class="connection-row">
+          <article class="connection-node">
+            <strong>Cadastros</strong>
+            <span>origem, peca, venda e custo</span>
+          </article>
+          <article class="connection-node">
+            <strong>Operacao</strong>
+            <span>produtos, lotes, historico e origens</span>
+          </article>
+          <article class="connection-node">
+            <strong>Analises</strong>
+            <span>produto, periodo e custos</span>
+          </article>
+          <article class="connection-node">
+            <strong>Alertas e giro</strong>
+            <span>alertas.html e giro-estoque.html</span>
+          </article>
+        </div>
+
+        <div class="connection-grid">
+          <div class="connection-group">
+            <h3>Cadastros</h3>
+            <ol>
+              <li><span>cadastro-origem.html</span><strong>cria origem</strong></li>
+              <li><span>cadastro-peca.html</span><strong>cria peca + imagem</strong></li>
+              <li><span>cadastro-custo.html</span><strong>lanca custo da peca</strong></li>
+              <li><span>cadastro-venda.html</span><strong>registra venda</strong></li>
+            </ol>
+          </div>
+
+          <div class="connection-group">
+            <h3>Operacao</h3>
+            <ol>
+              <li><span>produtos.html</span><strong>vende, adiciona imagem, abre detalhes</strong></li>
+              <li><span>lotes.html</span><strong>mostra entradas e saldo</strong></li>
+              <li><span>historico-vendas.html</span><strong>abre detalhes da venda</strong></li>
+              <li><span>listar-origens.html</span><strong>abre detalhes da origem</strong></li>
+            </ol>
+          </div>
+
+          <div class="connection-group">
+            <h3>Detalhes</h3>
+            <ol>
+              <li><span>detalhes-produto.html</span><strong>peca, imagem, estoque, custos e vendas</strong></li>
+              <li><span>detalhes-venda.html</span><strong>produto, custos, consumo e lucro</strong></li>
+              <li><span>detalhes-origem.html</span><strong>origem, pecas, vendas, custos e resultado</strong></li>
+            </ol>
+          </div>
+
+          <div class="connection-group">
+            <h3>Analises</h3>
+            <ol>
+              <li><span>analise-produto.html</span><strong>receita, custo e lucro por peca</strong></li>
+              <li><span>analise-periodo.html</span><strong>resultado por data de venda</strong></li>
+              <li><span>analise-custos.html</span><strong>custos agrupados por tipo</strong></li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="connection-footer">
+          <article>
+            <strong>Supabase PostgreSQL</strong>
+            <span>origens, pecas, entradas_estoque, vendas, custos_peca, custos_venda e consumos_estoque</span>
+          </article>
+          <article>
+            <strong>Supabase Storage</strong>
+            <span>bucket pecas guarda imagens e salva URL em pecas.imagem_url</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="flow-section" aria-label="Fluxo principal do sistema">
       <h2>Fluxo principal</h2>
       <div class="flow">
@@ -225,7 +366,7 @@
         <article>
           <span>2</span>
           <strong>Cadastrar pecas</strong>
-          <p>Vincula pecas a origem e informa quantidade.</p>
+          <p>Vincula pecas a origem, informa quantidade e pode enviar imagem.</p>
         </article>
         <article>
           <span>3</span>
@@ -239,8 +380,13 @@
         </article>
         <article>
           <span>5</span>
+          <strong>Atualizar imagem</strong>
+          <p>Produtos e detalhes permitem adicionar ou trocar imagem da peca.</p>
+        </article>
+        <article>
+          <span>6</span>
           <strong>Ver resultado</strong>
-          <p>Produtos, detalhes e relatorios mostram custo e lucro.</p>
+          <p>Analises e detalhes mostram custo, venda, lucro e resultado.</p>
         </article>
       </div>
     </section>

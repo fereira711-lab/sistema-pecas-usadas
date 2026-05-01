@@ -318,34 +318,22 @@ function renderizarAlertasPainel(dados) {
   `;
 }
 
-function renderizarCards(dados, resultadosOrigens) {
-  const totalInvestido = somar(dados.origens, "valorPago");
-  const totalVendido = dados.vendas.reduce((total, venda) => total + calcularValorVenda(venda), 0);
-  const consumosPorVenda = agruparConsumosPorVenda(dados.consumosEstoque);
-  const totalCustoFifo = calcularCustoFifoComFallback(dados.vendas, dados.pecas, dados.origens, consumosPorVenda);
-  const totalCustosPeca = somar(dados.custosPeca);
-  const totalCustosVenda = somar(dados.custosVenda);
-  const lucroGeral = totalVendido - totalCustoFifo - totalCustosPeca - totalCustosVenda;
+function renderizarCards(dados) {
   const pecasEmEstoque = dados.pecas.reduce((total, peca) => {
     return total + Math.max(Number(peca.quantidade || 0) - Number(peca.quantidadeVendida || 0), 0);
   }, 0);
   const pecasVendidas = dados.pecas.reduce((total, peca) => {
     return total + Number(peca.quantidadeVendida || 0);
   }, 0);
-  const origensNoLucro = resultadosOrigens.filter(resultado => resultado.lucro > 0).length;
-  const origensNoPrejuizo = resultadosOrigens.filter(resultado => resultado.lucro < 0).length;
-  const classeLucroCard = lucroGeral >= 0 ? "summary-card--profit" : "summary-card--loss";
-  const classeLucroTexto = obterClasseLucro(lucroGeral);
+  const vendasRegistradas = dados.vendas.length;
+  const lotesAtivos = dados.entradasEstoque.filter(entrada => calcularSaldoEntrada(entrada) > 0).length;
 
   cardsPainelGeral.innerHTML =
-    criarCard("Total investido", formatarMoeda(totalInvestido)) +
-    criarCard("Total vendido", formatarMoeda(totalVendido)) +
-    criarCard("Lucro geral", `<span class="${classeLucroTexto}">${formatarMoeda(lucroGeral)}</span>`, classeLucroCard) +
-    criarCard("Custo da venda", formatarMoeda(totalCustoFifo)) +
+    criarCard("Origens cadastradas", dados.origens.length) +
     criarCard("Pecas em estoque", pecasEmEstoque) +
     criarCard("Pecas vendidas", pecasVendidas) +
-    criarCard("Origens no lucro", origensNoLucro, "summary-card--profit") +
-    criarCard("Origens no prejuizo", origensNoPrejuizo, "summary-card--loss");
+    criarCard("Vendas registradas", vendasRegistradas) +
+    criarCard("Lotes ativos", lotesAtivos);
 }
 
 function obterUltimasVendas(vendas, limite = 20) {
@@ -390,7 +378,6 @@ function renderizarUltimasVendas(vendas) {
       <td data-label="SKU">${venda.sku || "-"}</td>
       <td data-label="Nome da peca"><strong class="product-name">${venda.produtoNome || `Peca ${venda.pecaId || ""}`.trim()}</strong></td>
       <td data-label="Quantidade">${venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0}</td>
-      <td data-label="Valor total">${formatarMoeda(calcularValorVenda(venda))}</td>
     `;
 
     tabelaUltimasVendas.appendChild(linha);
@@ -398,6 +385,10 @@ function renderizarUltimasVendas(vendas) {
 }
 
 function renderizarTabelaOrigens(resultadosOrigens) {
+  if (!tabelaResultadoOrigens) {
+    return;
+  }
+
   tabelaResultadoOrigens.innerHTML = "";
 
   if (resultadosOrigens.length === 0) {
@@ -437,18 +428,15 @@ async function iniciarPainelGeral() {
     if (tabelaUltimasVendas) {
       tabelaUltimasVendas.innerHTML = "";
     }
-    tabelaResultadoOrigens.innerHTML = "";
+    if (tabelaResultadoOrigens) {
+      tabelaResultadoOrigens.innerHTML = "";
+    }
     return;
   }
 
-  const resultadosOrigens = dados.origens.map(origem => {
-    return calcularResultadoOrigem(origem, dados);
-  });
-
-  renderizarCards(dados, resultadosOrigens);
+  renderizarCards(dados);
   renderizarAlertasPainel(dados);
   renderizarUltimasVendas(dados.vendas);
-  renderizarTabelaOrigens(resultadosOrigens);
 }
 
 document.addEventListener("DOMContentLoaded", iniciarPainelGeral);

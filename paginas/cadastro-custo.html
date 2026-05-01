@@ -12,7 +12,7 @@
       <p class="hero__tag">Custos</p>
       <h1>Cadastrar Custo da Peça</h1>
       <p class="hero__description">
-        Adicione custos extras de preparo, reparo, embalagem ou outros custos vinculados a uma peça.
+        Registre custos extras vinculados a uma peça.
       </p>
     </div>
   </header>
@@ -44,7 +44,7 @@
           </div>
         </div>
 
-        <section id="resumoProdutoCusto" class="summary-grid summary-grid--compact" aria-label="Resumo de custos da peça"></section>
+        <section id="resumoProdutoCusto" class="summary-grid summary-grid--compact" aria-label="Resumo operacional da peça"></section>
 
         <div class="form-row">
           <div class="form-group">
@@ -100,7 +100,7 @@
       <div class="stock-header">
         <div>
           <h2>Custos cadastrados</h2>
-          <p>Custos da peça carregados do Supabase quando ele estiver configurado.</p>
+          <p>Conferência operacional dos lançamentos; valores completos ficam nos detalhes e nas análises.</p>
         </div>
       </div>
 
@@ -116,7 +116,6 @@
               <th>ID da peça</th>
               <th>Tipo</th>
               <th>Descrição</th>
-              <th>Valor</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -129,6 +128,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=4"></script>
   <script src="../js/supabase-service.js?v=17"></script>
-  <script src="../js/custos.js?v=12"></script>
+  <script src="../js/custos.js?v=13"></script>
 </body>
 </html>

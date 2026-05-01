@@ -1,7 +1,9 @@
 const tabelaProdutos = document.getElementById("tabelaProdutos");
 const mensagemProdutos = document.getElementById("mensagemProdutos");
 const campoBuscaProdutos = document.getElementById("buscaProdutos");
+const campoImagemProdutoExistente = document.getElementById("imagemProdutoExistente");
 let dadosProdutos = { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [], consumosEstoque: [], entradasEstoque: [] };
+let pecaSelecionadaParaImagem = null;
 
 function primeiroValorPreenchido(...valores) {
   return valores.find(valor => valor !== null && valor !== undefined);
@@ -75,6 +77,7 @@ function normalizarPeca(peca) {
     custo: Number(peca.custo || 0),
     custoTotal: Number(custoTotal || 0),
     precoVenda,
+    imagemUrl: peca.imagemUrl || peca.imagem_url || "",
     preparada: Boolean(peca.preparada)
   };
 }
@@ -143,6 +146,10 @@ function abrirDetalhesProduto(pecaId) {
   window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}`;
 }
 
+function abrirEdicaoProduto(pecaId) {
+  window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}&editar=1`;
+}
+
 function abrirLancamentoCusto(pecaId) {
   window.location.href = `cadastro-custo.html?pecaId=${encodeURIComponent(pecaId)}`;
 }
@@ -171,6 +178,86 @@ function abrirVenda(pecaId) {
   }
 
   window.location.href = `cadastro-venda.html?pecaId=${encodeURIComponent(id)}`;
+}
+
+function buscarPecaCarregada(pecaId) {
+  return dadosProdutos.pecas.find(peca => Number(peca.id) === Number(pecaId));
+}
+
+function pedirImagemProduto(pecaId) {
+  const peca = buscarPecaCarregada(pecaId);
+
+  if (!peca) {
+    alert("Nao foi possivel encontrar a peca selecionada.");
+    return;
+  }
+
+  pecaSelecionadaParaImagem = peca;
+  campoImagemProdutoExistente.value = "";
+  campoImagemProdutoExistente.click();
+}
+
+function validarArquivoImagem(arquivo) {
+  if (!arquivo) {
+    return "Selecione uma imagem.";
+  }
+
+  if (!arquivo.type.startsWith("image/")) {
+    return "Selecione um arquivo de imagem valido.";
+  }
+
+  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
+    return "Configure o Supabase antes de enviar imagens.";
+  }
+
+  return "";
+}
+
+async function salvarImagemProdutoExistente(arquivo) {
+  const erroImagem = validarArquivoImagem(arquivo);
+
+  if (erroImagem) {
+    alert(erroImagem);
+    return;
+  }
+
+  if (!pecaSelecionadaParaImagem) {
+    alert("Selecione uma peca antes de enviar a imagem.");
+    return;
+  }
+
+  mensagemProdutos.textContent = "Enviando imagem da peca...";
+
+  try {
+    const imagemUrl = await window.supabaseService.uploadImagemPeca(arquivo, pecaSelecionadaParaImagem);
+    const pecaAtualizada = await window.supabaseService.atualizarPeca({
+      ...pecaSelecionadaParaImagem,
+      imagemUrl
+    });
+
+    dadosProdutos.pecas = dadosProdutos.pecas.map(peca => {
+      return Number(peca.id) === Number(pecaAtualizada.id)
+        ? normalizarPeca(pecaAtualizada)
+        : peca;
+    });
+
+    renderizarProdutos(
+      filtrarPecasPorBusca(dadosProdutos.pecas),
+      dadosProdutos.origens,
+      dadosProdutos.vendas,
+      dadosProdutos.custosPeca,
+      dadosProdutos.custosVenda,
+      dadosProdutos.consumosEstoque,
+      dadosProdutos.entradasEstoque
+    );
+    mensagemProdutos.textContent = "Imagem da peca atualizada com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao atualizar imagem da peca:", erro);
+    mensagemProdutos.textContent = "Nao foi possivel atualizar a imagem da peca.";
+  } finally {
+    pecaSelecionadaParaImagem = null;
+    campoImagemProdutoExistente.value = "";
+  }
 }
 
 function somarValores(lista, campo = "valor") {
@@ -341,6 +428,16 @@ function renderizarAlertas(alertas) {
   `;
 }
 
+function renderizarMidiaProduto(peca) {
+  const imagemUrl = String(peca.imagemUrl || "").trim();
+
+  if (imagemUrl) {
+    return `<img src="${escaparHtml(imagemUrl)}" alt="Imagem de ${escaparHtml(formatarNomePeca(peca))}" loading="lazy">`;
+  }
+
+  return `<span>${escaparHtml(obterIniciaisProduto(peca))}</span>`;
+}
+
 function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda, consumosEstoque, entradasEstoque) {
   tabelaProdutos.innerHTML = "";
 
@@ -360,8 +457,18 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda, con
     card.className = "product-card";
 
     card.innerHTML = `
-      <div class="product-card__media" aria-hidden="true">
-        <span>${escaparHtml(obterIniciaisProduto(peca))}</span>
+      <div class="product-card__tabs">
+        <span class="product-card__tab product-card__tab--active">Dados</span>
+        <span class="product-card__tab">Compatibilidade</span>
+      </div>
+
+      <div class="product-card__title">
+        <p class="product-card__sku">${escaparHtml(formatarSku(peca))}</p>
+        <h3>${escaparHtml(formatarNomePeca(peca))}</h3>
+      </div>
+
+      <div class="product-card__media">
+        ${renderizarMidiaProduto(peca)}
       </div>
 
       <div class="product-card__body">
@@ -379,10 +486,12 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda, con
         </div>
 
         <div class="product-card__actions">
-          <button type="button" data-acao="detalhes" data-peca-id="${peca.id}">Ver detalhes</button>
+          <button type="button" data-acao="detalhes" data-peca-id="${peca.id}">Detalhes</button>
+          <button type="button" data-acao="editar" data-peca-id="${peca.id}">Editar</button>
           <button type="button" data-acao="venda" data-peca-id="${peca.id}" onclick="abrirVenda(${peca.id})" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
-          <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lançar custo</button>
-          <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
+          <button type="button" data-acao="imagem" data-peca-id="${peca.id}">${peca.imagemUrl ? "Trocar" : "Imagem"}</button>
+          <button type="button" data-acao="custo" data-peca-id="${peca.id}">Custo</button>
+          <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Origem</button>
         </div>
       </div>
     `;
@@ -438,12 +547,25 @@ tabelaProdutos.addEventListener("click", evento => {
     return;
   }
 
+  if (botao.dataset.acao === "imagem" && botao.dataset.pecaId) {
+    pedirImagemProduto(botao.dataset.pecaId);
+    return;
+  }
+
   if (botao.dataset.acao === "venda") {
     return;
   }
 
-  if (botao.dataset.acao === "editar") {
-    alert("Edicao de peca sera implementada em uma proxima etapa.");
+  if (botao.dataset.acao === "editar" && botao.dataset.pecaId) {
+    abrirEdicaoProduto(botao.dataset.pecaId);
+  }
+});
+
+campoImagemProdutoExistente?.addEventListener("change", evento => {
+  const arquivo = evento.target.files?.[0];
+
+  if (arquivo) {
+    salvarImagemProdutoExistente(arquivo);
   }
 });
 

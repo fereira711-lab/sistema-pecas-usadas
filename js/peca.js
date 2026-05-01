@@ -75,8 +75,30 @@ function lerPecaDoFormulario() {
     custoTotal: Number(custoDigitado || 0),
     tipoCusto,
     origemId: Number(document.getElementById("origemId").value),
+    imagemUrl: "",
     status: "em_estoque"
   };
+}
+
+function obterArquivoImagemPeca() {
+  const campoImagem = document.getElementById("imagemPeca");
+  return campoImagem?.files?.[0] || null;
+}
+
+function validarArquivoImagem(arquivo) {
+  if (!arquivo) {
+    return "";
+  }
+
+  if (!arquivo.type.startsWith("image/")) {
+    return "Selecione um arquivo de imagem valido.";
+  }
+
+  if (!(window.supabaseService && window.supabaseService.estaConfigurado())) {
+    return "Configure o Supabase antes de enviar imagem da peca.";
+  }
+
+  return "";
 }
 
 function validarPeca(peca) {
@@ -107,15 +129,27 @@ async function salvarPeca() {
   const peca = lerPecaDoFormulario();
   const erroValidacao = validarPeca(peca);
   const botaoSalvar = document.querySelector("button[onclick='salvarPeca()']");
+  const arquivoImagem = obterArquivoImagemPeca();
 
   if (erroValidacao) {
     alert(erroValidacao);
     return;
   }
 
+  const erroImagem = validarArquivoImagem(arquivoImagem);
+
+  if (erroImagem) {
+    alert(erroImagem);
+    return;
+  }
+
   botaoSalvar.disabled = true;
 
   try {
+    if (arquivoImagem && window.supabaseService && window.supabaseService.estaConfigurado()) {
+      peca.imagemUrl = await window.supabaseService.uploadImagemPeca(arquivoImagem, peca);
+    }
+
     const pecaSalva = window.supabaseService && window.supabaseService.estaConfigurado()
       ? await window.supabaseService.salvarPeca(peca)
       : null;

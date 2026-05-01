@@ -9,6 +9,21 @@ const mensagemCustosProduto = document.getElementById("mensagemCustosProduto");
 const tabelaCustosProduto = document.getElementById("tabelaCustosProduto");
 const mensagemVendasProduto = document.getElementById("mensagemVendasProduto");
 const tabelaVendasProduto = document.getElementById("tabelaVendasProduto");
+const botaoImagemProduto = document.getElementById("botaoImagemProduto");
+const campoImagemProdutoDetalhe = document.getElementById("imagemProdutoDetalhe");
+const botaoEditarProduto = document.getElementById("botaoEditarProduto");
+const formEditarProduto = document.getElementById("formEditarProduto");
+const editarProdutoNome = document.getElementById("editarProdutoNome");
+const editarProdutoSku = document.getElementById("editarProdutoSku");
+const editarProdutoPreco = document.getElementById("editarProdutoPreco");
+const editarProdutoObservacoes = document.getElementById("editarProdutoObservacoes");
+const cancelarEdicaoProduto = document.getElementById("cancelarEdicaoProduto");
+const formEditarCustoProduto = document.getElementById("formEditarCustoProduto");
+const editarCustoId = document.getElementById("editarCustoId");
+const editarCustoTipo = document.getElementById("editarCustoTipo");
+const editarCustoValor = document.getElementById("editarCustoValor");
+const editarCustoDescricao = document.getElementById("editarCustoDescricao");
+const cancelarEdicaoCusto = document.getElementById("cancelarEdicaoCusto");
 
 let contextoProduto = {
   produto: null,
@@ -59,6 +74,10 @@ function formatarNumero(valor) {
   });
 }
 
+function converterNumero(valor) {
+  return Number(String(valor || "0").replace(",", "."));
+}
+
 function formatarData(data) {
   if (!data) {
     return "-";
@@ -89,9 +108,18 @@ function formatarSku(peca) {
   return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
 }
 
+function obterImagemUrlProduto(produto) {
+  return String(produto.imagemUrl || produto.imagem_url || "").trim();
+}
+
 function obterPecaIdDaUrl() {
   const parametros = new URLSearchParams(window.location.search);
   return Number(parametros.get("pecaId") || parametros.get("id"));
+}
+
+function deveAbrirEdicaoProduto() {
+  const parametros = new URLSearchParams(window.location.search);
+  return parametros.get("editar") === "1";
 }
 
 function valorVenda(venda) {
@@ -215,11 +243,24 @@ function renderizarDadosProduto(produto) {
   const quantidadeTotal = obterQuantidadeTotal(produto);
   const quantidadeVendidaTotal = obterQuantidadeVendida(produto);
   const quantidadeDisponivel = obterQuantidadeDisponivel(produto);
+  const imagemUrl = obterImagemUrlProduto(produto);
 
   tituloProduto.textContent = nomePeca;
   subtituloProduto.textContent = `ID ${produto.id} - ${produto.categoria || "Sem categoria"}`;
 
+  if (botaoImagemProduto) {
+    botaoImagemProduto.textContent = imagemUrl ? "Trocar imagem" : "Adicionar imagem";
+  }
+
   dadosProduto.innerHTML = `
+    <article class="detail-card detail-card--image">
+      <span>Imagem da peÃ§a</span>
+      ${
+        imagemUrl
+          ? `<img src="${escaparHtml(imagemUrl)}" alt="Imagem de ${escaparHtml(nomePeca)}">`
+          : `<strong>Sem imagem cadastrada</strong>`
+      }
+    </article>
     <article class="detail-card">
       <span>SKU</span>
       <strong>${escaparHtml(formatarSku(produto))}</strong>
@@ -261,6 +302,205 @@ function renderizarDadosProduto(produto) {
       <strong>${escaparHtml(produto.observacoes || "-")}</strong>
     </article>
   `;
+}
+
+function abrirFormularioEdicaoProduto() {
+  if (!contextoProduto.produto || !formEditarProduto) {
+    return;
+  }
+
+  editarProdutoNome.value = contextoProduto.produto.nome || contextoProduto.produto.nomePeca || "";
+  editarProdutoSku.value = formatarSku(contextoProduto.produto) === "-" ? "" : formatarSku(contextoProduto.produto);
+  editarProdutoPreco.value = Number(contextoProduto.produto.precoVenda || 0);
+  editarProdutoObservacoes.value = contextoProduto.produto.observacoes || "";
+  formEditarProduto.hidden = false;
+  editarProdutoNome.focus();
+}
+
+function fecharFormularioEdicaoProduto() {
+  if (formEditarProduto) {
+    formEditarProduto.hidden = true;
+  }
+}
+
+async function salvarEdicaoProduto(evento) {
+  evento.preventDefault();
+
+  if (!contextoProduto.produto || !window.supabaseService?.estaConfigurado()) {
+    mensagemProdutoNaoEncontrado.textContent = "Configure o Supabase antes de editar a peça.";
+    return;
+  }
+
+  const nome = editarProdutoNome.value.trim();
+  const sku = editarProdutoSku.value.trim();
+  const precoVenda = converterNumero(editarProdutoPreco.value);
+
+  if (!nome || !sku) {
+    mensagemProdutoNaoEncontrado.textContent = "Informe nome e SKU para salvar a edição.";
+    return;
+  }
+
+  if (Number.isNaN(precoVenda) || precoVenda < 0) {
+    mensagemProdutoNaoEncontrado.textContent = "Informe um preço válido.";
+    return;
+  }
+
+  const botaoSalvar = formEditarProduto.querySelector("button[type='submit']");
+  botaoSalvar.disabled = true;
+  mensagemProdutoNaoEncontrado.textContent = "Salvando dados da peça...";
+
+  try {
+    const produtoAtualizado = await window.supabaseService.atualizarDadosPeca({
+      id: contextoProduto.produto.id,
+      nome,
+      sku,
+      precoVenda,
+      observacoes: editarProdutoObservacoes.value.trim()
+    });
+
+    contextoProduto.produto = produtoAtualizado;
+    fecharFormularioEdicaoProduto();
+    renderizarTela();
+    mensagemProdutoNaoEncontrado.textContent = "Dados da peça atualizados com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao editar peça:", erro);
+    mensagemProdutoNaoEncontrado.textContent = "Não foi possível atualizar os dados da peça.";
+  } finally {
+    botaoSalvar.disabled = false;
+  }
+}
+
+function abrirFormularioEdicaoCusto(custoId) {
+  const custo = contextoProduto.custosPeca.find(item => Number(item.id) === Number(custoId));
+
+  if (!custo || !formEditarCustoProduto) {
+    return;
+  }
+
+  editarCustoId.value = custo.id;
+  editarCustoTipo.value = custo.tipoCusto || custo.tipo || "";
+  editarCustoValor.value = Number(custo.valor || 0);
+  editarCustoDescricao.value = custo.descricao || "";
+  formEditarCustoProduto.hidden = false;
+  editarCustoTipo.focus();
+}
+
+function fecharFormularioEdicaoCusto() {
+  if (formEditarCustoProduto) {
+    formEditarCustoProduto.hidden = true;
+  }
+}
+
+async function salvarEdicaoCusto(evento) {
+  evento.preventDefault();
+
+  if (!window.supabaseService?.estaConfigurado()) {
+    mensagemCustosProduto.textContent = "Configure o Supabase antes de editar custos.";
+    return;
+  }
+
+  const id = Number(editarCustoId.value);
+  const tipo = editarCustoTipo.value.trim();
+  const descricao = editarCustoDescricao.value.trim();
+  const valor = converterNumero(editarCustoValor.value);
+
+  if (!id || !tipo) {
+    mensagemCustosProduto.textContent = "Informe o tipo do custo.";
+    return;
+  }
+
+  if (Number.isNaN(valor) || valor < 0) {
+    mensagemCustosProduto.textContent = "Informe um valor de custo válido.";
+    return;
+  }
+
+  const botaoSalvar = formEditarCustoProduto.querySelector("button[type='submit']");
+  botaoSalvar.disabled = true;
+  mensagemCustosProduto.textContent = "Salvando custo...";
+
+  try {
+    const custoAtualizado = await window.supabaseService.atualizarCustoPeca({
+      id,
+      tipoCusto: tipo,
+      descricao,
+      valor
+    });
+
+    contextoProduto.custosPeca = contextoProduto.custosPeca.map(custo => (
+      Number(custo.id) === id ? custoAtualizado : custo
+    ));
+    fecharFormularioEdicaoCusto();
+    renderizarResumo();
+    renderizarCustos();
+    mensagemCustosProduto.textContent = "Custo atualizado com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao editar custo:", erro);
+    mensagemCustosProduto.textContent = "Não foi possível atualizar o custo.";
+  } finally {
+    botaoSalvar.disabled = false;
+  }
+}
+
+function validarArquivoImagem(arquivo) {
+  if (!arquivo) {
+    return "Selecione uma imagem.";
+  }
+
+  if (!arquivo.type.startsWith("image/")) {
+    return "Selecione um arquivo de imagem valido.";
+  }
+
+  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
+    return "Configure o Supabase antes de enviar imagens.";
+  }
+
+  return "";
+}
+
+function abrirSeletorImagemProduto() {
+  if (!contextoProduto.produto) {
+    alert("Produto nao encontrado para atualizar imagem.");
+    return;
+  }
+
+  campoImagemProdutoDetalhe.value = "";
+  campoImagemProdutoDetalhe.click();
+}
+
+async function salvarImagemProdutoDetalhe(arquivo) {
+  const erroImagem = validarArquivoImagem(arquivo);
+
+  if (erroImagem) {
+    alert(erroImagem);
+    return;
+  }
+
+  mensagemProdutoNaoEncontrado.textContent = "Enviando imagem da peca...";
+
+  if (botaoImagemProduto) {
+    botaoImagemProduto.disabled = true;
+  }
+
+  try {
+    const imagemUrl = await window.supabaseService.uploadImagemPeca(arquivo, contextoProduto.produto);
+    const produtoAtualizado = await window.supabaseService.atualizarPeca({
+      ...contextoProduto.produto,
+      imagemUrl
+    });
+
+    contextoProduto.produto = produtoAtualizado;
+    mensagemProdutoNaoEncontrado.textContent = "Imagem da peca atualizada com sucesso.";
+    renderizarDadosProduto(contextoProduto.produto);
+  } catch (erro) {
+    console.error("Erro ao atualizar imagem da peca:", erro);
+    mensagemProdutoNaoEncontrado.textContent = "Nao foi possivel atualizar a imagem da peca.";
+  } finally {
+    if (botaoImagemProduto) {
+      botaoImagemProduto.disabled = false;
+    }
+
+    campoImagemProdutoDetalhe.value = "";
+  }
 }
 
 function renderizarResumo() {
@@ -349,6 +589,11 @@ function renderizarCustos() {
       <td data-label="Descrição">${escaparHtml(custo.descricao || "-")}</td>
       <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
       <td data-label="Observações">${escaparHtml(custo.observacoes || custo.observacao || "-")}</td>
+      <td data-label="Ações">
+        <div class="table-actions table-actions--single">
+          <button type="button" data-acao="editar-custo" data-custo-id="${escaparHtml(custo.id)}">Editar</button>
+        </div>
+      </td>
     `;
 
     tabelaCustosProduto.appendChild(linha);
@@ -515,10 +760,37 @@ async function iniciarDetalhes() {
     }
 
     renderizarTela();
+    if (deveAbrirEdicaoProduto()) {
+      abrirFormularioEdicaoProduto();
+    }
   } catch (erro) {
     console.error(erro);
     renderizarNaoEncontrado("Não foi possível carregar os detalhes da peça pelo Supabase.");
   }
 }
+
+botaoImagemProduto?.addEventListener("click", abrirSeletorImagemProduto);
+
+campoImagemProdutoDetalhe?.addEventListener("change", evento => {
+  const arquivo = evento.target.files?.[0];
+
+  if (arquivo) {
+    salvarImagemProdutoDetalhe(arquivo);
+  }
+});
+
+botaoEditarProduto?.addEventListener("click", abrirFormularioEdicaoProduto);
+cancelarEdicaoProduto?.addEventListener("click", fecharFormularioEdicaoProduto);
+formEditarProduto?.addEventListener("submit", salvarEdicaoProduto);
+cancelarEdicaoCusto?.addEventListener("click", fecharFormularioEdicaoCusto);
+formEditarCustoProduto?.addEventListener("submit", salvarEdicaoCusto);
+
+tabelaCustosProduto?.addEventListener("click", evento => {
+  const botao = evento.target.closest("[data-acao='editar-custo']");
+
+  if (botao) {
+    abrirFormularioEdicaoCusto(botao.dataset.custoId);
+  }
+});
 
 iniciarDetalhes();

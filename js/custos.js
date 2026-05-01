@@ -335,9 +335,7 @@ function renderizarResumoProduto() {
     return;
   }
 
-  const custoBase = calcularCustoPeca(produto, origensCustoCarregadas);
-  const custosDiversos = somarCustosPorPeca(produto.id);
-  const custoTotal = custoBase + custosDiversos;
+  const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
 
   resumoProdutoCusto.innerHTML = `
     <article class="summary-card">
@@ -349,16 +347,8 @@ function renderizarResumoProduto() {
       <strong>${produto.id}</strong>
     </article>
     <article class="summary-card">
-      <span>Custo base</span>
-      <strong>${formatarMoeda(custoBase)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custos diversos</span>
-      <strong>${formatarMoeda(custosDiversos)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custo total atualizado</span>
-      <strong>${formatarMoeda(custoTotal)}</strong>
+      <span>Estoque disponivel</span>
+      <strong>${quantidadeDisponivel}</strong>
     </article>
   `;
 }
@@ -437,7 +427,6 @@ function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" :
       <td data-label="ID da peca">${custo.pecaId || "-"}</td>
       <td data-label="Tipo">${custo.tipoCusto || custo.tipo || "-"}</td>
       <td data-label="Descricao">${custo.descricao || custo.observacoes || "-"}</td>
-      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
       <td data-label="Acoes">
         <div class="table-actions">
           ${acoes}

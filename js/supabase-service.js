@@ -106,6 +106,7 @@
       custoTotal: Number(custoTotal || 0),
       tipoCusto: peca.tipo_custo || peca.tipo_custo_atribuido || "real",
       precoVenda: Number(peca.preco_venda || peca.preco_sugerido || 0),
+      imagemUrl: peca.imagem_url || peca.imagemUrl || "",
       createdAt: peca.created_at,
       observacoes: peca.observacoes || ""
     };
@@ -128,6 +129,7 @@
       custo_atribuido: Number(custoTotal || 0),
       tipo_custo_atribuido: peca.tipoCusto || "real",
       preco_sugerido: Number(peca.precoVenda || 0),
+      imagem_url: peca.imagemUrl || null,
       preparada: Boolean(peca.preparada),
       observacoes: peca.observacoes || null
     };
@@ -150,9 +152,56 @@
       custo_atribuido: Number(custoTotal || 0),
       tipo_custo_atribuido: peca.tipoCusto || "real",
       preco_sugerido: Number(peca.precoVenda || 0),
+      imagem_url: peca.imagemUrl || null,
       preparada: Boolean(peca.preparada),
       observacoes: peca.observacoes || null
     };
+  }
+
+  function obterExtensaoArquivo(nomeArquivo) {
+    const partes = String(nomeArquivo || "").split(".");
+    const extensao = partes.length > 1 ? partes.pop() : "jpg";
+
+    return extensao.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  }
+
+  function normalizarNomeArquivo(texto) {
+    return String(texto || "peca")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "peca";
+  }
+
+  async function uploadImagemPeca(arquivo, peca = {}) {
+    const cliente = obterCliente();
+
+    if (!cliente || !arquivo) {
+      return "";
+    }
+
+    const extensao = obterExtensaoArquivo(arquivo.name);
+    const nomeBase = normalizarNomeArquivo(peca.sku || peca.nome || peca.id);
+    const caminho = `${nomeBase}-${Date.now()}.${extensao}`;
+    const { error } = await cliente.storage
+      .from("pecas")
+      .upload(caminho, arquivo, {
+        cacheControl: "3600",
+        upsert: false
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    const { data } = cliente.storage
+      .from("pecas")
+      .getPublicUrl(caminho);
+
+    return data?.publicUrl || "";
   }
 
   function mapearCustoPecaDoBanco(custo) {
@@ -564,6 +613,32 @@
     return mapearPecaDoBanco(data);
   }
 
+  async function atualizarDadosPeca(peca) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("pecas")
+      .update({
+        nome_peca: peca.nome,
+        sku: peca.sku || null,
+        preco_sugerido: Number(peca.precoVenda || 0),
+        observacoes: peca.observacoes || null
+      })
+      .eq("id", peca.id)
+      .select("*, origens(descricao)")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearPecaDoBanco(data);
+  }
+
   async function salvarEntradaEstoque(entrada) {
     const cliente = obterCliente();
 
@@ -612,6 +687,31 @@
     return mapearCustoPecaDoBanco(data);
   }
 
+  async function atualizarCustoPeca(custo) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("custos_peca")
+      .update({
+        tipo_custo: custo.tipoCusto || custo.tipo,
+        descricao: custo.descricao || null,
+        valor: Number(custo.valor || 0)
+      })
+      .eq("id", custo.id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearCustoPecaDoBanco(data);
+  }
+
   async function salvarCustosVenda(vendaId, custosVenda) {
     const cliente = obterCliente();
     const custosValidos = Array.isArray(custosVenda)
@@ -632,6 +732,49 @@
     }
 
     return data.map(mapearCustoVendaDoBanco);
+  }
+
+  async function substituirCustosVenda(vendaId, custosVenda) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return [];
+    }
+
+    const { error: erroDelete } = await cliente
+      .from("custos_venda")
+      .delete()
+      .eq("venda_id", vendaId);
+
+    if (erroDelete) {
+      throw erroDelete;
+    }
+
+    return salvarCustosVenda(vendaId, custosVenda);
+  }
+
+  async function atualizarVendaBasica(venda) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("vendas")
+      .update({
+        data_venda: venda.dataVenda,
+        canal_venda: venda.canalVenda || null
+      })
+      .eq("id", venda.id)
+      .select("*, pecas(nome_peca, sku)")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearVendaDoBanco(data);
   }
 
   async function salvarVenda(venda) {
@@ -706,9 +849,14 @@
     salvarOrigem,
     salvarPeca,
     atualizarPeca,
+    atualizarDadosPeca,
+    uploadImagemPeca,
     salvarEntradaEstoque,
     salvarCustoPeca,
+    atualizarCustoPeca,
     salvarCustosVenda,
+    substituirCustosVenda,
+    atualizarVendaBasica,
     salvarVenda
   };
 })();

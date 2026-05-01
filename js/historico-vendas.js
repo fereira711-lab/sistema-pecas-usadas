@@ -2,7 +2,6 @@ const tabelaHistorico = document.getElementById("tabelaHistoricoVendas");
 const mensagemHistorico = document.getElementById("mensagemHistorico");
 const totalVendas = document.getElementById("totalVendas");
 const pecasVendidas = document.getElementById("pecasVendidas");
-const faturamentoTotal = document.getElementById("faturamentoTotal");
 const formFiltrosHistorico = document.getElementById("formFiltrosHistorico");
 const dataInicialHistorico = document.getElementById("dataInicialHistorico");
 const dataFinalHistorico = document.getElementById("dataFinalHistorico");
@@ -49,13 +48,6 @@ async function carregarDadosHistorico() {
   historicoCarregadoDoSupabase = false;
   vendasHistoricoCarregadas = buscarVendas();
   produtosHistoricoCarregados = buscarProdutos();
-}
-
-function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
 }
 
 function obterDataVenda(venda) {
@@ -157,13 +149,8 @@ function atualizarResumo(vendas) {
     return total + Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
   }, 0);
 
-  const faturamento = vendas.reduce((total, venda) => {
-    return total + Number(venda.valorTotal || 0);
-  }, 0);
-
   totalVendas.textContent = vendas.length;
   pecasVendidas.textContent = quantidadeVendida;
-  faturamentoTotal.textContent = formatarMoeda(faturamento);
 }
 
 function renderizarAcoesVenda(venda, indice) {
@@ -203,8 +190,6 @@ function renderizarHistorico() {
       <td data-label="Produto">${formatarNomePecaVenda(venda) || "-"}</td>
       <td data-label="ID da peça">${venda.pecaId || "-"}</td>
       <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</td>
-      <td data-label="Preço unitário">${formatarMoeda(venda.precoUnitario)}</td>
-      <td data-label="Valor total">${formatarMoeda(venda.valorTotal)}</td>
       <td data-label="Canal">${venda.canalVenda || venda.cliente || "-"}</td>
       <td data-label="Ações">
         <div class="table-actions">
