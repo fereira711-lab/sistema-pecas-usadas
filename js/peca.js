@@ -156,10 +156,6 @@ function validarPeca(peca) {
   return "";
 }
 
-function calcularCustoUnitarioDaEntrada(valorAtribuidoEntrada, quantidade) {
-  return quantidade > 0 ? Number(valorAtribuidoEntrada || 0) / quantidade : 0;
-}
-
 function montarEntradaEstoque(peca, origem, quantidade, custoUnitario) {
   return {
     id: Date.now(),
@@ -207,7 +203,7 @@ async function salvarPeca() {
   try {
     const quantidadeEntrada = Number(peca.quantidade || 0);
     const valorAtribuidoEntrada = Number(peca.valorAtribuidoEntrada || 0);
-    const custoUnitario = calcularCustoUnitarioDaEntrada(valorAtribuidoEntrada, quantidadeEntrada);
+    const custoUnitario = quantidadeEntrada > 0 ? valorAtribuidoEntrada / quantidadeEntrada : 0;
     let pecaSalva = {
       ...peca,
       quantidade: 0,
@@ -220,16 +216,15 @@ async function salvarPeca() {
     }
 
     if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-      const pecaCriada = await window.supabaseService.salvarPeca(pecaSalva);
-      const entradaSalva = await window.supabaseService.salvarEntradaEstoque(montarEntradaEstoque(pecaCriada, origemSelecionada, quantidadeEntrada, custoUnitario));
-      const pecaAtualizada = await window.supabaseService.atualizarPeca({
-        ...pecaCriada,
+      const resultado = await window.supabaseService.criarPecaComEntrada({
+        ...pecaSalva,
         quantidade: quantidadeEntrada,
-        custo: custoUnitario,
-        custoTotal: custoUnitario,
+        valorAtribuidoEntrada,
         tipoCusto: "rateado",
         status: "em_estoque"
       });
+      const pecaAtualizada = resultado.peca;
+      const entradaSalva = resultado.entrada;
 
       salvarEntradaNoCache(entradaSalva);
       salvarPecaNoCache(pecaAtualizada);

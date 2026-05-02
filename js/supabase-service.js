@@ -664,6 +664,66 @@
     return mapearEntradaEstoqueDoBanco(data);
   }
 
+  async function buscarEntradaEstoquePorId(entradaId) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("entradas_estoque")
+      .select("*, pecas(nome_peca, sku), origens(descricao)")
+      .eq("id", entradaId)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearEntradaEstoqueDoBanco(data);
+  }
+
+  async function criarPecaComEntrada(peca) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente.rpc("criar_peca_com_entrada", {
+      p_sku: peca.sku,
+      p_nome: peca.nome,
+      p_origem_id: Number(peca.origemId),
+      p_quantidade: Number(peca.quantidade),
+      p_valor_atribuido: Number(peca.valorAtribuidoEntrada || 0),
+      p_imagem_url: peca.imagemUrl || null,
+      p_observacoes: peca.observacoes || null
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const resultado = Array.isArray(data) ? data[0] : data;
+    const pecaId = Number(resultado?.peca_id || resultado?.pecaId || 0);
+    const entradaId = Number(resultado?.entrada_id || resultado?.entradaId || 0);
+
+    if (!pecaId || !entradaId) {
+      throw new Error("A funcao criar_peca_com_entrada nao retornou os IDs esperados.");
+    }
+
+    const [pecaSalva, entradaSalva] = await Promise.all([
+      buscarPecaPorId(pecaId),
+      buscarEntradaEstoquePorId(entradaId)
+    ]);
+
+    return {
+      peca: pecaSalva,
+      entrada: entradaSalva
+    };
+  }
+
   async function salvarCustoPeca(custo) {
     const cliente = obterCliente();
 
@@ -856,6 +916,8 @@
     atualizarPeca,
     atualizarDadosPeca,
     uploadImagemPeca,
+    buscarEntradaEstoquePorId,
+    criarPecaComEntrada,
     salvarEntradaEstoque,
     salvarCustoPeca,
     atualizarCustoPeca,
