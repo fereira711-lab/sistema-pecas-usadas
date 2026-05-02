@@ -103,7 +103,20 @@ function obterOrigensDoProduto(peca, origens) {
     : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
 }
 
-function calcularCustoUnitarioFallback(peca, origens) {
+function calcularCustoUnitarioFallback(peca, origens, entradasEstoque = []) {
+  const entradasDaPeca = entradasEstoque.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
+
+  if (entradasDaPeca.length > 0) {
+    const totalUnidadesEntrada = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
+    const totalInvestidoEntrada = entradasDaPeca.reduce((total, entrada) => {
+      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
+    }, 0);
+
+    if (totalUnidadesEntrada > 0 && totalInvestidoEntrada > 0) {
+      return totalInvestidoEntrada / totalUnidadesEntrada;
+    }
+  }
+
   const origensDoProduto = obterOrigensDoProduto(peca, origens);
   const totalUnidades = origensDoProduto.reduce((total, origem) => {
     return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
@@ -119,7 +132,7 @@ function calcularCustoUnitarioFallback(peca, origens) {
   return totalInvestido / totalUnidades;
 }
 
-function calcularCustoFifoComFallback(vendas, pecas, origens, consumosPorVenda) {
+function calcularCustoFifoComFallback(vendas, pecas, origens, consumosPorVenda, entradasEstoque) {
   return vendas.reduce((total, venda) => {
     const consumosDaVenda = consumosPorVenda[Number(venda.id)] || [];
 
@@ -128,7 +141,7 @@ function calcularCustoFifoComFallback(vendas, pecas, origens, consumosPorVenda) 
     }
 
     const peca = pecas.find(item => Number(item.id) === Number(venda.pecaId || 0));
-    const custoUnitario = peca ? calcularCustoUnitarioFallback(peca, origens) : 0;
+    const custoUnitario = peca ? calcularCustoUnitarioFallback(peca, origens, entradasEstoque) : 0;
     const quantidade = Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0);
 
     return total + (quantidade * custoUnitario);

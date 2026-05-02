@@ -56,6 +56,19 @@ function obterOrigensDoProduto(peca, origens) {
 }
 
 function calcularCustoPeca(peca, origens) {
+  const entradasDaPeca = (window.__entradasRelatorios || []).filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
+
+  if (entradasDaPeca.length > 0) {
+    const totalUnidadesEntrada = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
+    const totalInvestidoEntrada = entradasDaPeca.reduce((total, entrada) => {
+      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
+    }, 0);
+
+    if (totalUnidadesEntrada > 0 && totalInvestidoEntrada > 0) {
+      return totalInvestidoEntrada / totalUnidadesEntrada;
+    }
+  }
+
   const origensDoProduto = obterOrigensDoProduto(peca, origens);
   const totalUnidades = origensDoProduto.reduce((total, origem) => {
     return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
@@ -365,14 +378,16 @@ function prepararVendas(vendas, pecas, custosVenda, origens = buscarLista("orige
 async function carregarDadosRelatorios() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
-      const [origens, pecas, custosPeca, vendas, custosVenda] = await Promise.all([
+      const [origens, pecas, custosPeca, vendas, custosVenda, entradasEstoque] = await Promise.all([
         window.supabaseService.listarOrigens(),
         window.supabaseService.listarPecas(),
         window.supabaseService.listarCustosPeca(),
         window.supabaseService.listarVendas(),
-        window.supabaseService.listarCustosVenda()
+        window.supabaseService.listarCustosVenda(),
+        window.supabaseService.listarEntradasEstoque()
       ]);
 
+      window.__entradasRelatorios = entradasEstoque || [];
       const vendasPreparadas = prepararVendas(vendas, pecas, custosVenda, origens);
 
       salvarLista("origens", origens);
@@ -395,6 +410,7 @@ async function carregarDadosRelatorios() {
   const pecas = buscarLista("produtos");
   const custosPeca = buscarLista("custosDiversos");
   const origens = buscarLista("origens");
+  window.__entradasRelatorios = buscarLista("entradasEstoque");
   const vendas = prepararVendas(buscarLista("vendas"), pecas, buscarLista("custosVenda"), origens);
 
   return {

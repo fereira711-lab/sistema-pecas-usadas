@@ -1,4 +1,4 @@
-const TIPOS_CUSTO_PECA = ["real", "rateado", "simbolico"];
+const mensagemPeca = document.getElementById("mensagemPeca");
 
 function buscarOrigensLocais() {
   return JSON.parse(localStorage.getItem("origens")) || [];
@@ -12,20 +12,42 @@ function buscarPecasLocais() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
 }
 
-function salvarPecaLocal(peca) {
-  const pecas = buscarPecasLocais();
-  pecas.push(peca);
+function salvarPecasLocais(pecas) {
   localStorage.setItem("produtos", JSON.stringify(pecas));
 }
 
 function salvarPecaNoCache(peca) {
   const pecas = buscarPecasLocais().filter(item => Number(item.id) !== Number(peca.id));
   pecas.push(peca);
-  localStorage.setItem("produtos", JSON.stringify(pecas));
+  salvarPecasLocais(pecas);
+}
+
+function buscarEntradasLocais() {
+  return JSON.parse(localStorage.getItem("entradasEstoque")) || [];
+}
+
+function salvarEntradasLocais(entradas) {
+  localStorage.setItem("entradasEstoque", JSON.stringify(entradas));
+}
+
+function salvarEntradaNoCache(entrada) {
+  const entradas = buscarEntradasLocais().filter(item => Number(item.id) !== Number(entrada.id));
+  entradas.push(entrada);
+  salvarEntradasLocais(entradas);
+}
+
+function mostrarMensagem(texto, tipo) {
+  mensagemPeca.textContent = texto;
+  mensagemPeca.className = `form-message form-message--${tipo}`;
 }
 
 function obterMensagemErroSupabase(erro) {
   return erro?.message || erro?.details || erro?.hint || "erro desconhecido";
+}
+
+function obterOrigemIdDaUrl() {
+  const parametros = new URLSearchParams(window.location.search);
+  return Number(parametros.get("origemId") || 0);
 }
 
 async function carregarOrigens() {
@@ -36,53 +58,62 @@ async function carregarOrigens() {
       return origens;
     } catch (erro) {
       console.error("Erro ao carregar origens do Supabase:", erro);
-      alert(`Nao foi possivel carregar as origens do Supabase: ${obterMensagemErroSupabase(erro)}`);
-      return [];
+      return buscarOrigensLocais();
     }
   }
 
   return buscarOrigensLocais();
 }
 
+function formatarCodigoOrigem(origem) {
+  return origem?.codigoOrigem || `ORI-${String(origem?.id || "").padStart(6, "0")}`;
+}
+
 async function preencherSelectOrigens() {
   const selectOrigem = document.getElementById("origemId");
   const origens = await carregarOrigens();
+  const origemPreselecionada = obterOrigemIdDaUrl();
 
   selectOrigem.innerHTML = '<option value="">Selecione a origem</option>';
 
   origens.forEach(origem => {
     const opcao = document.createElement("option");
     opcao.value = origem.id;
-    opcao.textContent = origem.descricao;
+    opcao.textContent = `${formatarCodigoOrigem(origem)} - ${origem.descricao || `Origem ${origem.id}`}`;
     selectOrigem.appendChild(opcao);
   });
+
+  if (origemPreselecionada) {
+    selectOrigem.value = String(origemPreselecionada);
+  }
 }
 
 function lerPecaDoFormulario() {
-  const custoDigitado = document.getElementById("custo").value;
-  const precoDigitado = document.getElementById("preco").value;
   const quantidade = Number(document.getElementById("quantidade").value);
-  const tipoCusto = document.getElementById("tipoCusto").value;
+  const valorAtribuidoBruto = document.getElementById("valorAtribuidoEntrada").value.trim();
+  const valorAtribuidoEntrada = valorAtribuidoBruto === "" ? 0 : Number(valorAtribuidoBruto);
 
   return {
     id: Date.now(),
     nome: document.getElementById("nome").value.trim(),
     sku: document.getElementById("sku").value.trim().toUpperCase(),
-    precoVenda: Number(precoDigitado || 0),
     quantidade,
+    valorAtribuidoEntrada,
+    valorAtribuidoInformado: valorAtribuidoBruto !== "",
     quantidadeVendida: 0,
-    custo: Number(custoDigitado || 0),
-    custoTotal: Number(custoDigitado || 0),
-    tipoCusto,
+    custo: 0,
+    custoTotal: 0,
+    tipoCusto: "rateado",
+    precoVenda: 0,
     origemId: Number(document.getElementById("origemId").value),
     imagemUrl: "",
-    status: "em_estoque"
+    status: "em_estoque",
+    observacoes: document.getElementById("observacoesPeca").value.trim()
   };
 }
 
 function obterArquivoImagemPeca() {
-  const campoImagem = document.getElementById("imagemPeca");
-  return campoImagem?.files?.[0] || null;
+  return document.getElementById("imagemPeca")?.files?.[0] || null;
 }
 
 function validarArquivoImagem(arquivo) {
@@ -102,27 +133,46 @@ function validarArquivoImagem(arquivo) {
 }
 
 function validarPeca(peca) {
+  if (!peca.origemId) {
+    return "Selecione a origem da peca.";
+  }
+
   if (!peca.nome) {
     return "Informe o nome da peca.";
   }
 
   if (!peca.sku) {
-    return "Informe o SKU da peca. Ele sera usado para somar entradas de estoque.";
-  }
-
-  if (!peca.origemId) {
-    return "Selecione a origem da peca.";
+    return "Informe o SKU da peca.";
   }
 
   if (!peca.quantidade || peca.quantidade < 1) {
     return "A quantidade deve ser maior ou igual a 1.";
   }
 
-  if (!TIPOS_CUSTO_PECA.includes(peca.tipoCusto)) {
-    return "Selecione um tipo de custo valido.";
+  if (!Number.isFinite(peca.valorAtribuidoEntrada) || peca.valorAtribuidoEntrada < 0) {
+    return "O valor atribuido para a entrada deve ser maior ou igual a zero.";
   }
 
   return "";
+}
+
+function calcularCustoUnitarioDaEntrada(valorAtribuidoEntrada, quantidade) {
+  return quantidade > 0 ? Number(valorAtribuidoEntrada || 0) / quantidade : 0;
+}
+
+function montarEntradaEstoque(peca, origem, quantidade, custoUnitario) {
+  return {
+    id: Date.now(),
+    pecaId: Number(peca.id),
+    origemId: Number(origem.id),
+    quantidadeTotal: quantidade,
+    quantidadeConsumida: 0,
+    custoUnitario,
+    dataEntrada: origem.dataCompra || new Date().toISOString().slice(0, 10),
+    sku: peca.sku,
+    nomePeca: peca.nome,
+    origemDescricao: origem.descricao || ""
+  };
 }
 
 async function salvarPeca() {
@@ -132,40 +182,87 @@ async function salvarPeca() {
   const arquivoImagem = obterArquivoImagemPeca();
 
   if (erroValidacao) {
-    alert(erroValidacao);
+    mostrarMensagem(erroValidacao, "warning");
     return;
   }
 
   const erroImagem = validarArquivoImagem(arquivoImagem);
 
   if (erroImagem) {
-    alert(erroImagem);
+    mostrarMensagem(erroImagem, "warning");
+    return;
+  }
+
+  const origens = await carregarOrigens();
+  const origemSelecionada = origens.find(origem => Number(origem.id) === Number(peca.origemId));
+
+  if (!origemSelecionada) {
+    mostrarMensagem("A origem selecionada nao foi encontrada.", "warning");
     return;
   }
 
   botaoSalvar.disabled = true;
+  mostrarMensagem("Salvando peca...", "success");
 
   try {
+    const quantidadeEntrada = Number(peca.quantidade || 0);
+    const valorAtribuidoEntrada = Number(peca.valorAtribuidoEntrada || 0);
+    const custoUnitario = calcularCustoUnitarioDaEntrada(valorAtribuidoEntrada, quantidadeEntrada);
+    let pecaSalva = {
+      ...peca,
+      quantidade: 0,
+      custo: custoUnitario,
+      custoTotal: custoUnitario
+    };
+
     if (arquivoImagem && window.supabaseService && window.supabaseService.estaConfigurado()) {
-      peca.imagemUrl = await window.supabaseService.uploadImagemPeca(arquivoImagem, peca);
+      pecaSalva.imagemUrl = await window.supabaseService.uploadImagemPeca(arquivoImagem, peca);
     }
 
-    const pecaSalva = window.supabaseService && window.supabaseService.estaConfigurado()
-      ? await window.supabaseService.salvarPeca(peca)
-      : null;
+    if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+      const pecaCriada = await window.supabaseService.salvarPeca(pecaSalva);
+      const entradaSalva = await window.supabaseService.salvarEntradaEstoque(montarEntradaEstoque(pecaCriada, origemSelecionada, quantidadeEntrada, custoUnitario));
+      const pecaAtualizada = await window.supabaseService.atualizarPeca({
+        ...pecaCriada,
+        quantidade: quantidadeEntrada,
+        custo: custoUnitario,
+        custoTotal: custoUnitario,
+        tipoCusto: "rateado",
+        status: "em_estoque"
+      });
 
-    if (pecaSalva) {
-      salvarPecaNoCache(pecaSalva);
-      alert("Peca cadastrada no Supabase com sucesso.");
+      salvarEntradaNoCache(entradaSalva);
+      salvarPecaNoCache(pecaAtualizada);
+      mostrarMensagem(
+        peca.valorAtribuidoInformado
+          ? "Peca cadastrada e entrada de estoque criada com sucesso."
+          : "Peca cadastrada com entrada de estoque em custo zerado. Preencha o valor atribuido quando quiser ratear este custo.",
+        peca.valorAtribuidoInformado ? "success" : "warning"
+      );
     } else {
-      salvarPecaLocal(peca);
-      alert("Peca cadastrada no armazenamento temporario. Configure o Supabase para salvar no banco.");
+      const pecaLocal = {
+        ...peca,
+        custo: custoUnitario,
+        custoTotal: custoUnitario
+      };
+      const entradaLocal = montarEntradaEstoque(pecaLocal, origemSelecionada, quantidadeEntrada, custoUnitario);
+
+      salvarPecaNoCache(pecaLocal);
+      salvarEntradaNoCache(entradaLocal);
+      mostrarMensagem(
+        peca.valorAtribuidoInformado
+          ? "Peca salva no armazenamento local com entrada de estoque vinculada."
+          : "Peca salva no armazenamento local com entrada em custo zerado.",
+        peca.valorAtribuidoInformado ? "success" : "warning"
+      );
     }
 
-    window.location.href = "produtos.html";
+    setTimeout(() => {
+      window.location.href = "produtos.html";
+    }, 700);
   } catch (erro) {
     console.error("Erro ao cadastrar peca:", erro);
-    alert(`Nao foi possivel salvar a peca no Supabase: ${obterMensagemErroSupabase(erro)}`);
+    mostrarMensagem(`Nao foi possivel salvar a peca: ${obterMensagemErroSupabase(erro)}`, "warning");
   } finally {
     botaoSalvar.disabled = false;
   }

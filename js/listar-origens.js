@@ -11,7 +11,8 @@ function buscarOrigens() {
   const origens = JSON.parse(localStorage.getItem("origens")) || [];
   const origensComId = origens.map((origem, indice) => ({
     ...origem,
-    id: origem.id || Date.now() + indice
+    id: origem.id || Date.now() + indice,
+    codigoOrigem: origem.codigoOrigem || `ORI-${String(origem.id || indice + 1).padStart(6, "0")}`
   }));
 
   localStorage.setItem("origens", JSON.stringify(origensComId));
@@ -20,6 +21,28 @@ function buscarOrigens() {
 
 function salvarOrigens(origens) {
   localStorage.setItem("origens", JSON.stringify(origens));
+}
+
+function formatarMoeda(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
+
+function formatarData(data) {
+  if (!data) {
+    return "-";
+  }
+
+  const dataIso = String(data).slice(0, 10);
+  const partes = dataIso.split("-");
+
+  if (partes.length !== 3) {
+    return dataIso;
+  }
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
 async function carregarOrigens() {
@@ -31,7 +54,7 @@ async function carregarOrigens() {
       return origens;
     } catch (erro) {
       console.error("Erro ao carregar origens do Supabase:", erro);
-      mensagemOrigens.textContent = "Não foi possível carregar do Supabase. Exibindo dados temporários do navegador.";
+      mensagemOrigens.textContent = "Nao foi possivel carregar do Supabase. Exibindo dados temporarios do navegador.";
     }
   }
 
@@ -41,9 +64,9 @@ async function carregarOrigens() {
 
 function atualizarResumo(origens) {
   totalOrigens.textContent = origens.length;
-  totalCarros.textContent = origens.filter(origem => origem.tipo === "Carro para desmonte").length;
-  totalLotes.textContent = origens.filter(origem => origem.tipo === "Lote").length;
-  totalComprasAvulsas.textContent = origens.filter(origem => origem.tipo === "Compra avulsa").length;
+  totalCarros.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Carro para desmonte").length;
+  totalLotes.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Lote").length;
+  totalComprasAvulsas.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Compra avulsa").length;
 }
 
 function renderizarAcoesOrigem(origem) {
@@ -52,7 +75,7 @@ function renderizarAcoesOrigem(origem) {
   if (origensCarregadasDoSupabase) {
     return `
       ${botaoDetalhes}
-      <button type="button" disabled>Remoção não disponível</button>
+      <button type="button" disabled>Remocao nao disponivel</button>
     `;
   }
 
@@ -76,15 +99,15 @@ async function renderizarOrigens() {
 
   origens.forEach(origem => {
     const linha = document.createElement("tr");
-    const quantidadeTotal = Number(origem.quantidadeTotal || origem.quantidade_total || 0);
     linha.innerHTML = `
-      <td data-label="Data da compra">${origem.dataCompra || "-"}</td>
-      <td data-label="Tipo">${origem.tipo || "-"}</td>
-      <td data-label="SKU">${origem.produtoSku || "-"}</td>
-      <td data-label="Quantidade">${quantidadeTotal}</td>
-      <td data-label="Descrição">${origem.descricao || "-"}</td>
-      <td data-label="Observações">${origem.observacoes || "-"}</td>
-      <td data-label="Ações">
+      <td data-label="Codigo">${origem.codigoOrigem || `ORI-${String(origem.id).padStart(6, "0")}`}</td>
+      <td data-label="Data da compra">${formatarData(origem.dataCompra)}</td>
+      <td data-label="Tipo">${origem.tipoOrigem || origem.tipo || "-"}</td>
+      <td data-label="Valor">${formatarMoeda(origem.valorPago || origem.custoTotal || 0)}</td>
+      <td data-label="Tipo de custo">${origem.custoTipo || "-"}</td>
+      <td data-label="Descricao">${origem.descricao || "-"}</td>
+      <td data-label="Observacoes">${origem.observacoes || "-"}</td>
+      <td data-label="Acoes">
         <div class="table-actions">
           ${renderizarAcoesOrigem(origem)}
         </div>
@@ -104,7 +127,7 @@ function removerOrigemLocal(origemId) {
   const origem = origens.find(item => Number(item.id) === Number(origemId));
 
   if (!origem) {
-    mensagemOrigens.textContent = "Origem não encontrada para remoção.";
+    mensagemOrigens.textContent = "Origem nao encontrada para remocao.";
     return;
   }
 
@@ -118,7 +141,7 @@ function removerOrigemLocal(origemId) {
   renderizarOrigens();
 }
 
-tabelaOrigensLista.addEventListener("click", function (evento) {
+tabelaOrigensLista.addEventListener("click", evento => {
   const botao = evento.target.closest("button");
 
   if (!botao) {
@@ -135,5 +158,4 @@ tabelaOrigensLista.addEventListener("click", function (evento) {
 });
 
 renderizarOrigens();
-
 window.addEventListener("focus", renderizarOrigens);

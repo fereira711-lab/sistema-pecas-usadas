@@ -6,6 +6,8 @@ const subtituloOrigem = document.getElementById("subtituloOrigem");
 const mensagemOrigemNaoEncontrada = document.getElementById("mensagemOrigemNaoEncontrada");
 const dadosOrigem = document.getElementById("dadosOrigem");
 const resumoOrigem = document.getElementById("resumoOrigem");
+const mensagemDistribuicaoOrigem = document.getElementById("mensagemDistribuicaoOrigem");
+const resumoDistribuicaoOrigem = document.getElementById("resumoDistribuicaoOrigem");
 const mensagemEntradasOrigem = document.getElementById("mensagemEntradasOrigem");
 const tabelaEntradasOrigem = document.getElementById("tabelaEntradasOrigem");
 const mensagemProdutosOrigem = document.getElementById("mensagemProdutosOrigem");
@@ -192,6 +194,10 @@ function calcularResumoOrigem() {
   const custosDaVenda = somarCampo(dadosDetalhesOrigem.custosVenda, "valor");
   const resultadoOrigem = receitaTotal - custoConsumidoDaOrigem - custosDaPeca - custosDaVenda;
   const valorInvestido = Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0);
+  const valorAtribuidoNasEntradas = dadosDetalhesOrigem.entradas.reduce((total, entrada) => {
+    return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
+  }, 0);
+  const saldoParaDistribuir = valorInvestido - valorAtribuidoNasEntradas;
   const saldoAindaEmEstoque = dadosDetalhesOrigem.entradas.reduce((total, entrada) => {
     const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
     return total + (saldo * Number(entrada.custoUnitario || 0));
@@ -209,6 +215,8 @@ function calcularResumoOrigem() {
     custosDaVenda,
     resultadoOrigem,
     valorInvestido,
+    valorAtribuidoNasEntradas,
+    saldoParaDistribuir,
     saldoAindaEmEstoque,
     status,
     custosVendaPorVenda
@@ -216,10 +224,16 @@ function calcularResumoOrigem() {
 }
 
 function renderizarDadosOrigem(origem) {
+  const codigoOrigem = origem.codigoOrigem || `ORI-${String(origem.id || "").padStart(6, "0")}`;
+
   tituloOrigem.textContent = origem.descricao || `Origem ${origem.id}`;
-  subtituloOrigem.textContent = `${origem.tipoOrigem || origem.tipo || "Origem"} - ${formatarData(origem.dataCompra)}`;
+  subtituloOrigem.textContent = `${codigoOrigem} - ${origem.tipoOrigem || origem.tipo || "Origem"} - ${formatarData(origem.dataCompra)}`;
 
   dadosOrigem.innerHTML = `
+    <article class="detail-card">
+      <span>Codigo</span>
+      <strong>${escaparHtml(codigoOrigem)}</strong>
+    </article>
     <article class="detail-card">
       <span>ID</span>
       <strong>${escaparHtml(origem.id || "-")}</strong>
@@ -235,6 +249,10 @@ function renderizarDadosOrigem(origem) {
     <article class="detail-card">
       <span>Valor total</span>
       <strong>${formatarMoeda(origem.valorPago || origem.valor_total || origem.custoTotal)}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Tipo de custo</span>
+      <strong>${escaparHtml(origem.custoTipo || "-")}</strong>
     </article>
     <article class="detail-card">
       <span>Data da origem</span>
@@ -257,6 +275,14 @@ function renderizarResumoOrigem() {
     <article class="summary-card">
       <span>Valor investido</span>
       <strong>${formatarMoeda(resumo.valorInvestido)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Valor atribuido nas entradas</span>
+      <strong>${formatarMoeda(resumo.valorAtribuidoNasEntradas)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Saldo para distribuir</span>
+      <strong>${formatarMoeda(resumo.saldoParaDistribuir)}</strong>
     </article>
     <article class="summary-card">
       <span>Valor recuperado em vendas</span>
@@ -285,6 +311,36 @@ function renderizarResumoOrigem() {
     <article class="${classeCardResultado}">
       <span>Status</span>
       <strong class="${classeResultado}">${escaparHtml(resumo.status)}</strong>
+    </article>
+  `;
+}
+
+function renderizarDistribuicaoOrigem() {
+  const resumo = calcularResumoOrigem();
+  const diferenca = resumo.saldoParaDistribuir;
+  const statusDistribuicao = diferenca > 0.009
+    ? "Ainda ha valor da origem para distribuir nas pecas."
+    : diferenca < -0.009
+      ? "O valor atribuido nas entradas ultrapassou o valor total da origem."
+      : "O valor da origem foi distribuido por completo.";
+
+  mensagemDistribuicaoOrigem.textContent = statusDistribuicao;
+  resumoDistribuicaoOrigem.innerHTML = `
+    <article class="summary-card">
+      <span>Valor total da origem</span>
+      <strong>${formatarMoeda(resumo.valorInvestido)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Total atribuido nas entradas</span>
+      <strong>${formatarMoeda(resumo.valorAtribuidoNasEntradas)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Saldo restante</span>
+      <strong>${formatarMoeda(resumo.saldoParaDistribuir)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Entradas vinculadas</span>
+      <strong>${formatarNumero(dadosDetalhesOrigem.entradas.length)}</strong>
     </article>
   `;
 }
@@ -540,6 +596,7 @@ async function carregarContextoSupabase(idOrigem) {
 function renderizarTela() {
   renderizarDadosOrigem(dadosDetalhesOrigem.origem);
   renderizarResumoOrigem();
+  renderizarDistribuicaoOrigem();
   renderizarEntradas();
   renderizarPecas();
   renderizarVendas();
@@ -550,6 +607,7 @@ function limparTela(mensagem) {
   mensagemOrigemNaoEncontrada.textContent = mensagem;
   dadosOrigem.innerHTML = "";
   resumoOrigem.innerHTML = "";
+  resumoDistribuicaoOrigem.innerHTML = "";
   tabelaEntradasOrigem.innerHTML = "";
   tabelaProdutosOrigem.innerHTML = "";
   tabelaVendasOrigem.innerHTML = "";

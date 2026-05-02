@@ -23,6 +23,7 @@ let vendaAtual = null;
 let contextoVenda = {
   produto: null,
   origens: [],
+  entradasEstoque: [],
   custosVenda: [],
   consumosFifo: []
 };
@@ -187,6 +188,19 @@ function obterOrigensDoProduto(peca, origens) {
 }
 
 function calcularCustoPeca(peca, origens) {
+  const entradasDaPeca = contextoVenda.entradasEstoque.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
+
+  if (entradasDaPeca.length > 0) {
+    const totalUnidadesEntrada = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
+    const totalInvestidoEntrada = entradasDaPeca.reduce((total, entrada) => {
+      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
+    }, 0);
+
+    if (totalUnidadesEntrada > 0 && totalInvestidoEntrada > 0) {
+      return totalInvestidoEntrada / totalUnidadesEntrada;
+    }
+  }
+
   const origensDoProduto = obterOrigensDoProduto(peca, origens);
   const totalUnidades = origensDoProduto.reduce((total, origem) => {
     return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
@@ -614,17 +628,19 @@ async function carregarContextoSupabase(venda) {
     return venda;
   }
 
-  const [produto, origens, custosVenda, consumosEstoque] = await Promise.all([
+  const [produto, origens, custosVenda, consumosEstoque, entradasEstoque] = await Promise.all([
     window.supabaseService.buscarPecaPorId(venda.pecaId),
     window.supabaseService.listarOrigens(),
     window.supabaseService.listarCustosVenda(),
-    window.supabaseService.listarConsumosEstoque()
+    window.supabaseService.listarConsumosEstoque(),
+    window.supabaseService.listarEntradasEstoque()
   ]);
   const custosVendaDaVenda = custosVenda.filter(custo => Number(custo.vendaId || 0) === Number(venda.id));
 
   contextoVenda = {
     produto,
     origens,
+    entradasEstoque: entradasEstoque || [],
     custosVenda: custosVendaDaVenda,
     consumosFifo: consumosEstoque.filter(consumo => Number(consumo.vendaId || 0) === Number(venda.id))
   };

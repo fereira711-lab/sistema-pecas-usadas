@@ -391,7 +391,7 @@ body {
 
 .connection-footer {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   padding-top: 18px;
   border-top: 2px dashed rgba(242, 184, 75, 0.35);
@@ -423,7 +423,7 @@ body {
 
 .flow {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 12px;
 }
 

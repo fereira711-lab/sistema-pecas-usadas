@@ -89,6 +89,70 @@ h1 {
   line-height: 1.6;
 }
 
+.auth-checking main,
+.auth-checking .accordion-menu,
+.auth-checking .test-tools {
+  display: none;
+}
+
+.auth-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 8px 10px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--cor-texto-suave);
+  font-size: 0.88rem;
+}
+
+.auth-bar .button-secondary {
+  min-height: 30px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+}
+
+.auth-layout {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: min(420px, 100%);
+  padding: 24px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), transparent),
+    var(--cor-card);
+  box-shadow: var(--sombra-card);
+}
+
+.auth-card h1 {
+  margin-bottom: 10px;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  letter-spacing: -0.035em;
+}
+
+.auth-card .hero__description {
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-button {
+  width: 100%;
+}
+
 .container {
   position: relative;
   width: min(1120px, calc(100% - 32px));
@@ -504,6 +568,10 @@ textarea:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.form-actions--inline {
+  margin-bottom: 12px;
 }
 
 .button-primary,

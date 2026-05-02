@@ -86,6 +86,7 @@ function normalizarOrigem(origem) {
   return {
     ...origem,
     id: Number(origem.id),
+    codigoOrigem: origem.codigoOrigem || `ORI-${String(origem.id || "").padStart(6, "0")}`,
     descricao: origem.descricao || origem.nome || `Origem ${origem.id}`,
     produtoSku: origem.produtoSku || origem.produto_sku || "",
     quantidadeTotal: Number(origem.quantidadeTotal || origem.quantidade_total || 0),
@@ -281,7 +282,24 @@ function obterOrigensDoProduto(peca, origens) {
     : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
 }
 
-function calcularCustoBasePeca(peca, origens) {
+function obterEntradasDoProduto(peca, entradasEstoque) {
+  return entradasEstoque.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
+}
+
+function calcularCustoBasePeca(peca, origens, entradasEstoque = []) {
+  const entradasDaPeca = obterEntradasDoProduto(peca, entradasEstoque);
+
+  if (entradasDaPeca.length > 0) {
+    const totalUnidades = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
+    const totalInvestido = entradasDaPeca.reduce((total, entrada) => {
+      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
+    }, 0);
+
+    if (totalUnidades > 0 && totalInvestido > 0) {
+      return totalInvestido / totalUnidades;
+    }
+  }
+
   const origensDoProduto = obterOrigensDoProduto(peca, origens);
 
   const totalUnidades = origensDoProduto.reduce((total, origem) => {
@@ -356,12 +374,12 @@ function calcularCustoFifoComFallback(vendasDaPeca, consumosPorVenda, custoUnita
   }, 0);
 }
 
-function calcularLucroPeca(peca, origens, vendas, custosPeca, custosVenda, consumosEstoque) {
+function calcularLucroPeca(peca, origens, vendas, custosPeca, custosVenda, consumosEstoque, entradasEstoque) {
   const vendasDaPeca = filtrarPorPeca(vendas, peca.id);
   const idsVendasDaPeca = vendasDaPeca.map(venda => Number(venda.id));
   const custosVendaDaPeca = custosVenda.filter(custo => idsVendasDaPeca.includes(Number(custo.vendaId || 0)));
   const receita = calcularReceitaPeca(vendasDaPeca);
-  const custoUnitario = calcularCustoBasePeca(peca, origens);
+  const custoUnitario = calcularCustoBasePeca(peca, origens, entradasEstoque);
   const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
   const custoFifo = calcularCustoFifoComFallback(vendasDaPeca, consumosPorVenda, custoUnitario);
   const totalCustosPeca = somarValores(filtrarPorPeca(custosPeca, peca.id));

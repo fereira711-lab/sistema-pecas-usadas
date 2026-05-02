@@ -12,7 +12,7 @@
       <p class="hero__tag">Origens</p>
       <h1>Origens Cadastradas</h1>
       <p class="hero__description">
-        Consulte compras avulsas, carros para desmonte e lotes cadastrados no sistema.
+        Consulte as origens cadastradas antes de vincular pecas e entradas.
       </p>
     </div>
   </header>
@@ -44,11 +44,11 @@
       <div class="stock-header">
         <div>
           <h2>Lista de origens</h2>
-          <p>Origens carregadas do banco de dados.</p>
+          <p>Cadastro simplificado de origens, sem SKU e sem quantidade da peca.</p>
         </div>
         <div class="form-actions">
           <a class="button-secondary" href="../index.html">Voltar para o painel</a>
-          <a class="button-primary" href="origens.html">Cadastrar nova origem</a>
+          <a class="button-primary" href="cadastro-origem.html">Cadastrar nova origem</a>
         </div>
       </div>
 
@@ -58,13 +58,14 @@
         <table class="stock-table">
           <thead>
             <tr>
+              <th>Codigo</th>
               <th>Data da compra</th>
               <th>Tipo</th>
-              <th>SKU</th>
-              <th>Quantidade</th>
-              <th>Descrição</th>
-              <th>Observações</th>
-              <th>Ações</th>
+              <th>Valor</th>
+              <th>Tipo de custo</th>
+              <th>Descricao</th>
+              <th>Observacoes</th>
+              <th>Acoes</th>
             </tr>
           </thead>
           <tbody id="tabelaOrigensLista"></tbody>
@@ -75,7 +76,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
-  <script src="../js/supabase-service.js?v=22"></script>
-  <script src="../js/listar-origens.js?v=7"></script>
+  <script src="../js/supabase-service.js?v=25"></script>
+  <script src="../js/listar-origens.js?v=8"></script>
 </body>
 </html>

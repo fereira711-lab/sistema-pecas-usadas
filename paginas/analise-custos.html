@@ -57,11 +57,39 @@
         </table>
       </div>
     </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Distribuicao por origem</h2>
+          <p>Resumo do valor investido na origem, do que ja foi atribuido nas entradas e do saldo restante.</p>
+        </div>
+      </div>
+
+      <p id="mensagemDistribuicaoOrigens" class="empty-message"></p>
+      <section id="resumoDistribuicaoOrigens" class="summary-grid summary-grid--compact" aria-label="Resumo da distribuicao por origem"></section>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Codigo</th>
+              <th>Origem</th>
+              <th>Valor total</th>
+              <th>Valor atribuido</th>
+              <th>Saldo restante</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaDistribuicaoOrigens"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
-  <script src="../js/supabase-service.js?v=22"></script>
-  <script src="../js/analise-custos.js?v=1"></script>
+  <script src="../js/supabase-service.js?v=25"></script>
+  <script src="../js/analise-custos.js?v=2"></script>
 </body>
 </html>

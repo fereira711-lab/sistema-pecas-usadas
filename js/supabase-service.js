@@ -34,6 +34,10 @@
     return clienteSupabase;
   }
 
+  function formatarCodigoOrigem(valor) {
+    return `ORI-${String(valor || "").padStart(6, "0")}`;
+  }
+
   function mapearOrigemDoBanco(origem) {
     const tipoOrigem = origem.tipo_origem || origem.tipo;
     const custoTotal = origem.custo_total !== null && origem.custo_total !== undefined
@@ -42,6 +46,7 @@
 
     return {
       id: Number(origem.id),
+      codigoOrigem: formatarCodigoOrigem(origem.id),
       tipo: tipoOrigem,
       tipoOrigem,
       descricao: origem.descricao,

@@ -41,6 +41,28 @@
             <strong>Venda</strong>
             <span>Saida de uma ou mais unidades.</span>
           </article>
+          <article class="node">
+            <strong>Edicao</strong>
+            <span>O sistema agora permite atualizar peca, custo e venda sem alterar a logica principal.</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="branch branch--dados">
+        <h2>Acesso</h2>
+        <div class="node-list">
+          <article class="node">
+            <strong>Login preparado</strong>
+            <span>Existe tela login.html e integracao com Supabase Auth.</span>
+          </article>
+          <article class="node">
+            <strong>Uso livre agora</strong>
+            <span>A protecao obrigatoria foi desligada para o sistema continuar abrindo direto.</span>
+          </article>
+          <article class="node">
+            <strong>Seguranca futura</strong>
+            <span>O fluxo pode ser religado depois sem mexer em banco ou regras de negocio.</span>
+          </article>
         </div>
       </section>
 
@@ -80,6 +102,10 @@
           <article class="node">
             <strong>Pecas existentes</strong>
             <span>Cards e detalhes permitem adicionar ou trocar imagem.</span>
+          </article>
+          <article class="node">
+            <strong>Detalhes da peca</strong>
+            <span>A imagem tambem pode ser atualizada na tela de detalhes.</span>
           </article>
           <article class="node">
             <strong>Storage</strong>
@@ -134,6 +160,7 @@
         <h2>Telas</h2>
         <div class="screen-grid">
           <span>Inicio</span>
+          <span>Login</span>
           <span>Painel operacional</span>
           <span>Analise por produto</span>
           <span>Analise por periodo</span>
@@ -148,6 +175,8 @@
           <span>Detalhes da venda e custo</span>
           <span>Cadastro de venda</span>
           <span>Cadastro de custo</span>
+          <span>Cadastro de peca</span>
+          <span>Cadastro de origem</span>
           <span>Historico</span>
           <span>Lotes</span>
         </div>
@@ -169,6 +198,10 @@
             <span>Mostram informacao completa da peca, origem ou venda.</span>
           </article>
           <article class="node">
+            <strong>Edicao controlada</strong>
+            <span>Campos editaveis ficam nas telas certas, sem liberar mudanca de FIFO, quantidade vendida ou estoque.</span>
+          </article>
+          <article class="node">
             <strong>Layout compacto</strong>
             <span>Padrao global com fontes, botoes, tabelas e cards menores no desktop.</span>
           </article>
@@ -180,7 +213,7 @@
         <div class="node-list">
           <article class="node">
             <strong>Supabase</strong>
-            <span>Guarda os dados online e integra com Storage.</span>
+            <span>Guarda os dados online e integra com Storage e Auth.</span>
           </article>
           <article class="node">
             <strong>PostgreSQL</strong>
@@ -193,6 +226,10 @@
           <article class="node">
             <strong>Storage</strong>
             <span>Bucket pecas guarda as imagens publicas das pecas.</span>
+          </article>
+          <article class="node">
+            <strong>Auth</strong>
+            <span>Login opcional preparado para ativacao futura com email e senha.</span>
           </article>
         </div>
       </section>
@@ -278,6 +315,13 @@
 
         <div class="connection-line connection-line--down"></div>
 
+        <article class="connection-node">
+          <strong>Acesso opcional</strong>
+          <span>paginas/login.html</span>
+        </article>
+
+        <div class="connection-line connection-line--down"></div>
+
         <article class="connection-node connection-node--hub">
           <strong>Painel operacional</strong>
           <span>painel.html</span>
@@ -306,17 +350,17 @@
           <div class="connection-group">
             <h3>Cadastros</h3>
             <ol>
-              <li><span>cadastro-origem.html</span><strong>cria origem</strong></li>
-              <li><span>cadastro-peca.html</span><strong>cria peca + imagem</strong></li>
+              <li><span>cadastro-origem.html</span><strong>cria origem e entrada</strong></li>
+              <li><span>cadastro-peca.html</span><strong>cria peca + imagem inicial</strong></li>
               <li><span>cadastro-custo.html</span><strong>lanca custo da peca</strong></li>
-              <li><span>cadastro-venda.html</span><strong>registra venda</strong></li>
+              <li><span>cadastro-venda.html</span><strong>registra venda + custos da venda</strong></li>
             </ol>
           </div>
 
           <div class="connection-group">
             <h3>Operacao</h3>
             <ol>
-              <li><span>produtos.html</span><strong>vende, adiciona imagem, abre detalhes</strong></li>
+              <li><span>produtos.html</span><strong>vende, edita, adiciona imagem e abre detalhes</strong></li>
               <li><span>lotes.html</span><strong>mostra entradas e saldo</strong></li>
               <li><span>historico-vendas.html</span><strong>abre detalhes da venda</strong></li>
               <li><span>listar-origens.html</span><strong>abre detalhes da origem</strong></li>
@@ -326,8 +370,8 @@
           <div class="connection-group">
             <h3>Detalhes</h3>
             <ol>
-              <li><span>detalhes-produto.html</span><strong>peca, imagem, estoque, custos e vendas</strong></li>
-              <li><span>detalhes-venda.html</span><strong>produto, custos, consumo e lucro</strong></li>
+              <li><span>detalhes-produto.html</span><strong>peca, imagem, edicao, estoque, custos e vendas</strong></li>
+              <li><span>detalhes-venda.html</span><strong>produto, edicao de venda, custos, consumo e lucro</strong></li>
               <li><span>detalhes-origem.html</span><strong>origem, pecas, vendas, custos e resultado</strong></li>
             </ol>
           </div>
@@ -350,6 +394,10 @@
           <article>
             <strong>Supabase Storage</strong>
             <span>bucket pecas guarda imagens e salva URL em pecas.imagem_url</span>
+          </article>
+          <article>
+            <strong>Supabase Auth</strong>
+            <span>camada de login preparada, mas sem obrigatoriedade neste momento</span>
           </article>
         </div>
       </div>
@@ -385,6 +433,11 @@
         </article>
         <article>
           <span>6</span>
+          <strong>Editar cadastro</strong>
+          <p>Peca, custo e venda podem ser atualizados sem mexer em estoque ou FIFO.</p>
+        </article>
+        <article>
+          <span>7</span>
           <strong>Ver resultado</strong>
           <p>Analises e detalhes mostram custo, venda, lucro e resultado.</p>
         </article>

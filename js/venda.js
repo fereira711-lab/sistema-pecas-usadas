@@ -18,11 +18,16 @@ function salvarOrigens(origens) {
   localStorage.setItem("origens", JSON.stringify(origens));
 }
 
+function buscarEntradasLocais() {
+  return JSON.parse(localStorage.getItem("entradasEstoque")) || [];
+}
+
 const campoBuscaPecaVenda = document.getElementById("buscaPecaVenda");
 const sugestoesPecaVenda = document.getElementById("sugestoesPecaVenda");
 const campoDataVenda = document.getElementById("dataVenda");
 let pecasVendaCarregadas = [];
 let origensVendaCarregadas = [];
+let entradasVendaCarregadas = [];
 let sugestoesVendaAtuais = [];
 let indiceSugestaoVenda = -1;
 
@@ -199,6 +204,19 @@ function obterOrigensDoProduto(peca) {
 }
 
 function calcularCustoBasePeca(peca) {
+  const entradasDaPeca = entradasVendaCarregadas.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
+
+  if (entradasDaPeca.length > 0) {
+    const totalUnidadesEntrada = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
+    const totalInvestidoEntrada = entradasDaPeca.reduce((total, entrada) => {
+      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
+    }, 0);
+
+    if (totalUnidadesEntrada > 0 && totalInvestidoEntrada > 0) {
+      return totalInvestidoEntrada / totalUnidadesEntrada;
+    }
+  }
+
   const origensDoProduto = obterOrigensDoProduto(peca);
 
   const totalUnidades = origensDoProduto.reduce((total, origem) => {
@@ -422,19 +440,24 @@ async function inicializarFormularioVenda() {
   }
 
   try {
-    const [pecas, origens] = await Promise.all([
+    const [pecas, origens, entradas] = await Promise.all([
       carregarPecasParaVenda(),
-      carregarOrigensParaVenda()
+      carregarOrigensParaVenda(),
+      window.supabaseService && window.supabaseService.estaConfigurado()
+        ? window.supabaseService.listarEntradasEstoque()
+        : Promise.resolve(buscarEntradasLocais())
     ]);
 
     pecasVendaCarregadas = pecas;
     origensVendaCarregadas = origens;
+    entradasVendaCarregadas = entradas || [];
     selecionarPecaDaUrl();
     atualizarLimiteQuantidadeSelecionada();
   } catch (erro) {
     console.error("Erro ao carregar peças para venda:", erro);
     pecasVendaCarregadas = buscarPecas().map(normalizarPeca);
     origensVendaCarregadas = buscarOrigens();
+    entradasVendaCarregadas = buscarEntradasLocais();
     selecionarPecaDaUrl();
     atualizarLimiteQuantidadeSelecionada();
     alert("Não foi possível carregar as peças do Supabase. Verifique a configuração e tente novamente.");

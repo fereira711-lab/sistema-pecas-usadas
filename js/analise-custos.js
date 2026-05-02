@@ -1,6 +1,9 @@
 const mensagemAnaliseCustos = document.getElementById("mensagemAnaliseCustos");
 const resumoAnaliseCustos = document.getElementById("resumoAnaliseCustos");
 const tabelaAnaliseCustos = document.getElementById("tabelaAnaliseCustos");
+const mensagemDistribuicaoOrigens = document.getElementById("mensagemDistribuicaoOrigens");
+const resumoDistribuicaoOrigens = document.getElementById("resumoDistribuicaoOrigens");
+const tabelaDistribuicaoOrigens = document.getElementById("tabelaDistribuicaoOrigens");
 
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
@@ -31,6 +34,10 @@ function criarCard(titulo, valor) {
 
 function somar(lista, campo) {
   return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
+}
+
+function formatarCodigoOrigem(origem) {
+  return origem?.codigoOrigem || `ORI-${String(origem?.id || "").padStart(6, "0")}`;
 }
 
 function adicionarCustoNoGrupo(mapa, custo, origem) {
@@ -88,22 +95,52 @@ async function carregarDados() {
   }
 
   try {
-    const [custosPeca, custosVenda] = await Promise.all([
+    const [custosPeca, custosVenda, origens, entradas] = await Promise.all([
       window.supabaseService.listarCustosPeca(),
-      window.supabaseService.listarCustosVenda()
+      window.supabaseService.listarCustosVenda(),
+      window.supabaseService.listarOrigens(),
+      window.supabaseService.listarEntradasEstoque()
     ]);
 
     mensagemAnaliseCustos.textContent = "";
 
     return {
       custosPeca: custosPeca || [],
-      custosVenda: custosVenda || []
+      custosVenda: custosVenda || [],
+      origens: origens || [],
+      entradas: entradas || []
     };
   } catch (erro) {
     console.error("Erro ao carregar analise de custos:", erro);
     mensagemAnaliseCustos.textContent = "Nao foi possivel carregar os dados da analise de custos.";
     return null;
   }
+}
+
+function calcularDistribuicaoPorOrigem(origens, entradas) {
+  return (origens || []).map(origem => {
+    const entradasDaOrigem = (entradas || []).filter(entrada => Number(entrada.origemId || 0) === Number(origem.id));
+    const valorTotal = Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0);
+    const valorAtribuido = entradasDaOrigem.reduce((total, entrada) => {
+      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
+    }, 0);
+    const saldoRestante = valorTotal - valorAtribuido;
+    const status = saldoRestante > 0.009
+      ? "saldo a distribuir"
+      : saldoRestante < -0.009
+        ? "distribuido acima do total"
+        : "distribuicao fechada";
+
+    return {
+      id: origem.id,
+      codigoOrigem: formatarCodigoOrigem(origem),
+      descricao: origem.descricao || `Origem ${origem.id}`,
+      valorTotal,
+      valorAtribuido,
+      saldoRestante,
+      status
+    };
+  }).sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
 }
 
 function renderizarResumo(dados, grupos) {
@@ -116,6 +153,19 @@ function renderizarResumo(dados, grupos) {
     criarCard("Custos de venda", formatarMoeda(totalCustosVenda)) +
     criarCard("Total geral", formatarMoeda(totalGeral)) +
     criarCard("Tipos de custo", grupos.length);
+}
+
+function renderizarResumoDistribuicao(distribuicoes) {
+  const valorTotal = distribuicoes.reduce((total, item) => total + item.valorTotal, 0);
+  const valorAtribuido = distribuicoes.reduce((total, item) => total + item.valorAtribuido, 0);
+  const saldoRestante = distribuicoes.reduce((total, item) => total + item.saldoRestante, 0);
+  const origensComSaldo = distribuicoes.filter(item => item.saldoRestante > 0.009).length;
+
+  resumoDistribuicaoOrigens.innerHTML =
+    criarCard("Valor total das origens", formatarMoeda(valorTotal)) +
+    criarCard("Valor atribuido nas entradas", formatarMoeda(valorAtribuido)) +
+    criarCard("Saldo restante", formatarMoeda(saldoRestante)) +
+    criarCard("Origens com saldo", origensComSaldo);
 }
 
 function renderizarTabela(grupos) {
@@ -143,19 +193,51 @@ function renderizarTabela(grupos) {
   });
 }
 
+function renderizarTabelaDistribuicao(distribuicoes) {
+  tabelaDistribuicaoOrigens.innerHTML = "";
+
+  if (distribuicoes.length === 0) {
+    mensagemDistribuicaoOrigens.textContent = "Nenhuma origem cadastrada para analisar distribuicao.";
+    resumoDistribuicaoOrigens.innerHTML = "";
+    return;
+  }
+
+  mensagemDistribuicaoOrigens.textContent = "";
+  renderizarResumoDistribuicao(distribuicoes);
+
+  distribuicoes.forEach(item => {
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Codigo"><strong class="product-name">${item.codigoOrigem}</strong></td>
+      <td data-label="Origem">${item.descricao}</td>
+      <td data-label="Valor total">${formatarMoeda(item.valorTotal)}</td>
+      <td data-label="Valor atribuido">${formatarMoeda(item.valorAtribuido)}</td>
+      <td data-label="Saldo restante"><strong>${formatarMoeda(item.saldoRestante)}</strong></td>
+      <td data-label="Status">${item.status}</td>
+    `;
+
+    tabelaDistribuicaoOrigens.appendChild(linha);
+  });
+}
+
 async function iniciarAnaliseCustos() {
   const dados = await carregarDados();
 
   if (!dados) {
     resumoAnaliseCustos.innerHTML = "";
+    resumoDistribuicaoOrigens.innerHTML = "";
     tabelaAnaliseCustos.innerHTML = "";
+    tabelaDistribuicaoOrigens.innerHTML = "";
     return;
   }
 
   const grupos = agruparCustosPorTipo(dados.custosPeca, dados.custosVenda);
+  const distribuicoes = calcularDistribuicaoPorOrigem(dados.origens, dados.entradas);
 
   renderizarResumo(dados, grupos);
   renderizarTabela(grupos);
+  renderizarTabelaDistribuicao(distribuicoes);
 }
 
 document.addEventListener("DOMContentLoaded", iniciarAnaliseCustos);

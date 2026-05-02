@@ -39,6 +39,18 @@
     <section class="stock-card section-spaced">
       <div class="stock-header">
         <div>
+          <h2>Distribuicao do valor da origem</h2>
+          <p>Veja quanto do valor total da origem ja foi atribuido nas entradas desta origem.</p>
+        </div>
+      </div>
+
+      <p id="mensagemDistribuicaoOrigem" class="empty-message"></p>
+      <section id="resumoDistribuicaoOrigem" class="summary-grid summary-grid--compact" aria-label="Resumo da distribuicao da origem"></section>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
           <h2>Entradas de estoque</h2>
           <p>Lotes vinculados à origem, com saldo e custo unitário.</p>
         </div>
@@ -159,7 +171,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
-  <script src="../js/supabase-service.js?v=22"></script>
-  <script src="../js/detalhes-origem.js?v=13"></script>
+  <script src="../js/supabase-service.js?v=25"></script>
+  <script src="../js/detalhes-origem.js?v=15"></script>
 </body>
 </html>

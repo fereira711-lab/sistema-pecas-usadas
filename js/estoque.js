@@ -28,6 +28,10 @@ function buscarOrigens() {
   return JSON.parse(localStorage.getItem("origens")) || [];
 }
 
+function buscarEntradasLocais() {
+  return JSON.parse(localStorage.getItem("entradasEstoque")) || [];
+}
+
 async function carregarOrigens() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
@@ -40,6 +44,18 @@ async function carregarOrigens() {
   }
 
   return buscarOrigens();
+}
+
+async function carregarEntradas() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      return await window.supabaseService.listarEntradasEstoque() || [];
+    } catch (erro) {
+      console.error("Erro ao carregar entradas do Supabase:", erro);
+    }
+  }
+
+  return buscarEntradasLocais();
 }
 
 function salvarProdutos(produtos) {
@@ -83,7 +99,20 @@ function obterOrigensDoProduto(peca, origens) {
     : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
 }
 
-function calcularCustoPeca(peca, origens) {
+function calcularCustoPeca(peca, origens, entradasEstoque) {
+  const entradasDaPeca = entradasEstoque.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
+
+  if (entradasDaPeca.length > 0) {
+    const totalUnidadesEntrada = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
+    const totalInvestidoEntrada = entradasDaPeca.reduce((total, entrada) => {
+      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
+    }, 0);
+
+    if (totalUnidadesEntrada > 0 && totalInvestidoEntrada > 0) {
+      return totalInvestidoEntrada / totalUnidadesEntrada;
+    }
+  }
+
   const origensDoProduto = obterOrigensDoProduto(peca, origens);
   const totalUnidades = origensDoProduto.reduce((total, origem) => total + Number(origem.quantidadeTotal || origem.quantidade_total || 0), 0);
   const totalInvestido = origensDoProduto.reduce((total, origem) => total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0), 0);
@@ -106,6 +135,7 @@ function obterStatusProduto(produto) {
 async function renderizarEstoque() {
   const produtos = await carregarProdutos();
   const origens = await carregarOrigens();
+  const entradasEstoque = await carregarEntradas();
   tabelaEstoque.innerHTML = "";
 
   if (produtos.length === 0) {
@@ -116,7 +146,7 @@ async function renderizarEstoque() {
   mensagemEstoque.textContent = "";
 
   produtos.forEach((produto, indice) => {
-    const custoBase = calcularCustoPeca(produto, origens);
+    const custoBase = calcularCustoPeca(produto, origens, entradasEstoque);
     const custosDiversos = somarCustosPorPeca(produto.id);
     const custoTotal = custoBase + custosDiversos;
     const quantidade = Number(produto.quantidade || 1);
