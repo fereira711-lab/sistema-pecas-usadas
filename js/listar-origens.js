@@ -104,7 +104,6 @@ async function renderizarOrigens() {
       <td data-label="Data da compra">${formatarData(origem.dataCompra)}</td>
       <td data-label="Tipo">${origem.tipoOrigem || origem.tipo || "-"}</td>
       <td data-label="Valor">${formatarMoeda(origem.valorPago || origem.custoTotal || 0)}</td>
-      <td data-label="Tipo de custo">${origem.custoTipo || "-"}</td>
       <td data-label="Descricao">${origem.descricao || "-"}</td>
       <td data-label="Observacoes">${origem.observacoes || "-"}</td>
       <td data-label="Acoes">

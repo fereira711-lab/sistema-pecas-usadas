@@ -53,7 +53,7 @@ function lerOrigemDoFormulario() {
     descricao: document.getElementById("descricao").value.trim(),
     custoTotal: Number(valorDigitado || 0),
     valorPago: Number(valorDigitado || 0),
-    custoTipo: document.getElementById("custoTipo").value,
+    custoTipo: "",
     dataCompra: document.getElementById("dataCompra").value || obterDataHoje(),
     quantidadeTotal: 0,
     produtoSku: "",
@@ -62,8 +62,8 @@ function lerOrigemDoFormulario() {
 }
 
 function validarOrigem(origem) {
-  if (!origem.tipoOrigem || !origem.descricao || !origem.custoTipo || !origem.dataCompra) {
-    return "Preencha tipo da origem, descricao, valor, tipo de custo e data.";
+  if (!origem.tipoOrigem || !origem.descricao || !origem.dataCompra) {
+    return "Preencha tipo da origem, descricao, valor e data.";
   }
 
   if (!Number.isFinite(origem.valorPago) || origem.valorPago < 0) {

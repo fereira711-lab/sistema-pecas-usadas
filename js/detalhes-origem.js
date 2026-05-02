@@ -51,6 +51,13 @@ function formatarNumero(valor) {
   });
 }
 
+function formatarPercentual(valor) {
+  return `${Number(valor || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  })}%`;
+}
+
 function formatarData(data) {
   if (!data) {
     return "-";
@@ -198,6 +205,9 @@ function calcularResumoOrigem() {
     return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
   }, 0);
   const saldoParaDistribuir = valorInvestido - valorAtribuidoNasEntradas;
+  const percentualDistribuido = valorInvestido > 0
+    ? (valorAtribuidoNasEntradas / valorInvestido) * 100
+    : 0;
   const saldoAindaEmEstoque = dadosDetalhesOrigem.entradas.reduce((total, entrada) => {
     const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
     return total + (saldo * Number(entrada.custoUnitario || 0));
@@ -217,6 +227,7 @@ function calcularResumoOrigem() {
     valorInvestido,
     valorAtribuidoNasEntradas,
     saldoParaDistribuir,
+    percentualDistribuido,
     saldoAindaEmEstoque,
     status,
     custosVendaPorVenda
@@ -249,10 +260,6 @@ function renderizarDadosOrigem(origem) {
     <article class="detail-card">
       <span>Valor total</span>
       <strong>${formatarMoeda(origem.valorPago || origem.valor_total || origem.custoTotal)}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Tipo de custo</span>
-      <strong>${escaparHtml(origem.custoTipo || "-")}</strong>
     </article>
     <article class="detail-card">
       <span>Data da origem</span>
@@ -318,25 +325,45 @@ function renderizarResumoOrigem() {
 function renderizarDistribuicaoOrigem() {
   const resumo = calcularResumoOrigem();
   const diferenca = resumo.saldoParaDistribuir;
-  const statusDistribuicao = diferenca > 0.009
-    ? "Ainda ha valor da origem para distribuir nas pecas."
-    : diferenca < -0.009
-      ? "O valor atribuido nas entradas ultrapassou o valor total da origem."
-      : "O valor da origem foi distribuido por completo.";
+  const aindaFaltaDistribuir = diferenca > 0.009;
+  const distribuidoMaiorQueOrigem = diferenca < -0.009;
+  const statusDistribuicao = aindaFaltaDistribuir
+    ? "Ainda falta distribuir"
+    : distribuidoMaiorQueOrigem
+      ? "Valor distribuido maior que a origem"
+      : "Origem totalmente distribuida";
+  const detalheDistribuicao = aindaFaltaDistribuir
+    ? "Parte do investimento da origem ainda nao foi atribuida nas entradas."
+    : distribuidoMaiorQueOrigem
+      ? "Revise os valores atribuidos nas entradas desta origem."
+      : "Todo o valor da origem ja foi distribuido nas pecas/entradas.";
+  const classeStatus = aindaFaltaDistribuir
+    ? "summary-card summary-card--warning"
+    : distribuidoMaiorQueOrigem
+      ? "summary-card summary-card--loss"
+      : "summary-card summary-card--profit";
 
-  mensagemDistribuicaoOrigem.textContent = statusDistribuicao;
+  mensagemDistribuicaoOrigem.textContent = `${statusDistribuicao}. ${detalheDistribuicao}`;
   resumoDistribuicaoOrigem.innerHTML = `
     <article class="summary-card">
       <span>Valor total da origem</span>
       <strong>${formatarMoeda(resumo.valorInvestido)}</strong>
     </article>
     <article class="summary-card">
-      <span>Total atribuido nas entradas</span>
+      <span>Valor distribuido nas pecas/entradas</span>
       <strong>${formatarMoeda(resumo.valorAtribuidoNasEntradas)}</strong>
     </article>
     <article class="summary-card">
-      <span>Saldo restante</span>
+      <span>Valor ainda nao distribuido</span>
       <strong>${formatarMoeda(resumo.saldoParaDistribuir)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Percentual distribuido</span>
+      <strong>${formatarPercentual(resumo.percentualDistribuido)}</strong>
+    </article>
+    <article class="${classeStatus}">
+      <span>Status da distribuicao</span>
+      <strong>${escaparHtml(statusDistribuicao)}</strong>
     </article>
     <article class="summary-card">
       <span>Entradas vinculadas</span>
@@ -358,6 +385,7 @@ function renderizarEntradas() {
   dadosDetalhesOrigem.entradas.forEach(entrada => {
     const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
     const peca = obterPecaPorId(entrada.pecaId) || entrada;
+    const valorAtribuidoEntrada = Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -368,6 +396,7 @@ function renderizarEntradas() {
       <td data-label="Qtd. consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
       <td data-label="Saldo disponível">${formatarNumero(saldo)}</td>
       <td data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
+      <td data-label="Valor atribuido total">${formatarMoeda(valorAtribuidoEntrada)}</td>
       <td data-label="Data entrada">${formatarData(entrada.dataEntrada)}</td>
       <td data-label="Status">${escaparHtml(obterStatusEntrada(entrada))}</td>
     `;
