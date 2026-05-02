@@ -69,6 +69,14 @@ function criarCard(titulo, valor, classe = "") {
   `;
 }
 
+function formatarValorOuNaoCalculado(valor) {
+  if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
+    return "Custo nao calculado";
+  }
+
+  return formatarMoeda(Number(valor || 0));
+}
+
 function calcularAnalises(dados) {
   const vendasPorPeca = agruparPorId(dados.vendas, "pecaId");
   const custosPecaPorPeca = agruparPorId(dados.custosPeca, "pecaId");
@@ -80,11 +88,13 @@ function calcularAnalises(dados) {
     const vendasDaPeca = vendasPorPeca[pecaId] || [];
     const idsVendas = vendasDaPeca.map(venda => Number(venda.id));
     const receita = vendasDaPeca.reduce((total, venda) => total + calcularValorVenda(venda), 0);
+    const vendasSemCusto = idsVendas.filter(vendaId => (consumosPorVenda[vendaId] || []).length === 0).length;
     const custoEstoque = idsVendas.reduce((total, vendaId) => total + somar(consumosPorVenda[vendaId] || [], "custoTotal"), 0);
     const custosPeca = somar(custosPecaPorPeca[pecaId] || []);
     const custosVenda = idsVendas.reduce((total, vendaId) => total + somar(custosVendaPorVenda[vendaId] || []), 0);
     const custosAdicionais = custosPeca + custosVenda;
-    const lucro = receita - custoEstoque - custosAdicionais;
+    const custoCalculado = vendasDaPeca.length === 0 || vendasSemCusto === 0;
+    const lucro = custoCalculado ? receita - custoEstoque - custosAdicionais : null;
     const quantidadeVendida = vendasDaPeca.reduce((total, venda) => {
       return total + Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0);
     }, 0);
@@ -94,11 +104,13 @@ function calcularAnalises(dados) {
       sku: formatarSku(peca),
       nome: formatarNome(peca),
       receita,
-      custoEstoque,
+      custoEstoque: custoCalculado ? custoEstoque : null,
       custosAdicionais,
-      custoTotal: custoEstoque + custosAdicionais,
+      custoTotal: custoCalculado ? custoEstoque + custosAdicionais : null,
       lucro,
-      quantidadeVendida
+      quantidadeVendida,
+      custoCalculado,
+      vendasSemCusto
     };
   });
 }
@@ -148,16 +160,18 @@ async function carregarDados() {
 
 function renderizarResumo(analises) {
   const totalReceita = somar(analises, "receita");
-  const totalCusto = somar(analises, "custoTotal");
-  const totalLucro = somar(analises, "lucro");
+  const produtosComCustoPendente = analises.filter(analise => !analise.custoCalculado).length;
+  const totalCusto = produtosComCustoPendente > 0 ? null : somar(analises, "custoTotal");
+  const totalLucro = produtosComCustoPendente > 0 ? null : somar(analises, "lucro");
   const totalVendido = somar(analises, "quantidadeVendida");
-  const classeLucro = totalLucro >= 0 ? "summary-card--profit" : "summary-card--loss";
+  const classeLucro = totalLucro !== null && totalLucro >= 0 ? "summary-card--profit" : "summary-card--loss";
 
   resumoAnaliseProduto.innerHTML =
     criarCard("Receita total", formatarMoeda(totalReceita)) +
-    criarCard("Custo total", formatarMoeda(totalCusto)) +
-    criarCard("Lucro total", `<span class="${obterClasseLucro(totalLucro)}">${formatarMoeda(totalLucro)}</span>`, classeLucro) +
-    criarCard("Pecas vendidas", totalVendido);
+    criarCard("Custo total", formatarValorOuNaoCalculado(totalCusto)) +
+    criarCard("Lucro total", totalLucro === null ? "Custo nao calculado" : `<span class="${obterClasseLucro(totalLucro)}">${formatarMoeda(totalLucro)}</span>`, classeLucro) +
+    criarCard("Pecas vendidas", totalVendido) +
+    criarCard("Produtos com custo pendente", produtosComCustoPendente);
 }
 
 function renderizarTabela(analises) {
@@ -179,9 +193,9 @@ function renderizarTabela(analises) {
       <td data-label="SKU">${analise.sku}</td>
       <td data-label="Nome"><strong class="product-name">${analise.nome}</strong></td>
       <td data-label="Receita">${formatarMoeda(analise.receita)}</td>
-      <td data-label="Custo">${formatarMoeda(analise.custoEstoque)}</td>
+      <td data-label="Custo">${formatarValorOuNaoCalculado(analise.custoEstoque)}</td>
       <td data-label="Custos adicionais">${formatarMoeda(analise.custosAdicionais)}</td>
-      <td data-label="Lucro"><strong class="${obterClasseLucro(analise.lucro)}">${formatarMoeda(analise.lucro)}</strong></td>
+      <td data-label="Lucro">${analise.lucro === null ? "<strong>Custo nao calculado</strong>" : `<strong class="${obterClasseLucro(analise.lucro)}">${formatarMoeda(analise.lucro)}</strong>`}</td>
       <td data-label="Qtd. vendida">${analise.quantidadeVendida}</td>
     `;
 
@@ -230,7 +244,7 @@ function renderizarRanking(analises) {
       <td data-label="Nome"><strong class="product-name">${analise.nome}</strong></td>
       <td data-label="Qtd. vendida">${analise.quantidadeVendida}</td>
       <td data-label="Receita total">${formatarMoeda(analise.receita)}</td>
-      <td data-label="Lucro"><strong class="${obterClasseLucro(analise.lucro)}">${formatarMoeda(analise.lucro)}</strong></td>
+      <td data-label="Lucro">${analise.lucro === null ? "<strong>Custo nao calculado</strong>" : `<strong class="${obterClasseLucro(analise.lucro)}">${formatarMoeda(analise.lucro)}</strong>`}</td>
     `;
 
     tabelaRankingProduto.appendChild(linha);

@@ -226,16 +226,26 @@ function calcularCustoFifoVenda(consumosFifo) {
 }
 
 function recalcularVendaComCustoAtual(venda) {
-  const peca = contextoVenda.produto || buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
   const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
-  const custoUnitario = peca ? calcularCustoUnitarioAtualDaPeca(peca) : calcularCustoUnitario(venda);
   const custoFifo = calcularCustoFifoVenda(contextoVenda.consumosFifo);
-  const custoTotal = custoFifo > 0 ? custoFifo : custoUnitario * quantidade;
   const custosVenda = calcularTotalCustosVenda(venda);
+
+  if (!contextoVenda.consumosFifo.length) {
+    return {
+      custoCalculado: false,
+      custoUnitario: null,
+      custoTotal: null,
+      custosVenda,
+      lucroVenda: null
+    };
+  }
+
+  const custoTotal = custoFifo;
   const lucroVenda = Number(venda.valorTotal || 0) - custoTotal - custosVenda;
 
   return {
-    custoUnitario: quantidade > 0 ? custoTotal / quantidade : custoUnitario,
+    custoCalculado: true,
+    custoUnitario: quantidade > 0 ? custoTotal / quantidade : 0,
     custoTotal,
     custosVenda,
     lucroVenda
@@ -454,7 +464,7 @@ function renderizarResumoFinanceiro(venda) {
   const custoTotal = resultado.custoTotal;
   const totalCustosVenda = resultado.custosVenda;
   const lucroVenda = resultado.lucroVenda;
-  const margem = valorTotal > 0 ? (lucroVenda / valorTotal) * 100 : 0;
+  const margem = resultado.custoCalculado && valorTotal > 0 ? (lucroVenda / valorTotal) * 100 : null;
 
   resumoFinanceiroVenda.innerHTML = `
     <article class="summary-card">
@@ -463,11 +473,11 @@ function renderizarResumoFinanceiro(venda) {
     </article>
     <article class="summary-card">
       <span>Custo unitário</span>
-      <strong>${formatarMoeda(custoUnitario)}</strong>
+      <strong>${resultado.custoCalculado ? formatarMoeda(custoUnitario) : "Custo nao calculado"}</strong>
     </article>
     <article class="summary-card">
       <span>Custo das entradas consumidas</span>
-      <strong>${formatarMoeda(custoTotal)}</strong>
+      <strong>${resultado.custoCalculado ? formatarMoeda(custoTotal) : "Custo nao calculado"}</strong>
     </article>
     <article class="summary-card">
       <span>Custos da venda</span>
@@ -475,11 +485,11 @@ function renderizarResumoFinanceiro(venda) {
     </article>
     <article class="summary-card">
       <span>Lucro da venda</span>
-      <strong>${formatarMoeda(lucroVenda)}</strong>
+      <strong>${resultado.custoCalculado ? formatarMoeda(lucroVenda) : "Custo nao calculado"}</strong>
     </article>
     <article class="summary-card">
       <span>Margem de lucro</span>
-      <strong>${formatarPorcentagem(margem)}</strong>
+      <strong>${resultado.custoCalculado ? formatarPorcentagem(margem) : "-"}</strong>
     </article>
   `;
 }
@@ -595,7 +605,7 @@ function renderizarCustoFifo() {
   tabelaCustoFifoVenda.innerHTML = "";
 
   if (!contextoVenda.consumosFifo.length) {
-    mensagemCustoFifoVenda.textContent = "Esta venda ainda nao possui custo calculado por lote. O resumo usa fallback temporario.";
+    mensagemCustoFifoVenda.textContent = "Esta venda ainda nao possui custo calculado em venda_consumos_estoque.";
     return;
   }
 

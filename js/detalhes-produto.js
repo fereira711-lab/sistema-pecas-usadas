@@ -183,17 +183,29 @@ function calcularResultado() {
   const quantidadeTotalVendida = contextoProduto.vendas.reduce((total, venda) => total + quantidadeVendida(venda), 0);
   const vendasOrdenadas = ordenarVendasPorData(contextoProduto.vendas);
   const ultimaVenda = vendasOrdenadas.length > 0 ? obterDataVenda(vendasOrdenadas[0]) : "";
+  const vendasSemCusto = contextoProduto.vendas.filter(venda => obterConsumosDaVenda(venda.id).length === 0).length;
+  const custoCalculado = contextoProduto.vendas.length === 0 || vendasSemCusto === 0;
 
   return {
     receitaTotal,
-    custoEntradasConsumidas,
+    custoEntradasConsumidas: custoCalculado ? custoEntradasConsumidas : null,
     custosDaPeca,
     custosDaVenda,
-    lucroPeca: receitaTotal - custoEntradasConsumidas - custosDaPeca - custosDaVenda,
+    lucroPeca: custoCalculado ? receitaTotal - custoEntradasConsumidas - custosDaPeca - custosDaVenda : null,
     quantidadeTotalVendida,
     ultimaVenda,
-    diasSemVenda: calcularDiasSemVenda(ultimaVenda)
+    diasSemVenda: calcularDiasSemVenda(ultimaVenda),
+    custoCalculado,
+    vendasSemCusto
   };
+}
+
+function formatarValorOuNaoCalculado(valor) {
+  if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
+    return "Custo nao calculado";
+  }
+
+  return formatarMoeda(Number(valor || 0));
 }
 
 function obterQuantidadeTotal(produto) {
@@ -513,7 +525,7 @@ function renderizarResumo() {
     </article>
     <article class="summary-card">
       <span>Custo das entradas consumidas</span>
-      <strong>${formatarMoeda(resultado.custoEntradasConsumidas)}</strong>
+      <strong>${formatarValorOuNaoCalculado(resultado.custoEntradasConsumidas)}</strong>
     </article>
     <article class="summary-card">
       <span>Custos da peça</span>
@@ -525,7 +537,7 @@ function renderizarResumo() {
     </article>
     <article class="summary-card">
       <span>Lucro da peça</span>
-      <strong>${formatarMoeda(resultado.lucroPeca)}</strong>
+      <strong>${formatarValorOuNaoCalculado(resultado.lucroPeca)}</strong>
     </article>
     <article class="summary-card">
       <span>Última venda</span>
@@ -538,6 +550,10 @@ function renderizarResumo() {
     <article class="summary-card">
       <span>Quantidade vendida</span>
       <strong>${formatarNumero(resultado.quantidadeTotalVendida)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Vendas sem custo real</span>
+      <strong>${formatarNumero(resultado.vendasSemCusto)}</strong>
     </article>
   `;
 }
@@ -622,8 +638,11 @@ function renderizarVendas() {
     const custosVenda = obterCustosVendaDaVenda(venda.id);
     const consumosVenda = obterConsumosDaVenda(venda.id);
     const totalCustosVenda = custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
-    const totalCustoEntradas = consumosVenda.reduce((total, consumo) => total + Number(consumo.custoTotal || 0), 0);
-    const lucroVenda = valorVenda(venda) - totalCustoEntradas - totalCustosVenda;
+    const custoCalculado = consumosVenda.length > 0;
+    const totalCustoEntradas = custoCalculado
+      ? consumosVenda.reduce((total, consumo) => total + Number(consumo.custoTotal || 0), 0)
+      : null;
+    const lucroVenda = custoCalculado ? valorVenda(venda) - totalCustoEntradas - totalCustosVenda : null;
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -632,9 +651,9 @@ function renderizarVendas() {
       <td data-label="Valor unitário">${formatarMoeda(venda.valorUnitario || venda.precoUnitario)}</td>
       <td data-label="Valor total">${formatarMoeda(valorVenda(venda))}</td>
       <td data-label="Canal">${escaparHtml(venda.canalVenda || "-")}</td>
-      <td data-label="Custo entradas">${formatarMoeda(totalCustoEntradas)}</td>
+      <td data-label="Custo entradas">${formatarValorOuNaoCalculado(totalCustoEntradas)}</td>
       <td data-label="Custos venda">${formatarMoeda(totalCustosVenda)}</td>
-      <td data-label="Lucro venda">${formatarMoeda(lucroVenda)}</td>
+      <td data-label="Lucro venda">${formatarValorOuNaoCalculado(lucroVenda)}</td>
       <td data-label="Ações">
         <div class="table-actions">
           <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes</a>

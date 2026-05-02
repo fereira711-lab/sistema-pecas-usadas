@@ -136,15 +136,11 @@ function calcularCustoFifoComFallback(vendas, pecas, origens, consumosPorVenda, 
   return vendas.reduce((total, venda) => {
     const consumosDaVenda = consumosPorVenda[Number(venda.id)] || [];
 
-    if (consumosDaVenda.length > 0) {
-      return total + somar(consumosDaVenda, "custoTotal");
+    if (consumosDaVenda.length === 0) {
+      return total;
     }
 
-    const peca = pecas.find(item => Number(item.id) === Number(venda.pecaId || 0));
-    const custoUnitario = peca ? calcularCustoUnitarioFallback(peca, origens, entradasEstoque) : 0;
-    const quantidade = Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0);
-
-    return total + (quantidade * custoUnitario);
+    return total + somar(consumosDaVenda, "custoTotal");
   }, 0);
 }
 
@@ -159,9 +155,7 @@ function calcularReceitaFifoDaOrigem(vendasDaOrigem, consumosDaOrigem, vendasSem
 
     return total + (Number(consumo.quantidadeConsumida || 0) * valorUnitario);
   }, 0);
-  const receitaFallback = vendasSemConsumo.reduce((total, venda) => total + calcularValorVenda(venda), 0);
-
-  return receitaFifo + receitaFallback;
+  return receitaFifo;
 }
 
 function normalizarSku(sku) {

@@ -115,6 +115,14 @@ function filtrarVendasPorPeriodo(vendas) {
   });
 }
 
+function formatarValorOuNaoCalculado(valor) {
+  if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
+    return "Custo nao calculado";
+  }
+
+  return formatarMoeda(Number(valor || 0));
+}
+
 function calcularLinhas(vendasFiltradas) {
   const consumosPorVenda = agruparPorId(dadosAnalisePeriodo.consumosEstoque, "vendaId");
   const custosVendaPorVenda = agruparPorId(dadosAnalisePeriodo.custosVenda, "vendaId");
@@ -122,9 +130,11 @@ function calcularLinhas(vendasFiltradas) {
   return vendasFiltradas.map(venda => {
     const vendaId = Number(venda.id);
     const totalVendido = calcularValorVenda(venda);
-    const custoProdutos = somar(consumosPorVenda[vendaId] || [], "custoTotal");
+    const consumosDaVenda = consumosPorVenda[vendaId] || [];
+    const custoCalculado = consumosDaVenda.length > 0;
+    const custoProdutos = custoCalculado ? somar(consumosDaVenda, "custoTotal") : null;
     const custosVenda = somar(custosVendaPorVenda[vendaId] || [], "valor");
-    const lucro = totalVendido - custoProdutos - custosVenda;
+    const lucro = custoCalculado ? totalVendido - custoProdutos - custosVenda : null;
 
     return {
       venda,
@@ -133,16 +143,18 @@ function calcularLinhas(vendasFiltradas) {
       custoProdutos,
       custosVenda,
       lucro,
-      quantidade: Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0)
+      quantidade: Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0),
+      custoCalculado
     };
   });
 }
 
 function calcularResumo(linhas) {
   const totalVendido = somar(linhas, "totalVendido");
-  const custoProdutosVendidos = somar(linhas, "custoProdutos");
+  const vendasSemCusto = linhas.filter(linha => !linha.custoCalculado).length;
+  const custoProdutosVendidos = vendasSemCusto > 0 ? null : somar(linhas, "custoProdutos");
   const custosVenda = somar(linhas, "custosVenda");
-  const lucro = totalVendido - custoProdutosVendidos - custosVenda;
+  const lucro = vendasSemCusto > 0 ? null : totalVendido - custoProdutosVendidos - custosVenda;
   const quantidadeVendida = somar(linhas, "quantidade");
 
   return {
@@ -151,20 +163,22 @@ function calcularResumo(linhas) {
     custosVenda,
     lucro,
     quantidadeVendida,
-    numeroVendas: linhas.length
+    numeroVendas: linhas.length,
+    vendasSemCusto
   };
 }
 
 function renderizarResumo(resumo) {
-  const classeLucro = resumo.lucro >= 0 ? "summary-card--profit" : "summary-card--loss";
+  const classeLucro = resumo.lucro !== null && resumo.lucro >= 0 ? "summary-card--profit" : "summary-card--loss";
 
   resumoAnalisePeriodo.innerHTML =
     criarCard("Total vendido", formatarMoeda(resumo.totalVendido)) +
-    criarCard("Custo dos produtos vendidos", formatarMoeda(resumo.custoProdutosVendidos)) +
+    criarCard("Custo dos produtos vendidos", formatarValorOuNaoCalculado(resumo.custoProdutosVendidos)) +
     criarCard("Custos de venda", formatarMoeda(resumo.custosVenda)) +
-    criarCard("Lucro do periodo", `<span class="${obterClasseLucro(resumo.lucro)}">${formatarMoeda(resumo.lucro)}</span>`, classeLucro) +
+    criarCard("Lucro do periodo", resumo.lucro === null ? "Custo nao calculado" : `<span class="${obterClasseLucro(resumo.lucro)}">${formatarMoeda(resumo.lucro)}</span>`, classeLucro) +
     criarCard("Quantidade vendida", resumo.quantidadeVendida) +
-    criarCard("Numero de vendas", resumo.numeroVendas);
+    criarCard("Numero de vendas", resumo.numeroVendas) +
+    criarCard("Vendas sem custo real", resumo.vendasSemCusto);
 }
 
 function formatarNomeVenda(venda) {
@@ -193,9 +207,9 @@ function renderizarTabela(linhas) {
       <td data-label="ID da peca">${linha.venda.pecaId || "-"}</td>
       <td data-label="Quantidade">${linha.quantidade}</td>
       <td data-label="Valor total">${formatarMoeda(linha.totalVendido)}</td>
-      <td data-label="Custo estoque">${formatarMoeda(linha.custoProdutos)}</td>
+      <td data-label="Custo estoque">${formatarValorOuNaoCalculado(linha.custoProdutos)}</td>
       <td data-label="Custos venda">${formatarMoeda(linha.custosVenda)}</td>
-      <td data-label="Lucro"><strong class="${obterClasseLucro(linha.lucro)}">${formatarMoeda(linha.lucro)}</strong></td>
+      <td data-label="Lucro">${linha.lucro === null ? "<strong>Custo nao calculado</strong>" : `<strong class="${obterClasseLucro(linha.lucro)}">${formatarMoeda(linha.lucro)}</strong>`}</td>
     `;
 
     tabelaAnalisePeriodo.appendChild(tr);
