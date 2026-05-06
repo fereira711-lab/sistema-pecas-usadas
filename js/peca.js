@@ -88,18 +88,38 @@ async function preencherSelectOrigens() {
   }
 }
 
+function lerNumeroDoCampo(id) {
+  const valor = document.getElementById(id).value.trim();
+  return valor === "" ? null : Number(valor);
+}
+
+function calcularCustoTotalEntrada() {
+  const quantidade = lerNumeroDoCampo("quantidade");
+  const custoUnitario = lerNumeroDoCampo("custoUnitarioEntrada");
+  const campoCustoTotal = document.getElementById("custoTotalEntrada");
+
+  if (quantidade === null || custoUnitario === null || !Number.isFinite(quantidade) || !Number.isFinite(custoUnitario)) {
+    campoCustoTotal.value = "";
+    return 0;
+  }
+
+  const custoTotal = quantidade * custoUnitario;
+  campoCustoTotal.value = custoTotal.toFixed(2);
+  return custoTotal;
+}
+
 function lerPecaDoFormulario() {
-  const quantidade = Number(document.getElementById("quantidade").value);
-  const valorAtribuidoBruto = document.getElementById("valorAtribuidoEntrada").value.trim();
-  const valorAtribuidoEntrada = valorAtribuidoBruto === "" ? 0 : Number(valorAtribuidoBruto);
+  const quantidade = lerNumeroDoCampo("quantidade");
+  const custoUnitario = lerNumeroDoCampo("custoUnitarioEntrada");
+  const valorAtribuidoEntrada = Number(quantidade || 0) * Number(custoUnitario || 0);
 
   return {
     id: Date.now(),
     nome: document.getElementById("nome").value.trim(),
     sku: document.getElementById("sku").value.trim().toUpperCase(),
     quantidade,
+    custoUnitarioEntrada: custoUnitario,
     valorAtribuidoEntrada,
-    valorAtribuidoInformado: valorAtribuidoBruto !== "",
     quantidadeVendida: 0,
     custo: 0,
     custoTotal: 0,
@@ -145,12 +165,20 @@ function validarPeca(peca) {
     return "Informe o SKU da peca.";
   }
 
-  if (!peca.quantidade || peca.quantidade < 1) {
+  if (!Number.isFinite(peca.quantidade) || peca.quantidade < 1) {
     return "A quantidade deve ser maior ou igual a 1.";
   }
 
+  if (!Number.isInteger(peca.quantidade)) {
+    return "A quantidade deve ser um numero inteiro.";
+  }
+
+  if (!Number.isFinite(peca.custoUnitarioEntrada) || peca.custoUnitarioEntrada < 0) {
+    return "Informe um custo unitario maior ou igual a zero.";
+  }
+
   if (!Number.isFinite(peca.valorAtribuidoEntrada) || peca.valorAtribuidoEntrada < 0) {
-    return "O valor atribuido para a entrada deve ser maior ou igual a zero.";
+    return "O custo total calculado deve ser maior ou igual a zero.";
   }
 
   return "";
@@ -169,6 +197,17 @@ function montarEntradaEstoque(peca, origem, quantidade, custoUnitario) {
     nomePeca: peca.nome,
     origemDescricao: origem.descricao || ""
   };
+}
+
+function limparCamposDaPeca() {
+  document.getElementById("nome").value = "";
+  document.getElementById("sku").value = "";
+  document.getElementById("imagemPeca").value = "";
+  document.getElementById("quantidade").value = "";
+  document.getElementById("custoUnitarioEntrada").value = "";
+  document.getElementById("custoTotalEntrada").value = "";
+  document.getElementById("observacoesPeca").value = "";
+  document.getElementById("nome").focus();
 }
 
 async function salvarPeca() {
@@ -203,7 +242,7 @@ async function salvarPeca() {
   try {
     const quantidadeEntrada = Number(peca.quantidade || 0);
     const valorAtribuidoEntrada = Number(peca.valorAtribuidoEntrada || 0);
-    const custoUnitario = quantidadeEntrada > 0 ? valorAtribuidoEntrada / quantidadeEntrada : 0;
+    const custoUnitario = Number(peca.custoUnitarioEntrada || 0);
     let pecaSalva = {
       ...peca,
       quantidade: 0,
@@ -228,12 +267,7 @@ async function salvarPeca() {
 
       salvarEntradaNoCache(entradaSalva);
       salvarPecaNoCache(pecaAtualizada);
-      mostrarMensagem(
-        peca.valorAtribuidoInformado
-          ? "Peca cadastrada e entrada de estoque criada com sucesso."
-          : "Peca cadastrada com entrada de estoque em custo zerado. Preencha o valor atribuido quando quiser ratear este custo.",
-        peca.valorAtribuidoInformado ? "success" : "warning"
-      );
+      mostrarMensagem("Peca cadastrada e entrada de estoque criada com sucesso. Voce pode cadastrar outra peca para a mesma origem.", "success");
     } else {
       const pecaLocal = {
         ...peca,
@@ -244,17 +278,10 @@ async function salvarPeca() {
 
       salvarPecaNoCache(pecaLocal);
       salvarEntradaNoCache(entradaLocal);
-      mostrarMensagem(
-        peca.valorAtribuidoInformado
-          ? "Peca salva no armazenamento local com entrada de estoque vinculada."
-          : "Peca salva no armazenamento local com entrada em custo zerado.",
-        peca.valorAtribuidoInformado ? "success" : "warning"
-      );
+      mostrarMensagem("Peca salva no armazenamento local com entrada de estoque vinculada. Voce pode cadastrar outra peca para a mesma origem.", "success");
     }
 
-    setTimeout(() => {
-      window.location.href = "produtos.html";
-    }, 700);
+    limparCamposDaPeca();
   } catch (erro) {
     console.error("Erro ao cadastrar peca:", erro);
     mostrarMensagem(`Nao foi possivel salvar a peca: ${obterMensagemErroSupabase(erro)}`, "warning");
@@ -264,3 +291,5 @@ async function salvarPeca() {
 }
 
 preencherSelectOrigens();
+document.getElementById("quantidade").addEventListener("input", calcularCustoTotalEntrada);
+document.getElementById("custoUnitarioEntrada").addEventListener("input", calcularCustoTotalEntrada);
