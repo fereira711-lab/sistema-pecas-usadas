@@ -31,16 +31,11 @@
           <div class="form-group">
             <label for="tipoCusto">Tipo de custo *</label>
             <select id="tipoCusto" name="tipoCusto" required>
-              <option value="">Selecione o tipo</option>
-              <option value="Limpeza">Limpeza</option>
-              <option value="Solda">Solda</option>
-              <option value="Pintura">Pintura</option>
-              <option value="Conserto">Conserto</option>
-              <option value="Embalagem">Embalagem</option>
-              <option value="Preparo">Preparo</option>
-              <option value="Frete">Frete</option>
-              <option value="Outro">Outro</option>
             </select>
+            <div class="field-actions">
+              <button id="botaoNovoTipoCusto" type="button" class="button-secondary button-compact">+ Novo tipo</button>
+            </div>
+            <p class="field-hint">Use tipos cadastrados para evitar nomes duplicados nos relatorios.</p>
           </div>
         </div>
 
@@ -127,7 +122,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=4"></script>
-  <script src="../js/supabase-service.js?v=17"></script>
-  <script src="../js/custos.js?v=13"></script>
+  <script src="../js/supabase-service.js?v=27"></script>
+  <script src="../js/custos.js?v=14"></script>
 </body>
 </html>

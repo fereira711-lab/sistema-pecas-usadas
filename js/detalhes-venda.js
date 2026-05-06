@@ -14,11 +14,11 @@ const botaoEditarVenda = document.getElementById("botaoEditarVenda");
 const formEditarVenda = document.getElementById("formEditarVenda");
 const editarVendaData = document.getElementById("editarVendaData");
 const editarVendaCanal = document.getElementById("editarVendaCanal");
-const editarVendaCustoEmbalagem = document.getElementById("editarVendaCustoEmbalagem");
-const editarVendaCustoComissao = document.getElementById("editarVendaCustoComissao");
-const editarVendaCustoFrete = document.getElementById("editarVendaCustoFrete");
-const editarVendaCustoOutros = document.getElementById("editarVendaCustoOutros");
+const editarListaCustosVenda = document.getElementById("editarListaCustosVenda");
+const botaoEditarAdicionarCustoVenda = document.getElementById("botaoEditarAdicionarCustoVenda");
 const cancelarEdicaoVenda = document.getElementById("cancelarEdicaoVenda");
+let tiposCustoVendaDetalhes = [];
+const tiposCustoVendaPadraoDetalhes = ["Embalagem", "Frete", "Comissão", "Taxa marketplace", "Taxa cartão", "Desconto concedido", "Coleta", "Etiqueta", "Outros"];
 let vendaAtual = null;
 let contextoVenda = {
   produto: null,
@@ -53,6 +53,75 @@ function formatarMoeda(valor) {
 
 function converterNumero(valor) {
   return Number(String(valor || "0").replace(",", "."));
+}
+
+function escaparHtml(texto) {
+  return String(texto || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function buscarTiposCustoVendaLocais() {
+  const tipos = JSON.parse(localStorage.getItem("tiposCusto")) || [];
+
+  if (tipos.length > 0) {
+    return tipos;
+  }
+
+  return tiposCustoVendaPadraoDetalhes.map((nome, indice) => ({
+    id: `local-venda-${indice + 1}`,
+    nome,
+    categoria: "venda",
+    ativo: true
+  }));
+}
+
+function criarOpcoesTiposCustoVenda(tipoSelecionado = "") {
+  return [
+    '<option value="">Tipo de custo</option>',
+    ...tiposCustoVendaDetalhes
+      .filter(tipo => tipo.ativo !== false && ["venda", "ambos"].includes(tipo.categoria || "ambos"))
+      .sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"))
+      .map(tipo => {
+        const selecionado = tipo.nome === tipoSelecionado ? " selected" : "";
+        return `<option value="${escaparHtml(tipo.nome)}" data-tipo-id="${escaparHtml(tipo.id)}"${selecionado}>${escaparHtml(tipo.nome)}</option>`;
+      })
+  ].join("");
+}
+
+async function carregarTiposCustoVendaDetalhes() {
+  if (window.supabaseService?.estaConfigurado()) {
+    try {
+      tiposCustoVendaDetalhes = await window.supabaseService.listarTiposCusto("venda") || [];
+      return;
+    } catch (erro) {
+      console.error("Erro ao carregar tipos de custo da venda:", erro);
+    }
+  }
+
+  tiposCustoVendaDetalhes = buscarTiposCustoVendaLocais();
+}
+
+function adicionarLinhaEdicaoCustoVenda(custo = {}) {
+  if (!editarListaCustosVenda) {
+    return;
+  }
+
+  const linha = document.createElement("div");
+  linha.className = "cost-line";
+  linha.innerHTML = `
+    <select data-campo="tipo" aria-label="Tipo de custo da venda">
+      ${criarOpcoesTiposCustoVenda(custo.tipoCusto || custo.tipo || "")}
+    </select>
+    <input data-campo="valor" type="number" min="0" step="0.01" placeholder="Valor" value="${custo.valor || ""}">
+    <input data-campo="descricao" type="text" placeholder="Observacao" value="${escaparHtml(custo.descricao || "")}">
+    <button type="button" class="button-secondary" data-acao="remover-custo">Remover</button>
+  `;
+
+  editarListaCustosVenda.appendChild(linha);
 }
 
 function formatarData(data) {
@@ -343,10 +412,13 @@ function abrirFormularioEdicaoVenda() {
 
   editarVendaData.value = obterDataVenda(vendaAtual);
   editarVendaCanal.value = vendaAtual.canalVenda || vendaAtual.canal_venda || vendaAtual.cliente || "";
-  preencherCampoCusto(editarVendaCustoEmbalagem, "embalagem");
-  preencherCampoCusto(editarVendaCustoComissao, "comissao");
-  preencherCampoCusto(editarVendaCustoFrete, "frete");
-  preencherCampoCusto(editarVendaCustoOutros, "outros");
+  editarListaCustosVenda.innerHTML = "";
+  (contextoVenda.custosVenda || []).forEach(custo => adicionarLinhaEdicaoCustoVenda(custo));
+
+  if ((contextoVenda.custosVenda || []).length === 0) {
+    adicionarLinhaEdicaoCustoVenda();
+  }
+
   formEditarVenda.hidden = false;
   editarVendaData.focus();
 }
@@ -357,48 +429,33 @@ function fecharFormularioEdicaoVenda() {
   }
 }
 
-function montarCustoVendaEditado(tipo, campo, descricaoPadrao) {
-  const valor = converterNumero(campo.value);
-  const custoExistente = obterCustoVendaPorTipo(tipo);
-
-  if (Number.isNaN(valor) || valor < 0) {
-    throw new Error("Valor de custo inválido.");
-  }
-
-  if (valor <= 0) {
-    return null;
-  }
-
-  return {
-    tipo,
-    tipoCusto: tipo,
-    descricao: custoExistente?.descricao || descricaoPadrao,
-    valor
-  };
-}
 
 function montarCustosVendaEditados() {
-  const tiposEditados = new Set(["embalagem", "comissao", "frete", "outros"]);
-  const custosMantidos = contextoVenda.custosVenda
-    .filter(custo => {
-      const tipo = normalizarTipoCusto(custo.tipo || custo.tipoCusto);
-      const tipoPadrao = tipo.startsWith("outro") ? "outros" : tipo;
-      return !tiposEditados.has(tipoPadrao);
-    })
-    .map(custo => ({
-      tipo: custo.tipo || custo.tipoCusto,
-      tipoCusto: custo.tipoCusto || custo.tipo,
-      descricao: custo.descricao || "",
-      valor: Number(custo.valor || 0)
-    }));
+  return Array.from(editarListaCustosVenda.querySelectorAll(".cost-line"))
+    .map(linha => {
+      const selectTipo = linha.querySelector("[data-campo='tipo']");
+      const tipo = selectTipo?.value || "";
+      const tipoCustoId = selectTipo?.selectedOptions[0]?.dataset?.tipoId || null;
+      const descricao = linha.querySelector("[data-campo='descricao']")?.value.trim() || tipo;
+      const valor = converterNumero(linha.querySelector("[data-campo='valor']")?.value || 0);
 
-  return [
-    ...custosMantidos,
-    montarCustoVendaEditado("embalagem", editarVendaCustoEmbalagem, "Custo de embalagem"),
-    montarCustoVendaEditado("comissao", editarVendaCustoComissao, "Comissão da venda"),
-    montarCustoVendaEditado("frete", editarVendaCustoFrete, "Frete da venda"),
-    montarCustoVendaEditado("outros", editarVendaCustoOutros, "Outros custos da venda")
-  ].filter(Boolean);
+      if (Number.isNaN(valor) || valor < 0) {
+        throw new Error("Valor de custo invalido.");
+      }
+
+      if (valor > 0 && !tipo) {
+        throw new Error("Selecione o tipo de custo em todas as linhas com valor.");
+      }
+
+      return {
+        tipo,
+        tipoCusto: tipo,
+        tipoCustoId,
+        descricao,
+        valor
+      };
+    })
+    .filter(custo => custo.tipo && Number(custo.valor || 0) > 0);
 }
 
 async function salvarEdicaoVenda(evento) {
@@ -665,6 +722,8 @@ async function carregarContextoSupabase(venda) {
 async function iniciarDetalhesVenda() {
   let venda = null;
 
+  await carregarTiposCustoVendaDetalhes();
+
   try {
     venda = await encontrarVendaSupabase();
   } catch (erro) {
@@ -695,5 +754,13 @@ async function iniciarDetalhesVenda() {
 botaoEditarVenda?.addEventListener("click", abrirFormularioEdicaoVenda);
 cancelarEdicaoVenda?.addEventListener("click", fecharFormularioEdicaoVenda);
 formEditarVenda?.addEventListener("submit", salvarEdicaoVenda);
+botaoEditarAdicionarCustoVenda?.addEventListener("click", () => adicionarLinhaEdicaoCustoVenda());
+editarListaCustosVenda?.addEventListener("click", evento => {
+  const botao = evento.target.closest("[data-acao='remover-custo']");
+
+  if (botao) {
+    botao.closest(".cost-line")?.remove();
+  }
+});
 
 iniciarDetalhesVenda();

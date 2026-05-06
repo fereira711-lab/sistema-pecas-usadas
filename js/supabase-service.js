@@ -210,12 +210,16 @@
   }
 
   function mapearCustoPecaDoBanco(custo) {
+    const tipoCustoNome = custo.tipos_custo?.nome || custo.tipo_custo;
+
     return {
       id: Number(custo.id),
       pecaId: Number(custo.peca_id),
-      tipo: custo.tipo_custo,
-      tipoCusto: custo.tipo_custo,
+      tipo: tipoCustoNome,
+      tipoCusto: tipoCustoNome,
+      tipoCustoId: custo.tipo_custo_id ? Number(custo.tipo_custo_id) : null,
       descricao: custo.descricao || "",
+      observacoes: custo.observacoes || "",
       valor: Number(custo.valor || 0),
       data: custo.data_custo,
       dataCusto: custo.data_custo
@@ -223,10 +227,14 @@
   }
 
   function mapearCustoPecaParaBanco(custo) {
+    const tipoCustoId = Number(custo.tipoCustoId || 0);
+
     return {
       peca_id: Number(custo.pecaId),
       tipo_custo: custo.tipoCusto || custo.tipo,
+      tipo_custo_id: Number.isFinite(tipoCustoId) && tipoCustoId > 0 ? tipoCustoId : null,
       descricao: custo.descricao || null,
+      observacoes: custo.observacoes || custo.observacao || null,
       valor: Number(custo.valor || 0),
       data_custo: custo.dataCusto || custo.data || new Date().toISOString().slice(0, 10)
     };
@@ -282,12 +290,16 @@
   }
 
   function mapearCustoVendaDoBanco(custo) {
+    const tipoCustoNome = custo.tipos_custo?.nome || custo.tipo_custo;
+
     return {
       id: Number(custo.id),
       vendaId: Number(custo.venda_id),
-      tipo: custo.tipo_custo,
-      tipoCusto: custo.tipo_custo,
+      tipo: tipoCustoNome,
+      tipoCusto: tipoCustoNome,
+      tipoCustoId: custo.tipo_custo_id ? Number(custo.tipo_custo_id) : null,
       descricao: custo.descricao || "",
+      observacoes: custo.observacoes || "",
       valor: Number(custo.valor || 0),
       data: custo.data_custo,
       dataCusto: custo.data_custo
@@ -295,10 +307,14 @@
   }
 
   function mapearCustoVendaParaBanco(vendaId, custo) {
+    const tipoCustoId = Number(custo.tipoCustoId || 0);
+
     return {
       venda_id: Number(vendaId),
       tipo_custo: custo.tipoCusto || custo.tipo,
+      tipo_custo_id: Number.isFinite(tipoCustoId) && tipoCustoId > 0 ? tipoCustoId : null,
       descricao: custo.descricao || null,
+      observacoes: custo.observacoes || custo.observacao || null,
       valor: Number(custo.valor || 0),
       data_custo: custo.dataCusto || custo.data || new Date().toISOString().slice(0, 10)
     };
@@ -317,6 +333,26 @@
       custoUnitario: Number(entrada.custo_unitario || 0),
       dataEntrada: entrada.data_entrada,
       createdAt: entrada.created_at
+    };
+  }
+
+  function padronizarNomeTipoCusto(nome) {
+    const texto = String(nome || "").trim().replace(/\s+/g, " ").toLowerCase();
+
+    if (!texto) {
+      return "";
+    }
+
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+
+  function mapearTipoCustoDoBanco(tipo) {
+    return {
+      id: Number(tipo.id),
+      nome: tipo.nome || "",
+      categoria: tipo.categoria || "ambos",
+      ativo: Boolean(tipo.ativo),
+      createdAt: tipo.created_at
     };
   }
 
@@ -489,7 +525,7 @@
 
     const { data, error } = await cliente
       .from("custos_peca")
-      .select("*")
+      .select("*, tipos_custo:tipo_custo_id(nome)")
       .order("id", { ascending: true });
 
     if (error) {
@@ -508,7 +544,7 @@
 
     const { data, error } = await cliente
       .from("custos_venda")
-      .select("*")
+      .select("*, tipos_custo:tipo_custo_id(nome)")
       .order("id", { ascending: true });
 
     if (error) {
@@ -516,6 +552,195 @@
     }
 
     return data.map(mapearCustoVendaDoBanco);
+  }
+
+  async function listarTiposCusto(categoria = "") {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    let consulta = cliente
+      .from("tipos_custo")
+      .select("*")
+      .eq("ativo", true)
+      .order("nome", { ascending: true });
+
+    if (categoria) {
+      consulta = consulta.in("categoria", [categoria, "ambos"]);
+    }
+
+    const { data, error } = await consulta;
+
+    if (error) {
+      throw error;
+    }
+
+    return data.map(mapearTipoCustoDoBanco);
+  }
+
+  async function listarTodosTiposCusto() {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("tipos_custo")
+      .select("*")
+      .order("nome", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return data.map(mapearTipoCustoDoBanco);
+  }
+
+  async function contarUsoTipoCusto(tipoCustoId) {
+    const cliente = obterCliente();
+    const id = Number(tipoCustoId || 0);
+
+    if (!cliente || !id) {
+      return { peca: 0, venda: 0, total: 0 };
+    }
+
+    const [
+      { count: totalPeca, error: erroPeca },
+      { count: totalVenda, error: erroVenda }
+    ] = await Promise.all([
+      cliente.from("custos_peca").select("id", { count: "exact", head: true }).eq("tipo_custo_id", id),
+      cliente.from("custos_venda").select("id", { count: "exact", head: true }).eq("tipo_custo_id", id)
+    ]);
+
+    if (erroPeca) {
+      throw erroPeca;
+    }
+
+    if (erroVenda) {
+      throw erroVenda;
+    }
+
+    return {
+      peca: Number(totalPeca || 0),
+      venda: Number(totalVenda || 0),
+      total: Number(totalPeca || 0) + Number(totalVenda || 0)
+    };
+  }
+
+  async function atualizarTipoCusto(tipo) {
+    const cliente = obterCliente();
+    const nomePadronizado = padronizarNomeTipoCusto(tipo.nome);
+    const categoriaNormalizada = ["peca", "venda", "ambos"].includes(tipo.categoria) ? tipo.categoria : "ambos";
+
+    if (!cliente) {
+      return null;
+    }
+
+    if (!tipo.id || !nomePadronizado) {
+      throw new Error("Informe tipo de custo valido para atualizar.");
+    }
+
+    const tipos = await listarTodosTiposCusto();
+    const duplicado = (tipos || []).find(item => (
+      Number(item.id) !== Number(tipo.id) &&
+      String(item.nome || "").trim().toLowerCase() === nomePadronizado.toLowerCase()
+    ));
+
+    if (duplicado) {
+      throw new Error("Ja existe um tipo de custo com esse nome.");
+    }
+
+    const { data, error } = await cliente
+      .from("tipos_custo")
+      .update({
+        nome: nomePadronizado,
+        categoria: categoriaNormalizada,
+        ativo: tipo.ativo !== false
+      })
+      .eq("id", tipo.id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearTipoCustoDoBanco(data);
+  }
+
+  async function desativarTipoCusto(tipoCustoId) {
+    return atualizarTipoCusto({
+      ...(await listarTodosTiposCusto()).find(tipo => Number(tipo.id) === Number(tipoCustoId)),
+      ativo: false
+    });
+  }
+
+  async function excluirTipoCusto(tipoCustoId) {
+    const cliente = obterCliente();
+    const id = Number(tipoCustoId || 0);
+
+    if (!cliente || !id) {
+      return false;
+    }
+
+    const uso = await contarUsoTipoCusto(id);
+
+    if (uso.total > 0) {
+      throw new Error("Este tipo ja esta sendo usado em custos. Desative em vez de excluir.");
+    }
+
+    const { error } = await cliente
+      .from("tipos_custo")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  }
+
+  async function criarTipoCusto(nome, categoria = "ambos") {
+    const cliente = obterCliente();
+    const nomePadronizado = padronizarNomeTipoCusto(nome);
+    const categoriaNormalizada = ["peca", "venda", "ambos"].includes(categoria) ? categoria : "ambos";
+
+    if (!cliente) {
+      return null;
+    }
+
+    if (!nomePadronizado) {
+      throw new Error("Informe o nome do tipo de custo.");
+    }
+
+    const tipos = await listarTiposCusto();
+    const tipoExistente = (tipos || []).find(tipo => (
+      String(tipo.nome || "").trim().toLowerCase() === nomePadronizado.toLowerCase()
+    ));
+
+    if (tipoExistente) {
+      return tipoExistente;
+    }
+
+    const { data, error } = await cliente
+      .from("tipos_custo")
+      .insert({
+        nome: nomePadronizado,
+        categoria: categoriaNormalizada,
+        ativo: true
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearTipoCustoDoBanco(data);
   }
 
   async function listarEntradasEstoque() {
@@ -738,11 +963,13 @@
       .insert({
         peca_id: custoParaBanco.peca_id,
         tipo_custo: custoParaBanco.tipo_custo,
+        tipo_custo_id: custoParaBanco.tipo_custo_id,
         descricao: custoParaBanco.descricao,
+        observacoes: custoParaBanco.observacoes,
         valor: custoParaBanco.valor,
         data_custo: custoParaBanco.data_custo
       })
-      .select()
+      .select("*, tipos_custo:tipo_custo_id(nome)")
       .single();
 
     if (error) {
@@ -754,6 +981,7 @@
 
   async function atualizarCustoPeca(custo) {
     const cliente = obterCliente();
+    const tipoCustoId = Number(custo.tipoCustoId || 0);
 
     if (!cliente) {
       return null;
@@ -763,11 +991,14 @@
       .from("custos_peca")
       .update({
         tipo_custo: custo.tipoCusto || custo.tipo,
+        tipo_custo_id: Number.isFinite(tipoCustoId) && tipoCustoId > 0 ? tipoCustoId : null,
         descricao: custo.descricao || null,
-        valor: Number(custo.valor || 0)
+        observacoes: custo.observacoes || custo.observacao || null,
+        valor: Number(custo.valor || 0),
+        data_custo: custo.dataCusto || custo.data || new Date().toISOString().slice(0, 10)
       })
       .eq("id", custo.id)
-      .select()
+      .select("*, tipos_custo:tipo_custo_id(nome)")
       .single();
 
     if (error) {
@@ -790,7 +1021,7 @@
     const { data, error } = await cliente
       .from("custos_venda")
       .insert(custosValidos.map(custo => mapearCustoVendaParaBanco(vendaId, custo)))
-      .select();
+      .select("*, tipos_custo:tipo_custo_id(nome)");
 
     if (error) {
       throw error;
@@ -862,10 +1093,10 @@
       p_valor_unitario: vendaParaBanco.valor_unitario,
       p_canal_venda: vendaParaBanco.canal_venda,
       p_data_venda: vendaParaBanco.data_venda,
-      p_custo_embalagem: obterCustoVendaPorTipo(venda.custosVenda, "embalagem"),
-      p_custo_comissao: obterCustoVendaPorTipo(venda.custosVenda, "comissao"),
-      p_custo_frete: obterCustoVendaPorTipo(venda.custosVenda, "frete"),
-      p_custo_outros: obterCustoVendaPorTipo(venda.custosVenda, "outros")
+      p_custo_embalagem: 0,
+      p_custo_comissao: 0,
+      p_custo_frete: 0,
+      p_custo_outros: 0
     });
 
     if (error) {
@@ -874,8 +1105,7 @@
     }
 
     const pecaAtualizada = await buscarPecaPorId(venda.pecaId);
-    const custosVenda = await listarCustosVenda();
-    const custosDaVenda = custosVenda.filter(custo => Number(custo.vendaId) === Number(vendaId));
+    const custosDaVenda = await salvarCustosVenda(vendaId, venda.custosVenda || []);
 
     return {
       venda: {
@@ -909,6 +1139,13 @@
     listarVendas,
     listarCustosPeca,
     listarCustosVenda,
+    listarTiposCusto,
+    listarTodosTiposCusto,
+    criarTipoCusto,
+    contarUsoTipoCusto,
+    atualizarTipoCusto,
+    desativarTipoCusto,
+    excluirTipoCusto,
     listarEntradasEstoque,
     listarConsumosEstoque,
     salvarOrigem,

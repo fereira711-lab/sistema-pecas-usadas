@@ -6,11 +6,16 @@ const mensagemCusto = document.getElementById("mensagemCusto");
 const mensagemListaCustos = document.getElementById("mensagemListaCustos");
 const campoBuscaPecaCusto = document.getElementById("buscaPecaCusto");
 const sugestoesPecaCusto = document.getElementById("sugestoesPecaCusto");
+const selectTipoCusto = document.getElementById("tipoCusto");
+const botaoNovoTipoCusto = document.getElementById("botaoNovoTipoCusto");
 let produtosCustoCarregados = [];
 let custosCustoCarregados = [];
 let origensCustoCarregadas = [];
+let tiposCustoCarregados = [];
 let sugestoesCustoAtuais = [];
 let indiceSugestaoCusto = -1;
+const tiposCustoPadrao = ["Limpeza", "Solda", "Pintura", "Embalagem", "Frete", "Comissão", "Outros"];
+const categoriasTipoCusto = ["peca", "venda", "ambos"];
 
 function supabaseEstaConfigurado() {
   return window.supabaseService && window.supabaseService.estaConfigurado();
@@ -60,6 +65,134 @@ function destacarBusca(texto) {
   }
 
   return textoSeguro.replace(new RegExp(`(${escaparRegex(termo)})`, "gi"), "<mark>$1</mark>");
+}
+
+function padronizarNomeTipoCusto(nome) {
+  const texto = String(nome || "").trim().replace(/\s+/g, " ").toLowerCase();
+
+  if (!texto) {
+    return "";
+  }
+
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function normalizarNomeTipoCusto(nome) {
+  return String(nome || "").trim().toLowerCase();
+}
+
+function buscarTiposCustoLocais() {
+  const tipos = JSON.parse(localStorage.getItem("tiposCusto")) || [];
+
+  if (tipos.length > 0) {
+    return tipos;
+  }
+
+  return tiposCustoPadrao.map((nome, indice) => ({
+    id: `local-${indice + 1}`,
+    nome,
+    categoria: ["Embalagem", "Frete", "Comissão", "Outros"].includes(nome) ? "venda" : "peca",
+    ativo: true
+  }));
+}
+
+function salvarTiposCustoLocais(tipos) {
+  localStorage.setItem("tiposCusto", JSON.stringify(tipos));
+}
+
+function renderizarTiposCusto(tipoSelecionado = "") {
+  const valorSelecionado = tipoSelecionado || selectTipoCusto.value;
+
+  selectTipoCusto.innerHTML = '<option value="">Selecione o tipo</option>';
+
+  tiposCustoCarregados
+    .filter(tipo => tipo.ativo !== false && ["peca", "ambos"].includes(tipo.categoria || "ambos"))
+    .sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"))
+    .forEach(tipo => {
+      const opcao = document.createElement("option");
+      opcao.value = tipo.nome;
+      opcao.textContent = tipo.nome;
+      opcao.dataset.tipoId = tipo.id;
+      selectTipoCusto.appendChild(opcao);
+    });
+
+  if (valorSelecionado) {
+    selectTipoCusto.value = valorSelecionado;
+  }
+}
+
+async function carregarTiposCusto() {
+  if (supabaseEstaConfigurado()) {
+    try {
+      tiposCustoCarregados = await window.supabaseService.listarTiposCusto("peca") || [];
+      salvarTiposCustoLocais(tiposCustoCarregados);
+      renderizarTiposCusto();
+      return;
+    } catch (erro) {
+      console.error("Erro ao carregar tipos de custo:", erro);
+      mensagemCusto.textContent = "Nao foi possivel carregar os tipos de custo do Supabase. Usando lista local.";
+      mensagemCusto.className = "form-message form-message--warning";
+    }
+  }
+
+  tiposCustoCarregados = buscarTiposCustoLocais();
+  renderizarTiposCusto();
+}
+
+async function criarNovoTipoCusto() {
+  const nomeDigitado = prompt("Nome do novo tipo de custo:");
+  const nomePadronizado = padronizarNomeTipoCusto(nomeDigitado);
+
+  if (!nomeDigitado) {
+    return;
+  }
+
+  if (!nomePadronizado) {
+    mensagemCusto.textContent = "Informe um nome valido para o tipo de custo.";
+    mensagemCusto.className = "form-message form-message--warning";
+    return;
+  }
+
+  const tipoExistente = tiposCustoCarregados.find(tipo => (
+    normalizarNomeTipoCusto(tipo.nome) === normalizarNomeTipoCusto(nomePadronizado)
+  ));
+
+  if (tipoExistente) {
+    renderizarTiposCusto(tipoExistente.nome);
+    mensagemCusto.textContent = `Tipo "${tipoExistente.nome}" ja existe e foi selecionado.`;
+    mensagemCusto.className = "form-message form-message--warning";
+    return;
+  }
+
+  const categoriaDigitada = prompt("Categoria do tipo: peca, venda ou ambos", "peca");
+  const categoria = normalizarNomeTipoCusto(categoriaDigitada || "peca");
+
+  if (!categoriasTipoCusto.includes(categoria)) {
+    mensagemCusto.textContent = "Categoria invalida. Use peca, venda ou ambos.";
+    mensagemCusto.className = "form-message form-message--warning";
+    return;
+  }
+
+  try {
+    const novoTipo = supabaseEstaConfigurado()
+      ? await window.supabaseService.criarTipoCusto(nomePadronizado, categoria)
+      : {
+          id: `local-${Date.now()}`,
+          nome: nomePadronizado,
+          categoria,
+          ativo: true
+        };
+
+    tiposCustoCarregados.push(novoTipo);
+    salvarTiposCustoLocais(tiposCustoCarregados);
+    renderizarTiposCusto(novoTipo.nome);
+    mensagemCusto.textContent = `Tipo "${novoTipo.nome}" criado e selecionado.`;
+    mensagemCusto.className = "form-message form-message--success";
+  } catch (erro) {
+    console.error("Erro ao criar tipo de custo:", erro);
+    mensagemCusto.textContent = "Nao foi possivel criar o tipo de custo. Verifique se ele ja existe.";
+    mensagemCusto.className = "form-message form-message--warning";
+  }
 }
 
 function formatarNomePecaDestacado(peca) {
@@ -469,13 +602,14 @@ async function removerCustoLocal(indice) {
   renderizarResumoProduto();
 }
 
-function montarCusto(produto, tipo, descricao, valor, data) {
+function montarCusto(produto, tipo, descricao, valor, data, tipoCustoId) {
   return {
     id: Date.now(),
     pecaId: Number(produto.id),
     produtoNome: formatarNomePeca(produto),
     tipo: tipo,
     tipoCusto: tipo,
+    tipoCustoId,
     descricao: descricao,
     valor: Number(valor),
     data: data,
@@ -501,6 +635,7 @@ formularioCusto.addEventListener("submit", async function (evento) {
 
   const pecaId = Number(selectProdutoCusto.value);
   const tipo = document.getElementById("tipoCusto").value;
+  const tipoCustoId = selectTipoCusto.selectedOptions[0]?.dataset?.tipoId || null;
   const descricao = document.getElementById("descricaoCusto").value.trim();
   const valorDigitado = document.getElementById("valorCusto").value;
   const data = document.getElementById("dataCusto").value;
@@ -525,7 +660,7 @@ formularioCusto.addEventListener("submit", async function (evento) {
     return;
   }
 
-  const custo = montarCusto(produto, tipo, descricao, valorDigitado, data);
+  const custo = montarCusto(produto, tipo, descricao, valorDigitado, data, tipoCustoId);
 
   if (!custo.pecaId) {
     mensagemCusto.textContent = "Nao foi possivel identificar o ID da peca. Atualize a lista de pecas e tente novamente.";
@@ -546,6 +681,7 @@ formularioCusto.addEventListener("submit", async function (evento) {
     mensagemCusto.textContent = mensagemSucesso;
     mensagemCusto.className = "form-message form-message--success";
     formularioCusto.reset();
+    renderizarTiposCusto();
     await carregarCustos();
     renderizarResumoProduto();
     renderizarCustos(destino);
@@ -561,6 +697,7 @@ formularioCusto.addEventListener("submit", async function (evento) {
 selectProdutoCusto.addEventListener("change", renderizarResumoProduto);
 
 campoBuscaPecaCusto?.addEventListener("input", atualizarSugestoesCusto);
+botaoNovoTipoCusto?.addEventListener("click", criarNovoTipoCusto);
 
 campoBuscaPecaCusto?.addEventListener("focus", () => {
   if (!selectProdutoCusto.value && String(campoBuscaPecaCusto.value || "").trim()) {
@@ -617,6 +754,7 @@ tabelaCustos.addEventListener("click", function (evento) {
 });
 
 async function iniciarTelaCustos() {
+  await carregarTiposCusto();
   await carregarProdutos();
   await carregarOrigensParaCustos();
   const origemDados = await carregarCustos();

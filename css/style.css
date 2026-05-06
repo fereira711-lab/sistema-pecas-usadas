@@ -574,6 +574,13 @@ textarea:focus {
   margin-bottom: 12px;
 }
 
+.field-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
 .button-primary,
 .button-secondary {
   display: inline-flex;
@@ -599,6 +606,12 @@ textarea:focus {
   border: 1px solid var(--cor-borda);
   background: transparent;
   color: var(--cor-texto);
+}
+
+.button-compact {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 0.9rem;
 }
 
 .test-tools {
@@ -711,6 +724,19 @@ textarea:focus {
   line-height: 1.4;
 }
 
+.checkbox-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  color: var(--cor-texto);
+  font-weight: 700;
+}
+
+.checkbox-line input {
+  width: auto;
+}
+
 .file-input-hidden {
   display: none;
 }
@@ -731,6 +757,24 @@ textarea:focus {
 
 .optional-fields[open] summary {
   margin-bottom: 16px;
+}
+
+.cost-lines {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cost-line {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(120px, 0.7fr) minmax(180px, 1.4fr) auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.cost-line .button-secondary {
+  min-height: 46px;
+  padding-inline: 14px;
 }
 
 .detail-grid {
@@ -1723,6 +1767,10 @@ textarea:focus {
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .cost-line {
+    grid-template-columns: 1fr;
   }
 
   .form-card {

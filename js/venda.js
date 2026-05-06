@@ -25,11 +25,17 @@ function buscarEntradasLocais() {
 const campoBuscaPecaVenda = document.getElementById("buscaPecaVenda");
 const sugestoesPecaVenda = document.getElementById("sugestoesPecaVenda");
 const campoDataVenda = document.getElementById("dataVenda");
+const listaCustosVenda = document.getElementById("listaCustosVenda");
+const botaoAdicionarCustoVenda = document.getElementById("botaoAdicionarCustoVenda");
+const botaoNovoTipoCustoVenda = document.getElementById("botaoNovoTipoCustoVenda");
+const mensagemVenda = document.getElementById("mensagemVenda");
 let pecasVendaCarregadas = [];
 let origensVendaCarregadas = [];
 let entradasVendaCarregadas = [];
+let tiposCustoVendaCarregados = [];
 let sugestoesVendaAtuais = [];
 let indiceSugestaoVenda = -1;
+const tiposCustoVendaPadrao = ["Embalagem", "Frete", "Comissão", "Taxa marketplace", "Taxa cartão", "Desconto concedido", "Coleta", "Etiqueta", "Outros"];
 
 function salvarVendas(vendas) {
   localStorage.setItem("vendas", JSON.stringify(vendas));
@@ -81,6 +87,146 @@ function destacarBusca(texto) {
   }
 
   return textoSeguro.replace(new RegExp(`(${escaparRegex(termo)})`, "gi"), "<mark>$1</mark>");
+}
+
+function padronizarNomeTipoCusto(nome) {
+  const texto = String(nome || "").trim().replace(/\s+/g, " ").toLowerCase();
+
+  if (!texto) {
+    return "";
+  }
+
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function normalizarNomeTipoCusto(nome) {
+  return String(nome || "").trim().toLowerCase();
+}
+
+function buscarTiposCustoVendaLocais() {
+  const tipos = JSON.parse(localStorage.getItem("tiposCusto")) || [];
+
+  if (tipos.length > 0) {
+    return tipos;
+  }
+
+  return tiposCustoVendaPadrao.map((nome, indice) => ({
+    id: `local-venda-${indice + 1}`,
+    nome,
+    categoria: "venda",
+    ativo: true
+  }));
+}
+
+function salvarTiposCustoVendaLocais(tipos) {
+  localStorage.setItem("tiposCusto", JSON.stringify(tipos));
+}
+
+function criarOpcoesTiposCustoVenda(tipoSelecionado = "") {
+  return [
+    '<option value="">Tipo de custo</option>',
+    ...tiposCustoVendaCarregados
+      .filter(tipo => tipo.ativo !== false && ["venda", "ambos"].includes(tipo.categoria || "ambos"))
+      .sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"))
+      .map(tipo => {
+        const selecionado = tipo.nome === tipoSelecionado ? " selected" : "";
+        return `<option value="${escaparHtml(tipo.nome)}" data-tipo-id="${escaparHtml(tipo.id)}"${selecionado}>${escaparHtml(tipo.nome)}</option>`;
+      })
+  ].join("");
+}
+
+function atualizarSelectsTiposCustoVenda() {
+  listaCustosVenda?.querySelectorAll("[data-campo='tipo']").forEach(select => {
+    const valorAtual = select.value;
+    select.innerHTML = criarOpcoesTiposCustoVenda(valorAtual);
+    select.value = valorAtual;
+  });
+}
+
+async function carregarTiposCustoVenda() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      tiposCustoVendaCarregados = await window.supabaseService.listarTiposCusto("venda") || [];
+      salvarTiposCustoVendaLocais(tiposCustoVendaCarregados);
+      atualizarSelectsTiposCustoVenda();
+      return;
+    } catch (erro) {
+      console.error("Erro ao carregar tipos de custo da venda:", erro);
+    }
+  }
+
+  tiposCustoVendaCarregados = buscarTiposCustoVendaLocais();
+  atualizarSelectsTiposCustoVenda();
+}
+
+function adicionarLinhaCustoVenda(custo = {}) {
+  if (!listaCustosVenda) {
+    return;
+  }
+
+  const linha = document.createElement("div");
+  linha.className = "cost-line";
+  linha.innerHTML = `
+    <select data-campo="tipo" aria-label="Tipo de custo da venda">
+      ${criarOpcoesTiposCustoVenda(custo.tipoCusto || custo.tipo || "")}
+    </select>
+    <input data-campo="valor" type="number" min="0" step="0.01" placeholder="Valor" value="${custo.valor || ""}">
+    <input data-campo="descricao" type="text" placeholder="Observacao" value="${escaparHtml(custo.descricao || "")}">
+    <button type="button" class="button-secondary" data-acao="remover-custo">Remover</button>
+  `;
+
+  listaCustosVenda.appendChild(linha);
+}
+
+async function criarNovoTipoCustoVenda() {
+  const nomeDigitado = prompt("Nome do novo tipo de custo da venda:");
+  const nomePadronizado = padronizarNomeTipoCusto(nomeDigitado);
+
+  if (!nomeDigitado) {
+    return;
+  }
+
+  if (!nomePadronizado) {
+    alert("Informe um nome valido para o tipo de custo.");
+    return;
+  }
+
+  const tipoExistente = tiposCustoVendaCarregados.find(tipo => (
+    normalizarNomeTipoCusto(tipo.nome) === normalizarNomeTipoCusto(nomePadronizado)
+  ));
+
+  if (tipoExistente) {
+    atualizarSelectsTiposCustoVenda();
+    alert(`Tipo "${tipoExistente.nome}" ja existe.`);
+    return;
+  }
+
+  const categoriaDigitada = prompt("Categoria do tipo: peca, venda ou ambos", "venda");
+  const categoria = normalizarNomeTipoCusto(categoriaDigitada || "venda");
+
+  if (!["peca", "venda", "ambos"].includes(categoria)) {
+    alert("Categoria invalida. Use peca, venda ou ambos.");
+    return;
+  }
+
+  try {
+    const novoTipo = window.supabaseService && window.supabaseService.estaConfigurado()
+      ? await window.supabaseService.criarTipoCusto(nomePadronizado, categoria)
+      : {
+          id: `local-venda-${Date.now()}`,
+          nome: nomePadronizado,
+          categoria,
+          ativo: true
+        };
+
+    tiposCustoVendaCarregados.push(novoTipo);
+    salvarTiposCustoVendaLocais(tiposCustoVendaCarregados);
+    atualizarSelectsTiposCustoVenda();
+    adicionarLinhaCustoVenda({ tipoCusto: novoTipo.nome });
+  } catch (erro) {
+    console.error("Erro ao criar tipo de custo da venda:", erro);
+    alert("Nao foi possivel criar o tipo de custo.");
+  }
 }
 
 function formatarNomePecaDestacado(peca) {
@@ -171,14 +317,24 @@ function criarCustoVenda(tipo, descricao, valor) {
 }
 
 function lerCustosVendaDoFormulario() {
-  const custos = [
-    criarCustoVenda("embalagem", "Custo de embalagem", lerValorCampo("custoEmbalagem")),
-    criarCustoVenda("comissao", "Custo de comissao", lerValorCampo("custoComissao")),
-    criarCustoVenda("frete", "Custo de frete", lerValorCampo("custoFrete")),
-    criarCustoVenda("outros", "Outros custos", lerValorCampo("custoOutros"))
-  ];
+  if (!listaCustosVenda) {
+    return [];
+  }
 
-  return custos.filter(custo => Number(custo.valor || 0) > 0);
+  return Array.from(listaCustosVenda.querySelectorAll(".cost-line"))
+    .map(linha => {
+      const selectTipo = linha.querySelector("[data-campo='tipo']");
+      const tipo = selectTipo?.value || "";
+      const tipoCustoId = selectTipo?.selectedOptions[0]?.dataset?.tipoId || null;
+      const valor = Number(linha.querySelector("[data-campo='valor']")?.value || 0);
+      const descricao = linha.querySelector("[data-campo='descricao']")?.value.trim() || tipo;
+
+      return {
+        ...criarCustoVenda(tipo, descricao, valor),
+        tipoCustoId
+      };
+    })
+    .filter(custo => custo.tipo && Number(custo.valor || 0) > 0);
 }
 
 function somarCustosVenda(custosVenda) {
@@ -186,8 +342,25 @@ function somarCustosVenda(custosVenda) {
 }
 
 function existeCustoVendaNegativo() {
-  return ["custoEmbalagem", "custoComissao", "custoFrete", "custoOutros"]
-    .some(id => lerValorCampo(id) < 0);
+  if (!listaCustosVenda) {
+    return false;
+  }
+
+  return Array.from(listaCustosVenda.querySelectorAll("[data-campo='valor']"))
+    .some(campo => Number(campo.value || 0) < 0);
+}
+
+function existeCustoVendaIncompleto() {
+  if (!listaCustosVenda) {
+    return false;
+  }
+
+  return Array.from(listaCustosVenda.querySelectorAll(".cost-line"))
+    .some(linha => {
+      const tipo = linha.querySelector("[data-campo='tipo']")?.value || "";
+      const valor = Number(linha.querySelector("[data-campo='valor']")?.value || 0);
+      return valor > 0 && !tipo;
+    });
 }
 
 function normalizarSku(sku) {
@@ -296,6 +469,15 @@ function fecharSugestoesVenda() {
   sugestoesPecaVenda.innerHTML = "";
   sugestoesPecaVenda.classList.remove("is-open");
   indiceSugestaoVenda = -1;
+}
+
+function mostrarMensagemVenda(texto, tipo = "success") {
+  if (!mensagemVenda) {
+    return;
+  }
+
+  mensagemVenda.textContent = texto;
+  mensagemVenda.className = texto ? `form-message form-message--${tipo}` : "form-message";
 }
 
 function obterPrimeiroIndiceDisponivel(pecas) {
@@ -434,6 +616,8 @@ async function inicializarFormularioVenda() {
   const campoPeca = obterCampoPeca();
 
   preencherDataVendaPadrao();
+  await carregarTiposCustoVenda();
+  adicionarLinhaCustoVenda();
 
   if (!campoPeca) {
     return;
@@ -500,6 +684,16 @@ async function inicializarFormularioVenda() {
       selecionarPeca(peca);
     }
   });
+
+  botaoAdicionarCustoVenda?.addEventListener("click", () => adicionarLinhaCustoVenda());
+  botaoNovoTipoCustoVenda?.addEventListener("click", criarNovoTipoCustoVenda);
+  listaCustosVenda?.addEventListener("click", evento => {
+    const botao = evento.target.closest("[data-acao='remover-custo']");
+
+    if (botao) {
+      botao.closest(".cost-line")?.remove();
+    }
+  });
 }
 
 function lerVendaDoFormulario() {
@@ -545,6 +739,10 @@ function validarVenda(venda) {
     return "Os custos da venda devem ser maiores ou iguais a zero.";
   }
 
+  if (existeCustoVendaIncompleto()) {
+    return "Selecione o tipo de custo em todas as linhas com valor.";
+  }
+
   return "";
 }
 
@@ -560,6 +758,46 @@ function atualizarPecaVendidaLocalmente(peca, quantidadeVendida) {
 
   salvarPecaNoCache(pecaAtualizada);
   return pecaAtualizada;
+}
+
+function atualizarPecaNaListaVenda(pecaAtualizada) {
+  const pecaNormalizada = normalizarPeca(pecaAtualizada);
+  const indice = pecasVendaCarregadas.findIndex(peca => Number(peca.id) === Number(pecaNormalizada.id));
+
+  if (indice >= 0) {
+    pecasVendaCarregadas[indice] = pecaNormalizada;
+    return;
+  }
+
+  pecasVendaCarregadas.push(pecaNormalizada);
+}
+
+function limparFormularioVenda() {
+  document.getElementById("pecaId").value = "";
+  document.getElementById("valorVenda").value = "";
+  document.getElementById("quantidadeVendidaNaVenda").value = "";
+  document.getElementById("canalVenda").value = "";
+
+  if (campoBuscaPecaVenda) {
+    campoBuscaPecaVenda.value = "";
+  }
+
+  fecharSugestoesVenda();
+
+  if (campoDataVenda) {
+    campoDataVenda.value = obterDataHoje();
+  }
+
+  if (listaCustosVenda) {
+    listaCustosVenda.innerHTML = "";
+    adicionarLinhaCustoVenda();
+  }
+
+  campoBuscaPecaVenda?.focus();
+
+  if (window.location.search) {
+    window.history.replaceState({}, "", window.location.pathname);
+  }
 }
 
 async function salvarVenda() {
@@ -598,7 +836,8 @@ async function salvarVenda() {
 
       salvarVendaNoCache(vendaComLucro);
       salvarPecaNoCache(resultado.peca);
-      alert("Venda e custos da venda cadastrados no Supabase com sucesso.");
+      atualizarPecaNaListaVenda(resultado.peca);
+      mostrarMensagemVenda("Venda e custos da venda cadastrados com sucesso.", "success");
     } else {
       const pecaAtualizada = atualizarPecaVendidaLocalmente(peca, venda.quantidadeVendida);
       salvarVendaNoCache({
@@ -607,13 +846,14 @@ async function salvarVenda() {
         sku: pecaAtualizada.sku || "",
         lucroVenda: calcularLucroVenda(venda, pecaAtualizada)
       });
-      alert("Venda e custos da venda cadastrados no armazenamento temporario. Configure o Supabase para salvar no banco.");
+      atualizarPecaNaListaVenda(pecaAtualizada);
+      mostrarMensagemVenda("Venda cadastrada no armazenamento temporario. Configure o Supabase para salvar no banco.", "warning");
     }
 
-    window.location.href = "produtos.html";
+    limparFormularioVenda();
   } catch (erro) {
     console.error("Erro ao cadastrar venda:", erro);
-    alert(`Nao foi possivel salvar a venda no Supabase: ${erro.message || "erro desconhecido"}`);
+    mostrarMensagemVenda(`Nao foi possivel salvar a venda: ${erro.message || "erro desconhecido"}`, "warning");
   } finally {
     botaoSalvar.disabled = false;
   }

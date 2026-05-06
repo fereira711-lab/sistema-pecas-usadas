@@ -44,40 +44,35 @@
         <input id="canalVenda" placeholder="Canal da venda">
       </div>
 
-      <details class="optional-fields">
-        <summary>Custos opcionais da venda</summary>
-
-        <div class="form-row">
-          <div class="form-group">
-            <input id="custoEmbalagem" type="number" placeholder="Custo de embalagem">
-          </div>
-
-          <div class="form-group">
-            <input id="custoComissao" type="number" placeholder="Custo de comissão">
+      <section class="optional-fields">
+        <div class="stock-header">
+          <div>
+            <h2>Custos adicionais da venda</h2>
+            <p>Adicione quantos custos forem necessarios para calcular o resultado da venda.</p>
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <input id="custoFrete" type="number" placeholder="Custo de frete">
-          </div>
+        <div id="listaCustosVenda" class="cost-lines"></div>
 
-          <div class="form-group">
-            <input id="custoOutros" type="number" placeholder="Outros custos">
-          </div>
+        <div class="form-actions">
+          <button id="botaoAdicionarCustoVenda" type="button" class="button-secondary">+ Adicionar custo</button>
+          <button id="botaoNovoTipoCustoVenda" type="button" class="button-secondary">+ Novo tipo</button>
         </div>
-      </details>
+      </section>
 
       <div class="form-actions">
         <button type="button" class="button-primary" onclick="salvarVenda()">Salvar</button>
+        <a class="button-secondary" href="historico-vendas.html">Ver vendas</a>
         <a class="button-secondary" href="../index.html">Voltar para o painel</a>
       </div>
+
+      <p id="mensagemVenda" class="form-message" aria-live="polite"></p>
     </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
-  <script src="../js/supabase-service.js?v=25"></script>
-  <script src="../js/venda.js?v=15"></script>
+  <script src="../js/supabase-service.js?v=27"></script>
+  <script src="../js/venda.js?v=17"></script>
 </body>
 </html>

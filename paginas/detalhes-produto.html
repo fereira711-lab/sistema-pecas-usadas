@@ -111,7 +111,7 @@
         <div class="form-row">
           <div class="form-group">
             <label for="editarCustoTipo">Tipo</label>
-            <input id="editarCustoTipo" type="text">
+            <select id="editarCustoTipo"></select>
           </div>
 
           <div class="form-group">
@@ -123,6 +123,18 @@
         <div class="form-group">
           <label for="editarCustoDescricao">Descrição</label>
           <input id="editarCustoDescricao" type="text">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editarCustoData">Data</label>
+            <input id="editarCustoData" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="editarCustoObservacoes">Observações</label>
+            <textarea id="editarCustoObservacoes" rows="2"></textarea>
+          </div>
         </div>
 
         <div class="form-actions">
@@ -181,7 +193,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
-  <script src="../js/supabase-service.js?v=24"></script>
-  <script src="../js/detalhes-produto.js?v=10"></script>
+  <script src="../js/supabase-service.js?v=27"></script>
+  <script src="../js/detalhes-produto.js?v=11"></script>
 </body>
 </html>

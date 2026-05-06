@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tipos de Custo</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Configuracoes</p>
+      <h1>Tipos de Custo</h1>
+      <p class="hero__description">
+        Controle os nomes usados nos custos de pecas e vendas.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="form-card">
+      <h2>Novo tipo de custo</h2>
+
+      <form id="formTipoCusto">
+        <input id="tipoCustoId" type="hidden">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nomeTipoCusto">Nome *</label>
+            <input id="nomeTipoCusto" type="text" placeholder="Ex: Limpeza">
+          </div>
+
+          <div class="form-group">
+            <label for="categoriaTipoCusto">Categoria *</label>
+            <select id="categoriaTipoCusto">
+              <option value="peca">Peca</option>
+              <option value="venda">Venda</option>
+              <option value="ambos">Ambos</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="checkbox-line">
+          <input id="ativoTipoCusto" type="checkbox" checked>
+          Ativo
+        </label>
+
+        <p id="mensagemTipoCusto" class="form-message" aria-live="polite"></p>
+
+        <div class="form-actions">
+          <button type="submit" class="button-primary">Salvar tipo</button>
+          <button id="cancelarEdicaoTipoCusto" type="button" class="button-secondary" hidden>Cancelar edicao</button>
+          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="stock-card section-spaced">
+      <div class="stock-header">
+        <div>
+          <h2>Tipos cadastrados</h2>
+          <p>Tipos usados em custos antigos podem ser desativados, mas nao excluidos.</p>
+        </div>
+      </div>
+
+      <p id="mensagemListaTiposCusto" class="empty-message"></p>
+
+      <div class="table-wrapper">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Categoria</th>
+              <th>Status</th>
+              <th>Uso</th>
+              <th>Acoes</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaTiposCusto"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
+  <script src="../js/supabase-service.js?v=28"></script>
+  <script src="../js/tipos-custo.js?v=1"></script>
+</body>
+</html>

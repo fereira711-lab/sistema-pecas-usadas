@@ -23,6 +23,8 @@ const editarCustoId = document.getElementById("editarCustoId");
 const editarCustoTipo = document.getElementById("editarCustoTipo");
 const editarCustoValor = document.getElementById("editarCustoValor");
 const editarCustoDescricao = document.getElementById("editarCustoDescricao");
+const editarCustoData = document.getElementById("editarCustoData");
+const editarCustoObservacoes = document.getElementById("editarCustoObservacoes");
 const cancelarEdicaoCusto = document.getElementById("cancelarEdicaoCusto");
 
 let contextoProduto = {
@@ -34,6 +36,8 @@ let contextoProduto = {
   consumosEstoque: [],
   origemPrincipal: ""
 };
+let tiposCustoProduto = [];
+const tiposCustoPadraoProduto = ["Limpeza", "Solda", "Pintura", "Embalagem", "Frete", "Comissão", "Outros"];
 
 function buscarProdutosLocais() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
@@ -76,6 +80,77 @@ function formatarNumero(valor) {
 
 function converterNumero(valor) {
   return Number(String(valor || "0").replace(",", "."));
+}
+
+function normalizarNomeTipoCusto(nome) {
+  return String(nome || "").trim().toLowerCase();
+}
+
+function buscarTiposCustoLocais() {
+  return tiposCustoPadraoProduto.map((nome, indice) => ({
+    id: `local-${indice + 1}`,
+    nome,
+    categoria: ["Embalagem", "Frete", "Comissão", "Outros"].includes(nome) ? "venda" : "peca",
+    ativo: true
+  }));
+}
+
+function garantirTipoCustoDisponivel(nome) {
+  const texto = String(nome || "").trim();
+
+  if (!texto) {
+    return;
+  }
+
+  const existe = tiposCustoProduto.some(tipo => (
+    normalizarNomeTipoCusto(tipo.nome) === normalizarNomeTipoCusto(texto)
+  ));
+
+  if (!existe) {
+    tiposCustoProduto.push({
+      id: "",
+      nome: texto,
+      ativo: true
+    });
+  }
+}
+
+function renderizarTiposCustoProduto(tipoSelecionado = "") {
+  if (!editarCustoTipo) {
+    return;
+  }
+
+  editarCustoTipo.innerHTML = '<option value="">Selecione o tipo</option>';
+
+  tiposCustoProduto
+    .filter(tipo => tipo.ativo !== false && ["peca", "ambos"].includes(tipo.categoria || "ambos"))
+    .sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"))
+    .forEach(tipo => {
+      const opcao = document.createElement("option");
+      opcao.value = tipo.nome;
+      opcao.textContent = tipo.nome;
+      opcao.dataset.tipoId = tipo.id;
+      editarCustoTipo.appendChild(opcao);
+    });
+
+  if (tipoSelecionado) {
+    editarCustoTipo.value = tipoSelecionado;
+  }
+}
+
+async function carregarTiposCustoProduto() {
+  if (window.supabaseService?.estaConfigurado()) {
+    try {
+      tiposCustoProduto = await window.supabaseService.listarTiposCusto("peca") || [];
+      renderizarTiposCustoProduto();
+      return;
+    } catch (erro) {
+      console.error("Erro ao carregar tipos de custo:", erro);
+    }
+  }
+
+  tiposCustoProduto = buscarTiposCustoLocais();
+  renderizarTiposCustoProduto();
 }
 
 function formatarData(data) {
@@ -390,9 +465,12 @@ function abrirFormularioEdicaoCusto(custoId) {
   }
 
   editarCustoId.value = custo.id;
-  editarCustoTipo.value = custo.tipoCusto || custo.tipo || "";
+  garantirTipoCustoDisponivel(custo.tipoCusto || custo.tipo);
+  renderizarTiposCustoProduto(custo.tipoCusto || custo.tipo || "");
   editarCustoValor.value = Number(custo.valor || 0);
   editarCustoDescricao.value = custo.descricao || "";
+  editarCustoData.value = String(custo.dataCusto || custo.data || "").slice(0, 10);
+  editarCustoObservacoes.value = custo.observacoes || custo.observacao || "";
   formEditarCustoProduto.hidden = false;
   editarCustoTipo.focus();
 }
@@ -413,7 +491,10 @@ async function salvarEdicaoCusto(evento) {
 
   const id = Number(editarCustoId.value);
   const tipo = editarCustoTipo.value.trim();
+  const tipoCustoId = editarCustoTipo.selectedOptions[0]?.dataset?.tipoId || null;
   const descricao = editarCustoDescricao.value.trim();
+  const dataCusto = editarCustoData.value;
+  const observacoes = editarCustoObservacoes.value.trim();
   const valor = converterNumero(editarCustoValor.value);
 
   if (!id || !tipo) {
@@ -434,7 +515,10 @@ async function salvarEdicaoCusto(evento) {
     const custoAtualizado = await window.supabaseService.atualizarCustoPeca({
       id,
       tipoCusto: tipo,
+      tipoCustoId,
       descricao,
+      dataCusto,
+      observacoes,
       valor
     });
 
@@ -762,6 +846,7 @@ function renderizarNaoEncontrado(mensagem) {
 }
 
 async function iniciarDetalhes() {
+  await carregarTiposCustoProduto();
   const pecaId = obterPecaIdDaUrl();
 
   if (!pecaId) {
