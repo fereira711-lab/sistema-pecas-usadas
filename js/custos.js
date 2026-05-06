@@ -14,7 +14,7 @@ let origensCustoCarregadas = [];
 let tiposCustoCarregados = [];
 let sugestoesCustoAtuais = [];
 let indiceSugestaoCusto = -1;
-const tiposCustoPadrao = ["Limpeza", "Solda", "Pintura", "Embalagem", "Frete", "Comissão", "Outros"];
+const tiposCustoPadrao = ["Limpeza", "Solda", "Pintura", "Conserto", "Preparo"];
 const categoriasTipoCusto = ["peca", "venda", "ambos"];
 
 function supabaseEstaConfigurado() {
@@ -91,7 +91,7 @@ function buscarTiposCustoLocais() {
   return tiposCustoPadrao.map((nome, indice) => ({
     id: `local-${indice + 1}`,
     nome,
-    categoria: ["Embalagem", "Frete", "Comissão", "Outros"].includes(nome) ? "venda" : "peca",
+    categoria: "peca",
     ativo: true
   }));
 }

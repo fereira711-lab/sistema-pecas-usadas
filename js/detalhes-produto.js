@@ -37,7 +37,7 @@ let contextoProduto = {
   origemPrincipal: ""
 };
 let tiposCustoProduto = [];
-const tiposCustoPadraoProduto = ["Limpeza", "Solda", "Pintura", "Embalagem", "Frete", "Comissão", "Outros"];
+const tiposCustoPadraoProduto = ["Limpeza", "Solda", "Pintura", "Conserto", "Preparo"];
 
 function buscarProdutosLocais() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
@@ -90,7 +90,7 @@ function buscarTiposCustoLocais() {
   return tiposCustoPadraoProduto.map((nome, indice) => ({
     id: `local-${indice + 1}`,
     nome,
-    categoria: ["Embalagem", "Frete", "Comissão", "Outros"].includes(nome) ? "venda" : "peca",
+    categoria: "peca",
     ativo: true
   }));
 }

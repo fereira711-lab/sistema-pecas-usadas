@@ -33,65 +33,7 @@ function formatarNomePeca(peca) {
 }
 
 function somar(lista, campo) {
-  return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
-}
-
-function somarCustosPorPeca(custos, pecaId) {
-  return custos
-    .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
-    .reduce((total, custo) => total + Number(custo.valor || 0), 0);
-}
-
-function normalizarSku(sku) {
-  return String(sku || "").trim().toUpperCase();
-}
-
-function obterOrigensDoProduto(peca, origens) {
-  const sku = normalizarSku(peca.sku);
-  const origensPorSku = origens.filter(origem => normalizarSku(origem.produtoSku || origem.produto_sku) === sku);
-
-  return origensPorSku.length > 0
-    ? origensPorSku
-    : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
-}
-
-function calcularCustoPeca(peca, origens) {
-  const entradasDaPeca = (window.__entradasRelatorios || []).filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
-
-  if (entradasDaPeca.length > 0) {
-    const totalUnidadesEntrada = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
-    const totalInvestidoEntrada = entradasDaPeca.reduce((total, entrada) => {
-      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
-    }, 0);
-
-    if (totalUnidadesEntrada > 0 && totalInvestidoEntrada > 0) {
-      return totalInvestidoEntrada / totalUnidadesEntrada;
-    }
-  }
-
-  const origensDoProduto = obterOrigensDoProduto(peca, origens);
-  const totalUnidades = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
-  }, 0);
-  const totalInvestido = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
-  }, 0);
-
-  if (totalUnidades <= 0 || totalInvestido <= 0) {
-    return Number(peca.custo || 0);
-  }
-
-  return totalInvestido / totalUnidades;
-}
-
-function calcularLucroVenda(venda) {
-  if (!venda.custoCalculado) {
-    return null;
-  }
-
-  const custoTotal = Number(venda.custoTotal || venda.custoRealConsumido || 0);
-
-  return Number(venda.valorTotal || 0) - custoTotal - calcularTotalCustosVenda(venda);
+  return (lista || []).reduce((total, item) => total + Number(item?.[campo] || 0), 0);
 }
 
 function formatarValorOuNaoCalculado(valor) {
@@ -100,24 +42,6 @@ function formatarValorOuNaoCalculado(valor) {
   }
 
   return formatarMoeda(Number(valor || 0));
-}
-
-function calcularTotalCustosVenda(venda) {
-  if (venda.totalCustosVenda !== undefined) {
-    return Number(venda.totalCustosVenda || 0);
-  }
-
-  if (!Array.isArray(venda.custosVenda)) {
-    return 0;
-  }
-
-  return venda.custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
-}
-
-function somarCustosReaisDasPecas(produtos) {
-  return produtos.reduce((total, produto) => {
-    return total + (Number(produto.custo || 0) * Number(produto.quantidade || 0));
-  }, 0);
 }
 
 function calcularQuantidadeDisponivel(produto) {
@@ -139,19 +63,24 @@ function criarCard(titulo, valor) {
   `;
 }
 
+function obterResultadoVenda(venda) {
+  return venda.resultadoFinanceiro || window.financeiroUtils.calcularLucroVenda(venda, [], venda.custosVenda || []);
+}
+
 function renderizarCardsPrincipais(dados) {
   const totalProdutos = dados.pecas.length;
   const quantidadeEstoque = dados.pecas.reduce((total, peca) => total + calcularQuantidadeDisponivel(peca), 0);
   const totalOrigens = dados.origens.length;
   const valorInvestido = somar(dados.origens, "valorPago");
-  const totalCustos = somar(dados.custosPeca, "valor");
-  const faturamento = somar(dados.vendas, "valorTotal");
-  const vendasSemCusto = dados.vendas.filter(venda => !venda.custoCalculado).length;
-  const custosDasVendas = dados.vendas.reduce((total, venda) => total + calcularTotalCustosVenda(venda), 0);
-  const custoBaseVendido = vendasSemCusto > 0
+  const totalCustosPeca = somar(dados.custosPeca, "valor");
+  const resultadosVendas = dados.vendas.map(obterResultadoVenda);
+  const faturamento = resultadosVendas.reduce((total, resultado) => total + Number(resultado.receita || 0), 0);
+  const vendasSemCusto = resultadosVendas.filter(resultado => !resultado.calculado).length;
+  const custoConsumido = vendasSemCusto > 0
     ? null
-    : dados.vendas.reduce((total, venda) => total + Number(venda.custoRealConsumido || venda.custoTotal || 0), 0);
-  const custoVendas = custoBaseVendido === null ? null : custoBaseVendido + totalCustos + custosDasVendas;
+    : resultadosVendas.reduce((total, resultado) => total + Number(resultado.custoConsumido || 0), 0);
+  const custosDasVendas = resultadosVendas.reduce((total, resultado) => total + Number(resultado.custosVenda || 0), 0);
+  const custoVendas = custoConsumido === null ? null : custoConsumido + totalCustosPeca + custosDasVendas;
   const lucroBruto = custoVendas === null ? null : faturamento - custoVendas;
 
   cardsRelatorios.innerHTML =
@@ -159,14 +88,14 @@ function renderizarCardsPrincipais(dados) {
     criarCard("Quantidade total em estoque", quantidadeEstoque) +
     criarCard("Total de origens cadastradas", totalOrigens) +
     criarCard("Valor total investido em origens", formatarMoeda(valorInvestido)) +
-    criarCard("Total de custos diversos", formatarMoeda(totalCustos)) +
+    criarCard("Total de custos da peca", formatarMoeda(totalCustosPeca)) +
     criarCard("Faturamento total", formatarMoeda(faturamento)) +
     criarCard("Custo total das vendas", formatarValorOuNaoCalculado(custoVendas)) +
     criarCard("Lucro bruto total", formatarValorOuNaoCalculado(lucroBruto)) +
     criarCard("Vendas sem custo real", vendasSemCusto);
 }
 
-function renderizarResumoEstoque(produtos, custos, origens) {
+function renderizarResumoEstoque(produtos) {
   tabelaResumoEstoque.innerHTML = "";
 
   if (produtos.length === 0) {
@@ -177,9 +106,6 @@ function renderizarResumoEstoque(produtos, custos, origens) {
   mensagemEstoqueRelatorio.textContent = "";
 
   produtos.forEach(produto => {
-    const custoBase = calcularCustoPeca(produto, origens);
-    const custosDiversos = somarCustosPorPeca(custos, produto.id);
-    const custoTotal = custoBase + custosDiversos;
     const quantidade = Number(produto.quantidade || 1);
     const quantidadeVendida = Number(produto.quantidadeVendida || 0);
     const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
@@ -192,12 +118,9 @@ function renderizarResumoEstoque(produtos, custos, origens) {
       <td data-label="Categoria">${produto.categoria || "-"}</td>
       <td data-label="Qtd. total">${quantidade}</td>
       <td data-label="Qtd. vendida">${quantidadeVendida}</td>
-      <td data-label="Qtd. disponível">${quantidadeDisponivel}</td>
+      <td data-label="Qtd. disponivel">${quantidadeDisponivel}</td>
       <td data-label="Status">${status}</td>
-      <td data-label="Custo base">${formatarMoeda(custoBase)}</td>
-      <td data-label="Custos diversos">${formatarMoeda(custosDiversos)}</td>
-      <td data-label="Custo total">${formatarMoeda(custoTotal)}</td>
-      <td data-label="Preço de venda">${formatarMoeda(produto.precoVenda)}</td>
+      <td data-label="Preco de venda">${formatarMoeda(produto.precoVenda)}</td>
     `;
 
     tabelaResumoEstoque.appendChild(linha);
@@ -223,7 +146,7 @@ function renderizarAlertasEstoque(produtos) {
       <td data-label="Produto">${formatarNomePeca(produto)}</td>
       <td data-label="ID">${produto.id}</td>
       <td data-label="Quantidade">${quantidade}</td>
-      <td data-label="Situação">${quantidade === 0 ? "Sem estoque" : "Estoque baixo"}</td>
+      <td data-label="Situacao">${quantidade === 0 ? "Sem estoque" : "Estoque baixo"}</td>
     `;
 
     tabelaAlertasEstoque.appendChild(linha);
@@ -249,8 +172,7 @@ function renderizarResumoVendas(vendas) {
   mensagemResumoVendas.textContent = "";
 
   vendas.slice(0, 5).forEach((venda, posicao) => {
-    const indexOriginal = posicao;
-    const lucroVenda = calcularLucroVenda(venda);
+    const resultado = obterResultadoVenda(venda);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -258,11 +180,11 @@ function renderizarResumoVendas(vendas) {
       <td data-label="Produto">${formatarNomePeca({ id: venda.pecaId, nome: venda.produtoNome, sku: venda.sku }) || "-"}</td>
       <td data-label="ID da peca">${venda.pecaId || "-"}</td>
       <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0}</td>
-      <td data-label="Valor total">${formatarMoeda(venda.valorTotal)}</td>
-      <td data-label="Lucro bruto">${formatarValorOuNaoCalculado(lucroVenda)}</td>
-      <td data-label="Ações">
+      <td data-label="Valor total">${formatarMoeda(resultado.receita)}</td>
+      <td data-label="Lucro bruto">${formatarValorOuNaoCalculado(resultado.lucro)}</td>
+      <td data-label="Acoes">
         <div class="table-actions">
-          <a class="table-link" href="${abrirDetalhesVenda(venda, indexOriginal)}">Ver detalhes</a>
+          <a class="table-link" href="${abrirDetalhesVenda(venda, posicao)}">Ver detalhes</a>
         </div>
       </td>
     `;
@@ -285,6 +207,7 @@ function renderizarProdutosMaisVendidos(vendas) {
 
   vendas.forEach(venda => {
     const chave = venda.pecaId || venda.produtoNome || "sem-peca";
+    const resultado = obterResultadoVenda(venda);
 
     if (!agrupado[chave]) {
       agrupado[chave] = {
@@ -298,11 +221,12 @@ function renderizarProdutosMaisVendidos(vendas) {
     }
 
     agrupado[chave].quantidade += Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
-    agrupado[chave].faturamento += Number(venda.valorTotal || 0);
-    if (!venda.custoCalculado) {
+    agrupado[chave].faturamento += Number(resultado.receita || 0);
+
+    if (!resultado.calculado) {
       agrupado[chave].possuiVendaSemCusto = true;
     } else {
-      agrupado[chave].lucro += Number(calcularLucroVenda(venda) || 0);
+      agrupado[chave].lucro += Number(resultado.lucro || 0);
     }
   });
 
@@ -336,7 +260,7 @@ function renderizarCustosPorTipo(custos) {
   const agrupado = {};
 
   custos.forEach(custo => {
-    const tipo = custo.tipo || "Outro";
+    const tipo = custo.tipoCusto || custo.tipo || "Outro";
     agrupado[tipo] = (agrupado[tipo] || 0) + Number(custo.valor || 0);
   });
 
@@ -353,7 +277,7 @@ function renderizarCustosPorTipo(custos) {
 }
 
 function agruparCustosVendaPorVenda(custosVenda) {
-  return custosVenda.reduce((mapa, custo) => {
+  return (custosVenda || []).reduce((mapa, custo) => {
     const vendaId = Number(custo.vendaId || 0);
 
     if (!mapa[vendaId]) {
@@ -365,39 +289,21 @@ function agruparCustosVendaPorVenda(custosVenda) {
   }, {});
 }
 
-function agruparPorId(lista, campo) {
-  return (lista || []).reduce((mapa, item) => {
-    const id = Number(item?.[campo] || 0);
-
-    if (!mapa[id]) {
-      mapa[id] = [];
-    }
-
-    mapa[id].push(item);
-    return mapa;
-  }, {});
-}
-
 function prepararVendas(vendas, pecas, custosVenda, consumosEstoque) {
   const custosPorVenda = agruparCustosVendaPorVenda(custosVenda);
-  const consumosPorVenda = agruparPorId(consumosEstoque, "vendaId");
 
-  return vendas.map(venda => {
-    const peca = pecas.find(item => Number(item.id) === Number(venda.pecaId));
+  return (vendas || []).map(venda => {
+    const peca = (pecas || []).find(item => Number(item.id) === Number(venda.pecaId));
     const custosDaVenda = custosPorVenda[Number(venda.id)] || venda.custosVenda || [];
-    const consumosDaVenda = consumosPorVenda[Number(venda.id)] || [];
-    const custoRealConsumido = consumosDaVenda.reduce((total, consumo) => total + Number(consumo.custoTotal || 0), 0);
+    const resultadoFinanceiro = window.financeiroUtils.calcularLucroVenda(venda, consumosEstoque, custosVenda);
 
     return {
       ...venda,
       produtoNome: venda.produtoNome || peca?.nome || "-",
       sku: venda.sku || peca?.sku || "",
       pecaId: venda.pecaId || peca?.id || "",
-      custoRealConsumido,
-      custoTotal: custoRealConsumido,
-      custoCalculado: consumosDaVenda.length > 0,
       custosVenda: custosDaVenda,
-      totalCustosVenda: custosDaVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0)
+      resultadoFinanceiro
     };
   }).sort((a, b) => {
     const dataA = new Date(a.dataVenda || 0).getTime();
@@ -414,30 +320,27 @@ function prepararVendas(vendas, pecas, custosVenda, consumosEstoque) {
 async function carregarDadosRelatorios() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
-      const [origens, pecas, custosPeca, vendas, custosVenda, entradasEstoque, consumosEstoque] = await Promise.all([
+      const [origens, pecas, custosPeca, vendas, custosVenda, consumosEstoque] = await Promise.all([
         window.supabaseService.listarOrigens(),
         window.supabaseService.listarPecas(),
         window.supabaseService.listarCustosPeca(),
         window.supabaseService.listarVendas(),
         window.supabaseService.listarCustosVenda(),
-        window.supabaseService.listarEntradasEstoque(),
         window.supabaseService.listarConsumosEstoque()
       ]);
-
-      window.__entradasRelatorios = entradasEstoque || [];
       const vendasPreparadas = prepararVendas(vendas, pecas, custosVenda, consumosEstoque || []);
 
-      salvarLista("origens", origens);
-      salvarLista("produtos", pecas);
-      salvarLista("custosDiversos", custosPeca);
+      salvarLista("origens", origens || []);
+      salvarLista("produtos", pecas || []);
+      salvarLista("custosDiversos", custosPeca || []);
       salvarLista("vendas", vendasPreparadas);
       salvarLista("custosVenda", custosVenda || []);
       salvarLista("consumosEstoque", consumosEstoque || []);
 
       return {
-        origens,
-        pecas,
-        custosPeca,
+        origens: origens || [],
+        pecas: pecas || [],
+        custosPeca: custosPeca || [],
         vendas: vendasPreparadas
       };
     } catch (erro) {
@@ -449,7 +352,6 @@ async function carregarDadosRelatorios() {
   const pecas = buscarLista("produtos");
   const custosPeca = buscarLista("custosDiversos");
   const origens = buscarLista("origens");
-  window.__entradasRelatorios = buscarLista("entradasEstoque");
   const vendas = prepararVendas(
     buscarLista("vendas"),
     pecas,
@@ -469,7 +371,7 @@ async function iniciarRelatorios() {
   const dados = await carregarDadosRelatorios();
 
   renderizarCardsPrincipais(dados);
-  renderizarResumoEstoque(dados.pecas, dados.custosPeca, dados.origens);
+  renderizarResumoEstoque(dados.pecas);
   renderizarAlertasEstoque(dados.pecas);
   renderizarResumoVendas(dados.vendas);
   renderizarProdutosMaisVendidos(dados.vendas);

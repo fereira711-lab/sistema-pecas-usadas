@@ -2,19 +2,8 @@ const tabelaProdutos = document.getElementById("tabelaProdutos");
 const mensagemProdutos = document.getElementById("mensagemProdutos");
 const campoBuscaProdutos = document.getElementById("buscaProdutos");
 const campoImagemProdutoExistente = document.getElementById("imagemProdutoExistente");
-let dadosProdutos = { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [], consumosEstoque: [], entradasEstoque: [] };
+let dadosProdutos = { pecas: [] };
 let pecaSelecionadaParaImagem = null;
-
-function primeiroValorPreenchido(...valores) {
-  return valores.find(valor => valor !== null && valor !== undefined);
-}
-
-function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
-}
 
 function formatarNomePeca(peca) {
   const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
@@ -61,8 +50,6 @@ function normalizarPeca(peca) {
   const quantidade = Number(peca.quantidade || 1);
   const quantidadeVendida = Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
   const origemId = Number(peca.origemId || peca.origem_id || 0);
-  const precoVenda = Number(peca.precoVenda || peca.preco_venda || peca.preco_sugerido || 0);
-  const custoTotal = primeiroValorPreenchido(peca.custoTotal, peca.custo_total, peca.custo, 0);
 
   return {
     ...peca,
@@ -70,28 +57,11 @@ function normalizarPeca(peca) {
     nome: peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`,
     sku: peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "",
     origemId,
-    tipoCusto: peca.tipoCusto || peca.tipo_custo || peca.tipo_custo_atribuido || "-",
     quantidade,
     quantidadeVendida,
     status: peca.status || "em_estoque",
-    custo: Number(peca.custo || 0),
-    custoTotal: Number(custoTotal || 0),
-    precoVenda,
     imagemUrl: peca.imagemUrl || peca.imagem_url || "",
     preparada: Boolean(peca.preparada)
-  };
-}
-
-function normalizarOrigem(origem) {
-  return {
-    ...origem,
-    id: Number(origem.id),
-    codigoOrigem: origem.codigoOrigem || `ORI-${String(origem.id || "").padStart(6, "0")}`,
-    descricao: origem.descricao || origem.nome || `Origem ${origem.id}`,
-    produtoSku: origem.produtoSku || origem.produto_sku || "",
-    quantidadeTotal: Number(origem.quantidadeTotal || origem.quantidade_total || 0),
-    custoTotal: Number(origem.custoTotal || origem.custo_total || origem.valorPago || origem.valor_pago || 0),
-    valorPago: Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0)
   };
 }
 
@@ -99,43 +69,22 @@ function calcularQuantidadeDisponivel(peca) {
   return Math.max(Number(peca.quantidade || 0) - Number(peca.quantidadeVendida || 0), 0);
 }
 
-function criarMapaOrigens(origens) {
-  return origens.reduce((mapa, origem) => {
-    mapa[Number(origem.id)] = origem;
-    return mapa;
-  }, {});
-}
-
 async function carregarDados() {
   if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
     mensagemProdutos.textContent = "Configure o Supabase para carregar a lista de pecas.";
-    return { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [], consumosEstoque: [], entradasEstoque: [] };
+    return { pecas: [] };
   }
 
   try {
-    const [pecasSupabase, origensSupabase, vendasSupabase, custosPecaSupabase, custosVendaSupabase, consumosEstoqueSupabase, entradasEstoqueSupabase] = await Promise.all([
-      window.supabaseService.listarPecas(),
-      window.supabaseService.listarOrigens(),
-      window.supabaseService.listarVendas(),
-      window.supabaseService.listarCustosPeca(),
-      window.supabaseService.listarCustosVenda(),
-      window.supabaseService.listarConsumosEstoque(),
-      window.supabaseService.listarEntradasEstoque()
-    ]);
+    const pecasSupabase = await window.supabaseService.listarPecas();
 
     return {
-      pecas: pecasSupabase.map(normalizarPeca),
-      origens: origensSupabase.map(normalizarOrigem),
-      vendas: vendasSupabase,
-      custosPeca: custosPecaSupabase,
-      custosVenda: custosVendaSupabase,
-      consumosEstoque: consumosEstoqueSupabase || [],
-      entradasEstoque: entradasEstoqueSupabase || []
+      pecas: pecasSupabase.map(normalizarPeca)
     };
   } catch (erro) {
     console.error("Erro ao carregar produtos do Supabase:", erro);
     mensagemProdutos.textContent = "Nao foi possivel carregar os dados do Supabase.";
-    return { pecas: [], origens: [], vendas: [], custosPeca: [], custosVenda: [], consumosEstoque: [], entradasEstoque: [] };
+    return { pecas: [] };
   }
 }
 
@@ -242,15 +191,7 @@ async function salvarImagemProdutoExistente(arquivo) {
         : peca;
     });
 
-    renderizarProdutos(
-      filtrarPecasPorBusca(dadosProdutos.pecas),
-      dadosProdutos.origens,
-      dadosProdutos.vendas,
-      dadosProdutos.custosPeca,
-      dadosProdutos.custosVenda,
-      dadosProdutos.consumosEstoque,
-      dadosProdutos.entradasEstoque
-    );
+    renderizarProdutos(filtrarPecasPorBusca(dadosProdutos.pecas));
     mensagemProdutos.textContent = "Imagem da peca atualizada com sucesso.";
   } catch (erro) {
     console.error("Erro ao atualizar imagem da peca:", erro);
@@ -261,189 +202,12 @@ async function salvarImagemProdutoExistente(arquivo) {
   }
 }
 
-function somarValores(lista, campo = "valor") {
-  return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
-}
-
-function filtrarPorPeca(lista, pecaId) {
-  return lista.filter(item => Number(item.pecaId || 0) === Number(pecaId || 0));
-}
-
-function normalizarSku(sku) {
-  return String(sku || "").trim().toUpperCase();
-}
-
-function obterOrigensDoProduto(peca, origens) {
-  const sku = normalizarSku(peca.sku);
-  const origensPorSku = origens.filter(origem => normalizarSku(origem.produtoSku) === sku);
-
-  return origensPorSku.length > 0
-    ? origensPorSku
-    : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
-}
-
-function obterEntradasDoProduto(peca, entradasEstoque) {
-  return entradasEstoque.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
-}
-
-function calcularCustoBasePeca(peca, origens, entradasEstoque = []) {
-  const entradasDaPeca = obterEntradasDoProduto(peca, entradasEstoque);
-
-  if (entradasDaPeca.length > 0) {
-    const totalUnidades = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
-    const totalInvestido = entradasDaPeca.reduce((total, entrada) => {
-      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
-    }, 0);
-
-    if (totalUnidades > 0 && totalInvestido > 0) {
-      return totalInvestido / totalUnidades;
-    }
-  }
-
-  const origensDoProduto = obterOrigensDoProduto(peca, origens);
-
-  const totalUnidades = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.quantidadeTotal || 0);
-  }, 0);
-  const totalInvestido = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.valorPago || origem.custoTotal || 0);
-  }, 0);
-
-  if (totalUnidades <= 0 || totalInvestido <= 0) {
-    return Number(peca.custoTotal || peca.custo || 0);
-  }
-
-  return totalInvestido / totalUnidades;
-}
-
-function calcularReceitaPeca(vendasDaPeca) {
-  return vendasDaPeca.reduce((total, venda) => {
-    if (venda.valorTotal !== undefined || venda.valor_total !== undefined) {
-      return total + Number(venda.valorTotal || venda.valor_total || 0);
-    }
-
-    const quantidadeVendida = Number(venda.quantidadeVendida || venda.quantidade_vendida || 0);
-    const valorUnitario = Number(venda.valorUnitario || venda.valor_unitario || 0);
-
-    return total + (valorUnitario * quantidadeVendida);
-  }, 0);
-}
-
-function somarCustosEmbutidosDasVendas(vendasDaPeca) {
-  return vendasDaPeca.reduce((total, venda) => {
-    if (venda.totalCustosVenda !== undefined) {
-      return total + Number(venda.totalCustosVenda || 0);
-    }
-
-    if (!Array.isArray(venda.custosVenda)) {
-      return total;
-    }
-
-    return total + somarValores(venda.custosVenda);
-  }, 0);
-}
-
-function calcularQuantidadeVendidaPeca(vendasDaPeca) {
-  return vendasDaPeca.reduce((total, venda) => {
-    return total + Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0);
-  }, 0);
-}
-
-function agruparConsumosPorVenda(consumosEstoque) {
-  return consumosEstoque.reduce((mapa, consumo) => {
-    const vendaId = Number(consumo.vendaId || 0);
-
-    if (!mapa[vendaId]) {
-      mapa[vendaId] = [];
-    }
-
-    mapa[vendaId].push(consumo);
-    return mapa;
-  }, {});
-}
-
-function calcularCustoFifoComFallback(vendasDaPeca, consumosPorVenda, custoUnitarioFallback) {
-  return vendasDaPeca.reduce((total, venda) => {
-    const consumosDaVenda = consumosPorVenda[Number(venda.id)] || [];
-
-    if (consumosDaVenda.length > 0) {
-      return total + somarValores(consumosDaVenda, "custoTotal");
-    }
-
-    return total + (Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0) * custoUnitarioFallback);
-  }, 0);
-}
-
-function calcularLucroPeca(peca, origens, vendas, custosPeca, custosVenda, consumosEstoque, entradasEstoque) {
-  const vendasDaPeca = filtrarPorPeca(vendas, peca.id);
-  const idsVendasDaPeca = vendasDaPeca.map(venda => Number(venda.id));
-  const custosVendaDaPeca = custosVenda.filter(custo => idsVendasDaPeca.includes(Number(custo.vendaId || 0)));
-  const receita = calcularReceitaPeca(vendasDaPeca);
-  const custoUnitario = calcularCustoBasePeca(peca, origens, entradasEstoque);
-  const consumosPorVenda = agruparConsumosPorVenda(consumosEstoque);
-  const custoFifo = calcularCustoFifoComFallback(vendasDaPeca, consumosPorVenda, custoUnitario);
-  const totalCustosPeca = somarValores(filtrarPorPeca(custosPeca, peca.id));
-  const totalCustosVenda = somarValores(custosVendaDaPeca) || somarCustosEmbutidosDasVendas(vendasDaPeca);
-
-  return receita - custoFifo - totalCustosPeca - totalCustosVenda;
-}
-
-function obterClasseLucro(lucro, temVenda) {
-  if (!temVenda || lucro === 0) {
-    return "profit-value profit-value--neutral";
-  }
-
-  if (lucro > 0) {
-    return "profit-value profit-value--positive";
-  }
-
-  return "profit-value profit-value--negative";
-}
-
 function obterClasseStatus(status) {
   if (status === "vendida") {
     return "status-badge status-badge--sold";
   }
 
   return "status-badge status-badge--stock";
-}
-
-function criarAlerta(tipo, texto) {
-  return { tipo, texto };
-}
-
-function obterAlertasProduto(peca, quantidadeDisponivel, vendasDaPeca, entradasEstoque, consumosPorVenda) {
-  const alertas = [];
-  const entradasDaPeca = entradasEstoque.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id));
-  const vendasSemConsumo = vendasDaPeca.filter(venda => !(consumosPorVenda[Number(venda.id)] || []).length);
-
-  if (quantidadeDisponivel <= 0) {
-    alertas.push(criarAlerta("danger", "Sem estoque"));
-  } else if (quantidadeDisponivel <= 2) {
-    alertas.push(criarAlerta("warning", "Estoque baixo"));
-  }
-
-  if (entradasDaPeca.length === 0) {
-    alertas.push(criarAlerta("info", "Sem entrada de estoque"));
-  }
-
-  if (vendasSemConsumo.length > 0) {
-    alertas.push(criarAlerta("warning", "Venda sem custo calculado"));
-  }
-
-  return alertas;
-}
-
-function renderizarAlertas(alertas) {
-  if (!alertas.length) {
-    return `<span class="alert-pill alert-pill--ok">OK</span>`;
-  }
-
-  return `
-    <div class="alert-list">
-      ${alertas.map(alerta => `<span class="alert-pill alert-pill--${alerta.tipo}">${alerta.texto}</span>`).join("")}
-    </div>
-  `;
 }
 
 function renderizarMidiaProduto(peca) {
@@ -456,7 +220,7 @@ function renderizarMidiaProduto(peca) {
   return `<span>${escaparHtml(obterIniciaisProduto(peca))}</span>`;
 }
 
-function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda, consumosEstoque, entradasEstoque) {
+function renderizarProdutos(pecas) {
   tabelaProdutos.innerHTML = "";
 
   if (pecas.length === 0) {
@@ -520,27 +284,11 @@ function renderizarProdutos(pecas, origens, vendas, custosPeca, custosVenda, con
 
 async function inicializarProdutos() {
   dadosProdutos = await carregarDados();
-  renderizarProdutos(
-    filtrarPecasPorBusca(dadosProdutos.pecas),
-    dadosProdutos.origens,
-    dadosProdutos.vendas,
-    dadosProdutos.custosPeca,
-    dadosProdutos.custosVenda,
-    dadosProdutos.consumosEstoque,
-    dadosProdutos.entradasEstoque
-  );
+  renderizarProdutos(filtrarPecasPorBusca(dadosProdutos.pecas));
 }
 
 campoBuscaProdutos?.addEventListener("input", () => {
-  renderizarProdutos(
-    filtrarPecasPorBusca(dadosProdutos.pecas),
-    dadosProdutos.origens,
-    dadosProdutos.vendas,
-    dadosProdutos.custosPeca,
-    dadosProdutos.custosVenda,
-    dadosProdutos.consumosEstoque,
-    dadosProdutos.entradasEstoque
-  );
+  renderizarProdutos(filtrarPecasPorBusca(dadosProdutos.pecas));
 });
 
 tabelaProdutos.addEventListener("click", evento => {

@@ -717,13 +717,13 @@
       throw new Error("Informe o nome do tipo de custo.");
     }
 
-    const tipos = await listarTiposCusto();
+    const tipos = await listarTodosTiposCusto();
     const tipoExistente = (tipos || []).find(tipo => (
       String(tipo.nome || "").trim().toLowerCase() === nomePadronizado.toLowerCase()
     ));
 
     if (tipoExistente) {
-      return tipoExistente;
+      throw new Error("Ja existe um tipo de custo com esse nome.");
     }
 
     const { data, error } = await cliente

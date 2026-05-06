@@ -35,7 +35,7 @@ let entradasVendaCarregadas = [];
 let tiposCustoVendaCarregados = [];
 let sugestoesVendaAtuais = [];
 let indiceSugestaoVenda = -1;
-const tiposCustoVendaPadrao = ["Embalagem", "Frete", "Comissão", "Taxa marketplace", "Taxa cartão", "Desconto concedido", "Coleta", "Etiqueta", "Outros"];
+const tiposCustoVendaPadrao = ["Embalagem", "Frete", "Comissão", "Taxa marketplace", "Taxa cartão", "Coleta", "Etiqueta", "Outros"];
 
 function salvarVendas(vendas) {
   localStorage.setItem("vendas", JSON.stringify(vendas));

@@ -18,7 +18,7 @@ const editarListaCustosVenda = document.getElementById("editarListaCustosVenda")
 const botaoEditarAdicionarCustoVenda = document.getElementById("botaoEditarAdicionarCustoVenda");
 const cancelarEdicaoVenda = document.getElementById("cancelarEdicaoVenda");
 let tiposCustoVendaDetalhes = [];
-const tiposCustoVendaPadraoDetalhes = ["Embalagem", "Frete", "Comissão", "Taxa marketplace", "Taxa cartão", "Desconto concedido", "Coleta", "Etiqueta", "Outros"];
+const tiposCustoVendaPadraoDetalhes = ["Embalagem", "Frete", "Comissão", "Taxa marketplace", "Taxa cartão", "Coleta", "Etiqueta", "Outros"];
 let vendaAtual = null;
 let contextoVenda = {
   produto: null,

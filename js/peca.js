@@ -1,4 +1,13 @@
 const mensagemPeca = document.getElementById("mensagemPeca");
+const selectOrigem = document.getElementById("origemId");
+const resumoOrigemCadastro = document.getElementById("resumoOrigemCadastro");
+const resumoOrigemValorTotal = document.getElementById("resumoOrigemValorTotal");
+const resumoOrigemValorDistribuido = document.getElementById("resumoOrigemValorDistribuido");
+const resumoOrigemValorRestante = document.getElementById("resumoOrigemValorRestante");
+const resumoOrigemQuantidadeRestante = document.getElementById("resumoOrigemQuantidadeRestante");
+const linkDetalhesOrigem = document.getElementById("linkDetalhesOrigem");
+
+let origensCadastro = [];
 
 function buscarOrigensLocais() {
   return JSON.parse(localStorage.getItem("origens")) || [];
@@ -41,6 +50,13 @@ function mostrarMensagem(texto, tipo) {
   mensagemPeca.className = `form-message form-message--${tipo}`;
 }
 
+function formatarMoeda(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
+
 function obterMensagemErroSupabase(erro) {
   return erro?.message || erro?.details || erro?.hint || "erro desconhecido";
 }
@@ -65,18 +81,30 @@ async function carregarOrigens() {
   return buscarOrigensLocais();
 }
 
+async function carregarEntradasEstoque() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      return await window.supabaseService.listarEntradasEstoque();
+    } catch (erro) {
+      console.error("Erro ao carregar entradas de estoque:", erro);
+      return buscarEntradasLocais();
+    }
+  }
+
+  return buscarEntradasLocais();
+}
+
 function formatarCodigoOrigem(origem) {
   return origem?.codigoOrigem || `ORI-${String(origem?.id || "").padStart(6, "0")}`;
 }
 
 async function preencherSelectOrigens() {
-  const selectOrigem = document.getElementById("origemId");
-  const origens = await carregarOrigens();
+  origensCadastro = await carregarOrigens();
   const origemPreselecionada = obterOrigemIdDaUrl();
 
   selectOrigem.innerHTML = '<option value="">Selecione a origem</option>';
 
-  origens.forEach(origem => {
+  origensCadastro.forEach(origem => {
     const opcao = document.createElement("option");
     opcao.value = origem.id;
     opcao.textContent = `${formatarCodigoOrigem(origem)} - ${origem.descricao || `Origem ${origem.id}`}`;
@@ -86,6 +114,8 @@ async function preencherSelectOrigens() {
   if (origemPreselecionada) {
     selectOrigem.value = String(origemPreselecionada);
   }
+
+  await atualizarResumoOrigemSelecionada();
 }
 
 function lerNumeroDoCampo(id) {
@@ -106,6 +136,47 @@ function calcularCustoTotalEntrada() {
   const custoTotal = quantidade * custoUnitario;
   campoCustoTotal.value = custoTotal.toFixed(2);
   return custoTotal;
+}
+
+function calcularValorEntrada(entrada) {
+  return Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0);
+}
+
+async function atualizarResumoOrigemSelecionada() {
+  const origemId = Number(selectOrigem.value || 0);
+  const origem = origensCadastro.find(item => Number(item.id) === origemId);
+
+  if (!origem) {
+    resumoOrigemCadastro.hidden = true;
+    linkDetalhesOrigem.href = "cadastro-origem.html";
+    return null;
+  }
+
+  const entradas = await carregarEntradasEstoque();
+  const entradasValidas = Array.isArray(entradas) ? entradas : [];
+  const entradasDaOrigem = entradasValidas.filter(entrada => Number(entrada.origemId || 0) === origemId);
+  const valorTotal = Number(origem.custoTotal || origem.valorPago || 0);
+  const quantidadeTotal = Number(origem.quantidadeTotal || 0);
+  const valorDistribuido = entradasDaOrigem.reduce((total, entrada) => total + calcularValorEntrada(entrada), 0);
+  const quantidadeDistribuida = entradasDaOrigem.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
+  const valorRestante = valorTotal - valorDistribuido;
+  const quantidadeRestante = quantidadeTotal - quantidadeDistribuida;
+
+  resumoOrigemValorTotal.textContent = formatarMoeda(valorTotal);
+  resumoOrigemValorDistribuido.textContent = formatarMoeda(valorDistribuido);
+  resumoOrigemValorRestante.textContent = formatarMoeda(valorRestante);
+  resumoOrigemQuantidadeRestante.textContent = String(quantidadeRestante);
+  resumoOrigemCadastro.hidden = false;
+  linkDetalhesOrigem.href = `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}`;
+
+  return {
+    valorTotal,
+    valorDistribuido,
+    valorRestante,
+    quantidadeTotal,
+    quantidadeDistribuida,
+    quantidadeRestante
+  };
 }
 
 function lerPecaDoFormulario() {
@@ -207,7 +278,7 @@ function limparCamposDaPeca() {
   document.getElementById("custoUnitarioEntrada").value = "";
   document.getElementById("custoTotalEntrada").value = "";
   document.getElementById("observacoesPeca").value = "";
-  document.getElementById("nome").focus();
+  document.getElementById("sku").focus();
 }
 
 async function salvarPeca() {
@@ -228,8 +299,11 @@ async function salvarPeca() {
     return;
   }
 
-  const origens = await carregarOrigens();
-  const origemSelecionada = origens.find(origem => Number(origem.id) === Number(peca.origemId));
+  if (origensCadastro.length === 0) {
+    origensCadastro = await carregarOrigens();
+  }
+
+  const origemSelecionada = origensCadastro.find(origem => Number(origem.id) === Number(peca.origemId));
 
   if (!origemSelecionada) {
     mostrarMensagem("A origem selecionada nao foi encontrada.", "warning");
@@ -267,7 +341,6 @@ async function salvarPeca() {
 
       salvarEntradaNoCache(entradaSalva);
       salvarPecaNoCache(pecaAtualizada);
-      mostrarMensagem("Peca cadastrada e entrada de estoque criada com sucesso. Voce pode cadastrar outra peca para a mesma origem.", "success");
     } else {
       const pecaLocal = {
         ...peca,
@@ -278,10 +351,15 @@ async function salvarPeca() {
 
       salvarPecaNoCache(pecaLocal);
       salvarEntradaNoCache(entradaLocal);
-      mostrarMensagem("Peca salva no armazenamento local com entrada de estoque vinculada. Voce pode cadastrar outra peca para a mesma origem.", "success");
     }
 
     limparCamposDaPeca();
+    const resumoAtualizado = await atualizarResumoOrigemSelecionada();
+    const complementoQuantidade = resumoAtualizado
+      ? ` Quantidade restante da origem: ${resumoAtualizado.quantidadeRestante}.`
+      : "";
+
+    mostrarMensagem(`Peca cadastrada com sucesso.${complementoQuantidade} Voce pode cadastrar outra peca para a mesma origem.`, "success");
   } catch (erro) {
     console.error("Erro ao cadastrar peca:", erro);
     mostrarMensagem(`Nao foi possivel salvar a peca: ${obterMensagemErroSupabase(erro)}`, "warning");
@@ -291,5 +369,6 @@ async function salvarPeca() {
 }
 
 preencherSelectOrigens();
+selectOrigem.addEventListener("change", atualizarResumoOrigemSelecionada);
 document.getElementById("quantidade").addEventListener("input", calcularCustoTotalEntrada);
 document.getElementById("custoUnitarioEntrada").addEventListener("input", calcularCustoTotalEntrada);

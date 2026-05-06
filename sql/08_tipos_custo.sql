@@ -36,7 +36,6 @@ from (
     ('Comissão', 'venda'),
     ('Taxa marketplace', 'venda'),
     ('Taxa cartão', 'venda'),
-    ('Desconto concedido', 'venda'),
     ('Coleta', 'venda'),
     ('Etiqueta', 'venda'),
     ('Outros', 'venda')
@@ -61,7 +60,6 @@ from (
     ('Comissão', 'venda'),
     ('Taxa marketplace', 'venda'),
     ('Taxa cartão', 'venda'),
-    ('Desconto concedido', 'venda'),
     ('Coleta', 'venda'),
     ('Etiqueta', 'venda'),
     ('Outros', 'venda')
