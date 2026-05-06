@@ -36,14 +36,6 @@ function buscarProdutos() {
   return JSON.parse(localStorage.getItem("produtos")) || [];
 }
 
-function buscarOrigens() {
-  return JSON.parse(localStorage.getItem("origens")) || [];
-}
-
-function buscarCustos() {
-  return JSON.parse(localStorage.getItem("custosDiversos")) || [];
-}
-
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -194,32 +186,6 @@ async function encontrarVendaSupabase() {
   return vendas.find(venda => String(venda.id) === String(id)) || null;
 }
 
-function calcularCustoUnitario(venda) {
-  if (venda.custoUnitario !== undefined) {
-    return Number(venda.custoUnitario || 0);
-  }
-
-  if (venda.custoUnitarioAtualizado !== undefined) {
-    return Number(venda.custoUnitarioAtualizado || 0);
-  }
-
-  const custoTotal = calcularCustoTotal(venda);
-  const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
-  return quantidade > 0 ? custoTotal / quantidade : 0;
-}
-
-function calcularCustoTotal(venda) {
-  if (venda.custoTotal !== undefined) {
-    return Number(venda.custoTotal || 0);
-  }
-
-  if (venda.custoTotalVenda !== undefined) {
-    return Number(venda.custoTotalVenda || 0);
-  }
-
-  return 0;
-}
-
 function normalizarCustosVenda(custosVenda) {
   if (!Array.isArray(custosVenda)) {
     return [];
@@ -234,90 +200,29 @@ function normalizarCustosVenda(custosVenda) {
     .filter(custo => custo.tipo && custo.valor > 0);
 }
 
-function calcularTotalCustosVenda(venda) {
-  if (venda.totalCustosVenda !== undefined) {
-    return Number(venda.totalCustosVenda || 0);
-  }
+function obterCustosVendaParaCalculo(venda) {
+  const custos = contextoVenda.custosVenda.length > 0
+    ? contextoVenda.custosVenda
+    : normalizarCustosVenda(venda.custosVenda);
 
-  return normalizarCustosVenda(venda.custosVenda)
-    .reduce((total, custo) => total + Number(custo.valor || 0), 0);
-}
-
-function normalizarSku(sku) {
-  return String(sku || "").trim().toUpperCase();
-}
-
-function obterOrigensDoProduto(peca, origens) {
-  const sku = normalizarSku(peca.sku);
-  const origensPorSku = origens.filter(origem => normalizarSku(origem.produtoSku || origem.produto_sku) === sku);
-
-  return origensPorSku.length > 0
-    ? origensPorSku
-    : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
-}
-
-function calcularCustoPeca(peca, origens) {
-  const entradasDaPeca = contextoVenda.entradasEstoque.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
-
-  if (entradasDaPeca.length > 0) {
-    const totalUnidadesEntrada = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
-    const totalInvestidoEntrada = entradasDaPeca.reduce((total, entrada) => {
-      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
-    }, 0);
-
-    if (totalUnidadesEntrada > 0 && totalInvestidoEntrada > 0) {
-      return totalInvestidoEntrada / totalUnidadesEntrada;
-    }
-  }
-
-  const origensDoProduto = obterOrigensDoProduto(peca, origens);
-  const totalUnidades = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
-  }, 0);
-  const totalInvestido = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
-  }, 0);
-
-  if (totalUnidades <= 0 || totalInvestido <= 0) {
-    return Number(peca.custo || 0);
-  }
-
-  return totalInvestido / totalUnidades;
-}
-
-function calcularCustoUnitarioAtualDaPeca(peca) {
-  const origens = contextoVenda.origens.length > 0 ? contextoVenda.origens : buscarOrigens();
-  return calcularCustoPeca(peca, origens);
-}
-
-function calcularCustoFifoVenda(consumosFifo) {
-  return consumosFifo.reduce((total, consumo) => total + Number(consumo.custoTotal || 0), 0);
+  return custos.map(custo => ({
+    ...custo,
+    vendaId: custo.vendaId || venda.id
+  }));
 }
 
 function recalcularVendaComCustoAtual(venda) {
   const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
-  const custoFifo = calcularCustoFifoVenda(contextoVenda.consumosFifo);
-  const custosVenda = calcularTotalCustosVenda(venda);
-
-  if (!contextoVenda.consumosFifo.length) {
-    return {
-      custoCalculado: false,
-      custoUnitario: null,
-      custoTotal: null,
-      custosVenda,
-      lucroVenda: null
-    };
-  }
-
-  const custoTotal = custoFifo;
-  const lucroVenda = Number(venda.valorTotal || 0) - custoTotal - custosVenda;
+  const resultado = window.financeiroUtils.calcularLucroVenda(venda, contextoVenda.consumosFifo, obterCustosVendaParaCalculo(venda));
 
   return {
-    custoCalculado: true,
-    custoUnitario: quantidade > 0 ? custoTotal / quantidade : 0,
-    custoTotal,
-    custosVenda,
-    lucroVenda
+    custoCalculado: resultado.calculado,
+    custoUnitario: resultado.calculado && quantidade > 0 ? resultado.custoConsumido / quantidade : null,
+    custoTotal: resultado.custoConsumido,
+    custosVenda: resultado.custosVenda,
+    lucroVenda: resultado.lucro,
+    receita: resultado.receita,
+    margem: resultado.margem
   };
 }
 
@@ -515,13 +420,13 @@ async function salvarEdicaoVenda(evento) {
 }
 
 function renderizarResumoFinanceiro(venda) {
-  const valorTotal = Number(venda.valorTotal || 0);
   const resultado = recalcularVendaComCustoAtual(venda);
+  const valorTotal = resultado.receita;
   const custoUnitario = resultado.custoUnitario;
   const custoTotal = resultado.custoTotal;
   const totalCustosVenda = resultado.custosVenda;
   const lucroVenda = resultado.lucroVenda;
-  const margem = resultado.custoCalculado && valorTotal > 0 ? (lucroVenda / valorTotal) * 100 : null;
+  const margem = resultado.margem;
 
   resumoFinanceiroVenda.innerHTML = `
     <article class="summary-card">
@@ -563,7 +468,6 @@ function renderizarProduto(venda) {
   }
 
   mensagemProdutoVenda.textContent = "";
-  const custoBase = calcularCustoPeca(produto, contextoVenda.origens.length > 0 ? contextoVenda.origens : buscarOrigens());
   const quantidade = Number(produto.quantidade || 1);
   const quantidadeVendida = Number(produto.quantidadeVendida || 0);
   const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
@@ -607,10 +511,6 @@ function renderizarProduto(venda) {
       <strong>${status}</strong>
     </article>
     <article class="detail-card">
-      <span>Custo base atual</span>
-      <strong>${formatarMoeda(custoBase)}</strong>
-    </article>
-    <article class="detail-card">
       <span>Preço de venda atual</span>
       <strong>${formatarMoeda(produto.precoVenda)}</strong>
     </article>
@@ -618,9 +518,7 @@ function renderizarProduto(venda) {
 }
 
 function renderizarCustos(venda) {
-  const custosVenda = contextoVenda.custosVenda.length > 0
-    ? contextoVenda.custosVenda
-    : normalizarCustosVenda(venda.custosVenda);
+  const custosVenda = obterCustosVendaParaCalculo(venda);
   tabelaCustosVenda.innerHTML = "";
 
   if (custosVenda.length === 0) {
@@ -645,9 +543,10 @@ function renderizarCustos(venda) {
   });
 
   const linhaTotal = document.createElement("tr");
+  const totalCustosVenda = window.financeiroUtils.calcularCustosVenda(venda.id, custosVenda).valor;
   linhaTotal.innerHTML = `
     <td data-label="Data" colspan="3"><strong>Total de custos da venda</strong></td>
-    <td data-label="Valor"><strong>${formatarMoeda(calcularTotalCustosVenda(venda))}</strong></td>
+    <td data-label="Valor"><strong>${formatarMoeda(totalCustosVenda)}</strong></td>
   `;
   tabelaCustosVenda.appendChild(linhaTotal);
 }
@@ -683,9 +582,10 @@ function renderizarCustoFifo() {
   });
 
   const linhaTotal = document.createElement("tr");
+  const custoConsumido = window.financeiroUtils.calcularCustoConsumidoVenda(vendaAtual?.id, contextoVenda.consumosFifo);
   linhaTotal.innerHTML = `
     <td data-label="Lote" colspan="4"><strong>Custo total da venda</strong></td>
-    <td data-label="Custo total"><strong>${formatarMoeda(calcularCustoFifoVenda(contextoVenda.consumosFifo))}</strong></td>
+    <td data-label="Custo total"><strong>${formatarMoeda(custoConsumido.valor)}</strong></td>
   `;
   tabelaCustoFifoVenda.appendChild(linhaTotal);
 }

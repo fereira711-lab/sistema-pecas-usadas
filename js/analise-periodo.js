@@ -47,23 +47,7 @@ function obterDataVenda(venda) {
 }
 
 function calcularValorVenda(venda) {
-  const quantidade = Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0);
-  const valorUnitario = Number(venda.valorUnitario || venda.valor_unitario || venda.precoUnitario || 0);
-
-  return quantidade * valorUnitario;
-}
-
-function agruparPorId(lista, campo) {
-  return lista.reduce((mapa, item) => {
-    const id = Number(item[campo] || 0);
-
-    if (!mapa[id]) {
-      mapa[id] = [];
-    }
-
-    mapa[id].push(item);
-    return mapa;
-  }, {});
+  return window.financeiroUtils.calcularReceitaVenda(venda);
 }
 
 function somar(lista, campo = "valor") {
@@ -124,27 +108,31 @@ function formatarValorOuNaoCalculado(valor) {
 }
 
 function calcularLinhas(vendasFiltradas) {
-  const consumosPorVenda = agruparPorId(dadosAnalisePeriodo.consumosEstoque, "vendaId");
-  const custosVendaPorVenda = agruparPorId(dadosAnalisePeriodo.custosVenda, "vendaId");
-
   return vendasFiltradas.map(venda => {
     const vendaId = Number(venda.id);
-    const totalVendido = calcularValorVenda(venda);
-    const consumosDaVenda = consumosPorVenda[vendaId] || [];
-    const custoCalculado = consumosDaVenda.length > 0;
-    const custoProdutos = custoCalculado ? somar(consumosDaVenda, "custoTotal") : null;
-    const custosVenda = somar(custosVendaPorVenda[vendaId] || [], "valor");
-    const lucro = custoCalculado ? totalVendido - custoProdutos - custosVenda : null;
+    const resultadoVenda = window.financeiroUtils.calcularLucroVenda(
+      venda,
+      dadosAnalisePeriodo.consumosEstoque,
+      dadosAnalisePeriodo.custosVenda
+    );
+    const custoConsumido = window.financeiroUtils.calcularCustoConsumidoVenda(
+      vendaId,
+      dadosAnalisePeriodo.consumosEstoque
+    );
+    const custosDaVenda = window.financeiroUtils.calcularCustosVenda(
+      vendaId,
+      dadosAnalisePeriodo.custosVenda
+    );
 
     return {
       venda,
       data: obterDataVenda(venda),
-      totalVendido,
-      custoProdutos,
-      custosVenda,
-      lucro,
+      totalVendido: resultadoVenda.receita,
+      custoProdutos: custoConsumido.calculado ? custoConsumido.valor : null,
+      custosVenda: custosDaVenda.valor,
+      lucro: resultadoVenda.lucro,
       quantidade: Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0),
-      custoCalculado
+      custoCalculado: resultadoVenda.calculado
     };
   });
 }

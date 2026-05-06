@@ -817,6 +817,43 @@ textarea:focus {
   background: #f7f4ed;
 }
 
+.analysis-detail-row td {
+  padding: 0;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.analysis-detail-panel {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.analysis-detail-panel .stock-header {
+  margin-bottom: 0;
+}
+
+.analysis-detail-panel h3,
+.analysis-detail-panel h4 {
+  margin: 0 0 10px;
+}
+
+.analysis-filter {
+  padding: 16px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.analysis-detail-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.stock-table--nested {
+  min-width: 720px;
+}
+
 .stock-card {
   padding: 24px;
   border: 1px solid var(--cor-borda);

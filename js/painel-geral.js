@@ -12,25 +12,6 @@ function formatarMoeda(valor) {
   });
 }
 
-function somar(lista, campo = "valor") {
-  return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
-}
-
-function calcularValorVenda(venda) {
-  const quantidadeVendida = Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0);
-  const valorUnitario = Number(venda.valorUnitario || venda.precoUnitario || 0);
-
-  if (valorUnitario > 0) {
-    return quantidadeVendida * valorUnitario;
-  }
-
-  return Number(venda.valorTotal || 0);
-}
-
-function obterDataVenda(venda) {
-  return String(venda.dataVenda || venda.data_venda || "").slice(0, 10);
-}
-
 function formatarData(data) {
   if (!data) {
     return "-";
@@ -44,6 +25,10 @@ function formatarData(data) {
   }
 
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function obterDataVenda(venda) {
+  return String(venda.dataVenda || venda.data_venda || "").slice(0, 10);
 }
 
 function criarCard(titulo, valor, classe = "") {
@@ -69,16 +54,6 @@ function obterClasseLucro(lucro) {
   return "profit-value profit-value--neutral";
 }
 
-function filtrarPorPeca(lista, idsPecas) {
-  return lista.filter(item => idsPecas.includes(Number(item.pecaId || 0)));
-}
-
-function filtrarCustosVendaPorVendas(custosVenda, vendas) {
-  const idsVendas = vendas.map(venda => Number(venda.id));
-
-  return custosVenda.filter(custo => idsVendas.includes(Number(custo.vendaId || 0)));
-}
-
 function agruparConsumosPorVenda(consumosEstoque) {
   return consumosEstoque.reduce((mapa, consumo) => {
     const vendaId = Number(consumo.vendaId || 0);
@@ -92,125 +67,30 @@ function agruparConsumosPorVenda(consumosEstoque) {
   }, {});
 }
 
-function obterOrigensDoProduto(peca, origens) {
-  const sku = normalizarSku(peca.sku);
-  const origensPorSku = sku
-    ? origens.filter(origem => normalizarSku(origem.produtoSku || origem.produto_sku) === sku)
-    : [];
-
-  return origensPorSku.length > 0
-    ? origensPorSku
-    : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
-}
-
-function calcularCustoUnitarioFallback(peca, origens, entradasEstoque = []) {
-  const entradasDaPeca = entradasEstoque.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
-
-  if (entradasDaPeca.length > 0) {
-    const totalUnidadesEntrada = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
-    const totalInvestidoEntrada = entradasDaPeca.reduce((total, entrada) => {
-      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
-    }, 0);
-
-    if (totalUnidadesEntrada > 0 && totalInvestidoEntrada > 0) {
-      return totalInvestidoEntrada / totalUnidadesEntrada;
-    }
-  }
-
-  const origensDoProduto = obterOrigensDoProduto(peca, origens);
-  const totalUnidades = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
-  }, 0);
-  const totalInvestido = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
-  }, 0);
-
-  if (totalUnidades <= 0 || totalInvestido <= 0) {
-    return Number(peca.custoTotal || peca.custo || 0);
-  }
-
-  return totalInvestido / totalUnidades;
-}
-
-function calcularCustoFifoComFallback(vendas, pecas, origens, consumosPorVenda, entradasEstoque) {
-  return vendas.reduce((total, venda) => {
-    const consumosDaVenda = consumosPorVenda[Number(venda.id)] || [];
-
-    if (consumosDaVenda.length === 0) {
-      return total;
-    }
-
-    return total + somar(consumosDaVenda, "custoTotal");
-  }, 0);
-}
-
-function calcularReceitaFifoDaOrigem(vendasDaOrigem, consumosDaOrigem, vendasSemConsumo) {
-  const vendasPorId = vendasDaOrigem.reduce((mapa, venda) => {
-    mapa[Number(venda.id)] = venda;
-    return mapa;
-  }, {});
-  const receitaFifo = consumosDaOrigem.reduce((total, consumo) => {
-    const venda = vendasPorId[Number(consumo.vendaId)];
-    const valorUnitario = Number(venda?.valorUnitario || venda?.precoUnitario || 0);
-
-    return total + (Number(consumo.quantidadeConsumida || 0) * valorUnitario);
-  }, 0);
-  return receitaFifo;
-}
-
-function normalizarSku(sku) {
-  return String(sku || "").trim().toUpperCase();
-}
-
 function calcularResultadoOrigem(origem, dados) {
-  const entradasDaOrigem = dados.entradasEstoque.filter(entrada => Number(entrada.origemId || 0) === Number(origem.id));
-  const idsEntradasOrigem = new Set(entradasDaOrigem.map(entrada => Number(entrada.id)));
-  const idsPecasOrigem = new Set(entradasDaOrigem.map(entrada => Number(entrada.pecaId || 0)));
-  const skuOrigem = normalizarSku(origem.produtoSku || origem.produto_sku);
-  const pecasDaOrigem = dados.pecas.filter(peca => {
-    const skuPeca = normalizarSku(peca.sku);
-
-    return idsPecasOrigem.has(Number(peca.id)) ||
-      Number(peca.origemId || 0) === Number(origem.id) ||
-      Boolean(skuOrigem && skuPeca === skuOrigem);
-  });
-
-  pecasDaOrigem.forEach(peca => idsPecasOrigem.add(Number(peca.id)));
-
-  const consumosDaOrigem = dados.consumosEstoque.filter(consumo => idsEntradasOrigem.has(Number(consumo.entradaEstoqueId || 0)));
-  const idsVendasOrigem = new Set(consumosDaOrigem.map(consumo => Number(consumo.vendaId || 0)));
-  const vendasDaOrigem = dados.vendas.filter(venda => idsVendasOrigem.has(Number(venda.id)));
-  const custosPecaDaOrigem = dados.custosPeca.filter(custo => idsPecasOrigem.has(Number(custo.pecaId || 0)));
-  const custosVendaDaOrigem = dados.custosVenda.filter(custo => idsVendasOrigem.has(Number(custo.vendaId || 0)));
-  const vendasPorId = vendasDaOrigem.reduce((mapa, venda) => {
-    mapa[Number(venda.id)] = venda;
-    return mapa;
-  }, {});
-  const totalVendido = consumosDaOrigem.reduce((total, consumo) => {
-    const venda = vendasPorId[Number(consumo.vendaId)];
-    const valorUnitario = Number(venda?.valorUnitario || venda?.precoUnitario || 0);
-
-    return total + (Number(consumo.quantidadeConsumida || 0) * valorUnitario);
-  }, 0);
+  const resultado = window.financeiroUtils.calcularResultadoOrigem(
+    origem,
+    dados.entradasEstoque,
+    dados.vendas,
+    dados.consumosEstoque,
+    dados.custosPeca,
+    dados.custosVenda
+  );
   const investimento = Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
-  const custoConsumido = somar(consumosDaOrigem, "custoTotal");
-  const totalCustosPeca = somar(custosPecaDaOrigem);
-  const totalCustosVenda = somar(custosVendaDaOrigem);
-  const totalCustos = custoConsumido + totalCustosPeca + totalCustosVenda;
-  const lucro = totalVendido - totalCustos;
-  const status = lucro > 0
+  const totalCustos = resultado.custoConsumido + resultado.custosPeca + resultado.custosVenda;
+  const status = resultado.lucro > 0
     ? "lucro"
-    : totalVendido < investimento
+    : resultado.receita < investimento
       ? "ainda recuperando investimento"
-      : "prejuízo";
+      : "prejuizo";
 
   return {
     origem,
     investimento,
-    totalVendido,
+    totalVendido: resultado.receita,
     totalCustos,
-    custoVendido: custoConsumido,
-    lucro,
+    custoVendido: resultado.custoConsumido,
+    lucro: resultado.lucro,
     status
   };
 }
@@ -234,7 +114,15 @@ async function carregarDadosPainel() {
 
     mensagemPainelGeral.textContent = "";
 
-    return { origens, pecas, vendas, custosPeca, custosVenda, consumosEstoque: consumosEstoque || [], entradasEstoque: entradasEstoque || [] };
+    return {
+      origens: origens || [],
+      pecas: pecas || [],
+      vendas: vendas || [],
+      custosPeca: custosPeca || [],
+      custosVenda: custosVenda || [],
+      consumosEstoque: consumosEstoque || [],
+      entradasEstoque: entradasEstoque || []
+    };
   } catch (erro) {
     console.error("Erro ao carregar painel geral:", erro);
     mensagemPainelGeral.textContent = "Nao foi possivel carregar os dados do Supabase.";
