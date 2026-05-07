@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalhes da Peça</title>
+  <title>Central da Peça</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
   <header class="page-header">
     <div>
       <p class="hero__tag">Estoque</p>
-      <h1>Detalhes da Peça</h1>
+      <h1>Central da Peça</h1>
       <p class="hero__description">
-        Visualize os dados completos da peça, entradas, custos, vendas e resultado.
+        Reúna dados, edição, imagem, entradas, custos, vendas, origem e resultado da peça.
       </p>
     </div>
   </header>
@@ -22,9 +22,11 @@
       <div class="stock-header">
         <div>
           <h2 id="tituloProduto">Produto</h2>
-          <p id="subtituloProduto">Dados detalhados do item selecionado.</p>
+          <p id="subtituloProduto">Central completa do item selecionado.</p>
         </div>
         <div class="form-actions">
+          <button type="button" id="botaoVenderProduto" class="button-primary">Vender</button>
+          <button type="button" id="botaoLancamentoCustoProduto" class="button-secondary">Lançar custo</button>
           <button type="button" id="botaoEditarProduto" class="button-secondary">Editar dados</button>
           <button type="button" id="botaoImagemProduto" class="button-secondary">Adicionar imagem</button>
           <a class="button-secondary" href="produtos.html">Voltar para o estoque</a>
@@ -35,6 +37,7 @@
       <p id="mensagemProdutoNaoEncontrado" class="empty-message"></p>
       <input id="imagemProdutoDetalhe" class="file-input-hidden" type="file" accept="image/*">
       <div id="dadosProduto" class="detail-grid"></div>
+      <div id="origemVinculadaProduto" class="section-spaced"></div>
 
       <form id="formEditarProduto" class="edit-panel" hidden>
         <div class="form-row">
@@ -194,6 +197,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/supabase-service.js?v=29"></script>
+  <script src="../js/financeiro-utils.js?v=1"></script>
   <script src="../js/detalhes-produto.js?v=12"></script>
 </body>
 </html>

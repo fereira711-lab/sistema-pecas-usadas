@@ -10,6 +10,9 @@ const tabelaCustosProduto = document.getElementById("tabelaCustosProduto");
 const mensagemVendasProduto = document.getElementById("mensagemVendasProduto");
 const tabelaVendasProduto = document.getElementById("tabelaVendasProduto");
 const botaoImagemProduto = document.getElementById("botaoImagemProduto");
+const botaoVenderProduto = document.getElementById("botaoVenderProduto");
+const botaoLancamentoCustoProduto = document.getElementById("botaoLancamentoCustoProduto");
+const origemVinculadaProduto = document.getElementById("origemVinculadaProduto");
 const campoImagemProdutoDetalhe = document.getElementById("imagemProdutoDetalhe");
 const botaoEditarProduto = document.getElementById("botaoEditarProduto");
 const formEditarProduto = document.getElementById("formEditarProduto");
@@ -251,22 +254,39 @@ function calcularDiasSemVenda(ultimaVenda) {
 }
 
 function calcularResultado() {
-  const receitaTotal = contextoProduto.vendas.reduce((total, venda) => total + valorVenda(venda), 0);
-  const custoEntradasConsumidas = contextoProduto.consumosEstoque.reduce((total, consumo) => total + Number(consumo.custoTotal || 0), 0);
-  const custosDaPeca = contextoProduto.custosPeca.reduce((total, custo) => total + Number(custo.valor || 0), 0);
-  const custosDaVenda = contextoProduto.custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
+  const financeiro = window.financeiroUtils?.calcularLucroPeca
+    ? window.financeiroUtils.calcularLucroPeca(
+        contextoProduto.produto,
+        contextoProduto.vendas,
+        contextoProduto.consumosEstoque,
+        contextoProduto.custosPeca,
+        contextoProduto.custosVenda
+      )
+    : null;
+  const receitaTotal = financeiro
+    ? financeiro.receita
+    : contextoProduto.vendas.reduce((total, venda) => total + valorVenda(venda), 0);
+  const custosDaPeca = financeiro
+    ? financeiro.custosPeca
+    : contextoProduto.custosPeca.reduce((total, custo) => total + Number(custo.valor || 0), 0);
+  const custosDaVenda = financeiro
+    ? financeiro.custosVenda
+    : contextoProduto.custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
   const quantidadeTotalVendida = contextoProduto.vendas.reduce((total, venda) => total + quantidadeVendida(venda), 0);
   const vendasOrdenadas = ordenarVendasPorData(contextoProduto.vendas);
   const ultimaVenda = vendasOrdenadas.length > 0 ? obterDataVenda(vendasOrdenadas[0]) : "";
-  const vendasSemCusto = contextoProduto.vendas.filter(venda => obterConsumosDaVenda(venda.id).length === 0).length;
-  const custoCalculado = contextoProduto.vendas.length === 0 || vendasSemCusto === 0;
+  const vendasSemCusto = financeiro
+    ? financeiro.vendasSemCusto
+    : contextoProduto.vendas.filter(venda => obterConsumosDaVenda(venda.id).length === 0).length;
+  const custoCalculado = financeiro ? financeiro.calculado : contextoProduto.vendas.length === 0 || vendasSemCusto === 0;
 
   return {
     receitaTotal,
-    custoEntradasConsumidas: custoCalculado ? custoEntradasConsumidas : null,
+    custoEntradasConsumidas: custoCalculado ? financeiro?.custoConsumido ?? contextoProduto.consumosEstoque.reduce((total, consumo) => total + Number(consumo.custoTotal || 0), 0) : null,
     custosDaPeca,
     custosDaVenda,
-    lucroPeca: custoCalculado ? receitaTotal - custoEntradasConsumidas - custosDaPeca - custosDaVenda : null,
+    lucroPeca: custoCalculado ? financeiro?.lucro ?? receitaTotal - contextoProduto.consumosEstoque.reduce((total, consumo) => total + Number(consumo.custoTotal || 0), 0) - custosDaPeca - custosDaVenda : null,
+    margem: custoCalculado ? financeiro?.margem ?? null : null,
     quantidadeTotalVendida,
     ultimaVenda,
     diasSemVenda: calcularDiasSemVenda(ultimaVenda),
@@ -323,6 +343,17 @@ function obterOrigemPrincipal(produto) {
 
   const primeiraEntrada = contextoProduto.entradas.find(entrada => entrada.origemDescricao);
   return primeiraEntrada?.origemDescricao || "-";
+}
+
+function obterOrigemIdPrincipal(produto) {
+  const origemIdProduto = Number(produto.origemId || produto.origem_id || 0);
+
+  if (origemIdProduto) {
+    return origemIdProduto;
+  }
+
+  const primeiraEntrada = contextoProduto.entradas.find(entrada => Number(entrada.origemId || 0) > 0);
+  return Number(primeiraEntrada?.origemId || 0);
 }
 
 function renderizarDadosProduto(produto) {
@@ -388,6 +419,39 @@ function renderizarDadosProduto(produto) {
       <span>Observações</span>
       <strong>${escaparHtml(produto.observacoes || "-")}</strong>
     </article>
+  `;
+}
+
+function renderizarOrigemVinculada(produto) {
+  if (!origemVinculadaProduto) {
+    return;
+  }
+
+  const origemId = obterOrigemIdPrincipal(produto);
+  const descricaoOrigem = obterOrigemPrincipal(produto);
+
+  origemVinculadaProduto.innerHTML = `
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2>Origem vinculada</h2>
+          <p>Entrada principal usada para rastrear a peça no estoque.</p>
+        </div>
+        <div class="form-actions">
+          <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver origem</a>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <article class="detail-card">
+          <span>Origem</span>
+          <strong>${escaparHtml(descricaoOrigem)}</strong>
+        </article>
+        <article class="detail-card">
+          <span>ID da origem</span>
+          <strong>${origemId || "-"}</strong>
+        </article>
+      </div>
+    </section>
   `;
 }
 
@@ -624,6 +688,10 @@ function renderizarResumo() {
       <strong>${formatarValorOuNaoCalculado(resultado.lucroPeca)}</strong>
     </article>
     <article class="summary-card">
+      <span>Margem</span>
+      <strong>${resultado.margem === null || resultado.margem === undefined ? "-" : `${formatarNumero(resultado.margem)}%`}</strong>
+    </article>
+    <article class="summary-card">
       <span>Última venda</span>
       <strong>${formatarData(resultado.ultimaVenda)}</strong>
     </article>
@@ -830,6 +898,7 @@ function renderizarTela() {
 
   mensagemProdutoNaoEncontrado.textContent = "";
   renderizarDadosProduto(produto);
+  renderizarOrigemVinculada(produto);
   renderizarResumo();
   renderizarEntradas();
   renderizarCustos();
@@ -840,6 +909,9 @@ function renderizarNaoEncontrado(mensagem) {
   mensagemProdutoNaoEncontrado.textContent = mensagem;
   dadosProduto.innerHTML = "";
   resumoFinanceiro.innerHTML = "";
+  if (origemVinculadaProduto) {
+    origemVinculadaProduto.innerHTML = "";
+  }
   tabelaEntradasProduto.innerHTML = "";
   tabelaCustosProduto.innerHTML = "";
   tabelaVendasProduto.innerHTML = "";
@@ -874,6 +946,18 @@ async function iniciarDetalhes() {
 }
 
 botaoImagemProduto?.addEventListener("click", abrirSeletorImagemProduto);
+
+botaoVenderProduto?.addEventListener("click", () => {
+  if (contextoProduto.produto?.id) {
+    window.location.href = `cadastro-venda.html?pecaId=${encodeURIComponent(contextoProduto.produto.id)}`;
+  }
+});
+
+botaoLancamentoCustoProduto?.addEventListener("click", () => {
+  if (contextoProduto.produto?.id) {
+    window.location.href = `cadastro-custo.html?pecaId=${encodeURIComponent(contextoProduto.produto.id)}`;
+  }
+});
 
 campoImagemProdutoDetalhe?.addEventListener("change", evento => {
   const arquivo = evento.target.files?.[0];

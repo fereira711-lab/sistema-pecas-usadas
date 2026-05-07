@@ -10,9 +10,9 @@
   <header class="page-header">
     <div>
       <p class="hero__tag">Vendas</p>
-      <h1>Detalhes da Venda</h1>
+      <h1>Extrato da Venda</h1>
       <p class="hero__description">
-        Visualize os dados completos da venda, produto vendido, custos e resultado.
+        Entenda produto, receita, custos, consumo FIFO, entradas consumidas, lucro e edição da venda.
       </p>
     </div>
   </header>
@@ -22,7 +22,7 @@
       <div class="stock-header">
         <div>
           <h2 id="tituloVenda">Venda</h2>
-          <p id="subtituloVenda">Dados detalhados da venda selecionada.</p>
+          <p id="subtituloVenda">Extrato completo da venda selecionada.</p>
         </div>
         <div class="form-actions">
           <button type="button" id="botaoEditarVenda" class="button-secondary">Editar venda</button>
@@ -90,8 +90,10 @@
               <th>Lote</th>
               <th>Origem</th>
               <th>Quantidade</th>
+              <th>Data entrada</th>
               <th>Custo unitario</th>
               <th>Custo total</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody id="tabelaCustoFifoVenda"></tbody>
