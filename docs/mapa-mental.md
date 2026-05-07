@@ -26,16 +26,27 @@ mindmap
         Tem quantidade total
         Tem quantidade vendida
         Tem preco de venda
+        Pode ter imagem no Supabase Storage
+        Cadastro novo usa funcao transacional
       Custo da peca
         Limpeza
         Conserto
         Embalagem
         Outros custos antes da venda
+      Tipos de custo
+        Cadastro central dos nomes de custo
+        Categoria peca
+        Categoria venda
+        Categoria ambos
+        Pode desativar tipo usado
       Venda
         Escolhe uma peca
         Informa quantidade vendida
         Informa valor unitario
         Pode ter custos da venda
+      Login
+        Tela preparada com Supabase Auth
+        Uso obrigatorio pode ser ativado depois
 
     Telas
       Inicio
@@ -61,6 +72,10 @@ mindmap
         Mostra custo dos produtos vendidos
         Mostra custos de venda
         Mostra lucro do periodo
+      Analise de custos
+        Agrupa custos por tipo
+        Separa custos da peca e custos da venda
+        Mostra distribuicao por origem
       Giro de estoque
         Mostra pecas rapidas
         Mostra pecas em atencao
@@ -80,12 +95,21 @@ mindmap
       Cadastro de peca
         Cria peca vinculada a origem
         Define quantidade
+        Pode enviar imagem da peca
+        Cria peca e entrada em uma transacao no banco
+      Tipos de custo
+        Cria tipos usados em custos de pecas e vendas
+        Edita nome e categoria
+        Desativa tipos usados em registros antigos
       Produtos
         Lista pecas
         Mostra estoque
         Mostra custo unitario
         Mostra custo vendido
         Mostra lucro
+        Permite vender
+        Permite editar
+        Permite adicionar ou trocar imagem
       Entradas de estoque
         Lista entradas de estoque
         Mostra quantidade consumida
@@ -122,6 +146,8 @@ mindmap
       Supabase
         Guarda os dados online
         Usa PostgreSQL
+        Usa Storage para imagens
+        Tem Auth preparado para login
       Tabelas principais
         origens
           id
@@ -138,6 +164,7 @@ mindmap
         custos peca
           peca id
           tipo
+          tipo custo id
           descricao
           valor
         vendas
@@ -159,7 +186,27 @@ mindmap
         custos venda
           venda id
           tipo
+          tipo custo id
           valor
+        tipos custo
+          id
+          nome
+          categoria
+          ativo
+        pecas imagens
+          imagem url
+          bucket pecas no Storage
+      Funcoes do banco
+        registrar venda fifo
+          Salva venda
+          Consome lotes antigos primeiro
+          Registra consumos
+          Salva custos da venda
+        criar peca com entrada
+          Cria peca
+          Cria entrada de estoque
+          Atualiza quantidade
+          Faz tudo em uma transacao
 
     Logica de estoque
       Quantidade total
@@ -192,6 +239,10 @@ mindmap
         Lucro real por venda
         Registra quais lotes foram consumidos
         Bloqueia venda se nao houver saldo nas entradas
+      Cadastro transacional de peca
+        Evita criar peca sem entrada
+        Evita entrada sem peca
+        Mantem estoque e lote coerentes
 
     Logica de lucro
       Receita
@@ -215,8 +266,24 @@ mindmap
         comissao
         frete
         outros
+      Tipos de custo
+        Sao nomes padronizados
+        Podem valer para peca venda ou ambos
+        Mantem compatibilidade com custos antigos
       Formula
         lucro igual receita menos custo da venda menos custos da peca menos custos extras
+
+    Imagens das pecas
+      Cadastro de peca
+        Envia imagem inicial
+      Produtos
+        Mostra card com imagem ou iniciais
+        Permite adicionar imagem em peca existente
+      Detalhes da peca
+        Permite trocar imagem
+      Supabase Storage
+        Bucket pecas
+        URL publica salva em pecas imagem url
 
     Fluxo principal
       Cadastrar origem
@@ -225,13 +292,20 @@ mindmap
         Informa valor total
       Cadastrar pecas
         Cria o produto base com SKU
+        Pode enviar imagem
       Sistema gera entrada de estoque
         Usa quantidade e valor da entrada
+        Funcao transacional garante peca e lote juntos
+      Configurar tipos de custo
+        Define nomes padronizados
+        Evita digitar tipos diferentes para o mesmo custo
       Lancar custos
         Adiciona gastos extras da peca
+        Usa tipos cadastrados
       Vender peca
         Informa quantidade e valor
         Sistema consome entradas antigas primeiro
+        Permite custos extras da venda
         Sistema atualiza quantidade vendida
       Conferir resultado
         Produtos
@@ -249,8 +323,15 @@ mindmap
       js
         Regras e interacoes do front-end
         Conexao com Supabase
+        supabase-service centraliza chamadas ao banco
+        financeiro-utils centraliza calculos financeiros
       sql
         Tabelas e funcoes do banco
+        04 fifo estrutura lotes
+        05 funcao registrar venda fifo
+        06 imagens das pecas
+        07 criar peca com entrada
+        08 tipos de custo
       docs
         Documentacao para estudo
 ```
@@ -291,24 +372,30 @@ O sistema tambem tem telas de acompanhamento:
 - **Painel geral** mostra resumo do negocio, resultado por origem e ultimas vendas.
 - **Analise por produto** mostra lucro por peca e ranking dos produtos mais vendidos.
 - **Analise por periodo** mostra resultado financeiro filtrado por datas.
+- **Analise de custos** mostra os custos agrupados por tipo e por origem.
 - **Giro de estoque** mostra pecas rapidas, em atencao, paradas ou sem venda.
 - **Alertas** mostra pontos de atencao, como falta de estoque, lotes baixos e vendas sem custo calculado.
+- **Tipos de custo** ajuda a padronizar nomes como Limpeza, Frete, Comissao e Outros.
+- **Produtos e detalhes da peca** tambem cuidam das imagens salvas no Supabase Storage.
 
 ## Como pensar no projeto
 
-Pense no sistema em quatro partes:
+Pense no sistema em cinco partes:
 
 1. **Entrada**
    Origem e pecas entram no estoque.
 
 2. **Preparacao**
-   Custos extras podem ser adicionados na peca.
+   Custos extras e imagens podem ser adicionados na peca.
 
 3. **Saida**
    A venda registra quantas unidades foram vendidas e por quanto.
 
 4. **Resultado**
    Produtos, detalhes, painel, analises e alertas mostram estoque, custo, lucro e pontos de atencao.
+
+5. **Configuracao**
+   Tipos de custo e login/Auth ficam preparados para organizar e proteger o sistema conforme ele evoluir.
 
 ## Onde olhar quando tiver duvida
 
