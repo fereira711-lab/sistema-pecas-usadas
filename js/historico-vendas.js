@@ -187,8 +187,8 @@ function renderizarHistorico() {
 
     linha.innerHTML = `
       <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
-      <td data-label="Produto">${formatarNomePecaVenda(venda) || "-"}</td>
-      <td data-label="ID da peça">${venda.pecaId || "-"}</td>
+      <td data-label="SKU">${obterSkuVenda(venda) || "-"}</td>
+      <td data-label="Peça">${obterNomePecaVenda(venda) || "-"}</td>
       <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</td>
       <td data-label="Canal">${venda.canalVenda || venda.cliente || "-"}</td>
       <td data-label="Ações">

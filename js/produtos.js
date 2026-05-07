@@ -96,10 +96,6 @@ function abrirDetalhesProduto(pecaId) {
   window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}`;
 }
 
-function abrirEdicaoProduto(pecaId) {
-  window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}&editar=1`;
-}
-
 function abrirLancamentoCusto(pecaId) {
   window.location.href = `cadastro-custo.html?pecaId=${encodeURIComponent(pecaId)}`;
 }
@@ -239,16 +235,6 @@ function renderizarProdutos(pecas) {
     card.className = "product-card";
 
     card.innerHTML = `
-      <div class="product-card__tabs">
-        <span class="product-card__tab product-card__tab--active">Dados</span>
-        <span class="product-card__tab">Compatibilidade</span>
-      </div>
-
-      <div class="product-card__title">
-        <p class="product-card__sku">${escaparHtml(formatarSku(peca))}</p>
-        <h3>${escaparHtml(formatarNomePeca(peca))}</h3>
-      </div>
-
       <div class="product-card__media">
         ${renderizarMidiaProduto(peca)}
       </div>
@@ -257,7 +243,7 @@ function renderizarProdutos(pecas) {
         <div class="product-card__header">
           <div>
             <p class="product-card__sku">${escaparHtml(formatarSku(peca))}</p>
-            <h3>${escaparHtml(formatarNomePeca(peca))}</h3>
+            <h3>${escaparHtml(peca.nome || "-")}</h3>
           </div>
           <span class="${classeStatus}">${escaparHtml(peca.status)}</span>
         </div>
@@ -268,12 +254,10 @@ function renderizarProdutos(pecas) {
         </div>
 
         <div class="product-card__actions">
-          <button type="button" data-acao="detalhes" data-peca-id="${peca.id}">Detalhes</button>
-          <button type="button" data-acao="editar" data-peca-id="${peca.id}">Editar</button>
+          <button type="button" data-acao="detalhes" data-peca-id="${peca.id}">Ver detalhes</button>
           <button type="button" data-acao="venda" data-peca-id="${peca.id}" onclick="abrirVenda(${peca.id})" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
-          <button type="button" data-acao="imagem" data-peca-id="${peca.id}">${peca.imagemUrl ? "Trocar" : "Imagem"}</button>
-          <button type="button" data-acao="custo" data-peca-id="${peca.id}">Custo</button>
-          <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Origem</button>
+          <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lançar custo</button>
+          <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
         </div>
       </div>
     `;
@@ -313,17 +297,8 @@ tabelaProdutos.addEventListener("click", evento => {
     return;
   }
 
-  if (botao.dataset.acao === "imagem" && botao.dataset.pecaId) {
-    pedirImagemProduto(botao.dataset.pecaId);
-    return;
-  }
-
   if (botao.dataset.acao === "venda") {
     return;
-  }
-
-  if (botao.dataset.acao === "editar" && botao.dataset.pecaId) {
-    abrirEdicaoProduto(botao.dataset.pecaId);
   }
 });
 

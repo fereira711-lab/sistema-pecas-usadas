@@ -23,13 +23,6 @@ function salvarOrigens(origens) {
   localStorage.setItem("origens", JSON.stringify(origens));
 }
 
-function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
-}
-
 function formatarData(data) {
   if (!data) {
     return "-";
@@ -103,7 +96,6 @@ async function renderizarOrigens() {
       <td data-label="Codigo">${origem.codigoOrigem || `ORI-${String(origem.id).padStart(6, "0")}`}</td>
       <td data-label="Data da compra">${formatarData(origem.dataCompra)}</td>
       <td data-label="Tipo">${origem.tipoOrigem || origem.tipo || "-"}</td>
-      <td data-label="Valor">${formatarMoeda(origem.valorPago || origem.custoTotal || 0)}</td>
       <td data-label="Descricao">${origem.descricao || "-"}</td>
       <td data-label="Observacoes">${origem.observacoes || "-"}</td>
       <td data-label="Acoes">

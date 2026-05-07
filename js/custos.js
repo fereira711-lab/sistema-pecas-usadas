@@ -254,13 +254,6 @@ function salvarCustoNoCache(custo) {
   salvarCustos(custos);
 }
 
-function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
-}
-
 function somarCustosPorPeca(pecaId) {
   return custosCustoCarregados
     .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
@@ -476,8 +469,8 @@ function renderizarResumoProduto() {
       <strong>${formatarNomePeca(produto)}</strong>
     </article>
     <article class="summary-card">
-      <span>ID da peca</span>
-      <strong>${produto.id}</strong>
+      <span>SKU</span>
+      <strong>${produto.sku || "-"}</strong>
     </article>
     <article class="summary-card">
       <span>Estoque disponivel</span>
@@ -547,9 +540,9 @@ function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" :
     const linha = document.createElement("tr");
     const produto = obterDadosProdutoDoCusto(custo);
     const acoes = origemDados === "supabase"
-      ? `<button type="button" data-acao="detalhes" data-indice="${indice}">Ver detalhes</button>`
+      ? `<button type="button" data-acao="detalhes-produto" data-peca-id="${custo.pecaId || ""}" ${custo.pecaId ? "" : "disabled"}>Ver peça</button>`
       : `
-          <button type="button" data-acao="detalhes" data-indice="${indice}">Ver detalhes</button>
+          <button type="button" data-acao="detalhes-produto" data-peca-id="${custo.pecaId || ""}" ${custo.pecaId ? "" : "disabled"}>Ver peça</button>
           <button type="button" data-acao="remover-local" data-indice="${indice}">Remover local</button>
         `;
 
@@ -557,7 +550,6 @@ function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" :
       <td data-label="Data">${formatarData(custo.data || custo.dataCusto)}</td>
       <td data-label="SKU">${produto.sku}</td>
       <td data-label="Nome da peca"><strong class="product-name">${produto.nome}</strong></td>
-      <td data-label="ID da peca">${custo.pecaId || "-"}</td>
       <td data-label="Tipo">${custo.tipoCusto || custo.tipo || "-"}</td>
       <td data-label="Descricao">${custo.descricao || custo.observacoes || "-"}</td>
       <td data-label="Acoes">
@@ -571,20 +563,8 @@ function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" :
   });
 }
 
-function verDetalhes(indice) {
-  const custo = custosCustoCarregados[indice];
-  const produto = obterDadosProdutoDoCusto(custo);
-
-  alert(
-    `SKU: ${produto.sku}\n` +
-    `Peca: ${produto.nome}\n` +
-    `ID da peca: ${custo.pecaId || "-"}\n` +
-    `Tipo: ${custo.tipoCusto || custo.tipo || "-"}\n` +
-    `Descricao: ${custo.descricao || "-"}\n` +
-    `Valor: ${formatarMoeda(custo.valor)}\n` +
-    `Data: ${formatarData(custo.data || custo.dataCusto)}\n` +
-    `Observacoes: ${custo.observacoes || "-"}`
-  );
+function abrirDetalhesProduto(pecaId) {
+  window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}`;
 }
 
 async function removerCustoLocal(indice) {
@@ -663,7 +643,7 @@ formularioCusto.addEventListener("submit", async function (evento) {
   const custo = montarCusto(produto, tipo, descricao, valorDigitado, data, tipoCustoId);
 
   if (!custo.pecaId) {
-    mensagemCusto.textContent = "Nao foi possivel identificar o ID da peca. Atualize a lista de pecas e tente novamente.";
+    mensagemCusto.textContent = "Nao foi possivel identificar a peca. Atualize a lista de pecas e tente novamente.";
     mensagemCusto.className = "form-message form-message--warning";
     return;
   }
@@ -744,8 +724,8 @@ tabelaCustos.addEventListener("click", function (evento) {
 
   const indice = Number(botao.dataset.indice);
 
-  if (botao.dataset.acao === "detalhes") {
-    verDetalhes(indice);
+  if (botao.dataset.acao === "detalhes-produto" && botao.dataset.pecaId) {
+    abrirDetalhesProduto(botao.dataset.pecaId);
   }
 
   if (botao.dataset.acao === "remover-local") {
