@@ -38,12 +38,16 @@
             <span>Limpeza, reparo, preparo e outros.</span>
           </article>
           <article class="node">
+            <strong>Tipos de custo</strong>
+            <span>Cadastro central de nomes usados em custos de pecas, vendas ou ambos.</span>
+          </article>
+          <article class="node">
             <strong>Venda</strong>
             <span>Saida de uma ou mais unidades.</span>
           </article>
           <article class="node">
-            <strong>Edicao</strong>
-            <span>O sistema agora permite atualizar peca, custo e venda sem alterar a logica principal.</span>
+            <strong>Cadastro transacional</strong>
+            <span>Nova peca e entrada de estoque podem ser criadas juntas no banco.</span>
           </article>
         </div>
       </section>
@@ -122,6 +126,28 @@
         </div>
       </section>
 
+      <section class="branch branch--dados">
+        <h2>Tipos de custo</h2>
+        <div class="node-list">
+          <article class="node">
+            <strong>Padronizacao</strong>
+            <span>Evita cadastrar o mesmo custo com nomes diferentes.</span>
+          </article>
+          <article class="node">
+            <strong>Categorias</strong>
+            <span>Peca, venda ou ambos.</span>
+          </article>
+          <article class="node">
+            <strong>Historico</strong>
+            <span>Custos antigos continuam funcionando pelas colunas de texto.</span>
+          </article>
+          <article class="node">
+            <strong>Uso controlado</strong>
+            <span>Tipo ja usado pode ser desativado em vez de excluido.</span>
+          </article>
+        </div>
+      </section>
+
       <section class="branch branch--custos">
         <h2>Custo base</h2>
         <div class="formula-card">
@@ -153,6 +179,10 @@
             <strong>Custos da venda</strong>
             <span>Frete, embalagem, comissao e outros.</span>
           </article>
+          <article class="node">
+            <strong>Tipos padronizados</strong>
+            <span>Custos de peca e venda podem usar o cadastro de tipos.</span>
+          </article>
         </div>
       </section>
 
@@ -175,6 +205,7 @@
           <span>Detalhes da venda e custo</span>
           <span>Cadastro de venda</span>
           <span>Cadastro de custo</span>
+          <span>Tipos de custo</span>
           <span>Cadastro de peca</span>
           <span>Cadastro de origem</span>
           <span>Historico</span>
@@ -230,6 +261,10 @@
           <article class="node">
             <strong>Auth</strong>
             <span>Login opcional preparado para ativacao futura com email e senha.</span>
+          </article>
+          <article class="node">
+            <strong>Funcoes SQL</strong>
+            <span>registrar_venda_fifo e criar_peca_com_entrada mantem operacoes importantes transacionais.</span>
           </article>
         </div>
       </section>
@@ -351,9 +386,10 @@
             <h3>Cadastros</h3>
             <ol>
               <li><span>cadastro-origem.html</span><strong>cria origem e entrada</strong></li>
-              <li><span>cadastro-peca.html</span><strong>cria peca + imagem inicial</strong></li>
+              <li><span>cadastro-peca.html</span><strong>cria peca + entrada + imagem inicial</strong></li>
               <li><span>cadastro-custo.html</span><strong>lanca custo da peca</strong></li>
               <li><span>cadastro-venda.html</span><strong>registra venda + custos da venda</strong></li>
+              <li><span>tipos-custo.html</span><strong>padroniza nomes de custos</strong></li>
             </ol>
           </div>
 
@@ -389,7 +425,7 @@
         <div class="connection-footer">
           <article>
             <strong>Supabase PostgreSQL</strong>
-            <span>origens, pecas, entradas_estoque, vendas, custos_peca, custos_venda e consumos_estoque</span>
+            <span>origens, pecas, entradas_estoque, vendas, custos_peca, custos_venda, tipos_custo e consumos_estoque</span>
           </article>
           <article>
             <strong>Supabase Storage</strong>
@@ -419,25 +455,30 @@
         <article>
           <span>3</span>
           <strong>Gerar entrada</strong>
-          <p>Cria o lote de estoque com quantidade, saldo e custo unitario.</p>
+          <p>Cria o lote de estoque com quantidade, saldo e custo unitario. No cadastro de peca, isso pode acontecer em uma transacao.</p>
         </article>
         <article>
           <span>4</span>
+          <strong>Configurar custos</strong>
+          <p>Tipos de custo padronizam nomes usados em pecas e vendas.</p>
+        </article>
+        <article>
+          <span>5</span>
           <strong>Vender</strong>
           <p>Registra a venda e consome primeiro os lotes mais antigos.</p>
         </article>
         <article>
-          <span>5</span>
+          <span>6</span>
           <strong>Atualizar imagem</strong>
           <p>Produtos e detalhes permitem adicionar ou trocar imagem da peca.</p>
         </article>
         <article>
-          <span>6</span>
+          <span>7</span>
           <strong>Editar cadastro</strong>
           <p>Peca, custo e venda podem ser atualizados sem mexer em estoque ou FIFO.</p>
         </article>
         <article>
-          <span>7</span>
+          <span>8</span>
           <strong>Ver resultado</strong>
           <p>Analises e detalhes mostram custo, venda, lucro e resultado.</p>
         </article>
