@@ -29,8 +29,37 @@
 
       <p id="mensagemProdutos" class="empty-message"></p>
 
-      <div class="form-group">
-        <input id="buscaProdutos" type="search" placeholder="Pesquisar peça (nome ou SKU)">
+      <div class="form-row filters-compact">
+        <div class="form-group">
+          <label for="buscaProdutos">Busca rápida</label>
+          <input id="buscaProdutos" type="search" placeholder="SKU ou nome da peça">
+        </div>
+
+        <div class="form-group">
+          <label for="filtroEstoqueProdutos">Estoque</label>
+          <select id="filtroEstoqueProdutos">
+            <option value="">Todos</option>
+            <option value="em-estoque">Em estoque</option>
+            <option value="sem-estoque">Sem estoque</option>
+            <option value="estoque-baixo">Estoque baixo</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="filtroOrigemProdutos">Origem</label>
+          <select id="filtroOrigemProdutos">
+            <option value="">Todas</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="ordenacaoProdutos">Ordenar por</label>
+          <select id="ordenacaoProdutos">
+            <option value="nome">Nome</option>
+            <option value="sku">SKU</option>
+            <option value="estoque">Estoque</option>
+          </select>
+        </div>
       </div>
 
       <input id="imagemProdutoExistente" class="file-input-hidden" type="file" accept="image/*">

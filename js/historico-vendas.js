@@ -3,6 +3,7 @@ const mensagemHistorico = document.getElementById("mensagemHistorico");
 const totalVendas = document.getElementById("totalVendas");
 const pecasVendidas = document.getElementById("pecasVendidas");
 const formFiltrosHistorico = document.getElementById("formFiltrosHistorico");
+const buscaRapidaHistorico = document.getElementById("buscaRapidaHistorico");
 const dataInicialHistorico = document.getElementById("dataInicialHistorico");
 const dataFinalHistorico = document.getElementById("dataFinalHistorico");
 const filtroSkuHistorico = document.getElementById("filtroSkuHistorico");
@@ -100,12 +101,14 @@ function filtrarVendas(vendas) {
   const skuBusca = normalizarTexto(filtroSkuHistorico?.value);
   const nomeBusca = normalizarTexto(filtroNomeHistorico?.value);
   const canalBusca = normalizarTexto(filtroCanalHistorico?.value);
+  const buscaRapida = normalizarTexto(buscaRapidaHistorico?.value);
 
   return vendas.filter(venda => {
     const dataVenda = obterDataVenda(venda);
     const sku = normalizarTexto(obterSkuVenda(venda));
     const nome = normalizarTexto(obterNomePecaVenda(venda));
     const canal = normalizarTexto(venda.canalVenda || venda.cliente);
+    const textoGeral = `${sku} ${nome} ${canal}`;
 
     if (dataInicial && (!dataVenda || dataVenda < dataInicial)) {
       return false;
@@ -124,6 +127,10 @@ function filtrarVendas(vendas) {
     }
 
     if (canalBusca && !canal.includes(canalBusca)) {
+      return false;
+    }
+
+    if (buscaRapida && !textoGeral.includes(buscaRapida)) {
       return false;
     }
 
@@ -259,6 +266,7 @@ formFiltrosHistorico?.addEventListener("submit", function (evento) {
 });
 
 [
+  buscaRapidaHistorico,
   dataInicialHistorico,
   dataFinalHistorico,
   filtroSkuHistorico,

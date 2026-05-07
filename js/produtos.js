@@ -1,8 +1,11 @@
 const tabelaProdutos = document.getElementById("tabelaProdutos");
 const mensagemProdutos = document.getElementById("mensagemProdutos");
 const campoBuscaProdutos = document.getElementById("buscaProdutos");
+const filtroEstoqueProdutos = document.getElementById("filtroEstoqueProdutos");
+const filtroOrigemProdutos = document.getElementById("filtroOrigemProdutos");
+const ordenacaoProdutos = document.getElementById("ordenacaoProdutos");
 const campoImagemProdutoExistente = document.getElementById("imagemProdutoExistente");
-let dadosProdutos = { pecas: [] };
+let dadosProdutos = { pecas: [], origens: [] };
 let pecaSelecionadaParaImagem = null;
 
 function formatarNomePeca(peca) {
@@ -76,10 +79,14 @@ async function carregarDados() {
   }
 
   try {
-    const pecasSupabase = await window.supabaseService.listarPecas();
+    const [pecasSupabase, origensSupabase] = await Promise.all([
+      window.supabaseService.listarPecas(),
+      window.supabaseService.listarOrigens()
+    ]);
 
     return {
-      pecas: pecasSupabase.map(normalizarPeca)
+      pecas: pecasSupabase.map(normalizarPeca),
+      origens: origensSupabase || []
     };
   } catch (erro) {
     console.error("Erro ao carregar produtos do Supabase:", erro);
@@ -113,6 +120,89 @@ function filtrarPecasPorBusca(pecas) {
 
     return nome.includes(termo) || sku.includes(termo);
   });
+}
+
+function filtrarPecasPorEstoque(pecas) {
+  const filtro = filtroEstoqueProdutos?.value || "";
+
+  if (!filtro) {
+    return pecas;
+  }
+
+  return pecas.filter(peca => {
+    const disponivel = calcularQuantidadeDisponivel(peca);
+
+    if (filtro === "em-estoque") {
+      return disponivel > 0;
+    }
+
+    if (filtro === "sem-estoque") {
+      return disponivel <= 0;
+    }
+
+    if (filtro === "estoque-baixo") {
+      return disponivel > 0 && disponivel <= 2;
+    }
+
+    return true;
+  });
+}
+
+function filtrarPecasPorOrigem(pecas) {
+  const origemId = Number(filtroOrigemProdutos?.value || 0);
+
+  if (!origemId) {
+    return pecas;
+  }
+
+  return pecas.filter(peca => Number(peca.origemId || 0) === origemId);
+}
+
+function ordenarPecas(pecas) {
+  const ordenacao = ordenacaoProdutos?.value || "nome";
+
+  return [...pecas].sort((a, b) => {
+    if (ordenacao === "sku") {
+      return formatarSku(a).localeCompare(formatarSku(b), "pt-BR");
+    }
+
+    if (ordenacao === "estoque") {
+      return calcularQuantidadeDisponivel(b) - calcularQuantidadeDisponivel(a);
+    }
+
+    return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR");
+  });
+}
+
+function obterPecasVisiveis() {
+  return ordenarPecas(
+    filtrarPecasPorOrigem(
+      filtrarPecasPorEstoque(
+        filtrarPecasPorBusca(dadosProdutos.pecas)
+      )
+    )
+  );
+}
+
+function renderizarFiltroOrigens() {
+  if (!filtroOrigemProdutos) {
+    return;
+  }
+
+  const valorAtual = filtroOrigemProdutos.value;
+  filtroOrigemProdutos.innerHTML = '<option value="">Todas</option>';
+
+  dadosProdutos.origens
+    .slice()
+    .sort((a, b) => String(a.descricao || "").localeCompare(String(b.descricao || ""), "pt-BR"))
+    .forEach(origem => {
+      const opcao = document.createElement("option");
+      opcao.value = origem.id;
+      opcao.textContent = origem.descricao || origem.codigoOrigem || `Origem ${origem.id}`;
+      filtroOrigemProdutos.appendChild(opcao);
+    });
+
+  filtroOrigemProdutos.value = valorAtual;
 }
 
 function abrirVenda(pecaId) {
@@ -187,7 +277,7 @@ async function salvarImagemProdutoExistente(arquivo) {
         : peca;
     });
 
-    renderizarProdutos(filtrarPecasPorBusca(dadosProdutos.pecas));
+    renderizarProdutos(obterPecasVisiveis());
     mensagemProdutos.textContent = "Imagem da peca atualizada com sucesso.";
   } catch (erro) {
     console.error("Erro ao atualizar imagem da peca:", erro);
@@ -268,11 +358,16 @@ function renderizarProdutos(pecas) {
 
 async function inicializarProdutos() {
   dadosProdutos = await carregarDados();
-  renderizarProdutos(filtrarPecasPorBusca(dadosProdutos.pecas));
+  renderizarFiltroOrigens();
+  renderizarProdutos(obterPecasVisiveis());
 }
 
 campoBuscaProdutos?.addEventListener("input", () => {
-  renderizarProdutos(filtrarPecasPorBusca(dadosProdutos.pecas));
+  renderizarProdutos(obterPecasVisiveis());
+});
+
+[filtroEstoqueProdutos, filtroOrigemProdutos, ordenacaoProdutos].forEach(campo => {
+  campo?.addEventListener("change", () => renderizarProdutos(obterPecasVisiveis()));
 });
 
 tabelaProdutos.addEventListener("click", evento => {

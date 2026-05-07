@@ -4,8 +4,14 @@ const totalOrigens = document.getElementById("totalOrigens");
 const totalCarros = document.getElementById("totalCarros");
 const totalLotes = document.getElementById("totalLotes");
 const totalComprasAvulsas = document.getElementById("totalComprasAvulsas");
+const buscaOrigens = document.getElementById("buscaOrigens");
+const filtroTipoOrigem = document.getElementById("filtroTipoOrigem");
+const filtroDistribuicaoOrigem = document.getElementById("filtroDistribuicaoOrigem");
+const ordenacaoOrigens = document.getElementById("ordenacaoOrigens");
 
 let origensCarregadasDoSupabase = false;
+let origensCarregadas = [];
+let entradasOrigensCarregadas = [];
 
 function buscarOrigens() {
   const origens = JSON.parse(localStorage.getItem("origens")) || [];
@@ -41,8 +47,12 @@ function formatarData(data) {
 async function carregarOrigens() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
-      const origens = await window.supabaseService.listarOrigens();
+      const [origens, entradas] = await Promise.all([
+        window.supabaseService.listarOrigens(),
+        window.supabaseService.listarEntradasEstoque()
+      ]);
       salvarOrigens(origens);
+      entradasOrigensCarregadas = entradas || [];
       origensCarregadasDoSupabase = true;
       return origens;
     } catch (erro) {
@@ -52,7 +62,104 @@ async function carregarOrigens() {
   }
 
   origensCarregadasDoSupabase = false;
+  entradasOrigensCarregadas = [];
   return buscarOrigens();
+}
+
+function normalizarTexto(texto) {
+  return String(texto || "").trim().toLowerCase();
+}
+
+function obterCodigoOrigem(origem) {
+  return origem.codigoOrigem || `ORI-${String(origem.id).padStart(6, "0")}`;
+}
+
+function obterTipoOrigem(origem) {
+  return origem.tipoOrigem || origem.tipo || "-";
+}
+
+function obterEntradasDaOrigem(origemId) {
+  return entradasOrigensCarregadas.filter(entrada => Number(entrada.origemId || 0) === Number(origemId));
+}
+
+function obterStatusDistribuicao(origem) {
+  const quantidadeOrigem = Number(origem.quantidadeTotal || origem.quantidade_total || 0);
+  const quantidadeDistribuida = obterEntradasDaOrigem(origem.id).reduce((total, entrada) => {
+    return total + Number(entrada.quantidadeTotal || 0);
+  }, 0);
+
+  if (quantidadeOrigem > 0 && quantidadeDistribuida >= quantidadeOrigem) {
+    return "total";
+  }
+
+  return "parcial";
+}
+
+function renderizarFiltroTipo(origens) {
+  if (!filtroTipoOrigem) {
+    return;
+  }
+
+  const valorAtual = filtroTipoOrigem.value;
+  const tipos = [...new Set(origens.map(obterTipoOrigem).filter(tipo => tipo && tipo !== "-"))];
+  filtroTipoOrigem.innerHTML = '<option value="">Todos</option>';
+
+  tipos
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+    .forEach(tipo => {
+      const opcao = document.createElement("option");
+      opcao.value = tipo;
+      opcao.textContent = tipo;
+      filtroTipoOrigem.appendChild(opcao);
+    });
+
+  filtroTipoOrigem.value = valorAtual;
+}
+
+function filtrarOrigens(origens) {
+  const termo = normalizarTexto(buscaOrigens?.value);
+  const tipo = filtroTipoOrigem?.value || "";
+  const distribuicao = filtroDistribuicaoOrigem?.value || "";
+
+  return origens.filter(origem => {
+    const codigo = normalizarTexto(obterCodigoOrigem(origem));
+    const descricao = normalizarTexto(origem.descricao);
+    const tipoOrigem = obterTipoOrigem(origem);
+    const statusDistribuicao = obterStatusDistribuicao(origem);
+
+    if (termo && !`${codigo} ${descricao}`.includes(termo)) {
+      return false;
+    }
+
+    if (tipo && tipoOrigem !== tipo) {
+      return false;
+    }
+
+    if (distribuicao && statusDistribuicao !== distribuicao) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+function ordenarOrigens(origens) {
+  const sentido = ordenacaoOrigens?.value || "data-desc";
+
+  return [...origens].sort((a, b) => {
+    const dataA = String(a.dataCompra || "").slice(0, 10);
+    const dataB = String(b.dataCompra || "").slice(0, 10);
+
+    if (sentido === "data-asc") {
+      return dataA.localeCompare(dataB);
+    }
+
+    return dataB.localeCompare(dataA);
+  });
+}
+
+function obterOrigensVisiveis() {
+  return ordenarOrigens(filtrarOrigens(origensCarregadas));
 }
 
 function atualizarResumo(origens) {
@@ -78,8 +185,8 @@ function renderizarAcoesOrigem(origem) {
   `;
 }
 
-async function renderizarOrigens() {
-  const origens = await carregarOrigens();
+function renderizarOrigens() {
+  const origens = obterOrigensVisiveis();
   tabelaOrigensLista.innerHTML = "";
   atualizarResumo(origens);
 
@@ -93,9 +200,9 @@ async function renderizarOrigens() {
   origens.forEach(origem => {
     const linha = document.createElement("tr");
     linha.innerHTML = `
-      <td data-label="Codigo">${origem.codigoOrigem || `ORI-${String(origem.id).padStart(6, "0")}`}</td>
+      <td data-label="Codigo">${obterCodigoOrigem(origem)}</td>
       <td data-label="Data da compra">${formatarData(origem.dataCompra)}</td>
-      <td data-label="Tipo">${origem.tipoOrigem || origem.tipo || "-"}</td>
+      <td data-label="Tipo">${obterTipoOrigem(origem)}</td>
       <td data-label="Descricao">${origem.descricao || "-"}</td>
       <td data-label="Observacoes">${origem.observacoes || "-"}</td>
       <td data-label="Acoes">
@@ -107,6 +214,12 @@ async function renderizarOrigens() {
 
     tabelaOrigensLista.appendChild(linha);
   });
+}
+
+async function carregarERenderizarOrigens() {
+  origensCarregadas = await carregarOrigens();
+  renderizarFiltroTipo(origensCarregadas);
+  renderizarOrigens();
 }
 
 function abrirDetalhesOrigem(origemId) {
@@ -129,7 +242,7 @@ function removerOrigemLocal(origemId) {
   }
 
   salvarOrigens(origens.filter(item => Number(item.id) !== Number(origemId)));
-  renderizarOrigens();
+  carregarERenderizarOrigens();
 }
 
 tabelaOrigensLista.addEventListener("click", evento => {
@@ -148,5 +261,10 @@ tabelaOrigensLista.addEventListener("click", evento => {
   }
 });
 
-renderizarOrigens();
-window.addEventListener("focus", renderizarOrigens);
+[buscaOrigens, filtroTipoOrigem, filtroDistribuicaoOrigem, ordenacaoOrigens].forEach(campo => {
+  campo?.addEventListener("input", renderizarOrigens);
+  campo?.addEventListener("change", renderizarOrigens);
+});
+
+carregarERenderizarOrigens();
+window.addEventListener("focus", carregarERenderizarOrigens);

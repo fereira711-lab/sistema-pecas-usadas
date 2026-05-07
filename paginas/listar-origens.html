@@ -54,6 +54,37 @@
 
       <p id="mensagemOrigens" class="empty-message"></p>
 
+      <div class="form-row filters-compact">
+        <div class="form-group">
+          <label for="buscaOrigens">Busca rápida</label>
+          <input id="buscaOrigens" type="search" placeholder="Código ou descrição da origem">
+        </div>
+
+        <div class="form-group">
+          <label for="filtroTipoOrigem">Tipo</label>
+          <select id="filtroTipoOrigem">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="filtroDistribuicaoOrigem">Distribuição</label>
+          <select id="filtroDistribuicaoOrigem">
+            <option value="">Todas</option>
+            <option value="total">Totalmente distribuída</option>
+            <option value="parcial">Parcialmente distribuída</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="ordenacaoOrigens">Ordenar por data</label>
+          <select id="ordenacaoOrigens">
+            <option value="data-desc">Mais recentes</option>
+            <option value="data-asc">Mais antigas</option>
+          </select>
+        </div>
+      </div>
+
       <div class="table-wrapper">
         <table class="stock-table">
           <thead>
