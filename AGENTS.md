@@ -1,87 +1,68 @@
-# Instruções para o Codex
+# Instrucoes para o Codex
 
-Este projeto é um sistema web de gestão de estoque, compras e vendas.
+Projeto: sistema web de gestao de estoque, compras e vendas de pecas usadas.
 
-O objetivo é construir o sistema de forma didática, prática e organizada, ajudando o Rafael a aprender enquanto o projeto evolui.
+Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Rafael a aprender enquanto o projeto cresce.
 
-## Tecnologias principais
+## Tecnologias
 
-- HTML
-- CSS
-- JavaScript
-- Supabase
-- PostgreSQL
-- Git/GitHub
+- HTML, CSS e JavaScript
+- Supabase e PostgreSQL
+- Git e GitHub
 
-## Regras gerais
+## Regras principais
 
-- Explique de forma simples o que será feito antes de alterar arquivos importantes.
-- Trabalhe em etapas pequenas.
-- Não faça grandes refatorações sem avisar antes.
-- Não apague arquivos sem explicar o motivo.
-- Não mexa em chaves, senhas, tokens ou dados sensíveis.
-- Não invente tabelas do banco sem explicar a necessidade.
-- Sempre que criar ou alterar código, explique o que mudou no final.
+- Trabalhar em etapas pequenas e evitar grandes refatoracoes sem avisar.
+- Explicar de forma simples antes de alterar arquivos importantes.
+- Nao apagar arquivos sem explicar o motivo.
+- Nao mexer em chaves, senhas, tokens ou dados sensiveis.
+- Nao fazer commit automaticamente sem autorizacao.
+- Ao final de mudancas, explicar resumidamente o que mudou e por que.
 
-## Organização do projeto
+## Organizacao
 
-- HTML deve ficar em arquivos de tela.
-- CSS deve ficar separado em arquivos dentro da pasta css.
-- JavaScript deve ficar separado em arquivos dentro da pasta js.
-- Evite misturar HTML, CSS e JavaScript no mesmo arquivo, exceto quando for apenas um teste simples.
-- Use nomes de arquivos claros e fáceis de entender.
-
-## Forma de trabalhar
-
-Antes de executar uma tarefa grande, siga este fluxo:
-
-1. Analisar a estrutura atual do projeto.
-2. Explicar o que já existe.
-3. Criar um plano simples da mudança.
-4. Informar quais arquivos serão criados ou alterados.
-5. Executar apenas a etapa combinada.
-6. Revisar o que foi feito.
-7. Explicar o resultado final.
+- Manter HTML em arquivos de tela, CSS em `css/` e JavaScript em `js/`.
+- Evitar misturar HTML, CSS e JavaScript no mesmo arquivo, exceto em testes simples.
+- Usar nomes de arquivos claros e codigo simples, legivel e organizado.
 
 ## Banco de dados e Supabase
 
-- Antes de sugerir mudanças no banco, explique a lógica.
-- Separar bem tabelas, relacionamentos e funções SQL.
-- Não modificar regras importantes de estoque, venda ou custo sem explicar.
-- Sempre pensar na integridade dos dados.
+- Antes de sugerir ou fazer mudancas no banco, explicar a logica.
+- Nao alterar regras importantes de estoque, venda, compra ou custo sem explicar o impacto.
+- Preservar a integridade dos dados.
+- Sempre verificar `error` nas respostas do Supabase.
 
-## Front-end
+## Front-end e JavaScript
 
-- Criar telas simples, funcionais e fáceis de entender.
-- Priorizar clareza antes de aparência avançada.
-- Usar CSS limpo e organizado.
-- Evitar excesso de bibliotecas externas.
+- Criar telas simples, funcionais e faceis de entender.
+- Priorizar clareza antes de aparencia avancada.
+- Usar CSS limpo e evitar excesso de bibliotecas externas.
+- Separar responsabilidades no JavaScript e evitar funcoes muito grandes.
+- Tratar erros de forma clara para o usuario.
 
-## JavaScript
+## Tarefas grandes
 
-- Escrever código simples e comentado quando necessário.
-- Evitar funções muito grandes.
-- Separar responsabilidades.
-- Tratar erros de forma clara.
-- Sempre que usar Supabase, verificar se há error na resposta.
+Antes de executar uma tarefa grande:
+
+1. Analisar a estrutura atual.
+2. Explicar o que ja existe.
+3. Criar um plano simples.
+4. Informar os arquivos que serao criados ou alterados.
+5. Executar somente a etapa combinada.
+6. Revisar e explicar o resultado.
 
 ## Git
 
-- Não fazer commit automaticamente sem autorização.
-- Após alterações, sugerir os comandos:
-  - git status
-  - git diff
-  - git add .
-  - git commit -m "mensagem"
-  - git push
+Apos alteracoes, sugerir quando fizer sentido:
 
-## Estilo de explicação
+- `git status`
+- `git diff`
+- `git add .`
+- `git commit -m "mensagem"`
+- `git push`
 
-- Explique como professor, com exemplos práticos.
-- Use linguagem simples.
-- Mostre o motivo da decisão.
-- Ajude o Rafael a entender, não apenas copiar código.
+## Estilo
 
-## Objetivo final
-
-Construir um sistema funcional, organizado e profissional, com evolução gradual.
+- Responder em linguagem simples, como professor.
+- Ser direto, mas explicar o motivo das decisoes importantes.
+- Ajudar Rafael a entender o sistema, nao apenas copiar codigo.
