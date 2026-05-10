@@ -526,7 +526,8 @@
     const { data, error } = await cliente
       .from("custos_peca")
       .select("*, tipos_custo:tipo_custo_id(nome)")
-      .order("id", { ascending: true });
+      .order("data_custo", { ascending: false })
+      .order("id", { ascending: false });
 
     if (error) {
       throw error;
@@ -1008,6 +1009,32 @@
     return mapearCustoPecaDoBanco(data);
   }
 
+  async function excluirCustoPeca(custoId) {
+    const cliente = obterCliente();
+    const id = Number(custoId || 0);
+
+    if (!cliente || !id) {
+      return false;
+    }
+
+    const { data, error } = await cliente
+      .from("custos_peca")
+      .delete()
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data?.id) {
+      throw new Error("Custo da peca nao encontrado para exclusao.");
+    }
+
+    return true;
+  }
+
   async function salvarCustosVenda(vendaId, custosVenda) {
     const cliente = obterCliente();
     const custosValidos = Array.isArray(custosVenda)
@@ -1158,6 +1185,7 @@
     salvarEntradaEstoque,
     salvarCustoPeca,
     atualizarCustoPeca,
+    excluirCustoPeca,
     salvarCustosVenda,
     substituirCustosVenda,
     atualizarVendaBasica,

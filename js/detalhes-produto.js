@@ -438,7 +438,7 @@ function renderizarOrigemVinculada(produto) {
           <p>Entrada principal usada para rastrear a peça no estoque.</p>
         </div>
         <div class="form-actions">
-          <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver origem</a>
+          <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver detalhes da origem</a>
         </div>
       </div>
       <div class="detail-grid">
@@ -808,7 +808,7 @@ function renderizarVendas() {
       <td data-label="Lucro venda">${formatarValorOuNaoCalculado(lucroVenda)}</td>
       <td data-label="Ações">
         <div class="table-actions">
-          <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes</a>
+          <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes da venda</a>
         </div>
       </td>
     `;
