@@ -64,9 +64,8 @@
     {
       titulo: "Sistema",
       icone: "ri-settings-3-line",
-      aberto: ["login.html"].includes(paginaAtual),
+      aberto: false,
       itens: [
-        { texto: "Login", icone: "ri-login-box-line", url: "paginas/login.html" },
         { texto: "Mapa Mental", icone: "ri-mind-map", url: "docs/mapa-mental.html" }
       ]
     }
@@ -125,6 +124,7 @@
   function criarSidebar() {
     if (document.querySelector(".app-sidebar")) return;
 
+    const email = document.body.dataset.authEmail || "Usuario logado";
     const sidebar = document.createElement("aside");
     sidebar.className = "app-sidebar";
     sidebar.innerHTML = `
@@ -139,6 +139,13 @@
       <nav class="app-sidebar__nav" aria-label="Menu do sistema">
         ${grupos.map(criarGrupo).join("")}
       </nav>
+      <div class="app-sidebar__session">
+        <span id="emailUsuarioLogado">${email}</span>
+        <button id="botaoLogout" class="app-sidebar__logout" type="button">
+          <span class="app-sidebar__item-icon" aria-hidden="true"><i class="ri-logout-box-line"></i></span>
+          <span>Sair</span>
+        </button>
+      </div>
     `;
 
     document.body.insertBefore(sidebar, document.body.firstChild);
@@ -168,5 +175,13 @@
     carregarRemixIcons();
     criarSidebar();
     configurarGrupos();
+  });
+
+  document.addEventListener("auth:sessao-ok", evento => {
+    const emailUsuario = document.getElementById("emailUsuarioLogado");
+
+    if (emailUsuario) {
+      emailUsuario.textContent = evento.detail?.email || "Usuario logado";
+    }
   });
 })();

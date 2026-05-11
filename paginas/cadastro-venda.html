@@ -6,7 +6,7 @@
   <title>Cadastrar Venda</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body>
+<body data-auth="protected" class="auth-checking">
   <header class="page-header">
     <div>
       <p class="hero__tag">Cadastro</p>
@@ -72,8 +72,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
+  <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=29"></script>
   <script src="../js/venda.js?v=18"></script>
-  <script src="../js/sidebar.js?v=1"></script>
+  <script src="../js/sidebar.js?v=4"></script>
 </body>
 </html>

@@ -10,10 +10,10 @@
       : "paginas/login.html";
   }
 
-  function caminhoIndex() {
+  function caminhoInicial() {
     return window.location.pathname.includes("/paginas/")
-      ? "../index.html"
-      : "index.html";
+      ? "../dashboard.html"
+      : "dashboard.html";
   }
 
   function definirMensagem(elemento, texto, tipo = "") {
@@ -27,7 +27,24 @@
 
   function obterUrlRetorno() {
     const parametros = new URLSearchParams(window.location.search);
-    return parametros.get("redirect") || caminhoIndex();
+    return parametros.get("redirect") || caminhoInicial();
+  }
+
+  function limparSessaoLocal() {
+    try {
+      Object.keys(window.localStorage || {}).forEach(chave => {
+        if (chave.startsWith("sb-") || chave.includes("supabase.auth.token")) {
+          window.localStorage.removeItem(chave);
+        }
+      });
+    } catch (erro) {
+      console.warn("Nao foi possivel limpar a sessao local.", erro);
+    }
+  }
+
+  function redirecionarParaLogin() {
+    const destino = `${caminhoLogin()}?redirect=${encodeURIComponent(window.location.href)}`;
+    window.location.replace(destino);
   }
 
   async function verificarSessaoProtegida() {
@@ -35,25 +52,36 @@
 
     if (!supabaseAuth) {
       definirMensagem(mensagemAuth, "Configure o Supabase antes de acessar o sistema.", "warning");
-      document.body.classList.remove("auth-checking");
+      window.location.replace(caminhoLogin());
       return;
     }
 
     const { data, error } = await supabaseAuth.auth.getSession();
 
     if (error || !data.session) {
-      const destino = `${caminhoLogin()}?redirect=${encodeURIComponent(window.location.href)}`;
-      window.location.replace(destino);
+      redirecionarParaLogin();
+      return;
+    }
+
+    const { data: dadosUsuario, error: erroUsuario } = await supabaseAuth.auth.getUser();
+
+    if (erroUsuario || !dadosUsuario.user) {
+      limparSessaoLocal();
+      redirecionarParaLogin();
       return;
     }
 
     const emailUsuario = document.getElementById("emailUsuarioLogado");
+    const email = dadosUsuario.user.email || data.session.user?.email || "Usuario logado";
+
+    document.body.dataset.authEmail = email;
 
     if (emailUsuario) {
-      emailUsuario.textContent = data.session.user?.email || "Usuario logado";
+      emailUsuario.textContent = email;
     }
 
     document.body.classList.remove("auth-checking");
+    document.dispatchEvent(new CustomEvent("auth:sessao-ok", { detail: { email } }));
   }
 
   async function fazerLogin(evento) {
@@ -100,6 +128,7 @@
       await supabaseAuth.auth.signOut();
     }
 
+    limparSessaoLocal();
     window.location.href = caminhoLogin();
   }
 
@@ -118,7 +147,6 @@
   document.addEventListener("DOMContentLoaded", () => {
     const paginaAuth = document.body.dataset.auth;
     const formularioLogin = document.getElementById("formLogin");
-    const botaoLogout = document.getElementById("botaoLogout");
 
     if (paginaAuth === "protected") {
       verificarSessaoProtegida();
@@ -129,6 +157,16 @@
     }
 
     formularioLogin?.addEventListener("submit", fazerLogin);
-    botaoLogout?.addEventListener("click", sair);
+  });
+
+  document.addEventListener("click", evento => {
+    const botaoLogout = evento.target.closest("#botaoLogout");
+
+    if (!botaoLogout) {
+      return;
+    }
+
+    evento.preventDefault();
+    sair();
   });
 })();
