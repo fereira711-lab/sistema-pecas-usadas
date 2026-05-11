@@ -3,227 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="0; url=dashboard.html">
   <title>Sistema de Gestao de Pecas Usadas</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header class="hero">
-    <div class="hero__content">
-      <p class="hero__tag">Painel principal</p>
-      <h1>Sistema de Gestao de Pecas Usadas</h1>
+  <main class="auth-layout">
+    <section class="auth-card">
+      <p class="hero__tag">Sistema</p>
+      <h1>Redirecionando para o Dashboard</h1>
       <p class="hero__description">
-        Controle visual de origens, pecas, estoque, custos, vendas e relatorios.
+        Se a pagina nao abrir automaticamente, acesse o dashboard pelo botao abaixo.
       </p>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="intro">
-      <h2>Porta de entrada do sistema</h2>
-      <p>Escolha um grupo para abrir somente os modulos daquele fluxo.</p>
-    </section>
-
-    <section class="accordion-menu" aria-label="Modulos do sistema">
-      <article class="accordion-group">
-        <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="grupo-cadastros">
-          <span>
-            <small>Grupo</small>
-            Cadastros
-          </span>
-          <span class="accordion-icon" aria-hidden="true">+</span>
-        </button>
-
-        <div class="accordion-panel" id="grupo-cadastros" hidden>
-          <div class="menu-grid menu-grid--module">
-            <article class="menu-card">
-              <h3>Cadastro de Peca</h3>
-              <p>Cadastre pecas usadas vinculadas a uma origem e gere a entrada de estoque.</p>
-              <button type="button" data-url="paginas/cadastro-peca.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Cadastro de Custo da Peca</h3>
-              <p>Adicione custos de limpeza, preparo, conserto, embalagem e outros.</p>
-              <button type="button" data-url="paginas/cadastro-custo.html">Acessar</button>
-            </article>
-          </div>
-        </div>
-      </article>
-
-      <article class="accordion-group">
-        <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="grupo-operacoes">
-          <span>
-            <small>Grupo</small>
-            Operacoes
-          </span>
-          <span class="accordion-icon" aria-hidden="true">+</span>
-        </button>
-
-        <div class="accordion-panel" id="grupo-operacoes" hidden>
-          <div class="menu-grid menu-grid--module">
-            <article class="menu-card">
-              <h3>Produtos / Pecas</h3>
-              <p>Veja pecas cadastradas, estoque, custos, vendas e lucro.</p>
-              <button type="button" data-url="paginas/produtos.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Venda de Peca</h3>
-              <p>Registre uma venda e atualize o estoque.</p>
-              <button type="button" data-url="paginas/cadastro-venda.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Entradas de Estoque</h3>
-              <p>Visualize entradas de estoque, consumo e saldo disponivel por lote.</p>
-              <button type="button" data-url="paginas/lotes.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Historico de Vendas</h3>
-              <p>Visualize vendas registradas, faturamento, custos e lucro.</p>
-              <button type="button" data-url="paginas/historico-vendas.html">Acessar</button>
-            </article>
-          </div>
-        </div>
-      </article>
-
-      <article class="accordion-group">
-        <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="grupo-estoque">
-          <span>
-            <small>Grupo</small>
-            Estoque
-          </span>
-          <span class="accordion-icon" aria-hidden="true">+</span>
-        </button>
-
-        <div class="accordion-panel" id="grupo-estoque" hidden>
-          <div class="menu-grid menu-grid--module">
-            <article class="menu-card">
-              <h3>Estoque / Produtos</h3>
-              <p>Controle pecas disponiveis, vendidas, custos e resultado por produto.</p>
-              <button type="button" data-url="paginas/produtos.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Entradas / Lotes</h3>
-              <p>Acompanhe entradas de estoque, consumo e saldo disponivel por lote.</p>
-              <button type="button" data-url="paginas/lotes.html">Acessar</button>
-            </article>
-          </div>
-        </div>
-      </article>
-
-      <article class="accordion-group">
-        <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="grupo-analises">
-          <span>
-            <small>Grupo</small>
-            Analises
-          </span>
-          <span class="accordion-icon" aria-hidden="true">+</span>
-        </button>
-
-        <div class="accordion-panel" id="grupo-analises" hidden>
-          <div class="menu-grid menu-grid--module">
-            <article class="menu-card">
-              <h3>Painel Geral</h3>
-              <p>Veja uma visao geral do negocio com estoque, vendas, custos e lucro.</p>
-              <button type="button" data-url="painel.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Analise por Produto</h3>
-              <p>Compare receita, custos, lucro e quantidade vendida de cada peca.</p>
-              <button type="button" data-url="paginas/analise-produto.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Analise por Periodo</h3>
-              <p>Filtre as vendas por data e veja total vendido, custos e lucro.</p>
-              <button type="button" data-url="paginas/analise-periodo.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Analise de Custos</h3>
-              <p>Veja custos agrupados por tipo, separando custos da peca e da venda.</p>
-              <button type="button" data-url="paginas/analise-custos.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Giro de Estoque</h3>
-              <p>Identifique pecas rapidas, paradas, sem venda ou que precisam de atencao.</p>
-              <button type="button" data-url="paginas/giro-estoque.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Alertas</h3>
-              <p>Veja produtos sem estoque, estoque baixo e outros pontos de acompanhamento.</p>
-              <button type="button" data-url="paginas/alertas.html">Acessar</button>
-            </article>
-          </div>
-        </div>
-      </article>
-
-      <article class="accordion-group">
-        <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="grupo-administracao">
-          <span>
-            <small>Grupo</small>
-            Administracao / Configuracoes
-          </span>
-          <span class="accordion-icon" aria-hidden="true">+</span>
-        </button>
-
-        <div class="accordion-panel" id="grupo-administracao" hidden>
-          <div class="menu-grid menu-grid--module">
-            <article class="menu-card">
-              <h3>Listar Origens</h3>
-              <p>Pagina de apoio para consultar origens e abrir detalhes por origem.</p>
-              <button type="button" data-url="paginas/listar-origens.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Tipos de Custo</h3>
-              <p>Cadastre, edite, desative ou exclua tipos usados nos custos.</p>
-              <button type="button" data-url="paginas/tipos-custo.html">Acessar</button>
-            </article>
-
-            <article class="menu-card">
-              <h3>Mapa Mental</h3>
-              <p>Abra uma visao visual para entender telas, dados, custos, vendas e lucro.</p>
-              <button type="button" data-url="docs/mapa-mental.html">Acessar</button>
-            </article>
-
-            <article class="menu-card menu-card--future">
-              <h3>Detalhes da Origem</h3>
-              <p>Tela secundaria aberta pela listagem de origens.</p>
-              <button type="button" data-alert="Para ver os detalhes de uma origem, acesse Listar Origens e clique em Ver detalhes.">Como acessar</button>
-            </article>
-
-            <article class="menu-card menu-card--future">
-              <h3>Detalhes da Venda</h3>
-              <p>Tela secundaria aberta pelo historico de vendas.</p>
-              <button type="button" data-alert="Para ver os detalhes de uma venda, acesse Historico de Vendas e clique em Ver detalhes.">Como acessar</button>
-            </article>
-          </div>
-        </div>
-      </article>
-    </section>
-
-    <section class="test-tools" aria-label="Ferramentas de teste">
-      <div>
-        <p class="hero__tag">Desenvolvimento</p>
-        <h2>Ferramentas de Teste</h2>
-        <p>Esses botoes sao apenas para testes durante o desenvolvimento.</p>
-      </div>
-
-      <div class="test-tools__actions">
-        <button type="button" class="button-primary" onclick="gerarTudoTeste()">Gerar dados de teste</button>
-        <button type="button" class="button-secondary" onclick="limparDadosTeste()">Limpar dados de teste</button>
-      </div>
+      <a class="button-primary" href="dashboard.html">Abrir dashboard</a>
     </section>
   </main>
 
-  <script src="js/dados-teste.js"></script>
-  <script src="js/app.js?v=5"></script>
+  <script>
+    window.location.replace("dashboard.html");
+  </script>
 </body>
 </html>

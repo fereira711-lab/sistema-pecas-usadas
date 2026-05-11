@@ -922,7 +922,7 @@ async function iniciarDetalhes() {
   const pecaId = obterPecaIdDaUrl();
 
   if (!pecaId) {
-    renderizarNaoEncontrado("Produto não encontrado.");
+    renderizarNaoEncontrado("Selecione uma peca pela tela Produtos para abrir os detalhes.");
     return;
   }
 

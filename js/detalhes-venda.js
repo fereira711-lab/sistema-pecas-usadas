@@ -763,7 +763,7 @@ async function iniciarDetalhesVenda() {
   venda = venda || encontrarVenda();
 
   if (!venda) {
-    mensagemVendaNaoEncontrada.textContent = "Venda não encontrada.";
+    mensagemVendaNaoEncontrada.textContent = "Selecione uma venda pelo historico para abrir os detalhes.";
     dadosVenda.innerHTML = "";
     resumoFinanceiroVenda.innerHTML = "";
     tabelaCustoFifoVenda.innerHTML = "";

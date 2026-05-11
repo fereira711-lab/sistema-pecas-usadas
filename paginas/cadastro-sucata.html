@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Sucata</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Cadastro</p>
+      <h1>Cadastro de Sucata</h1>
+      <p class="hero__description">
+        Tela inicial para estruturar o cadastro de sucatas. A logica sera definida em uma proxima etapa.
+      </p>
+    </div>
+  </header>
+
+  <main class="container form-layout">
+    <section class="form-card">
+      <p class="empty-message">
+        Esta tela ainda nao grava dados. Ela foi criada para separar o fluxo de sucata do cadastro de origem.
+      </p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="tipoSucata">Tipo de sucata</label>
+          <input id="tipoSucata" type="text" placeholder="Ex: carro para desmonte, lote, avulsa" disabled>
+        </div>
+
+        <div class="form-group">
+          <label for="identificacaoSucata">Identificacao</label>
+          <input id="identificacaoSucata" type="text" placeholder="Ex: placa, lote ou descricao" disabled>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="observacoesSucata">Observacoes</label>
+        <textarea id="observacoesSucata" rows="4" placeholder="Observacoes da sucata" disabled></textarea>
+      </div>
+
+      <div class="form-actions">
+        <a class="button-secondary" href="cadastro-origem.html">Abrir cadastro de origem</a>
+        <a class="button-secondary" href="../dashboard.html">Voltar para o dashboard</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/sidebar.js?v=2"></script>
+</body>
+</html>

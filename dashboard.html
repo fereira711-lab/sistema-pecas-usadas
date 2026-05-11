@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Sistema de Gestao de Pecas Usadas</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.45;
+      letter-spacing: 0;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-sidebar,
+    .app-sidebar button,
+    .app-sidebar a {
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .app-sidebar__brand strong {
+      font-size: 0.98rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .app-sidebar__dashboard,
+    .app-sidebar__group-button {
+      font-size: 0.86rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+    }
+
+    .app-sidebar__link {
+      font-size: 0.84rem;
+      font-weight: 500;
+      line-height: 1.22;
+    }
+
+    .page-header {
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    .hero__tag {
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+    }
+
+    .page-header h1 {
+      font-size: clamp(1.75rem, 2.4vw, 2.25rem);
+      font-weight: 600;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .hero__description,
+    .stock-header p,
+    .menu-card p {
+      font-size: 0.92rem;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .summary-card span {
+      font-size: 0.82rem;
+      font-weight: 500;
+      line-height: 1.25;
+    }
+
+    .summary-card strong {
+      font-size: 1.75rem;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .stock-header h2 {
+      font-size: 1.18rem;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .menu-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .menu-card button,
+    button,
+    .button-primary,
+    .button-secondary {
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 0.86rem;
+      font-weight: 600;
+      letter-spacing: 0;
+      line-height: 1.2;
+    }
+
+    table,
+    input,
+    select,
+    textarea {
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 0.86rem;
+      font-weight: 400;
+      line-height: 1.35;
+    }
+
+    th {
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    td {
+      font-size: 0.84rem;
+      font-weight: 400;
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Dashboard</p>
+      <h1>Dashboard</h1>
+      <p class="hero__description">
+        Visao inicial do ERP. Esta pagina sera evoluida com indicadores, atalhos e alertas principais.
+      </p>
+    </div>
+  </header>
+
+  <main class="container stock-layout">
+    <section class="summary-grid summary-grid--compact">
+      <article class="summary-card">
+        <span>Produtos em estoque</span>
+        <strong>--</strong>
+      </article>
+
+      <article class="summary-card">
+        <span>Vendas recentes</span>
+        <strong>--</strong>
+      </article>
+
+      <article class="summary-card summary-card--profit">
+        <span>Lucro do periodo</span>
+        <strong>--</strong>
+      </article>
+
+      <article class="summary-card summary-card--loss">
+        <span>Alertas</span>
+        <strong>--</strong>
+      </article>
+    </section>
+
+    <section class="stock-card">
+      <div class="stock-header">
+        <div>
+          <h2>Atalhos operacionais</h2>
+          <p>Acesse rapidamente as principais rotinas do sistema.</p>
+        </div>
+      </div>
+
+      <div class="menu-grid menu-grid--module">
+        <article class="menu-card">
+          <h3>Produtos / Estoque</h3>
+          <p>Consulte pecas, saldos, custos e resultado por produto.</p>
+          <button type="button" data-url="paginas/produtos.html">Acessar</button>
+        </article>
+
+        <article class="menu-card">
+          <h3>Nova Venda</h3>
+          <p>Registre uma venda e mantenha o consumo de estoque pelo FIFO.</p>
+          <button type="button" data-url="paginas/cadastro-venda.html">Acessar</button>
+        </article>
+
+        <article class="menu-card">
+          <h3>Cadastrar Peca</h3>
+          <p>Cadastre uma peca vinculada a origem e entrada de estoque.</p>
+          <button type="button" data-url="paginas/cadastro-peca.html">Acessar</button>
+        </article>
+
+        <article class="menu-card">
+          <h3>Entradas / Lotes</h3>
+          <p>Acompanhe lotes, consumo e saldo disponivel por entrada.</p>
+          <button type="button" data-url="paginas/lotes.html">Acessar</button>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/sidebar.js?v=2"></script>
+  <script src="js/app.js?v=5"></script>
+</body>
+</html>

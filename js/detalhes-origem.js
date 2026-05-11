@@ -645,7 +645,7 @@ function limparTela(mensagem) {
 
 async function iniciarDetalhesOrigem() {
   if (!origemId) {
-    limparTela("Origem não encontrada.");
+    limparTela("Selecione uma origem pela listagem para abrir os detalhes.");
     return;
   }
 
