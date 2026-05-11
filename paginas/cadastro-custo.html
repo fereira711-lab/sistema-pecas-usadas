@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastrar Custo da Peça</title>
+  <title>Custo de peça</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
   <header class="page-header">
     <div>
       <p class="hero__tag">Custos</p>
-      <h1>Cadastrar Custo da Peça</h1>
+      <h1>Custo de peça</h1>
       <p class="hero__description">
         Registre custos extras vinculados a uma peça.
       </p>
@@ -85,7 +85,8 @@
         <p id="mensagemCusto" class="form-message" aria-live="polite"></p>
 
         <div class="form-actions">
-          <button type="submit" class="button-primary">Salvar Custo</button>
+          <button id="botaoSalvarCusto" type="submit" class="button-primary">Salvar custo</button>
+          <button id="botaoCancelarEdicaoCusto" type="button" class="button-secondary" hidden>Cancelar edição</button>
           <a class="button-secondary" href="../index.html">Voltar para o painel</a>
         </div>
       </form>
@@ -110,6 +111,7 @@
               <th>Nome da peça</th>
               <th>Tipo</th>
               <th>Descrição</th>
+              <th>Valor</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -121,8 +123,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=4"></script>
-  <script src="../js/supabase-service.js?v=29"></script>
-  <script src="../js/custos.js?v=15"></script>
+  <script src="../js/supabase-service.js?v=30"></script>
+  <script src="../js/custos.js?v=16"></script>
   <script src="../js/sidebar.js?v=1"></script>
 </body>
 </html>

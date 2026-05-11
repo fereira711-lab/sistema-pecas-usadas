@@ -8,12 +8,15 @@ const campoBuscaPecaCusto = document.getElementById("buscaPecaCusto");
 const sugestoesPecaCusto = document.getElementById("sugestoesPecaCusto");
 const selectTipoCusto = document.getElementById("tipoCusto");
 const botaoNovoTipoCusto = document.getElementById("botaoNovoTipoCusto");
+const botaoSalvarCusto = document.getElementById("botaoSalvarCusto");
+const botaoCancelarEdicaoCusto = document.getElementById("botaoCancelarEdicaoCusto");
 let produtosCustoCarregados = [];
 let custosCustoCarregados = [];
 let origensCustoCarregadas = [];
 let tiposCustoCarregados = [];
 let sugestoesCustoAtuais = [];
 let indiceSugestaoCusto = -1;
+let custoEmEdicaoId = null;
 const tiposCustoPadrao = ["Limpeza", "Solda", "Pintura", "Conserto", "Preparo"];
 const categoriasTipoCusto = ["peca", "venda", "ambos"];
 
@@ -102,6 +105,7 @@ function salvarTiposCustoLocais(tipos) {
 
 function renderizarTiposCusto(tipoSelecionado = "") {
   const valorSelecionado = tipoSelecionado || selectTipoCusto.value;
+  let encontrouSelecionado = !valorSelecionado;
 
   selectTipoCusto.innerHTML = '<option value="">Selecione o tipo</option>';
 
@@ -114,7 +118,15 @@ function renderizarTiposCusto(tipoSelecionado = "") {
       opcao.textContent = tipo.nome;
       opcao.dataset.tipoId = tipo.id;
       selectTipoCusto.appendChild(opcao);
+      encontrouSelecionado = encontrouSelecionado || tipo.nome === valorSelecionado;
     });
+
+  if (valorSelecionado && !encontrouSelecionado) {
+    const opcao = document.createElement("option");
+    opcao.value = valorSelecionado;
+    opcao.textContent = valorSelecionado;
+    selectTipoCusto.appendChild(opcao);
+  }
 
   if (valorSelecionado) {
     selectTipoCusto.value = valorSelecionado;
@@ -483,6 +495,7 @@ async function carregarCustos() {
   if (supabaseEstaConfigurado()) {
     try {
       custosCustoCarregados = await window.supabaseService.listarCustosPeca() || [];
+      ordenarCustosPorMaisRecente();
       mensagemListaCustos.textContent = "";
       return "supabase";
     } catch (erro) {
@@ -494,7 +507,22 @@ async function carregarCustos() {
   }
 
   custosCustoCarregados = buscarCustos();
+  ordenarCustosPorMaisRecente();
   return "local";
+}
+
+function ordenarCustosPorMaisRecente() {
+  custosCustoCarregados.sort((a, b) => {
+    const dataA = String(a.data || a.dataCusto || "");
+    const dataB = String(b.data || b.dataCusto || "");
+    const comparacaoData = dataB.localeCompare(dataA);
+
+    if (comparacaoData !== 0) {
+      return comparacaoData;
+    }
+
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
 }
 
 function formatarData(data) {
@@ -521,6 +549,13 @@ function obterDadosProdutoDoCusto(custo) {
   };
 }
 
+function formatarMoeda(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
+
 function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" : "local") {
   const custos = custosCustoCarregados;
   tabelaCustos.innerHTML = "";
@@ -536,15 +571,10 @@ function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" :
 
   mensagemListaCustos.textContent = "";
 
-  custos.forEach((custo, indice) => {
+  custos.forEach((custo) => {
     const linha = document.createElement("tr");
     const produto = obterDadosProdutoDoCusto(custo);
-    const acoes = origemDados === "supabase"
-      ? `<button type="button" data-acao="detalhes-produto" data-peca-id="${custo.pecaId || ""}" ${custo.pecaId ? "" : "disabled"}>Ver peça</button>`
-      : `
-          <button type="button" data-acao="detalhes-produto" data-peca-id="${custo.pecaId || ""}" ${custo.pecaId ? "" : "disabled"}>Ver peça</button>
-          <button type="button" data-acao="remover-local" data-indice="${indice}">Remover local</button>
-        `;
+    const custoId = custo.id || "";
 
     linha.innerHTML = `
       <td data-label="Data">${formatarData(custo.data || custo.dataCusto)}</td>
@@ -552,9 +582,12 @@ function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" :
       <td data-label="Nome da peca"><strong class="product-name">${produto.nome}</strong></td>
       <td data-label="Tipo">${custo.tipoCusto || custo.tipo || "-"}</td>
       <td data-label="Descricao">${custo.descricao || custo.observacoes || "-"}</td>
+      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
       <td data-label="Acoes">
         <div class="table-actions">
-          ${acoes}
+          <button type="button" data-acao="editar-custo" data-custo-id="${custoId}">Editar</button>
+          <button type="button" data-acao="excluir-custo" data-custo-id="${custoId}">Excluir</button>
+          <button type="button" data-acao="detalhes-produto" data-peca-id="${custo.pecaId || ""}" ${custo.pecaId ? "" : "disabled"}>Ver peca</button>
         </div>
       </td>
     `;
@@ -567,19 +600,38 @@ function abrirDetalhesProduto(pecaId) {
   window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}`;
 }
 
-async function removerCustoLocal(indice) {
-  const custos = buscarCustos();
-  const confirmou = confirm(`Deseja remover o custo "${custos[indice].descricao}"?`);
+function buscarCustoPorId(custoId) {
+  return custosCustoCarregados.find(custo => Number(custo.id) === Number(custoId));
+}
 
-  if (!confirmou) {
-    return;
-  }
+function preencherFormularioParaEdicao(custo) {
+  const produto = buscarProdutoPorId(custo.pecaId);
 
-  custos.splice(indice, 1);
-  salvarCustos(custos);
-  await carregarCustos();
-  renderizarCustos("local");
+  custoEmEdicaoId = Number(custo.id);
+  selectProdutoCusto.value = String(custo.pecaId || "");
+  campoBuscaPecaCusto.value = produto ? formatarNomePeca(produto) : custo.produtoNome || "";
   renderizarResumoProduto();
+  renderizarTiposCusto(custo.tipoCusto || custo.tipo || "");
+  document.getElementById("descricaoCusto").value = custo.descricao || "";
+  document.getElementById("valorCusto").value = Number(custo.valor || 0).toFixed(2);
+  document.getElementById("dataCusto").value = String(custo.data || custo.dataCusto || "").slice(0, 10);
+  document.getElementById("observacoesCusto").value = custo.observacoes || "";
+  botaoSalvarCusto.textContent = "Atualizar custo";
+  botaoCancelarEdicaoCusto.hidden = false;
+  mensagemCusto.textContent = "Editando custo cadastrado.";
+  mensagemCusto.className = "form-message form-message--warning";
+  formularioCusto.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function cancelarEdicaoCusto() {
+  custoEmEdicaoId = null;
+  formularioCusto.reset();
+  renderizarTiposCusto();
+  renderizarResumoProduto();
+  botaoSalvarCusto.textContent = "Salvar custo";
+  botaoCancelarEdicaoCusto.hidden = true;
+  mensagemCusto.textContent = "";
+  mensagemCusto.className = "form-message";
 }
 
 function montarCusto(produto, tipo, descricao, valor, data, tipoCustoId) {
@@ -600,8 +652,10 @@ function montarCusto(produto, tipo, descricao, valor, data, tipoCustoId) {
 
 async function salvarCustoNoSupabaseOuFallback(custo) {
   if (supabaseEstaConfigurado()) {
-    const custoSalvo = await window.supabaseService.salvarCustoPeca(custo);
-    console.log("Custo cadastrado no Supabase:", custoSalvo);
+    const custoSalvo = custoEmEdicaoId
+      ? await window.supabaseService.atualizarCustoPeca(custo)
+      : await window.supabaseService.salvarCustoPeca(custo);
+    console.log("Custo salvo no Supabase:", custoSalvo);
     return "supabase";
   }
 
@@ -641,6 +695,7 @@ formularioCusto.addEventListener("submit", async function (evento) {
   }
 
   const custo = montarCusto(produto, tipo, descricao, valorDigitado, data, tipoCustoId);
+  custo.id = custoEmEdicaoId || custo.id;
 
   if (!custo.pecaId) {
     mensagemCusto.textContent = "Nao foi possivel identificar a peca. Atualize a lista de pecas e tente novamente.";
@@ -653,15 +708,15 @@ formularioCusto.addEventListener("submit", async function (evento) {
 
   try {
     const destino = await salvarCustoNoSupabaseOuFallback(custo);
+    const estavaEditando = Boolean(custoEmEdicaoId);
     const mensagemSucesso = destino === "supabase"
-      ? "Custo cadastrado no Supabase e vinculado a peca."
-      : "Custo cadastrado no armazenamento temporario.";
+      ? `Custo ${estavaEditando ? "atualizado" : "cadastrado"} no Supabase e vinculado a peca.`
+      : `Custo ${estavaEditando ? "atualizado" : "cadastrado"} no armazenamento temporario.`;
 
-    alert("Custo cadastrado com sucesso.");
+    alert(`Custo ${estavaEditando ? "atualizado" : "cadastrado"} com sucesso.`);
+    cancelarEdicaoCusto();
     mensagemCusto.textContent = mensagemSucesso;
     mensagemCusto.className = "form-message form-message--success";
-    formularioCusto.reset();
-    renderizarTiposCusto();
     await carregarCustos();
     renderizarResumoProduto();
     renderizarCustos(destino);
@@ -678,6 +733,7 @@ selectProdutoCusto.addEventListener("change", renderizarResumoProduto);
 
 campoBuscaPecaCusto?.addEventListener("input", atualizarSugestoesCusto);
 botaoNovoTipoCusto?.addEventListener("click", criarNovoTipoCusto);
+botaoCancelarEdicaoCusto?.addEventListener("click", cancelarEdicaoCusto);
 
 campoBuscaPecaCusto?.addEventListener("focus", () => {
   if (!selectProdutoCusto.value && String(campoBuscaPecaCusto.value || "").trim()) {
@@ -722,16 +778,62 @@ tabelaCustos.addEventListener("click", function (evento) {
     return;
   }
 
-  const indice = Number(botao.dataset.indice);
-
   if (botao.dataset.acao === "detalhes-produto" && botao.dataset.pecaId) {
     abrirDetalhesProduto(botao.dataset.pecaId);
   }
 
-  if (botao.dataset.acao === "remover-local") {
-    removerCustoLocal(indice);
+  if (botao.dataset.acao === "editar-custo") {
+    const custo = buscarCustoPorId(botao.dataset.custoId);
+
+    if (custo) {
+      preencherFormularioParaEdicao(custo);
+    }
+  }
+
+  if (botao.dataset.acao === "excluir-custo") {
+    excluirCusto(botao.dataset.custoId);
   }
 });
+
+async function excluirCusto(custoId) {
+  const custo = buscarCustoPorId(custoId);
+
+  if (!custo) {
+    mensagemCusto.textContent = "Nao foi possivel identificar o custo para excluir.";
+    mensagemCusto.className = "form-message form-message--warning";
+    return;
+  }
+
+  if (!supabaseEstaConfigurado()) {
+    mensagemCusto.textContent = "Configure o Supabase para excluir custos reais da peca.";
+    mensagemCusto.className = "form-message form-message--warning";
+    return;
+  }
+
+  const confirmou = confirm(`Deseja excluir o custo "${custo.descricao || custo.tipoCusto || custo.tipo}"?`);
+
+  if (!confirmou) {
+    return;
+  }
+
+  try {
+    await window.supabaseService.excluirCustoPeca(custo.id);
+
+    if (Number(custoEmEdicaoId) === Number(custo.id)) {
+      cancelarEdicaoCusto();
+    }
+
+    await carregarCustos();
+    renderizarCustos("supabase");
+    renderizarResumoProduto();
+    mensagemCusto.textContent = "Custo excluido do Supabase com sucesso.";
+    mensagemCusto.className = "form-message form-message--success";
+  } catch (erro) {
+    console.error("Erro ao excluir custo da peca:", erro);
+    mensagemCusto.textContent = "Nao foi possivel excluir o custo da peca.";
+    mensagemCusto.className = "form-message form-message--warning";
+  }
+}
 
 async function iniciarTelaCustos() {
   await carregarTiposCusto();

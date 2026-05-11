@@ -438,7 +438,7 @@ function renderizarOrigemVinculada(produto) {
           <p>Entrada principal usada para rastrear a peça no estoque.</p>
         </div>
         <div class="form-actions">
-          <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver origem</a>
+          <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver detalhes da origem</a>
         </div>
       </div>
       <div class="detail-grid">
@@ -787,28 +787,25 @@ function renderizarVendas() {
   mensagemVendasProduto.textContent = "";
 
   ordenarVendasPorData(contextoProduto.vendas).forEach(venda => {
-    const custosVenda = obterCustosVendaDaVenda(venda.id);
-    const consumosVenda = obterConsumosDaVenda(venda.id);
-    const totalCustosVenda = custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
-    const custoCalculado = consumosVenda.length > 0;
-    const totalCustoEntradas = custoCalculado
-      ? consumosVenda.reduce((total, consumo) => total + Number(consumo.custoTotal || 0), 0)
-      : null;
-    const lucroVenda = custoCalculado ? valorVenda(venda) - totalCustoEntradas - totalCustosVenda : null;
+    const resultadoVenda = window.financeiroUtils.calcularLucroVenda(
+      venda,
+      contextoProduto.consumosEstoque,
+      contextoProduto.custosVenda
+    );
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
       <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
       <td data-label="Quantidade">${formatarNumero(quantidadeVendida(venda))}</td>
       <td data-label="Valor unitário">${formatarMoeda(venda.valorUnitario || venda.precoUnitario)}</td>
-      <td data-label="Valor total">${formatarMoeda(valorVenda(venda))}</td>
+      <td data-label="Valor total">${formatarMoeda(resultadoVenda.receita)}</td>
       <td data-label="Canal">${escaparHtml(venda.canalVenda || "-")}</td>
-      <td data-label="Custo entradas">${formatarValorOuNaoCalculado(totalCustoEntradas)}</td>
-      <td data-label="Custos venda">${formatarMoeda(totalCustosVenda)}</td>
-      <td data-label="Lucro venda">${formatarValorOuNaoCalculado(lucroVenda)}</td>
+      <td data-label="Custo entradas">${formatarValorOuNaoCalculado(resultadoVenda.custoConsumido)}</td>
+      <td data-label="Custos venda">${formatarMoeda(resultadoVenda.custosVenda)}</td>
+      <td data-label="Lucro venda">${formatarValorOuNaoCalculado(resultadoVenda.lucro)}</td>
       <td data-label="Ações">
         <div class="table-actions">
-          <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes</a>
+          <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes da venda</a>
         </div>
       </td>
     `;
@@ -899,10 +896,10 @@ function renderizarTela() {
   mensagemProdutoNaoEncontrado.textContent = "";
   renderizarDadosProduto(produto);
   renderizarOrigemVinculada(produto);
-  renderizarResumo();
   renderizarEntradas();
   renderizarCustos();
   renderizarVendas();
+  renderizarResumo();
 }
 
 function renderizarNaoEncontrado(mensagem) {
