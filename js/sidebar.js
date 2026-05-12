@@ -9,7 +9,9 @@
       aberto: ["cadastro-peca.html", "cadastro-origem.html", "cadastro-sucata.html", "cadastro-custo.html", "tipos-custo.html"].includes(paginaAtual),
       itens: [
         { texto: "Cadastro de Pecas", icone: "ri-tools-line", url: "paginas/cadastro-peca.html" },
+        { texto: "Cadastro de Localizacao", icone: "ri-map-pin-line", url: "#", aviso: "Tela de localizacao sera criada em etapa futura." },
         { texto: "Cadastrar Origem", icone: "ri-car-line", url: "paginas/cadastro-origem.html" },
+        { texto: "Cadastro de Sucata", icone: "ri-truck-line", url: "paginas/cadastro-sucata.html" },
         { texto: "Cadastro de Custo da Peca", icone: "ri-money-dollar-circle-line", url: "paginas/cadastro-custo.html" },
         { texto: "Tipos de Custo", icone: "ri-price-tag-3-line", url: "paginas/tipos-custo.html" }
       ]
@@ -21,6 +23,7 @@
       itens: [
         { texto: "Produtos", icone: "ri-box-3-line", url: "paginas/produtos.html" },
         { texto: "Entradas de Estoque / Lotes", icone: "ri-stack-line", url: "paginas/lotes.html" },
+        { texto: "Endereco de Peca", icone: "ri-map-pin-2-line", url: "#", aviso: "Tela de endereco de peca sera criada em etapa futura." },
       ]
     },
     {
@@ -52,6 +55,9 @@
       aberto: ["detalhes-origem.html", "detalhes-produto.html", "detalhes-venda.html", "listar-origens.html", "relatorios.html"].includes(paginaAtual),
       itens: [
         { texto: "Listar Origens", icone: "ri-list-check-2", url: "paginas/listar-origens.html" },
+        { texto: "Detalhes da Origem", icone: "ri-file-list-3-line", url: "#", aviso: "Abrir detalhes pela lista de origens." },
+        { texto: "Detalhes da Peca", icone: "ri-file-search-line", url: "#", aviso: "Abrir detalhes pela tela de produtos." },
+        { texto: "Detalhes da Venda", icone: "ri-receipt-line", url: "#", aviso: "Abrir detalhes pelo historico de vendas." },
         { texto: "Relatorios", icone: "ri-file-chart-line", url: "paginas/relatorios.html" }
       ]
     },
