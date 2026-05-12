@@ -125,6 +125,7 @@
     if (document.querySelector(".app-sidebar")) return;
 
     const email = document.body.dataset.authEmail || "Usuario logado";
+    const menuRecolhido = localStorage.getItem("menuLateralRecolhido") === "sim";
     const sidebar = document.createElement("aside");
     sidebar.className = "app-sidebar";
     sidebar.innerHTML = `
@@ -132,6 +133,10 @@
         <span><i class="ri-recycle-line"></i></span>
         <strong>DWDW ERP</strong>
       </a>
+      <button id="botaoRecolherMenu" class="app-sidebar__collapse" type="button" aria-label="Recolher menu" title="Recolher menu">
+        <i class="ri-side-bar-line" aria-hidden="true"></i>
+        <span>Recolher</span>
+      </button>
       <a class="app-sidebar__dashboard${paginaAtual === "dashboard.html" ? " is-active" : ""}" href="${emPaginaInterna ? "../dashboard.html" : "dashboard.html"}">
         <span class="app-sidebar__item-icon" aria-hidden="true"><i class="ri-dashboard-line"></i></span>
         <span>Dashboard</span>
@@ -150,9 +155,37 @@
 
     document.body.insertBefore(sidebar, document.body.firstChild);
     document.body.classList.add("has-app-sidebar");
+
+    if (menuRecolhido) {
+      document.body.classList.add("is-sidebar-collapsed");
+      atualizarBotaoRecolher();
+    }
+  }
+
+  function atualizarBotaoRecolher() {
+    const botao = document.getElementById("botaoRecolherMenu");
+    const recolhido = document.body.classList.contains("is-sidebar-collapsed");
+
+    if (!botao) {
+      return;
+    }
+
+    botao.setAttribute("aria-label", recolhido ? "Expandir menu" : "Recolher menu");
+    botao.setAttribute("title", recolhido ? "Expandir menu" : "Recolher menu");
+    botao.querySelector("span").textContent = recolhido ? "Expandir" : "Recolher";
   }
 
   function configurarGrupos() {
+    const botaoRecolher = document.getElementById("botaoRecolherMenu");
+
+    botaoRecolher?.addEventListener("click", () => {
+      const vaiRecolher = !document.body.classList.contains("is-sidebar-collapsed");
+
+      document.body.classList.toggle("is-sidebar-collapsed", vaiRecolher);
+      localStorage.setItem("menuLateralRecolhido", vaiRecolher ? "sim" : "nao");
+      atualizarBotaoRecolher();
+    });
+
     document.querySelectorAll(".app-sidebar__group-button").forEach(botao => {
       botao.addEventListener("click", () => {
         const grupo = botao.closest(".app-sidebar__group");

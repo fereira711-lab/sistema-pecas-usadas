@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview Cadastro de Peca - ERP</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      background:
+        radial-gradient(circle at 18% 8%, rgba(36, 59, 88, 0.34), transparent 28rem),
+        linear-gradient(135deg, #111827 0%, #172231 52%, #0f172a 100%);
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    .preview-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 24px;
+      border-bottom: 1px solid rgba(203, 213, 225, 0.14);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(16px);
+    }
+
+    .preview-topbar h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: 0;
+    }
+
+    .preview-topbar p {
+      margin: 3px 0 0;
+      color: #aebace;
+      font-size: 0.82rem;
+    }
+
+    .preview-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 999px;
+      background: rgba(226, 232, 240, 0.08);
+      color: #dbe4ef;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .preview-wrap {
+      width: min(1320px, calc(100% - 32px));
+      margin: 18px auto 34px;
+    }
+
+    .preview-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .preview-panel,
+    .photo-panel,
+    .preview-footer {
+      border: 1px solid rgba(203, 213, 225, 0.18);
+      border-radius: 14px;
+      background:
+        linear-gradient(145deg, rgba(71, 85, 105, 0.34), rgba(15, 23, 42, 0.12)),
+        rgba(20, 29, 43, 0.94);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.26);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px 12px 0;
+      overflow-x: auto;
+    }
+
+    .tab {
+      min-height: 34px;
+      padding: 8px 12px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 10px 10px 0 0;
+      background: rgba(15, 23, 42, 0.48);
+      color: #b8c4d6;
+      font-size: 0.82rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .tab.is-active {
+      border-color: rgba(203, 213, 225, 0.28);
+      background: rgba(226, 232, 240, 0.12);
+      color: #f8fafc;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .block {
+      grid-column: span 12;
+      padding: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 12px;
+      background: rgba(8, 17, 31, 0.54);
+    }
+
+    .block h2 {
+      margin: 0 0 12px;
+      color: #f8fafc;
+      font-size: 0.98rem;
+      letter-spacing: 0;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      grid-column: span 3;
+      display: grid;
+      gap: 5px;
+    }
+
+    .field.span-2 {
+      grid-column: span 6;
+    }
+
+    .field.span-4 {
+      grid-column: span 12;
+    }
+
+    label {
+      color: #95a3b8;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 34px;
+      padding: 8px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.58);
+      color: #e5edf7;
+      font: inherit;
+      font-size: 0.84rem;
+    }
+
+    textarea {
+      min-height: 72px;
+      resize: vertical;
+    }
+
+    .photo-panel {
+      position: sticky;
+      top: 78px;
+      padding: 14px;
+    }
+
+    .photo-panel h2 {
+      margin: 0 0 10px;
+      font-size: 0.98rem;
+    }
+
+    .photo-preview {
+      display: grid;
+      min-height: 214px;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 12px;
+      background:
+        linear-gradient(145deg, rgba(148, 163, 184, 0.12), rgba(15, 23, 42, 0.2)),
+        #0b1220;
+    }
+
+    .photo-preview img {
+      width: 100%;
+      height: 214px;
+      object-fit: cover;
+      opacity: 0.9;
+    }
+
+    .photo-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .mini-stat {
+      padding: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.52);
+    }
+
+    .mini-stat span {
+      display: block;
+      color: #94a3b8;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .mini-stat strong {
+      display: block;
+      margin-top: 4px;
+      color: #f8fafc;
+      font-size: 1rem;
+    }
+
+    .photo-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .thumb {
+      aspect-ratio: 1;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 8px;
+      background: rgba(226, 232, 240, 0.10);
+    }
+
+    .preview-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+      padding: 12px;
+    }
+
+    .btn {
+      min-height: 36px;
+      padding: 8px 13px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 9px;
+      background: rgba(226, 232, 240, 0.10);
+      color: #e5edf7;
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+
+    .btn-primary {
+      border-color: rgba(59, 130, 246, 0.36);
+      background: rgba(59, 130, 246, 0.24);
+    }
+
+    .market-chip {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.12);
+      color: #bbf7d0;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    @media (max-width: 1100px) {
+      .preview-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .photo-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .field,
+      .field.span-2 {
+        grid-column: span 12;
+      }
+
+      .preview-footer {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body class="ui-soft-dark">
+  <header class="preview-topbar">
+    <div>
+      <h1>Preview cadastro de peca</h1>
+      <p>Fluxo operacional compacto inspirado em ERP de desmontes.</p>
+    </div>
+    <span class="preview-status">Preview visual</span>
+  </header>
+
+  <main class="preview-wrap">
+    <section class="preview-shell" aria-label="Preview do cadastro de peca">
+      <div class="preview-panel">
+        <div class="tabs" aria-label="Blocos do cadastro">
+          <button class="tab is-active" type="button">Informacoes da peca</button>
+          <button class="tab" type="button">Informacoes adicionais</button>
+          <button class="tab" type="button">Marketplace</button>
+          <button class="tab" type="button">Financeiro</button>
+        </div>
+
+        <div class="form-grid">
+          <section class="block">
+            <h2>Informacoes da peca</h2>
+            <div class="fields">
+              <div class="field"><label>SKU</label><input value="DWDW-000842"></div>
+              <div class="field span-2"><label>Nome da peca</label><input value="Farol dianteiro direito"></div>
+              <div class="field"><label>Marca</label><input value="Honda"></div>
+              <div class="field"><label>Modelo</label><input value="Civic G10"></div>
+              <div class="field"><label>Categoria</label><select><option>Iluminacao</option></select></div>
+              <div class="field"><label>Localizacao</label><input value="Rua B / Prat. 04"></div>
+              <div class="field"><label>Quantidade</label><input value="1"></div>
+              <div class="field span-2"><label>Origem vinculada</label><input value="Sucata Civic 2018 - ORI-000128"></div>
+            </div>
+          </section>
+
+          <section class="block">
+            <h2>Informacoes adicionais</h2>
+            <div class="fields">
+              <div class="field"><label>Qualidade</label><select><option>Bom estado</option></select></div>
+              <div class="field"><label>Codigo interno</label><input value="INT-FAR-2401"></div>
+              <div class="field"><label>Numero da peca</label><input value="33100-TBA-A01"></div>
+              <div class="field span-2"><label>Compatibilidade</label><input value="Civic 2017, 2018, 2019, 2020"></div>
+              <div class="field span-4"><label>Observacoes</label><textarea>Pequenas marcas de uso, lente integra e suportes conferidos.</textarea></div>
+            </div>
+          </section>
+
+          <section class="block">
+            <h2>Marketplace</h2>
+            <div class="fields">
+              <div class="field span-2"><label>Titulo Mercado Livre</label><input value="Farol Direito Honda Civic 2017 2018 2019 Original"></div>
+              <div class="field"><label>Status anuncio</label><select><option>Rascunho</option></select></div>
+              <div class="field"><label>Preco marketplace</label><input value="R$ 890,00"></div>
+              <div class="field span-2"><label>Compatibilidade SEO</label><input value="honda civic farol direito original usado"></div>
+              <div class="field span-4"><label>Descricao curta</label><textarea>Peca usada original, testada e pronta para envio. Consulte compatibilidade antes da compra.</textarea></div>
+            </div>
+          </section>
+
+          <section class="block">
+            <h2>Financeiro</h2>
+            <div class="fields">
+              <div class="field"><label>Custo unitario</label><input value="R$ 310,00"></div>
+              <div class="field"><label>Valor venda</label><input value="R$ 760,00"></div>
+              <div class="field"><label>Custos adicionais</label><input value="R$ 45,00"></div>
+              <div class="field"><label>Margem estimada</label><input value="53,3%"></div>
+              <div class="field span-2"><label>Indicador FIFO</label><span class="market-chip">Entrada mais antiga selecionada</span></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <aside class="photo-panel" aria-label="Fotos da peca">
+        <h2>Fotos da peca</h2>
+        <div class="photo-preview">
+          <img src="https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9?auto=format&fit=crop&w=700&q=80" alt="Imagem ficticia de peca automotiva">
+        </div>
+        <div class="photo-meta">
+          <div class="mini-stat"><span>Imagens</span><strong>5</strong></div>
+          <div class="mini-stat"><span>Principal</span><strong>Foto 1</strong></div>
+        </div>
+        <button class="btn" type="button">Selecionar fotos</button>
+        <div class="photo-strip" aria-hidden="true">
+          <span class="thumb"></span>
+          <span class="thumb"></span>
+          <span class="thumb"></span>
+          <span class="thumb"></span>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="preview-footer">
+      <button class="btn" type="button">Cancelar</button>
+      <button class="btn" type="button">Salvar e cadastrar outra</button>
+      <button class="btn btn-primary" type="button">Salvar peca</button>
+    </footer>
+  </main>
+
+  <script src="js/sidebar.js?v=5"></script>
+</body>
+</html>

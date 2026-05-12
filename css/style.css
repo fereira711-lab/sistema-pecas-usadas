@@ -40,6 +40,110 @@ body::before {
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.85), transparent);
 }
 
+body.ui-soft-dark {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(71, 85, 105, 0.26), transparent 28rem),
+    radial-gradient(circle at 88% 8%, rgba(15, 118, 110, 0.12), transparent 30rem),
+    linear-gradient(135deg, #101722 0%, #172231 48%, #111827 100%);
+}
+
+body.ui-soft-dark::before {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+}
+
+.ui-soft-dark .page-header {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.ui-soft-dark .hero__tag {
+  border-color: rgba(148, 163, 184, 0.34);
+  background: rgba(148, 163, 184, 0.10);
+  color: #cbd5e1;
+}
+
+.ui-soft-dark .summary-card,
+.ui-soft-dark .stock-card,
+.ui-soft-dark .menu-card,
+.ui-soft-dark .form-card {
+  border-color: rgba(203, 213, 225, 0.18);
+  background:
+    linear-gradient(145deg, rgba(71, 85, 105, 0.46), rgba(15, 23, 42, 0.18)),
+    rgba(20, 29, 43, 0.92);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.ui-soft-dark .stock-card,
+.ui-soft-dark .form-card {
+  margin-bottom: 22px;
+}
+
+.ui-soft-dark .summary-grid {
+  gap: 22px;
+}
+
+.ui-soft-dark .summary-card {
+  outline: 1px solid rgba(255, 255, 255, 0.025);
+  outline-offset: -3px;
+}
+
+.ui-soft-dark .summary-card strong {
+  color: #dbeafe;
+}
+
+.ui-soft-dark .summary-card--profit {
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.ui-soft-dark .summary-card--loss {
+  border-color: rgba(248, 113, 113, 0.26);
+}
+
+.ui-soft-dark .menu-card:hover {
+  border-color: rgba(148, 163, 184, 0.34);
+  background-color: rgba(30, 41, 59, 0.94);
+}
+
+.ui-soft-dark .menu-card button,
+.ui-soft-dark .button-primary,
+.ui-soft-dark .button-secondary {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(226, 232, 240, 0.12);
+  color: #e2e8f0;
+  box-shadow: none;
+}
+
+.ui-soft-dark .menu-card button:hover,
+.ui-soft-dark .button-primary:hover,
+.ui-soft-dark .button-secondary:hover {
+  border-color: rgba(203, 213, 225, 0.42);
+  background: rgba(226, 232, 240, 0.18);
+  box-shadow: none;
+}
+
+.ui-soft-dark input,
+.ui-soft-dark select,
+.ui-soft-dark textarea {
+  border-color: rgba(148, 163, 184, 0.20);
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.ui-soft-dark .table-wrapper,
+.ui-soft-dark .stock-table {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.ui-soft-dark .stock-table th {
+  background: rgba(15, 23, 42, 0.54);
+}
+
+.ui-soft-dark .stock-table tbody tr:hover {
+  background: rgba(226, 232, 240, 0.06);
+}
+
 .hero {
   position: relative;
   width: min(1200px, calc(100% - 32px));
@@ -962,7 +1066,7 @@ textarea:focus {
 .product-name {
   display: inline-block;
   max-width: 170px;
-  color: #ffffff;
+  color: #e5edf6;
   font-size: 1rem;
   line-height: 1.35;
 }
@@ -1004,7 +1108,7 @@ textarea:focus {
 }
 
 .product-card__tab--active {
-  color: #ffffff;
+  color: #e2e8f0;
   background: rgba(7, 11, 16, 0.36);
 }
 
@@ -1444,6 +1548,11 @@ textarea:focus {
 
 .has-app-sidebar {
   padding-left: 268px;
+  transition: padding-left 0.18s ease;
+}
+
+.has-app-sidebar.is-sidebar-collapsed {
+  padding-left: 76px;
 }
 
 .app-sidebar {
@@ -1455,13 +1564,24 @@ textarea:focus {
   flex-direction: column;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(142, 230, 178, 0.34) transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.36) transparent;
   padding: 12px 10px;
-  border-right: 1px solid var(--cor-borda);
+  border-right: 1px solid rgba(148, 163, 184, 0.16);
   background:
-    linear-gradient(180deg, rgba(47, 118, 109, 0.16), transparent 30rem),
-    rgba(42, 47, 55, 0.96);
-  box-shadow: 10px 0 22px rgba(0, 0, 0, 0.14);
+    linear-gradient(180deg, rgba(30, 41, 59, 0.34), transparent 30rem),
+    rgba(13, 19, 31, 0.99);
+  box-shadow: 12px 0 32px rgba(0, 0, 0, 0.26);
+  transition: width 0.18s ease, box-shadow 0.18s ease;
+}
+
+.is-sidebar-collapsed .app-sidebar {
+  width: 76px;
+  overflow-x: hidden;
+}
+
+.is-sidebar-collapsed .app-sidebar:hover {
+  width: 268px;
+  box-shadow: 16px 0 42px rgba(0, 0, 0, 0.32);
 }
 
 .app-sidebar::-webkit-scrollbar {
@@ -1473,13 +1593,13 @@ textarea:focus {
 }
 
 .app-sidebar::-webkit-scrollbar-thumb {
-  border: 1px solid rgba(42, 47, 55, 0.96);
+  border: 1px solid rgba(24, 34, 49, 0.98);
   border-radius: 999px;
-  background: rgba(142, 230, 178, 0.34);
+  background: rgba(148, 163, 184, 0.36);
 }
 
 .app-sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(142, 230, 178, 0.58);
+  background: rgba(203, 213, 225, 0.46);
 }
 
 .app-sidebar__brand {
@@ -1494,6 +1614,10 @@ textarea:focus {
   transition: border-color 0.16s ease;
 }
 
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__brand {
+  justify-content: center;
+}
+
 .app-sidebar__brand span {
   display: inline-flex;
   width: 30px;
@@ -1501,14 +1625,92 @@ textarea:focus {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: #ffffff;
-  color: #23443b;
+  background: rgba(226, 232, 240, 0.16);
+  color: #dbeafe;
   font-weight: 900;
 }
 
 .app-sidebar__brand strong {
   font-size: 1rem;
   letter-spacing: -0.02em;
+}
+
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__brand strong,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__dashboard span:last-child,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__group-title,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__chevron,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__link span:last-child,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__session > span,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__logout span:last-child,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__collapse span {
+  display: none;
+}
+
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__group-button::before {
+  display: inline-flex;
+  width: 24px;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  color: #dbeafe;
+  font-family: remixicon;
+  font-size: 1.06rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__group:nth-of-type(1) .app-sidebar__group-button::before {
+  content: "\ed8b";
+}
+
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__group:nth-of-type(2) .app-sidebar__group-button::before {
+  content: "\ea51";
+}
+
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__group:nth-of-type(3) .app-sidebar__group-button::before {
+  content: "\f11f";
+}
+
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__group:nth-of-type(4) .app-sidebar__group-button::before {
+  content: "\ead8";
+}
+
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__group:nth-of-type(5) .app-sidebar__group-button::before {
+  content: "\ee59";
+}
+
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__group:nth-of-type(6) .app-sidebar__group-button::before {
+  content: "\f0e6";
+}
+
+.app-sidebar__collapse {
+  display: flex;
+  min-height: 34px;
+  width: 100%;
+  align-items: center;
+  gap: 9px;
+  margin: 4px 0 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 9px;
+  background: rgba(226, 232, 240, 0.07);
+  color: #dbe4ef;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.app-sidebar__collapse:hover {
+  background: rgba(226, 232, 240, 0.12);
+}
+
+.app-sidebar__collapse i {
+  display: inline-flex;
+  width: 24px;
+  justify-content: center;
+  font-size: 1.06rem;
 }
 
 .app-sidebar__nav {
@@ -1521,8 +1723,8 @@ textarea:focus {
   gap: 8px;
   margin-top: auto;
   padding: 14px 8px 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.78);
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  color: rgba(226, 232, 240, 0.76);
   font-size: 0.78rem;
 }
 
@@ -1536,20 +1738,20 @@ textarea:focus {
   gap: 9px;
   min-height: 34px;
   padding: 7px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.20);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
+  background: rgba(226, 232, 240, 0.08);
+  color: #e5edf6;
   cursor: pointer;
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   font-weight: 700;
   text-align: left;
 }
 
 .app-sidebar__logout:hover {
-  border-color: rgba(242, 184, 75, 0.42);
-  background: rgba(242, 184, 75, 0.12);
+  border-color: rgba(203, 213, 225, 0.34);
+  background: rgba(226, 232, 240, 0.13);
 }
 
 .app-sidebar__dashboard {
@@ -1569,11 +1771,30 @@ textarea:focus {
   transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
 }
 
+.app-sidebar__collapse + .app-sidebar__dashboard {
+  margin-top: 20px;
+}
+
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__dashboard,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__group-button,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__link,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__logout,
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__collapse {
+  justify-content: center;
+  width: 48px;
+  min-width: 48px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
+}
+
 .app-sidebar__dashboard:hover,
 .app-sidebar__dashboard.is-active {
-  background: rgba(142, 230, 178, 0.12);
-  border-left-color: #8ee6b2;
-  box-shadow: inset 0 0 0 1px rgba(142, 230, 178, 0.06);
+  background: rgba(30, 41, 59, 0.92);
+  border-left-color: #cbd5e1;
+  box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.07);
 }
 
 .app-sidebar__group {
@@ -1589,15 +1810,15 @@ textarea:focus {
   gap: 10px;
   min-height: 34px;
   padding: 7px 8px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 9px;
-  background: transparent;
-  color: #ffffff;
+  background: rgba(148, 163, 184, 0.78);
+  color: #050816;
   cursor: pointer;
   font: inherit;
   font-size: 0.85rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-align: left;
   text-transform: uppercase;
   transition: background-color 0.16s ease, color 0.16s ease;
@@ -1605,7 +1826,9 @@ textarea:focus {
 
 .app-sidebar__group-button:hover,
 .app-sidebar__group.is-open .app-sidebar__group-button {
-  background: rgba(255, 255, 255, 0.075);
+  border-color: rgba(203, 213, 225, 0.20);
+  background: rgba(170, 184, 204, 0.88);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .app-sidebar__group-title {
@@ -1621,7 +1844,7 @@ textarea:focus {
   flex: 0 0 24px;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: #dbeafe;
   font-size: 1.06rem;
   line-height: 1;
   transition: color 0.16s ease, transform 0.16s ease;
@@ -1639,7 +1862,7 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(226, 232, 240, 0.70);
   transform: rotate(180deg);
   transition: transform 0.18s ease;
   font-size: 1.08rem;
@@ -1652,19 +1875,31 @@ textarea:focus {
 .app-sidebar__items {
   display: none;
   gap: 2px;
-  margin: 2px 0 6px 0;
+  margin: 5px 0 8px 0;
   overflow: hidden;
-  padding: 6px 6px 6px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 8px 6px 8px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 12px;
-  background: rgba(7, 11, 16, 0.2);
-  box-shadow: inset 3px 0 0 rgba(142, 230, 178, 0.16);
+  background:
+    linear-gradient(180deg, rgba(10, 22, 40, 0.96), rgba(5, 12, 24, 0.98)),
+    #07111f;
+  box-shadow:
+    inset 3px 0 0 rgba(203, 213, 225, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
   transform-origin: top;
+}
+
+.app-sidebar__group-button .app-sidebar__group-icon {
+  color: #050816;
 }
 
 .app-sidebar__group.is-open .app-sidebar__items {
   display: grid;
   animation: appSidebarAccordion 0.18s ease;
+}
+
+.is-sidebar-collapsed .app-sidebar:not(:hover) .app-sidebar__items {
+  display: none;
 }
 
 .app-sidebar__link {
@@ -1675,9 +1910,9 @@ textarea:focus {
   padding: 6px 8px;
   border-left: 3px solid transparent;
   border-radius: 8px;
-  color: #ffffff;
-  font-size: 0.85rem;
-  font-weight: 700;
+  color: #c9d4e3;
+  font-size: 0.86rem;
+  font-weight: 600;
   line-height: 1.2;
   text-decoration: none;
   transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
@@ -1685,7 +1920,7 @@ textarea:focus {
 
 .app-sidebar__link:hover,
 .app-sidebar__link.is-active {
-  background: rgba(142, 230, 178, 0.12);
+  background: rgba(226, 232, 240, 0.08);
   color: #ffffff;
 }
 
@@ -1697,20 +1932,21 @@ textarea:focus {
 .app-sidebar__dashboard:hover .app-sidebar__item-icon,
 .app-sidebar__link:hover .app-sidebar__item-icon,
 .app-sidebar__link.is-active .app-sidebar__item-icon {
-  color: #8ee6b2;
+  color: #cbd5e1;
   transform: scale(1.05);
 }
 
 .app-sidebar__link.is-active {
-  border-left-color: #8ee6b2;
-  box-shadow: inset 0 0 0 1px rgba(142, 230, 178, 0.06);
+  border-left-color: #cbd5e1;
+  box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.07);
 }
 
 .app-sidebar__group-button:focus-visible,
 .app-sidebar__dashboard:focus-visible,
 .app-sidebar__link:focus-visible,
-.app-sidebar__logout:focus-visible {
-  outline: 2px solid rgba(142, 230, 178, 0.35);
+.app-sidebar__logout:focus-visible,
+.app-sidebar__collapse:focus-visible {
+  outline: 2px solid rgba(203, 213, 225, 0.34);
   outline-offset: 2px;
 }
 
@@ -1730,6 +1966,7 @@ textarea:focus {
   .app-sidebar__dashboard,
   .app-sidebar__group-button,
   .app-sidebar__link,
+  .app-sidebar__collapse,
   .app-sidebar__group-icon,
   .app-sidebar__item-icon,
   .app-sidebar__chevron {
