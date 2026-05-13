@@ -3357,13 +3357,45 @@ textarea:focus {
   margin-bottom: 3px;
 }
 
+.products-action-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-md);
+  padding: var(--espaco-md);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: var(--raio-card);
+  background: rgba(15, 23, 42, 0.36);
+}
+
+.products-action-panel h3 {
+  margin-bottom: 3px;
+  color: #f8fafc;
+  font-size: 0.94rem;
+  line-height: 1.2;
+}
+
+.products-action-panel p {
+  margin-bottom: 0;
+  color: var(--cor-texto-suave);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.products-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--espaco-sm);
+}
+
 .products-action-primary {
   white-space: nowrap;
 }
 
 .products-toolbar {
   display: grid;
-  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  grid-template-columns: minmax(190px, 250px) minmax(0, 1fr);
   gap: var(--espaco-lg);
   align-items: end;
   padding: var(--espaco-md);
@@ -3391,7 +3423,8 @@ textarea:focus {
 }
 
 .products-filters {
-  grid-template-columns: minmax(240px, 1.5fr) repeat(3, minmax(130px, 1fr));
+  grid-template-columns: minmax(260px, 1.5fr) repeat(3, minmax(132px, 1fr));
+  align-items: end;
 }
 
 .products-filters .form-group {
@@ -3432,6 +3465,13 @@ textarea:focus {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
     rgba(13, 20, 32, 0.76);
+  transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
+}
+
+.products-page .product-card:hover {
+  border-color: rgba(203, 213, 225, 0.28);
+  background-color: rgba(20, 29, 43, 0.86);
+  transform: translateY(-1px);
 }
 
 .products-page .product-card__media {
@@ -3458,6 +3498,7 @@ textarea:focus {
 
 .products-page .product-card__header {
   min-height: 44px;
+  gap: 10px;
 }
 
 .products-page .product-card__header h3 {
@@ -3469,6 +3510,7 @@ textarea:focus {
 
 .products-page .product-card__stock {
   min-height: 38px;
+  background: rgba(15, 23, 42, 0.42);
 }
 
 .products-page .product-card__actions {
@@ -3495,13 +3537,18 @@ textarea:focus {
 
 @media (max-width: 600px) {
   .products-header,
+  .products-action-panel,
   .products-list__header {
     display: block;
   }
 
+  .products-actions {
+    justify-content: stretch;
+    margin-top: var(--espaco-sm);
+  }
+
   .products-action-primary {
     width: 100%;
-    margin-top: var(--espaco-sm);
   }
 
   .products-toolbar {
