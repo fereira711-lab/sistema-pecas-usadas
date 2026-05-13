@@ -9,10 +9,47 @@ O contexto do negocio e venda de pecas usadas/seminovas. Por isso, o sistema pre
 Fluxo principal:
 
 ```text
-origem -> peca -> entrada -> venda -> FIFO -> lucro
+origem -> peca -> entrada -> venda -> FIFO -> analise
 ```
 
-A origem registra a procedencia ou compra. A peca representa o item comercial. A entrada formaliza o lote no estoque. A venda consome o estoque. O FIFO define o custo oficial vendido. O lucro e calculado a partir da receita menos custo FIFO consumido e custos extras.
+A origem registra a procedencia ou compra. A peca representa o item comercial. A entrada formaliza o lote no estoque. A venda consome o estoque. O FIFO define o custo oficial vendido. As analises usam esses dados para mostrar resultado, lucro, margem, giro e custos.
+
+## Estado atual do sistema
+
+O sistema esta organizado em uma cadeia principal:
+
+```text
+origem -> peca -> entrada -> venda -> FIFO -> analise
+```
+
+Decisoes atuais:
+
+- FIFO real e a fonte oficial de custo das vendas. O custo vendido deve vir de `venda_consumos_estoque`.
+- `financeiro-utils.js` e a fonte oficial de calculos financeiros. Telas devem reutilizar essa camada para receita, custo consumido, custos, lucro e margem.
+- `paginas/produtos.html` e a tela operacional principal para estoque/produtos.
+- Telas de detalhes funcionam como central da entidade: origem, peca e venda.
+- Telas de analise formam a area financeira, separada do fluxo operacional diario.
+- O acesso a telas de detalhes deve partir do contexto correto, como lista de produtos, historico de vendas, origem ou tabelas relacionadas, e nao de cards soltos no menu.
+
+## Teste real recente
+
+No teste real recente foram navegados e avaliados estes fluxos:
+
+- produtos;
+- custo de peca;
+- detalhes da peca;
+- detalhes da venda;
+- origem;
+- analises.
+
+O teste confirmou que o sistema ja possui a estrutura central funcionando, mas tambem mostrou pontos de melhoria nas telas de detalhes e na validacao continua dos custos.
+
+## Pendencias encontradas no teste real
+
+- `detalhes-produto` ainda precisa evoluir a exibicao de custos, vendas relacionadas, resumo financeiro e mensagens quando nao houver dados.
+- `detalhes-venda` precisa funcionar como extrato completo da venda, mostrando dados da venda, custos, consumo FIFO, lucro e margem.
+- Custo de peca foi ajustado para editar/excluir, mas deve continuar sendo validado em uso real.
+- O acesso as telas de detalhes deve continuar vindo do contexto correto, e nao de cards soltos no menu inicial.
 
 ## Modulos do sistema
 
@@ -147,3 +184,23 @@ Estruturas principais no SQL:
 - Adicionar auditoria para alteracoes de venda, custo, estoque e origem.
 - Evoluir relatorios por margem, origem, canal de venda e tipo de custo.
 - Integrar exportacao de dados e dashboards mais completos.
+
+### Modulos futuros documentados
+
+- Marketplace/anuncios.
+- Geracao de anuncio com IA.
+- Painel operacional de anuncios.
+- SKU automatico por categoria.
+- Multiempresa.
+- Usuarios e permissoes.
+
+## Padrao de uso do Codex no projeto
+
+Para manter o trabalho organizado, os pedidos para o Codex devem seguir este padrao:
+
+- comandos curtos;
+- objetivo em 1 frase;
+- arquivos definidos;
+- regras claras;
+- informar quando nao deve fazer commit;
+- pedir resposta curta quando o foco for execucao.

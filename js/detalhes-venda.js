@@ -19,6 +19,7 @@ const botaoEditarAdicionarCustoVenda = document.getElementById("botaoEditarAdici
 const cancelarEdicaoVenda = document.getElementById("cancelarEdicaoVenda");
 let tiposCustoVendaDetalhes = [];
 const tiposCustoVendaPadraoDetalhes = ["Embalagem", "Frete", "Comissão", "Taxa marketplace", "Taxa cartão", "Coleta", "Etiqueta", "Outros"];
+const TEXTO_CUSTO_NAO_CALCULADO = "Custo não calculado";
 let vendaAtual = null;
 let contextoVenda = {
   produto: null,
@@ -147,10 +148,24 @@ function formatarSku(peca) {
 }
 
 function formatarPorcentagem(valor) {
+  if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
+    return "-";
+  }
+
   return `${Number(valor || 0).toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })}%`;
+}
+
+function obterClasseLucro(valor) {
+  if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
+    return "profit-value profit-value--neutral";
+  }
+
+  return Number(valor) >= 0
+    ? "profit-value profit-value--positive"
+    : "profit-value profit-value--negative";
 }
 
 function obterQuantidadeVendida(venda) {
@@ -444,37 +459,50 @@ async function salvarEdicaoVenda(evento) {
 
 function renderizarResumoFinanceiro(venda) {
   const resultado = recalcularVendaComCustoAtual(venda);
+  const quantidade = obterQuantidadeVendida(venda);
+  const valorUnitario = obterValorUnitarioVenda(venda);
   const valorTotal = resultado.receita;
   const custoUnitario = resultado.custoUnitario;
   const custoTotal = resultado.custoTotal;
   const totalCustosVenda = resultado.custosVenda;
   const lucroVenda = resultado.lucroVenda;
   const margem = resultado.margem;
+  const classeCardResultado = resultado.custoCalculado
+    ? (lucroVenda >= 0 ? "summary-card summary-card--profit" : "summary-card summary-card--loss")
+    : "summary-card";
 
   resumoFinanceiroVenda.innerHTML = `
+    <article class="summary-card">
+      <span>Quantidade vendida</span>
+      <strong>${quantidade}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Valor unitário</span>
+      <strong>${formatarMoeda(valorUnitario)}</strong>
+    </article>
     <article class="summary-card">
       <span>Valor total da venda</span>
       <strong>${formatarMoeda(valorTotal)}</strong>
     </article>
     <article class="summary-card">
-      <span>Custo unitário</span>
-      <strong>${resultado.custoCalculado ? formatarMoeda(custoUnitario) : "Custo nao calculado"}</strong>
+      <span>Custo unitário FIFO</span>
+      <strong>${resultado.custoCalculado ? formatarMoeda(custoUnitario) : TEXTO_CUSTO_NAO_CALCULADO}</strong>
     </article>
     <article class="summary-card">
       <span>Custo das entradas consumidas</span>
-      <strong>${resultado.custoCalculado ? formatarMoeda(custoTotal) : "Custo nao calculado"}</strong>
+      <strong>${resultado.custoCalculado ? formatarMoeda(custoTotal) : TEXTO_CUSTO_NAO_CALCULADO}</strong>
     </article>
     <article class="summary-card">
       <span>Custos da venda</span>
       <strong>${formatarMoeda(totalCustosVenda)}</strong>
     </article>
-    <article class="summary-card">
+    <article class="${classeCardResultado}">
       <span>Lucro da venda</span>
-      <strong>${resultado.custoCalculado ? formatarMoeda(lucroVenda) : "Custo nao calculado"}</strong>
+      <strong>${resultado.custoCalculado ? `<span class="${obterClasseLucro(lucroVenda)}">${formatarMoeda(lucroVenda)}</span>` : TEXTO_CUSTO_NAO_CALCULADO}</strong>
     </article>
-    <article class="summary-card">
+    <article class="${classeCardResultado}">
       <span>Margem de lucro</span>
-      <strong>${resultado.custoCalculado ? formatarPorcentagem(margem) : "-"}</strong>
+      <strong>${resultado.custoCalculado ? `<span class="${obterClasseLucro(lucroVenda)}">${formatarPorcentagem(margem)}</span>` : TEXTO_CUSTO_NAO_CALCULADO}</strong>
     </article>
   `;
 }
@@ -584,7 +612,7 @@ function renderizarCustoFifoLegado() {
   tabelaCustoFifoVenda.innerHTML = "";
 
   if (!contextoVenda.consumosFifo.length) {
-    mensagemCustoFifoVenda.textContent = "Esta venda ainda nao possui custo calculado em venda_consumos_estoque.";
+    mensagemCustoFifoVenda.textContent = TEXTO_CUSTO_NAO_CALCULADO;
     return;
   }
 
@@ -625,6 +653,7 @@ function renderizarDadosVendaCompleta(venda) {
   const receita = window.financeiroUtils?.calcularReceitaVenda
     ? window.financeiroUtils.calcularReceitaVenda(venda)
     : Number(venda.valorTotal || venda.valor_total || venda.valorVenda || 0);
+  const resultado = recalcularVendaComCustoAtual(venda);
 
   subtituloVenda.textContent = `${nomeVenda} - ${formatarData(dataVenda)}`;
 
@@ -662,6 +691,22 @@ function renderizarDadosVendaCompleta(venda) {
       <strong>${formatarMoeda(receita)}</strong>
     </article>
     <article class="detail-card">
+      <span>Custos da venda</span>
+      <strong>${formatarMoeda(resultado.custosVenda)}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Consumo FIFO</span>
+      <strong>${resultado.custoCalculado ? `${contextoVenda.consumosFifo.length} registro(s)` : TEXTO_CUSTO_NAO_CALCULADO}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Lucro</span>
+      <strong>${resultado.custoCalculado ? `<span class="${obterClasseLucro(resultado.lucroVenda)}">${formatarMoeda(resultado.lucroVenda)}</span>` : TEXTO_CUSTO_NAO_CALCULADO}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Margem</span>
+      <strong>${resultado.custoCalculado ? `<span class="${obterClasseLucro(resultado.lucroVenda)}">${formatarPorcentagem(resultado.margem)}</span>` : TEXTO_CUSTO_NAO_CALCULADO}</strong>
+    </article>
+    <article class="detail-card">
       <span>Canal de venda</span>
       <strong>${escaparHtml(venda.canalVenda || venda.canal_venda || venda.cliente || "-")}</strong>
     </article>
@@ -680,7 +725,12 @@ function renderizarCustoFifo() {
   tabelaCustoFifoVenda.innerHTML = "";
 
   if (!contextoVenda.consumosFifo.length) {
-    mensagemCustoFifoVenda.textContent = "Esta venda ainda nao possui custo calculado em venda_consumos_estoque.";
+    mensagemCustoFifoVenda.textContent = TEXTO_CUSTO_NAO_CALCULADO;
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
+      <td data-label="Lote" colspan="7"><strong>${TEXTO_CUSTO_NAO_CALCULADO}</strong></td>
+    `;
+    tabelaCustoFifoVenda.appendChild(linha);
     return;
   }
 

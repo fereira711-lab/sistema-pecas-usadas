@@ -186,6 +186,36 @@ function formatarSku(peca) {
   return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
 }
 
+function normalizarTextoChave(valor) {
+  return String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function obterNomeChavePeca(peca) {
+  return normalizarTextoChave(peca?.nome || peca?.nome_peca || peca?.nomeProduto || peca?.produtoNome || peca?.descricao);
+}
+
+function pertenceAPeca(registro, produto, pecaId) {
+  if (Number(registro?.pecaId || registro?.peca_id || 0) === Number(pecaId)) {
+    return true;
+  }
+
+  const skuProduto = normalizarTextoChave(formatarSku(produto));
+  const skuRegistro = normalizarTextoChave(registro?.sku || registro?.codigo || registro?.codigo_peca);
+
+  if (skuProduto && skuProduto !== "-" && skuProduto === skuRegistro) {
+    return true;
+  }
+
+  const nomeProduto = obterNomeChavePeca(produto);
+  const nomeRegistro = normalizarTextoChave(registro?.produtoNome || registro?.nomeProduto || registro?.nome || registro?.descricao);
+
+  return Boolean(nomeProduto && nomeProduto === nomeRegistro);
+}
+
 function obterImagemUrlProduto(produto) {
   return String(produto.imagemUrl || produto.imagem_url || "").trim();
 }
@@ -201,6 +231,10 @@ function deveAbrirEdicaoProduto() {
 }
 
 function valorVenda(venda) {
+  if (window.financeiroUtils?.calcularReceitaVenda) {
+    return window.financeiroUtils.calcularReceitaVenda(venda);
+  }
+
   const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || venda.quantidade_vendida || 0);
   const unitario = Number(venda.valorUnitario || venda.precoUnitario || venda.valor_unitario || 0);
   return Number(venda.valorTotal || venda.valor_total || venda.valorVenda || unitario * quantidade || 0);
@@ -208,6 +242,17 @@ function valorVenda(venda) {
 
 function quantidadeVendida(venda) {
   return Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || venda.quantidade_vendida || 0);
+}
+
+function obterValorUnitarioVenda(venda) {
+  const quantidade = quantidadeVendida(venda);
+  const valorUnitario = Number(venda.valorUnitario || venda.precoUnitario || venda.valor_unitario || venda.valorVendaUnitario || 0);
+
+  if (valorUnitario > 0) {
+    return valorUnitario;
+  }
+
+  return quantidade > 0 ? valorVenda(venda) / quantidade : 0;
 }
 
 function obterStatusEntrada(entrada) {
@@ -297,10 +342,18 @@ function calcularResultado() {
 
 function formatarValorOuNaoCalculado(valor) {
   if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
-    return "Custo nao calculado";
+    return "Custo não calculado";
   }
 
   return formatarMoeda(Number(valor || 0));
+}
+
+function alternarTabelaVazia(tabela, vazia) {
+  const wrapper = tabela?.closest(".table-wrapper");
+
+  if (wrapper) {
+    wrapper.hidden = vazia;
+  }
 }
 
 function obterQuantidadeTotal(produto) {
@@ -431,8 +484,7 @@ function renderizarOrigemVinculada(produto) {
   const descricaoOrigem = obterOrigemPrincipal(produto);
 
   origemVinculadaProduto.innerHTML = `
-    <section class="stock-card">
-      <div class="stock-header">
+    <div class="stock-header">
         <div>
           <h2>Origem vinculada</h2>
           <p>Entrada principal usada para rastrear a peça no estoque.</p>
@@ -440,8 +492,8 @@ function renderizarOrigemVinculada(produto) {
         <div class="form-actions">
           <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver detalhes da origem</a>
         </div>
-      </div>
-      <div class="detail-grid">
+    </div>
+    <div class="detail-grid">
         <article class="detail-card">
           <span>Origem</span>
           <strong>${escaparHtml(descricaoOrigem)}</strong>
@@ -450,8 +502,7 @@ function renderizarOrigemVinculada(produto) {
           <span>ID da origem</span>
           <strong>${origemId || "-"}</strong>
         </article>
-      </div>
-    </section>
+    </div>
   `;
 }
 
@@ -715,10 +766,12 @@ function renderizarEntradas() {
 
   if (contextoProduto.entradas.length === 0) {
     mensagemEntradasProduto.textContent = "Nenhuma entrada de estoque encontrada para esta peça.";
+    alternarTabelaVazia(tabelaEntradasProduto, true);
     return;
   }
 
   mensagemEntradasProduto.textContent = "";
+  alternarTabelaVazia(tabelaEntradasProduto, false);
 
   contextoProduto.entradas.forEach(entrada => {
     const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
@@ -742,11 +795,13 @@ function renderizarCustos() {
   tabelaCustosProduto.innerHTML = "";
 
   if (contextoProduto.custosPeca.length === 0) {
-    mensagemCustosProduto.textContent = "Nenhum custo cadastrado para esta peça.";
+    mensagemCustosProduto.textContent = "Nenhum custo cadastrado";
+    alternarTabelaVazia(tabelaCustosProduto, true);
     return;
   }
 
   mensagemCustosProduto.textContent = "";
+  alternarTabelaVazia(tabelaCustosProduto, false);
 
   contextoProduto.custosPeca.forEach(custo => {
     const linha = document.createElement("tr");
@@ -780,11 +835,13 @@ function renderizarVendas() {
   tabelaVendasProduto.innerHTML = "";
 
   if (contextoProduto.vendas.length === 0) {
-    mensagemVendasProduto.textContent = "Nenhuma venda registrada para esta peça.";
+    mensagemVendasProduto.textContent = "Nenhuma venda registrada";
+    alternarTabelaVazia(tabelaVendasProduto, true);
     return;
   }
 
   mensagemVendasProduto.textContent = "";
+  alternarTabelaVazia(tabelaVendasProduto, false);
 
   ordenarVendasPorData(contextoProduto.vendas).forEach(venda => {
     const resultadoVenda = window.financeiroUtils.calcularLucroVenda(
@@ -797,7 +854,7 @@ function renderizarVendas() {
     linha.innerHTML = `
       <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
       <td data-label="Quantidade">${formatarNumero(quantidadeVendida(venda))}</td>
-      <td data-label="Valor unitário">${formatarMoeda(venda.valorUnitario || venda.precoUnitario)}</td>
+      <td data-label="Valor unitário">${formatarMoeda(obterValorUnitarioVenda(venda))}</td>
       <td data-label="Valor total">${formatarMoeda(resultadoVenda.receita)}</td>
       <td data-label="Canal">${escaparHtml(venda.canalVenda || "-")}</td>
       <td data-label="Custo entradas">${formatarValorOuNaoCalculado(resultadoVenda.custoConsumido)}</td>
@@ -839,9 +896,9 @@ async function carregarContextoSupabase(pecaId) {
     return { produto: null };
   }
 
-  const entradasProduto = (entradas || []).filter(entrada => Number(entrada.pecaId) === Number(pecaId));
-  const custosPecaProduto = (custosPeca || []).filter(custo => Number(custo.pecaId) === Number(pecaId));
-  const vendasProduto = (vendas || []).filter(venda => Number(venda.pecaId) === Number(pecaId));
+  const entradasProduto = (entradas || []).filter(entrada => pertenceAPeca(entrada, produto, pecaId));
+  const custosPecaProduto = (custosPeca || []).filter(custo => pertenceAPeca(custo, produto, pecaId));
+  const vendasProduto = (vendas || []).filter(venda => pertenceAPeca(venda, produto, pecaId));
   const vendaIds = new Set(vendasProduto.map(venda => Number(venda.id)));
   const custosVendaProduto = (custosVenda || []).filter(custo => vendaIds.has(Number(custo.vendaId)));
   const consumosProduto = (consumosEstoque || []).filter(consumo => vendaIds.has(Number(consumo.vendaId)));
@@ -864,9 +921,9 @@ function carregarContextoLocal(pecaId) {
     return { produto: null };
   }
 
-  const vendas = buscarVendasLocais().filter(venda => Number(venda.pecaId || 0) === Number(pecaId));
+  const vendas = buscarVendasLocais().filter(venda => pertenceAPeca(venda, produto, pecaId));
   const vendaIds = new Set(vendas.map(venda => Number(venda.id)));
-  const custosPeca = buscarCustosLocais().filter(custo => Number(custo.pecaId || 0) === Number(pecaId));
+  const custosPeca = buscarCustosLocais().filter(custo => pertenceAPeca(custo, produto, pecaId));
   const origens = buscarOrigensLocais();
   const origemPrincipal = origens.find(origem => Number(origem.id) === Number(produto.origemId || produto.origem_id))?.descricao || produto.origem || "";
 
@@ -887,6 +944,45 @@ function carregarContextoLocal(pecaId) {
     }).filter(custo => !custo.vendaId || vendaIds.has(Number(custo.vendaId))),
     consumosEstoque: [],
     origemPrincipal
+  };
+}
+
+function mesclarPorIdOuAssinatura(principal, complemento, criarAssinatura) {
+  const mapa = new Map();
+
+  [...(principal || []), ...(complemento || [])].forEach(item => {
+    const chave = item?.id ? `id:${item.id}` : criarAssinatura(item);
+
+    if (chave && !mapa.has(chave)) {
+      mapa.set(chave, item);
+    }
+  });
+
+  return Array.from(mapa.values());
+}
+
+function mesclarContextoComDadosLocais(contexto, pecaId) {
+  const contextoLocal = carregarContextoLocal(pecaId);
+
+  if (!contexto?.produto || !contextoLocal?.produto) {
+    return contexto;
+  }
+
+  const vendas = mesclarPorIdOuAssinatura(contexto.vendas, contextoLocal.vendas, venda => (
+    `venda:${obterDataVenda(venda)}:${quantidadeVendida(venda)}:${valorVenda(venda)}:${venda.canalVenda || venda.cliente || ""}`
+  ));
+  const vendaIds = new Set(vendas.map(venda => Number(venda.id)));
+  const custosVendaLocais = contextoLocal.custosVenda.filter(custo => !custo.vendaId || vendaIds.has(Number(custo.vendaId)));
+
+  return {
+    ...contexto,
+    custosPeca: mesclarPorIdOuAssinatura(contexto.custosPeca, contextoLocal.custosPeca, custo => (
+      `custo-peca:${custo.tipoCusto || custo.tipo}:${custo.descricao || ""}:${custo.valor || 0}:${custo.dataCusto || custo.data || ""}`
+    )),
+    vendas,
+    custosVenda: mesclarPorIdOuAssinatura(contexto.custosVenda, custosVendaLocais, custo => (
+      `custo-venda:${custo.vendaId || ""}:${custo.tipoCusto || custo.tipo}:${custo.valor || 0}:${custo.descricao || ""}`
+    ))
   };
 }
 
@@ -925,7 +1021,9 @@ async function iniciarDetalhes() {
 
   try {
     const contextoSupabase = await carregarContextoSupabase(pecaId);
-    contextoProduto = contextoSupabase || carregarContextoLocal(pecaId);
+    contextoProduto = contextoSupabase
+      ? mesclarContextoComDadosLocais(contextoSupabase, pecaId)
+      : carregarContextoLocal(pecaId);
 
     if (!contextoProduto.produto) {
       renderizarNaoEncontrado("Produto não encontrado.");

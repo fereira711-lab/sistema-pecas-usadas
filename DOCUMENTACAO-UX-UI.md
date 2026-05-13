@@ -8,6 +8,38 @@ A referencia deve ser de dashboards SaaS/ERP: telas organizadas, leitura rapida,
 
 O sistema deve evitar telas poluidas, excesso de cards grandes, informacoes repetidas e blocos visuais que dificultem a operacao diaria.
 
+## Estado atual da UX/UI
+
+O sistema entrou em fase de revisao visual. A direcao e melhorar a experiencia com cuidado, estudando o design antes de aplicar mudancas definitivas.
+
+Decisoes de UX atuais:
+
+- Evitar redesign geral de uma vez.
+- Trabalhar pagina por pagina.
+- Preservar o funcionamento antes de mexer em aparencia.
+- Manter `produtos.html` como tela operacional principal.
+- Usar telas de detalhes como centrais completas da entidade.
+- Usar analises como area financeira, sem sobrecarregar as telas operacionais.
+- Usar `preview.html` e o design system como laboratorio visual antes de aplicar mudancas no sistema real.
+
+## Teste real recente de UX
+
+Foram testadas as areas:
+
+- produtos;
+- custo de peca;
+- detalhes da peca;
+- detalhes da venda;
+- origem;
+- analises.
+
+Pendencias percebidas:
+
+- `detalhes-produto` precisa comunicar melhor custos, vendas relacionadas, resumo financeiro e estados sem dados.
+- `detalhes-venda` precisa se comportar como extrato completo da venda.
+- A edicao/exclusao de custo de peca deve continuar sendo validada.
+- Links para detalhes devem nascer do contexto da lista ou da entidade relacionada, nao de cards soltos no menu.
+
 ## Tipos de tela
 
 ### Telas operacionais
@@ -247,3 +279,19 @@ Exemplos:
 - Comecar pelas telas mais usadas: produtos, cadastro de venda, historico de vendas e painel geral.
 - Depois aplicar em detalhes: origem, peca e venda.
 - Por fim revisar analises, configuracoes e paginas legadas.
+
+### Laboratorio visual
+
+- Usar `preview.html` para testar ideias visuais antes de aplicar em paginas reais.
+- Usar `DESIGN-SYSTEM.md` para registrar padroes aprovados.
+- Validar uma tela por vez antes de espalhar o mesmo padrao.
+- Evitar transformar testes visuais em regra definitiva sem revisar o impacto operacional.
+
+### Padrao de solicitacao ao Codex
+
+- Comando curto.
+- Objetivo em 1 frase.
+- Arquivos definidos.
+- Regras claras.
+- Avisar quando nao deve fazer commit.
+- Pedir resposta curta quando a tarefa for objetiva.

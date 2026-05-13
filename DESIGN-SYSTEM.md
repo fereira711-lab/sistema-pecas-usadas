@@ -11,6 +11,28 @@ Ele deve:
 - Criar uma aparencia profissional no estilo ERP/SaaS.
 - Manter o foco em operacao rapida, leitura clara e produtividade.
 - Servir como base antes da criacao de CSS global ou componentes reutilizaveis.
+- Servir junto com `preview.html` como laboratorio visual antes de mudancas definitivas.
+
+## Momento atual do design
+
+O sistema esta em fase de revisao visual. O design deve ser estudado antes de ser aplicado no sistema inteiro.
+
+Decisoes atuais:
+
+- Nao fazer redesign geral de uma vez.
+- Trabalhar pagina por pagina.
+- Validar primeiro em `preview.html` ou em uma tela controlada.
+- Manter o padrao visual atual enquanto a nova direcao e estudada.
+- Evitar mudancas que alterem regra de negocio, FIFO ou calculos financeiros.
+- Registrar decisoes novas antes de espalhar padroes para outras telas.
+
+## Organizacao funcional atual
+
+- Produtos e a tela operacional principal para estoque/produtos.
+- Detalhes sao centrais da entidade: origem, peca e venda.
+- Analises sao a area financeira do sistema.
+- FIFO real e a fonte oficial de custo.
+- `financeiro-utils.js` e a fonte oficial de calculos financeiros.
 
 ## Identidade visual
 
@@ -442,6 +464,24 @@ Regras:
 - Explicar que nao ha dados.
 - Indicar a acao recomendada.
 - Evitar tabelas vazias sem mensagem.
+- Em detalhes da peca, usar mensagens claras como "Nenhum custo cadastrado" e "Nenhuma venda registrada".
+- Em detalhes da venda, quando nao houver consumo FIFO, indicar que o custo nao esta calculado.
+
+## Pendencias de UX registradas
+
+- `detalhes-produto` deve exibir melhor custos, vendas relacionadas, resumo financeiro e estados sem dados.
+- `detalhes-venda` deve funcionar como extrato completo da venda, com dados da venda, custos, consumo FIFO, lucro e margem.
+- Custo de peca foi ajustado para editar/excluir, mas precisa continuar sendo validado.
+- Acesso a detalhes deve vir do contexto correto da entidade, nao de cards soltos no menu.
+
+## Modulos futuros que precisarao seguir o design system
+
+- Marketplace/anuncios.
+- Geracao de anuncio com IA.
+- Painel operacional de anuncios.
+- SKU automatico por categoria.
+- Multiempresa.
+- Usuarios e permissoes.
 
 ## Responsividade
 
