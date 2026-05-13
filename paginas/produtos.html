@@ -17,53 +17,70 @@
     </div>
   </header>
 
-  <main class="container stock-layout">
-    <section class="stock-card">
-      <div class="stock-header">
+  <main class="container stock-layout products-page">
+    <section class="stock-card products-shell">
+      <div class="stock-header products-header">
         <div>
           <h2>Peças cadastradas</h2>
           <p>Lista operacional para consultar estoque, vender, lançar custo ou abrir detalhes.</p>
         </div>
-        <a class="button-secondary" href="cadastro-peca.html">Cadastrar peça</a>
+        <a class="button-secondary products-action-primary" href="cadastro-peca.html">Cadastrar peça</a>
       </div>
 
-      <p id="mensagemProdutos" class="empty-message"></p>
-
-      <div class="form-row filters-compact">
-        <div class="form-group">
-          <label for="buscaProdutos">Busca rápida</label>
-          <input id="buscaProdutos" type="search" placeholder="SKU ou nome da peça">
+      <section class="products-toolbar" aria-label="Filtros e busca de produtos">
+        <div class="products-toolbar__heading">
+          <h3>Filtros e busca</h3>
+          <p>Encontre rapidamente a peça por SKU, nome, estoque ou origem.</p>
         </div>
 
-        <div class="form-group">
-          <label for="filtroEstoqueProdutos">Estoque</label>
-          <select id="filtroEstoqueProdutos">
-            <option value="">Todos</option>
-            <option value="em-estoque">Em estoque</option>
-            <option value="sem-estoque">Sem estoque</option>
-            <option value="estoque-baixo">Estoque baixo</option>
-          </select>
-        </div>
+        <div class="form-row filters-compact products-filters">
+          <div class="form-group products-search-field">
+            <label for="buscaProdutos">Busca rápida</label>
+            <input id="buscaProdutos" type="search" placeholder="SKU ou nome da peça">
+          </div>
 
-        <div class="form-group">
-          <label for="filtroOrigemProdutos">Origem</label>
-          <select id="filtroOrigemProdutos">
-            <option value="">Todas</option>
-          </select>
-        </div>
+          <div class="form-group">
+            <label for="filtroEstoqueProdutos">Estoque</label>
+            <select id="filtroEstoqueProdutos">
+              <option value="">Todos</option>
+              <option value="em-estoque">Em estoque</option>
+              <option value="sem-estoque">Sem estoque</option>
+              <option value="estoque-baixo">Estoque baixo</option>
+            </select>
+          </div>
 
-        <div class="form-group">
-          <label for="ordenacaoProdutos">Ordenar por</label>
-          <select id="ordenacaoProdutos">
-            <option value="nome">Nome</option>
-            <option value="sku">SKU</option>
-            <option value="estoque">Estoque</option>
-          </select>
+          <div class="form-group">
+            <label for="filtroOrigemProdutos">Origem</label>
+            <select id="filtroOrigemProdutos">
+              <option value="">Todas</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="ordenacaoProdutos">Ordenar por</label>
+            <select id="ordenacaoProdutos">
+              <option value="nome">Nome</option>
+              <option value="sku">SKU</option>
+              <option value="estoque">Estoque</option>
+            </select>
+          </div>
         </div>
-      </div>
+      </section>
+
+      <p id="mensagemProdutos" class="empty-message products-message"></p>
 
       <input id="imagemProdutoExistente" class="file-input-hidden" type="file" accept="image/*">
-      <div id="tabelaProdutos" class="product-card-grid" aria-label="Produtos cadastrados"></div>
+
+      <section class="products-list" aria-labelledby="tituloListaProdutos">
+        <div class="products-list__header">
+          <div>
+            <h3 id="tituloListaProdutos">Lista de produtos</h3>
+            <p>Cards compactos com estoque, status e ações principais.</p>
+          </div>
+        </div>
+
+        <div id="tabelaProdutos" class="product-card-grid" aria-label="Produtos cadastrados"></div>
+      </section>
     </section>
   </main>
 
