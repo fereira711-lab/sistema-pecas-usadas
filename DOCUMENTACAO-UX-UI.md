@@ -22,6 +22,21 @@ Decisoes de UX atuais:
 - Usar analises como area financeira, sem sobrecarregar as telas operacionais.
 - Usar `preview.html` e o design system como laboratorio visual antes de aplicar mudancas no sistema real.
 
+## Padrao visual em validacao
+
+O `cadastro-peca.html` passa a ser a primeira tela real usada como referencia do novo padrao visual do sistema. O preview continua sendo laboratorio, mas o cadastro de peca e a base pratica para validar densidade, contraste, blocos e componentes antes de espalhar o estilo para outras telas.
+
+Regras consolidadas nesta fase:
+
+- Fundo escuro operacional para fluxos de trabalho intensivo.
+- Conteudo organizado em cards compactos e blocos bem separados.
+- Formularios divididos por etapas logicas, sem textos explicativos repetitivos.
+- Dourado/amarelo como destaque discreto de identidade, principalmente em aba ativa, titulo pequeno e acentos suaves.
+- Dourado nao deve parecer alerta em campos normais.
+- Badges devem ser pequenos, suaves e nao competir com campos ou titulos.
+- Campos calculados ou `readonly` devem ter estilo proprio, com fundo levemente diferente, borda discreta e texto destacado.
+- Sidebar e topbar devem ser adotadas futuramente como base global do ERP, mantendo o conteudo central compacto.
+
 ## Teste real recente de UX
 
 Foram testadas as areas:
@@ -234,6 +249,9 @@ Regras:
 - Labels claros.
 - Mensagens de validacao proximas do campo ou do formulario.
 - Botao principal no final do fluxo.
+- Em telas operacionais, reduzir legendas e manter apenas texto que ajude na decisao.
+- Separar blocos como origem/lote, dados da entidade, entrada/acao operacional, fotos/anexos e observacoes quando isso reduzir ambiguidade.
+- Exibir valores calculados como leitura, nao como campo editavel comum.
 
 ### Paineis expansíveis
 

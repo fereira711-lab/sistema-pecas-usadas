@@ -1034,15 +1034,19 @@ textarea:focus {
 .piece-cadastro-page .form-section input:focus,
 .piece-cadastro-page .form-section select:focus,
 .piece-cadastro-page .form-section textarea:focus {
-  border-color: rgba(251, 191, 36, 0.42);
+  border-color: rgba(203, 213, 225, 0.54);
   box-shadow:
-    inset 0 0 0 1px rgba(251, 191, 36, 0.06),
-    0 0 0 2px rgba(251, 191, 36, 0.06);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 0 2px rgba(148, 163, 184, 0.10);
 }
 
 .piece-cadastro-page .field-hint {
   color: rgba(125, 211, 252, 0.74);
   font-size: 0.72rem;
+}
+
+.piece-cadastro-page .field-hint--calculated {
+  color: rgba(203, 213, 225, 0.60);
 }
 
 .piece-cadastro-page .required-marker {
@@ -1070,6 +1074,32 @@ textarea:focus {
 
 .piece-cadastro-page .summary-grid--compact .summary-card strong {
   font-size: 1rem;
+}
+
+.piece-cadastro-page .summary-value--neutral {
+  color: rgba(203, 213, 225, 0.88);
+  font-size: 0.92rem;
+}
+
+.piece-cadastro-page .summary-value--attention {
+  color: rgba(248, 213, 145, 0.88);
+  font-size: 0.92rem;
+}
+
+.piece-cadastro-page .calculated-input[readonly] {
+  border-color: rgba(125, 211, 252, 0.22);
+  background:
+    linear-gradient(180deg, rgba(125, 211, 252, 0.045), transparent),
+    rgba(15, 23, 42, 0.72);
+  color: #dbeafe;
+  font-weight: 800;
+}
+
+.piece-cadastro-page .calculated-input[readonly]:focus {
+  border-color: rgba(125, 211, 252, 0.34);
+  box-shadow:
+    inset 0 0 0 1px rgba(125, 211, 252, 0.06),
+    0 0 0 2px rgba(125, 211, 252, 0.06);
 }
 
 .photo-upload-block {

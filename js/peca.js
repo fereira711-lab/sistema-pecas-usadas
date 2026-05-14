@@ -142,6 +142,39 @@ function calcularValorEntrada(entrada) {
   return Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0);
 }
 
+function origemTemQuantidadeTotalDefinida(origem) {
+  const valor = origem?.quantidadeTotal;
+  return valor !== undefined && valor !== null && valor !== "" && Number.isFinite(Number(valor));
+}
+
+function formatarQuantidadeRestante(quantidadeRestante, temQuantidadeTotal) {
+  if (!temQuantidadeTotal) {
+    return "Sem quantidade prevista";
+  }
+
+  if (quantidadeRestante < 0) {
+    return "Quantidade excedida";
+  }
+
+  return String(quantidadeRestante);
+}
+
+function atualizarVisualQuantidadeRestante(quantidadeRestante, temQuantidadeTotal) {
+  resumoOrigemQuantidadeRestante.classList.remove(
+    "summary-value--neutral",
+    "summary-value--attention"
+  );
+
+  if (!temQuantidadeTotal) {
+    resumoOrigemQuantidadeRestante.classList.add("summary-value--neutral");
+    return;
+  }
+
+  if (quantidadeRestante < 0) {
+    resumoOrigemQuantidadeRestante.classList.add("summary-value--attention");
+  }
+}
+
 async function atualizarResumoOrigemSelecionada() {
   const origemId = Number(selectOrigem.value || 0);
   const origem = origensCadastro.find(item => Number(item.id) === origemId);
@@ -156,6 +189,7 @@ async function atualizarResumoOrigemSelecionada() {
   const entradasValidas = Array.isArray(entradas) ? entradas : [];
   const entradasDaOrigem = entradasValidas.filter(entrada => Number(entrada.origemId || 0) === origemId);
   const valorTotal = Number(origem.custoTotal || origem.valorPago || 0);
+  const temQuantidadeTotal = origemTemQuantidadeTotalDefinida(origem);
   const quantidadeTotal = Number(origem.quantidadeTotal || 0);
   const valorDistribuido = entradasDaOrigem.reduce((total, entrada) => total + calcularValorEntrada(entrada), 0);
   const quantidadeDistribuida = entradasDaOrigem.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
@@ -165,7 +199,8 @@ async function atualizarResumoOrigemSelecionada() {
   resumoOrigemValorTotal.textContent = formatarMoeda(valorTotal);
   resumoOrigemValorDistribuido.textContent = formatarMoeda(valorDistribuido);
   resumoOrigemValorRestante.textContent = formatarMoeda(valorRestante);
-  resumoOrigemQuantidadeRestante.textContent = String(quantidadeRestante);
+  resumoOrigemQuantidadeRestante.textContent = formatarQuantidadeRestante(quantidadeRestante, temQuantidadeTotal);
+  atualizarVisualQuantidadeRestante(quantidadeRestante, temQuantidadeTotal);
   resumoOrigemCadastro.hidden = false;
   linkDetalhesOrigem.href = `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}`;
 
@@ -175,7 +210,9 @@ async function atualizarResumoOrigemSelecionada() {
     valorRestante,
     quantidadeTotal,
     quantidadeDistribuida,
-    quantidadeRestante
+    quantidadeRestante,
+    quantidadeRestanteTexto: formatarQuantidadeRestante(quantidadeRestante, temQuantidadeTotal),
+    temQuantidadeTotal
   };
 }
 
@@ -356,7 +393,7 @@ async function salvarPeca() {
     limparCamposDaPeca();
     const resumoAtualizado = await atualizarResumoOrigemSelecionada();
     const complementoQuantidade = resumoAtualizado
-      ? ` Quantidade restante da origem: ${resumoAtualizado.quantidadeRestante}.`
+      ? ` Quantidade da origem: ${resumoAtualizado.quantidadeRestanteTexto}.`
       : "";
 
     mostrarMensagem(`Peca cadastrada com sucesso.${complementoQuantidade} Voce pode cadastrar outra peca para a mesma origem.`, "success");

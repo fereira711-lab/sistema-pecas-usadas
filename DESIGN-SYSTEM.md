@@ -26,6 +26,22 @@ Decisoes atuais:
 - Evitar mudancas que alterem regra de negocio, FIFO ou calculos financeiros.
 - Registrar decisoes novas antes de espalhar padroes para outras telas.
 
+## Referencia visual aprovada em campo
+
+O `cadastro-peca.html` e a primeira referencia visual aplicada em uma tela real do novo padrao do ERP. Ele deve orientar a evolucao das proximas telas operacionais, sem obrigar copia literal de todos os detalhes.
+
+Diretrizes extraidas dessa tela:
+
+- Fundo escuro operacional, com contraste suficiente para uso diario.
+- Cards compactos com bordas visiveis, sem excesso de sombra.
+- Blocos de formulario bem separados por etapa.
+- Layout denso, mas com respiro suficiente entre grupos.
+- Abas visuais podem indicar areas futuras; apenas a area funcional deve parecer ativa.
+- Dourado/amarelo e cor de identidade e destaque discreto, nao cor dominante.
+- Badges como "Obrigatorio" devem ser pequenos, suaves e de baixa competicao visual.
+- Campos calculados/readonly usam estilo proprio: fundo sutil, borda neutra/fria e texto destacado.
+- Sidebar e topbar devem entrar futuramente como estrutura global, mantendo a area central focada na tarefa.
+
 ## Organizacao funcional atual
 
 - Produtos e a tela operacional principal para estoque/produtos.
@@ -81,6 +97,8 @@ Regras:
 - Vermelho deve indicar erro, risco ou acao destrutiva.
 - Amarelo deve indicar aviso, atencao ou pendencia.
 - Cores fortes devem aparecer em pontos especificos, nao dominar a tela.
+- No novo padrao escuro, dourado/amarelo tambem pode representar identidade visual, desde que discreto e concentrado em aba ativa, pequenas chamadas e acentos.
+- Evitar usar dourado forte em bordas de campos normais, porque isso compete com titulos, botoes e estados de validacao.
 
 ## Tipografia
 
@@ -357,6 +375,8 @@ Regras:
 - Cor consistente.
 - Nao usar badge para textos longos.
 - Nao depender apenas da cor quando o texto puder esclarecer.
+- Badges auxiliares, como "Obrigatorio", devem ser menores e menos brilhantes que badges de status operacional.
+- Badges nao devem chamar mais atencao que o campo ou acao principal do bloco.
 
 ## Formularios
 
@@ -368,6 +388,9 @@ Padrao:
 - Foco com borda azul.
 - Selects com mesma altura dos inputs.
 - Agrupamento por blocos logicos.
+- Em formularios operacionais, usar blocos compactos por etapa: origem/lote, entidade, entrada operacional, fotos/anexos e observacoes.
+- Campos calculados devem parecer leitura automatica, com `readonly`, fundo levemente diferente e dica curta como "Calculado automaticamente.".
+- Evitar legendas repetitivas dentro dos blocos quando o titulo e o label ja explicam a funcao.
 
 Largura:
 
