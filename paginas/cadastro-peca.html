@@ -6,7 +6,7 @@
   <title>Cadastrar Peca</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark piece-cadastro-page">
   <header class="page-header">
     <div>
       <p class="hero__tag">Cadastro</p>
@@ -19,79 +19,147 @@
 
   <main class="container form-layout">
     <section class="form-card">
-      <h2>Cadastrar Peca</h2>
-
-      <div class="form-actions form-actions--inline">
-        <a class="button-secondary" href="cadastro-origem.html">+ Nova origem</a>
+      <div class="piece-form-top">
+        <div>
+          <span class="piece-form-eyebrow">Cadastro operacional</span>
+          <h2>Nova peca com entrada</h2>
+        </div>
+        <span class="piece-status-chip">Operacional ativo</span>
       </div>
 
-      <div class="form-group">
-        <label for="origemId">Origem *</label>
-        <select id="origemId">
-          <option value="">Selecione a origem</option>
-        </select>
+      <div class="piece-tabs" aria-label="Areas do cadastro">
+        <span class="piece-tab piece-tab--active">Operacional</span>
+        <span class="piece-tab piece-tab--disabled">Marketplace <small>em desenvolvimento</small></span>
+        <span class="piece-tab piece-tab--disabled">Fiscal / Tecnica <small>em desenvolvimento</small></span>
+        <span class="piece-tab piece-tab--disabled">Compatibilidade <small>em desenvolvimento</small></span>
       </div>
 
-      <div id="resumoOrigemCadastro" class="summary-grid summary-grid--compact" hidden>
-        <div class="summary-card">
-          <span>Valor total</span>
-          <strong id="resumoOrigemValorTotal">R$ 0,00</strong>
-        </div>
-        <div class="summary-card">
-          <span>Valor distribuido</span>
-          <strong id="resumoOrigemValorDistribuido">R$ 0,00</strong>
-        </div>
-        <div class="summary-card">
-          <span>Valor restante</span>
-          <strong id="resumoOrigemValorRestante">R$ 0,00</strong>
-        </div>
-        <div class="summary-card">
-          <span>Quantidade restante</span>
-          <strong id="resumoOrigemQuantidadeRestante">0</strong>
-        </div>
-      </div>
+      <div class="piece-form-sections">
+        <section class="form-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Origem/Lote</h3>
+            </div>
+            <div class="section-actions">
+              <span class="required-marker">Obrigatório</span>
+              <a class="button-secondary button-compact" href="cadastro-origem.html">+ Nova origem</a>
+            </div>
+          </div>
 
-      <div class="form-group">
-        <input id="nome" placeholder="Nome da peca">
-      </div>
+          <div class="form-fields">
+            <div class="form-group field-span-8">
+              <label for="origemId">Origem/Lote vinculado</label>
+              <select id="origemId">
+                <option value="">Selecione a origem</option>
+              </select>
+            </div>
+          </div>
 
-      <div class="form-group">
-        <input id="sku" placeholder="SKU / Codigo da peca">
-        <p class="field-hint">O SKU continua manual agora. Depois podemos automatizar sem mudar este fluxo.</p>
-      </div>
+          <div id="resumoOrigemCadastro" class="summary-grid summary-grid--compact origin-summary" hidden>
+            <div class="summary-card">
+              <span>Valor total</span>
+              <strong id="resumoOrigemValorTotal">R$ 0,00</strong>
+            </div>
+            <div class="summary-card">
+              <span>Valor distribuido</span>
+              <strong id="resumoOrigemValorDistribuido">R$ 0,00</strong>
+            </div>
+            <div class="summary-card">
+              <span>Valor restante</span>
+              <strong id="resumoOrigemValorRestante">R$ 0,00</strong>
+            </div>
+            <div class="summary-card">
+              <span>Quantidade restante</span>
+              <strong id="resumoOrigemQuantidadeRestante">0</strong>
+            </div>
+          </div>
+        </section>
 
-      <div class="form-group">
-        <label for="imagemPeca">Imagem da peca</label>
-        <input id="imagemPeca" type="file" accept="image/*">
-        <p class="field-hint">A imagem sera enviada para o bucket pecas no Supabase Storage.</p>
-      </div>
+        <section class="form-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Peca</h3>
+            </div>
+            <span class="required-marker">Obrigatório</span>
+          </div>
 
-      <div class="form-row form-row--three">
-        <div class="form-group">
-          <label for="quantidade">Quantidade *</label>
-          <input id="quantidade" type="number" min="1" step="1" placeholder="Quantidade">
-        </div>
+          <div class="form-fields">
+            <div class="form-group field-span-8">
+              <label for="nome">Nome da peca</label>
+              <input id="nome" placeholder="Nome da peca">
+            </div>
 
-        <div class="form-group">
-          <label for="custoUnitarioEntrada">Custo unitário *</label>
-          <input id="custoUnitarioEntrada" type="number" min="0" step="0.01" placeholder="0,00">
-          <p class="field-hint">Custo unitário é o custo de cada unidade desta peça dentro da origem.</p>
-        </div>
+            <div class="form-group field-span-4">
+              <label for="sku">SKU</label>
+              <input id="sku" placeholder="SKU / Codigo da peca">
+            </div>
+          </div>
+        </section>
 
-        <div class="form-group">
-          <label for="custoTotalEntrada">Custo total</label>
-          <input id="custoTotalEntrada" type="number" min="0" step="0.01" placeholder="0,00" readonly>
-        </div>
-      </div>
+        <section class="form-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Entrada de estoque</h3>
+            </div>
+            <span class="required-marker">Obrigatório</span>
+          </div>
 
-      <div class="form-group">
-        <textarea id="observacoesPeca" rows="4" placeholder="Observacoes da peca"></textarea>
+          <div class="form-fields">
+            <div class="form-group field-span-4">
+              <label for="quantidade">Quantidade</label>
+              <input id="quantidade" type="number" min="1" step="1" placeholder="Quantidade">
+            </div>
+
+            <div class="form-group field-span-4">
+              <label for="custoUnitarioEntrada">Custo unitario</label>
+              <input id="custoUnitarioEntrada" type="number" min="0" step="0.01" placeholder="0,00">
+            </div>
+
+            <div class="form-group field-span-4">
+              <label for="custoTotalEntrada">Custo total calculado</label>
+              <input id="custoTotalEntrada" type="number" min="0" step="0.01" placeholder="0,00" readonly>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Fotos</h3>
+            </div>
+            <span class="piece-status-chip piece-status-chip--muted">Visual</span>
+          </div>
+
+          <div class="photo-upload-block">
+            <div class="photo-preview-box">
+              <strong>Imagem da peca</strong>
+            </div>
+            <div class="form-group">
+              <label for="imagemPeca">Arquivo da imagem</label>
+              <input id="imagemPeca" type="file" accept="image/*">
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Observacoes</h3>
+            </div>
+            <span class="piece-status-chip piece-status-chip--muted">Interno</span>
+          </div>
+
+          <div class="form-group compact-textarea">
+            <label for="observacoesPeca">Observacoes internas</label>
+            <textarea id="observacoesPeca" rows="4" placeholder="Observacoes da peca"></textarea>
+          </div>
+        </section>
       </div>
 
       <p id="mensagemPeca" class="form-message" aria-live="polite"></p>
 
       <div class="form-actions">
-        <button type="button" class="button-primary" onclick="salvarPeca()">Salvar</button>
+        <button type="button" class="button-primary" onclick="salvarPeca()">Salvar peca e entrada</button>
         <a class="button-secondary" href="produtos.html">Ver produtos</a>
         <a id="linkDetalhesOrigem" class="button-secondary" href="cadastro-origem.html">Detalhes da origem</a>
         <a class="button-secondary" href="../index.html">Voltar para o painel</a>
