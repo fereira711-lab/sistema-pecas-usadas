@@ -3,8 +3,15 @@ const mensagemProdutos = document.getElementById("mensagemProdutos");
 const campoBuscaProdutos = document.getElementById("buscaProdutos");
 const filtroEstoqueProdutos = document.getElementById("filtroEstoqueProdutos");
 const filtroOrigemProdutos = document.getElementById("filtroOrigemProdutos");
+const filtroStatusProdutos = document.getElementById("filtroStatusProdutos");
 const ordenacaoProdutos = document.getElementById("ordenacaoProdutos");
+const quantidadePaginaProdutos = document.getElementById("quantidadePaginaProdutos");
 const campoImagemProdutoExistente = document.getElementById("imagemProdutoExistente");
+const shellProdutos = document.querySelector(".products-shell");
+const botaoAbrirFiltrosProdutos = document.getElementById("botaoAbrirFiltrosProdutos");
+const botaoFecharFiltrosProdutos = document.getElementById("botaoFecharFiltrosProdutos");
+const botaoLimparFiltrosProdutos = document.getElementById("botaoLimparFiltrosProdutos");
+const botaoAplicarFiltrosProdutos = document.getElementById("botaoAplicarFiltrosProdutos");
 let dadosProdutos = { pecas: [], origens: [] };
 let pecaSelecionadaParaImagem = null;
 
@@ -26,6 +33,15 @@ function escaparHtml(valor) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function formatarMoeda(valor) {
+  const numero = Number(valor || 0);
+
+  return numero.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
 }
 
 function obterIniciaisProduto(peca) {
@@ -64,6 +80,7 @@ function normalizarPeca(peca) {
     quantidadeVendida,
     status: peca.status || "em_estoque",
     imagemUrl: peca.imagemUrl || peca.imagem_url || "",
+    precoVenda: Number(peca.precoVenda || peca.preco_venda || peca.valorVenda || peca.valor_venda || peca.preco_sugerido || 0),
     preparada: Boolean(peca.preparada)
   };
 }
@@ -107,6 +124,10 @@ function abrirLancamentoCusto(pecaId) {
   window.location.href = `cadastro-custo.html?pecaId=${encodeURIComponent(pecaId)}`;
 }
 
+function abrirEdicaoProduto(pecaId) {
+  window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}&editar=1`;
+}
+
 function filtrarPecasPorBusca(pecas) {
   const termo = String(campoBuscaProdutos?.value || "").trim().toLowerCase();
 
@@ -117,8 +138,9 @@ function filtrarPecasPorBusca(pecas) {
   return pecas.filter(peca => {
     const nome = String(peca.nome || peca.nome_peca || "").toLowerCase();
     const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").toLowerCase();
+    const codigo = String(peca.codigo || peca.codigo_peca || peca.cod || peca.id || "").toLowerCase();
 
-    return nome.includes(termo) || sku.includes(termo);
+    return nome.includes(termo) || sku.includes(termo) || codigo.includes(termo);
   });
 }
 
@@ -158,6 +180,16 @@ function filtrarPecasPorOrigem(pecas) {
   return pecas.filter(peca => Number(peca.origemId || 0) === origemId);
 }
 
+function filtrarPecasPorStatus(pecas) {
+  const status = filtroStatusProdutos?.value || "";
+
+  if (!status) {
+    return pecas;
+  }
+
+  return pecas.filter(peca => String(peca.status || "") === status);
+}
+
 function ordenarPecas(pecas) {
   const ordenacao = ordenacaoProdutos?.value || "nome";
 
@@ -176,12 +208,39 @@ function ordenarPecas(pecas) {
 
 function obterPecasVisiveis() {
   return ordenarPecas(
-    filtrarPecasPorOrigem(
-      filtrarPecasPorEstoque(
-        filtrarPecasPorBusca(dadosProdutos.pecas)
+    filtrarPecasPorStatus(
+      filtrarPecasPorOrigem(
+        filtrarPecasPorEstoque(
+          filtrarPecasPorBusca(dadosProdutos.pecas)
+        )
       )
     )
   );
+}
+
+function limitarPecasPorPagina(pecas) {
+  const valor = quantidadePaginaProdutos?.value || "24";
+
+  if (valor === "todos") {
+    return pecas;
+  }
+
+  const limite = Number(valor);
+  return Number.isFinite(limite) && limite > 0 ? pecas.slice(0, limite) : pecas;
+}
+
+function alternarPainelFiltrosProdutos(aberto) {
+  shellProdutos?.classList.toggle("products-shell--filters-open", aberto);
+  botaoAbrirFiltrosProdutos?.setAttribute("aria-expanded", aberto ? "true" : "false");
+}
+
+function limparFiltrosProdutos() {
+  if (filtroEstoqueProdutos) filtroEstoqueProdutos.value = "";
+  if (filtroOrigemProdutos) filtroOrigemProdutos.value = "";
+  if (filtroStatusProdutos) filtroStatusProdutos.value = "";
+  if (ordenacaoProdutos) ordenacaoProdutos.value = "nome";
+
+  renderizarProdutos(obterPecasVisiveis());
 }
 
 function renderizarFiltroOrigens() {
@@ -296,6 +355,26 @@ function obterClasseStatus(status) {
   return "status-badge status-badge--stock";
 }
 
+function formatarStatusProduto(status, quantidadeDisponivel) {
+  if (quantidadeDisponivel <= 0) {
+    return "Sem estoque";
+  }
+
+  if (status === "vendida") {
+    return "Vendido";
+  }
+
+  return "Em estoque";
+}
+
+function obterClasseStatusProduto(status, quantidadeDisponivel) {
+  if (quantidadeDisponivel <= 0) {
+    return "status-badge status-badge--empty";
+  }
+
+  return obterClasseStatus(status);
+}
+
 function renderizarMidiaProduto(peca) {
   const imagemUrl = String(peca.imagemUrl || "").trim();
 
@@ -308,6 +387,7 @@ function renderizarMidiaProduto(peca) {
 
 function renderizarProdutos(pecas) {
   tabelaProdutos.innerHTML = "";
+  const pecasPaginadas = limitarPecasPorPagina(pecas);
 
   if (pecas.length === 0) {
     mensagemProdutos.textContent = campoBuscaProdutos?.value
@@ -318,36 +398,49 @@ function renderizarProdutos(pecas) {
 
   mensagemProdutos.textContent = "";
 
-  pecas.forEach(peca => {
+  pecasPaginadas.forEach(peca => {
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-    const classeStatus = obterClasseStatus(peca.status);
+    const classeStatus = obterClasseStatusProduto(peca.status, quantidadeDisponivel);
+    const statusProduto = formatarStatusProduto(peca.status, quantidadeDisponivel);
+    const precoOperacional = Number(peca.precoVenda || 0) > 0 ? formatarMoeda(peca.precoVenda) : "Sem preco";
     const card = document.createElement("article");
     card.className = "product-card";
 
     card.innerHTML = `
-      <div class="product-card__media">
-        ${renderizarMidiaProduto(peca)}
-      </div>
-
       <div class="product-card__body">
         <div class="product-card__header">
-          <div>
+          <div class="product-card__title-block">
             <p class="product-card__sku">${escaparHtml(formatarSku(peca))}</p>
             <h3>${escaparHtml(peca.nome || "-")}</h3>
           </div>
-          <span class="${classeStatus}">${escaparHtml(peca.status)}</span>
+
+          <details class="product-card__menu">
+            <summary aria-label="Acoes do produto">...</summary>
+            <div class="product-card__menu-list">
+              <button type="button" data-acao="detalhes" data-peca-id="${peca.id}">Ver detalhes</button>
+              <button type="button" data-acao="venda" data-peca-id="${peca.id}" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
+              <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lancar custo</button>
+              <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
+              <button type="button" data-acao="editar" data-peca-id="${peca.id}">Editar dados</button>
+              <button type="button" data-acao="imagem" data-peca-id="${peca.id}">Trocar imagem</button>
+            </div>
+          </details>
         </div>
 
-        <div class="product-card__stock">
-          <span>Estoque disponível</span>
-          <strong>${quantidadeDisponivel}</strong>
+        <div class="product-card__media">
+          ${renderizarMidiaProduto(peca)}
         </div>
 
-        <div class="product-card__actions">
-          <button type="button" data-acao="detalhes" data-peca-id="${peca.id}">Ver detalhes</button>
-          <button type="button" data-acao="venda" data-peca-id="${peca.id}" onclick="abrirVenda(${peca.id})" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
-          <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lançar custo</button>
-          <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
+        <div class="product-card__summary">
+          <div class="product-card__price">
+            <span>Preco sugerido</span>
+            <strong>${escaparHtml(precoOperacional)}</strong>
+          </div>
+          <div class="product-card__stock">
+            <span>Qtd.</span>
+            <strong>${quantidadeDisponivel}</strong>
+          </div>
+          <span class="${classeStatus}">${escaparHtml(statusProduto)}</span>
         </div>
       </div>
     `;
@@ -366,8 +459,32 @@ campoBuscaProdutos?.addEventListener("input", () => {
   renderizarProdutos(obterPecasVisiveis());
 });
 
-[filtroEstoqueProdutos, filtroOrigemProdutos, ordenacaoProdutos].forEach(campo => {
+[filtroEstoqueProdutos, filtroOrigemProdutos, filtroStatusProdutos, ordenacaoProdutos, quantidadePaginaProdutos].forEach(campo => {
   campo?.addEventListener("change", () => renderizarProdutos(obterPecasVisiveis()));
+});
+
+botaoAbrirFiltrosProdutos?.addEventListener("click", () => {
+  const aberto = !shellProdutos?.classList.contains("products-shell--filters-open");
+  alternarPainelFiltrosProdutos(aberto);
+});
+
+botaoFecharFiltrosProdutos?.addEventListener("click", () => {
+  alternarPainelFiltrosProdutos(false);
+});
+
+botaoAplicarFiltrosProdutos?.addEventListener("click", () => {
+  renderizarProdutos(obterPecasVisiveis());
+  alternarPainelFiltrosProdutos(false);
+});
+
+botaoLimparFiltrosProdutos?.addEventListener("click", () => {
+  limparFiltrosProdutos();
+});
+
+document.addEventListener("keydown", evento => {
+  if (evento.key === "Escape") {
+    alternarPainelFiltrosProdutos(false);
+  }
 });
 
 tabelaProdutos.addEventListener("click", evento => {
@@ -392,7 +509,18 @@ tabelaProdutos.addEventListener("click", evento => {
     return;
   }
 
-  if (botao.dataset.acao === "venda") {
+  if (botao.dataset.acao === "editar" && botao.dataset.pecaId) {
+    abrirEdicaoProduto(botao.dataset.pecaId);
+    return;
+  }
+
+  if (botao.dataset.acao === "imagem" && botao.dataset.pecaId) {
+    pedirImagemProduto(botao.dataset.pecaId);
+    return;
+  }
+
+  if (botao.dataset.acao === "venda" && botao.dataset.pecaId) {
+    abrirVenda(botao.dataset.pecaId);
     return;
   }
 });

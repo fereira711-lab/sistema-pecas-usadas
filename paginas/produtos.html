@@ -6,13 +6,13 @@
   <title>Estoque / Produtos</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark products-operational-page">
   <header class="page-header">
     <div>
       <p class="hero__tag">Estoque</p>
       <h1>Estoque / Produtos</h1>
       <p class="hero__description">
-        Localize peças disponíveis e execute as ações principais do estoque.
+        Localize pecas disponiveis e execute as acoes principais do estoque.
       </p>
     </div>
   </header>
@@ -21,34 +21,63 @@
     <section class="stock-card products-shell">
       <div class="stock-header products-header">
         <div>
-          <h2>Peças cadastradas</h2>
-          <p>Lista operacional para consultar estoque, vender, lançar custo ou abrir detalhes.</p>
+          <span class="piece-form-eyebrow">Estoque operacional</span>
+          <h2>Produtos cadastrados</h2>
+          <p>Consulta rapida de pecas, estoque, status e acoes principais.</p>
+        </div>
+
+        <div class="products-header__actions">
+          <span class="piece-status-chip">Operacional</span>
+          <a class="button-secondary products-action-primary" href="cadastro-peca.html">Cadastrar peca</a>
         </div>
       </div>
 
-      <section class="products-action-panel" aria-label="Ações principais de produtos">
-        <div>
-          <h3>Ações principais</h3>
-          <p>Use a ação abaixo para incluir uma nova peça no estoque.</p>
-        </div>
+      <section class="products-toolbar" aria-label="Filtros e busca de produtos">
+        <div class="products-main-controls">
+          <div class="form-group products-page-size-field">
+            <label for="quantidadePaginaProdutos">Por pagina</label>
+            <select id="quantidadePaginaProdutos">
+              <option value="12">12</option>
+              <option value="24" selected>24</option>
+              <option value="48">48</option>
+              <option value="todos">Todos</option>
+            </select>
+          </div>
 
-        <div class="products-actions">
-          <a class="button-secondary products-action-primary" href="cadastro-peca.html">Cadastrar peça</a>
+          <div class="form-group products-search-field">
+            <label for="buscaProdutos">Buscar produto</label>
+            <input id="buscaProdutos" type="search" placeholder="Buscar por SKU, nome ou codigo">
+          </div>
+
+          <button id="botaoAbrirFiltrosProdutos" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosProdutos" aria-expanded="false">
+            Filtros
+          </button>
         </div>
       </section>
 
-      <section class="products-toolbar" aria-label="Filtros e busca de produtos">
-        <div class="products-toolbar__heading">
-          <h3>Filtros e busca</h3>
-          <p>Encontre rapidamente a peça por SKU, nome, estoque ou origem.</p>
-        </div>
+      <p id="mensagemProdutos" class="empty-message products-message"></p>
 
-        <div class="form-row filters-compact products-filters">
-          <div class="form-group products-search-field">
-            <label for="buscaProdutos">Busca rápida</label>
-            <input id="buscaProdutos" type="search" placeholder="SKU ou nome da peça">
+      <input id="imagemProdutoExistente" class="file-input-hidden" type="file" accept="image/*">
+
+      <div class="products-content-layout">
+        <section class="products-list" aria-labelledby="tituloListaProdutos">
+          <div class="products-list__header">
+            <div>
+              <h3 id="tituloListaProdutos">Lista de produtos</h3>
+            </div>
           </div>
 
+          <div id="tabelaProdutos" class="product-card-grid" aria-label="Produtos cadastrados"></div>
+        </section>
+      </div>
+
+      <aside id="painelFiltrosProdutos" class="products-filter-panel" aria-label="Filtros avancados de produtos">
+        <div class="products-filter-panel__header">
+          <h3>Filtros avancados</h3>
+          <button id="botaoFecharFiltrosProdutos" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
+        </div>
+
+        <div class="products-filters">
           <div class="form-group">
             <label for="filtroEstoqueProdutos">Estoque</label>
             <select id="filtroEstoqueProdutos">
@@ -67,6 +96,15 @@
           </div>
 
           <div class="form-group">
+            <label for="filtroStatusProdutos">Status</label>
+            <select id="filtroStatusProdutos">
+              <option value="">Todos</option>
+              <option value="em_estoque">Em estoque</option>
+              <option value="vendida">Vendido</option>
+            </select>
+          </div>
+
+          <div class="form-group">
             <label for="ordenacaoProdutos">Ordenar por</label>
             <select id="ordenacaoProdutos">
               <option value="nome">Nome</option>
@@ -75,22 +113,12 @@
             </select>
           </div>
         </div>
-      </section>
 
-      <p id="mensagemProdutos" class="empty-message products-message"></p>
-
-      <input id="imagemProdutoExistente" class="file-input-hidden" type="file" accept="image/*">
-
-      <section class="products-list" aria-labelledby="tituloListaProdutos">
-        <div class="products-list__header">
-          <div>
-            <h3 id="tituloListaProdutos">Lista de produtos</h3>
-            <p>Cards compactos com estoque, status e ações principais.</p>
-          </div>
+        <div class="products-filter-panel__actions">
+          <button id="botaoLimparFiltrosProdutos" class="button-secondary" type="button">Limpar filtros</button>
+          <button id="botaoAplicarFiltrosProdutos" class="button-primary" type="button">Aplicar/Fechar</button>
         </div>
-
-        <div id="tabelaProdutos" class="product-card-grid" aria-label="Produtos cadastrados"></div>
-      </section>
+      </aside>
     </section>
   </main>
 
@@ -98,7 +126,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=25"></script>
-  <script src="../js/produtos.js?v=24"></script>
+  <script src="../js/produtos.js?v=29"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>
