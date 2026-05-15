@@ -4,26 +4,12 @@
 
   const grupos = [
     {
-      titulo: "Cadastros",
-      icone: "ri-folder-add-line",
-      aberto: ["cadastro-peca.html", "cadastro-origem.html", "cadastro-sucata.html", "cadastro-custo.html", "tipos-custo.html"].includes(paginaAtual),
+      titulo: "Produtos",
+      icone: "ri-box-3-line",
+      aberto: ["produtos.html", "cadastro-peca.html"].includes(paginaAtual),
       itens: [
-        { texto: "Cadastro de Pecas", icone: "ri-tools-line", url: "paginas/cadastro-peca.html" },
-        { texto: "Cadastro de Localizacao", icone: "ri-map-pin-line", url: "#", aviso: "Tela de localizacao sera criada em etapa futura." },
-        { texto: "Cadastrar Origem", icone: "ri-car-line", url: "paginas/cadastro-origem.html" },
-        { texto: "Cadastro de Sucata", icone: "ri-truck-line", url: "paginas/cadastro-sucata.html" },
-        { texto: "Cadastro de Custo da Peca", icone: "ri-money-dollar-circle-line", url: "paginas/cadastro-custo.html" },
-        { texto: "Tipos de Custo", icone: "ri-price-tag-3-line", url: "paginas/tipos-custo.html" }
-      ]
-    },
-    {
-      titulo: "Estoque",
-      icone: "ri-archive-line",
-      aberto: ["produtos.html", "estoque.html", "lotes.html"].includes(paginaAtual),
-      itens: [
-        { texto: "Produtos", icone: "ri-box-3-line", url: "paginas/produtos.html" },
-        { texto: "Entradas de Estoque / Lotes", icone: "ri-stack-line", url: "paginas/lotes.html" },
-        { texto: "Endereco de Peca", icone: "ri-map-pin-2-line", url: "#", aviso: "Tela de endereco de peca sera criada em etapa futura." },
+        { texto: "Consultar estoque", icone: "ri-search-line", url: "paginas/produtos.html" },
+        { texto: "Cadastrar peca", icone: "ri-tools-line", url: "paginas/cadastro-peca.html" }
       ]
     },
     {
@@ -31,42 +17,55 @@
       icone: "ri-shopping-cart-2-line",
       aberto: ["cadastro-venda.html", "historico-vendas.html"].includes(paginaAtual),
       itens: [
-        { texto: "Nova Venda", icone: "ri-add-circle-line", url: "paginas/cadastro-venda.html" },
-        { texto: "Historico de Venda", icone: "ri-history-line", url: "paginas/historico-vendas.html" }
+        { texto: "Registrar venda", icone: "ri-add-circle-line", url: "paginas/cadastro-venda.html" },
+        { texto: "Historico de vendas", icone: "ri-history-line", url: "paginas/historico-vendas.html" }
       ]
     },
     {
-      titulo: "Analise",
+      titulo: "Estoque",
+      icone: "ri-archive-line",
+      aberto: ["lotes.html", "giro-estoque.html", "alertas.html"].includes(paginaAtual),
+      itens: [
+        { texto: "Entradas/Lotes", icone: "ri-stack-line", url: "paginas/lotes.html" },
+        { texto: "Giro de estoque", icone: "ri-loop-right-line", url: "paginas/giro-estoque.html" },
+        { texto: "Alertas", icone: "ri-alert-line", url: "paginas/alertas.html" }
+      ]
+    },
+    {
+      titulo: "Origens",
+      icone: "ri-route-line",
+      aberto: ["cadastro-origem.html", "listar-origens.html"].includes(paginaAtual),
+      itens: [
+        { texto: "Cadastrar origem", icone: "ri-car-line", url: "paginas/cadastro-origem.html" },
+        { texto: "Origens cadastradas", icone: "ri-list-check-2", url: "paginas/listar-origens.html" }
+      ]
+    },
+    {
+      titulo: "Custos",
+      icone: "ri-price-tag-3-line",
+      aberto: ["cadastro-custo.html", "tipos-custo.html"].includes(paginaAtual),
+      itens: [
+        { texto: "Custo de peca", icone: "ri-money-dollar-circle-line", url: "paginas/cadastro-custo.html" },
+        { texto: "Tipos de custo", icone: "ri-price-tag-3-line", url: "paginas/tipos-custo.html" }
+      ]
+    },
+    {
+      titulo: "Analises",
       icone: "ri-bar-chart-box-line",
-      aberto: ["painel.html", "analise-produto.html", "analise-periodo.html", "analise-custos.html", "giro-estoque.html", "alertas.html", "origens.html"].includes(paginaAtual),
+      aberto: ["analise-produto.html", "analise-periodo.html", "analise-custos.html"].includes(paginaAtual),
       itens: [
-        { texto: "Painel Geral", icone: "ri-line-chart-line", url: "painel.html" },
-        { texto: "Analise por Produto", icone: "ri-pie-chart-line", url: "paginas/analise-produto.html" },
-        { texto: "Analise por Periodo", icone: "ri-calendar-event-line", url: "paginas/analise-periodo.html" },
-        { texto: "Analise de Custos", icone: "ri-funds-line", url: "paginas/analise-custos.html" },
-        { texto: "Giro de Estoque", icone: "ri-loop-right-line", url: "paginas/giro-estoque.html" },
-        { texto: "Alertas", icone: "ri-alert-line", url: "paginas/alertas.html" },
-        { texto: "Origens", icone: "ri-route-line", url: "paginas/origens.html" }
-      ]
-    },
-    {
-      titulo: "Detalhes",
-      icone: "ri-information-line",
-      aberto: ["detalhes-origem.html", "detalhes-produto.html", "detalhes-venda.html", "listar-origens.html", "relatorios.html"].includes(paginaAtual),
-      itens: [
-        { texto: "Listar Origens", icone: "ri-list-check-2", url: "paginas/listar-origens.html" },
-        { texto: "Detalhes da Origem", icone: "ri-file-list-3-line", url: "#", aviso: "Abrir detalhes pela lista de origens." },
-        { texto: "Detalhes da Peca", icone: "ri-file-search-line", url: "#", aviso: "Abrir detalhes pela tela de produtos." },
-        { texto: "Detalhes da Venda", icone: "ri-receipt-line", url: "#", aviso: "Abrir detalhes pelo historico de vendas." },
-        { texto: "Relatorios", icone: "ri-file-chart-line", url: "paginas/relatorios.html" }
+        { texto: "Analise por produto", icone: "ri-pie-chart-line", url: "paginas/analise-produto.html" },
+        { texto: "Analise por periodo", icone: "ri-calendar-event-line", url: "paginas/analise-periodo.html" },
+        { texto: "Analise de custos", icone: "ri-funds-line", url: "paginas/analise-custos.html" }
       ]
     },
     {
       titulo: "Sistema",
       icone: "ri-settings-3-line",
-      aberto: false,
+      aberto: ["mapa-mental.html"].includes(paginaAtual),
       itens: [
-        { texto: "Mapa Mental", icone: "ri-mind-map", url: "docs/mapa-mental.html" }
+        { texto: "Mapa mental", icone: "ri-mind-map", url: "docs/mapa-mental.html" },
+        { texto: "Documentacao", icone: "ri-file-text-line", url: "DOCUMENTACAO-SISTEMA.md" }
       ]
     }
   ];
@@ -104,7 +103,7 @@
   }
 
   function criarGrupo(grupo, index) {
-    const aberto = grupo.aberto || (paginaAtual === "index.html" && index === 0);
+    const aberto = grupo.aberto || (paginaAtual === "index.html" && index < 2);
     return `
       <section class="app-sidebar__group${aberto ? " is-open" : ""}">
         <button class="app-sidebar__group-button" type="button" aria-expanded="${aberto ? "true" : "false"}">
@@ -129,7 +128,7 @@
     const sidebar = document.createElement("aside");
     sidebar.className = "app-sidebar";
     sidebar.innerHTML = `
-      <a class="app-sidebar__brand" href="${emPaginaInterna ? "../dashboard.html" : "dashboard.html"}">
+      <a class="app-sidebar__brand" href="${emPaginaInterna ? "../index.html" : "index.html"}">
         <span><i class="ri-recycle-line"></i></span>
         <strong>DWDW ERP</strong>
       </a>
@@ -137,7 +136,7 @@
         <i class="ri-side-bar-line" aria-hidden="true"></i>
         <span>Recolher</span>
       </button>
-      <a class="app-sidebar__dashboard${paginaAtual === "dashboard.html" ? " is-active" : ""}" href="${emPaginaInterna ? "../dashboard.html" : "dashboard.html"}">
+      <a class="app-sidebar__dashboard${["index.html", "painel.html"].includes(paginaAtual) ? " is-active" : ""}" href="${emPaginaInterna ? "../painel.html" : "painel.html"}">
         <span class="app-sidebar__item-icon" aria-hidden="true"><i class="ri-dashboard-line"></i></span>
         <span>Dashboard</span>
       </a>
