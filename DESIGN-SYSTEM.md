@@ -11,7 +11,7 @@ Ele deve:
 - Criar uma aparencia profissional no estilo ERP/SaaS.
 - Manter o foco em operacao rapida, leitura clara e produtividade.
 - Servir como base antes da criacao de CSS global ou componentes reutilizaveis.
-- Servir junto com `preview.html` como laboratorio visual antes de mudancas definitivas.
+- Servir junto com a pasta `previews/` como laboratorio visual antes de mudancas definitivas.
 
 ## Momento atual do design
 
@@ -21,10 +21,14 @@ Decisoes atuais:
 
 - Nao fazer redesign geral de uma vez.
 - Trabalhar pagina por pagina.
-- Validar primeiro em `preview.html` ou em uma tela controlada.
+- Validar primeiro em `previews/` ou em uma tela controlada.
 - Manter o padrao visual atual enquanto a nova direcao e estudada.
 - Evitar mudancas que alterem regra de negocio, FIFO ou calculos financeiros.
 - Registrar decisoes novas antes de espalhar padroes para outras telas.
+- Manter `painel.html` como entrada oficial apos login.
+- Manter a sidebar como navegacao principal atual.
+- Manter `index.html` como entrada tecnica/redirecionamento.
+- Manter `dashboard.html` como legado/redirecionamento para `painel.html`.
 
 ## Referencia visual aprovada em campo
 
@@ -40,7 +44,8 @@ Diretrizes extraidas dessa tela:
 - Dourado/amarelo e cor de identidade e destaque discreto, nao cor dominante.
 - Badges como "Obrigatorio" devem ser pequenos, suaves e de baixa competicao visual.
 - Campos calculados/readonly usam estilo proprio: fundo sutil, borda neutra/fria e texto destacado.
-- Sidebar e topbar devem entrar futuramente como estrutura global, mantendo a area central focada na tarefa.
+- Sidebar e a estrutura global atual, mantendo a area central focada na tarefa.
+- Topbar com mega menu pode ser estudada em `previews/preview-mega-menu.html`, sem substituir a sidebar ate ser aprovada.
 
 ## Organizacao funcional atual
 
@@ -49,6 +54,19 @@ Diretrizes extraidas dessa tela:
 - Analises sao a area financeira do sistema.
 - FIFO real e a fonte oficial de custo.
 - `financeiro-utils.js` e a fonte oficial de calculos financeiros.
+- `painel.html` e a entrada oficial do sistema apos login.
+- `index.html` e entrada tecnica/compatibilidade.
+- `dashboard.html` e legado/redirecionamento.
+- Paginas de detalhes nao entram como link direto no menu principal.
+
+## Estrutura de projeto considerada no design
+
+- `css/`: estilos globais, tokens visuais e CSS do mapa mental.
+- `docs/`: documentacao auxiliar e relatorios tecnicos.
+- `js/`: scripts por tela e utilitarios compartilhados.
+- `paginas/`: telas reais do sistema.
+- `previews/`: prototipos visuais sem funcao operacional.
+- `sql/`: estrutura de banco, FIFO e RPCs.
 
 ## Identidade visual
 
@@ -76,7 +94,7 @@ Evitar:
 
 ## Paleta de cores
 
-Sugestao inicial para padronizacao:
+O padrao visual atual e escuro operacional. A tabela abaixo registra a referencia historica clara, mas as telas recentes devem priorizar fundo escuro, bordas suaves, cards compactos e dourado como destaque discreto.
 
 | Uso | Cor sugerida | Observacao |
 | --- | --- | --- |
@@ -92,7 +110,8 @@ Sugestao inicial para padronizacao:
 
 Regras:
 
-- Azul deve ser usado para acao principal e navegacao ativa.
+- Dourado/amarelo e a cor de identidade no padrao atual, mas deve aparecer apenas como destaque discreto.
+- Azul pode ser usado em estados informativos ou links, sem competir com a identidade principal.
 - Verde deve indicar sucesso ou situacao positiva.
 - Vermelho deve indicar erro, risco ou acao destrutiva.
 - Amarelo deve indicar aviso, atencao ou pendencia.
@@ -156,6 +175,19 @@ Regras:
 
 Menu lateral com modulos principais do ERP.
 
+Modulos atuais:
+
+- Painel Geral.
+- Produtos.
+- Vendas.
+- Estoque.
+- Origens.
+- Custos.
+- Analises.
+- Sistema.
+
+Paginas de detalhes nao devem aparecer como link direto; devem abrir pelo contexto da listagem ou entidade relacionada.
+
 ### Topo/header
 
 Area superior com contexto da pagina, busca, acoes rapidas e usuario.
@@ -178,21 +210,22 @@ Padrao recomendado:
 
 - Largura aberta: `240px` a `280px`.
 - Largura recolhida: `64px` a `72px`.
-- Fundo neutro ou branco.
+- Fundo escuro/neutro, coerente com o tema operacional atual.
 - Bordas discretas.
-- Item ativo com destaque azul.
+- Item ativo com destaque discreto, preferencialmente dourado suave ou borda/acento sutil.
 - Hover com fundo suave.
 - Icones simples ao lado dos textos.
 
-Agrupamento de modulos:
+Agrupamento de modulos atual:
 
-- Dashboard
-- Origens
-- Produtos
-- Estoque
-- Vendas
-- Financeiro
-- Configuracoes
+- Painel Geral.
+- Produtos: Consultar estoque, Cadastrar peca.
+- Vendas: Registrar venda, Historico de vendas.
+- Estoque: Entradas/Lotes, Giro de estoque, Alertas.
+- Origens: Cadastrar origem, Origens cadastradas.
+- Custos: Custo de peca, Tipos de custo.
+- Analises: Analise por produto, Analise por periodo, Analise de custos.
+- Sistema: Mapa mental e documentacao quando houver link.
 
 Estrutura hierarquica:
 
@@ -235,7 +268,7 @@ Uso correto:
 
 Padrao visual:
 
-- Fundo branco.
+- Fundo escuro/neutro nas telas atuais.
 - Borda discreta.
 - Raio pequeno: `6px` a `8px`.
 - Sombra leve ou nenhuma.
@@ -251,6 +284,27 @@ Quando evitar cards:
 - Cards dentro de cards.
 - Telas operacionais que precisam ser rapidas e densas.
 
+### Card de produto oficial
+
+O card operacional da pagina Produtos deve exibir:
+
+- SKU.
+- Nome da peca.
+- Foto ou placeholder.
+- Preco de venda.
+- Quantidade disponivel.
+- Status apenas quando relevante, como sem estoque ou estoque baixo.
+- Menu de acoes.
+
+Nao exibir no card:
+
+- Lucro.
+- Custo.
+- Margem.
+- Resultado financeiro.
+
+Essas informacoes pertencem a detalhes, painel ou analises.
+
 ## Tabelas
 
 Padrao:
@@ -265,9 +319,12 @@ Padrao:
 
 Filtros:
 
-- Devem ficar acima da tabela.
+- Busca principal sempre visivel.
+- Botao "Filtros" ao lado da busca.
+- Painel lateral direito para filtros avancados.
 - Devem ser discretos e compactos.
 - Devem permitir limpar filtros rapidamente.
+- Devem ter botoes "Limpar filtros" e "Aplicar/Fechar".
 
 Paginacao:
 
@@ -542,6 +599,9 @@ Prioridade operacional:
 - Operacional deve ser rapido.
 - Detalhes concentram contexto completo.
 - Analises ficam separadas das telas operacionais.
+- Telas operacionais nao devem receber analise financeira pesada.
+- FIFO continua sendo a fonte oficial de custo real.
+- `financeiro-utils.js` continua sendo a fonte oficial de calculos financeiros.
 - Evitar excesso de informacao visual.
 - Evitar componentes duplicados.
 - Nao criar estilos isolados para casos que podem ser padronizados.

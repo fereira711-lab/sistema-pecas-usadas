@@ -17,10 +17,15 @@ Decisoes de UX atuais:
 - Evitar redesign geral de uma vez.
 - Trabalhar pagina por pagina.
 - Preservar o funcionamento antes de mexer em aparencia.
+- Manter `painel.html` como entrada oficial apos login.
+- Usar a sidebar como navegacao principal atual do ERP.
+- Manter `index.html` como entrada tecnica/redirecionamento, nao como menu inicial de cards.
+- Manter `dashboard.html` apenas como legado/redirecionamento para o Painel Geral.
 - Manter `produtos.html` como tela operacional principal.
 - Usar telas de detalhes como centrais completas da entidade.
 - Usar analises como area financeira, sem sobrecarregar as telas operacionais.
-- Usar `preview.html` e o design system como laboratorio visual antes de aplicar mudancas no sistema real.
+- Usar a pasta `previews/` e o design system como laboratorio visual antes de aplicar mudancas no sistema real.
+- Nao exibir paginas de detalhes como links diretos no menu; elas devem abrir pelo contexto correto.
 
 ## Padrao visual em validacao
 
@@ -34,8 +39,35 @@ Regras consolidadas nesta fase:
 - Dourado/amarelo como destaque discreto de identidade, principalmente em aba ativa, titulo pequeno e acentos suaves.
 - Dourado nao deve parecer alerta em campos normais.
 - Badges devem ser pequenos, suaves e nao competir com campos ou titulos.
+- Filtros avancados devem usar painel lateral padronizado quando houver espaco; a busca principal permanece visivel.
+- Listagens devem priorizar densidade, leitura rapida e acoes no contexto.
 - Campos calculados ou `readonly` devem ter estilo proprio, com fundo levemente diferente, borda discreta e texto destacado.
-- Sidebar e topbar devem ser adotadas futuramente como base global do ERP, mantendo o conteudo central compacto.
+- Sidebar e a navegacao principal atual; topbar/mega menu pode ser estudado em preview antes de substituir qualquer fluxo real.
+
+## Navegacao atual
+
+- O login direciona para `painel.html`.
+- O item principal da sidebar deve aparecer como "Painel Geral" e apontar para `painel.html`.
+- `dashboard.html` nao deve ser mantido como segunda versao do painel; ele e legado/redirecionamento.
+- `index.html` deve continuar funcionando como entrada tecnica/compatibilidade.
+- Detalhes de produto, venda e origem devem ser acessados a partir das listagens ou cards de contexto, nao pelo menu principal.
+
+## Pasta de previews
+
+A pasta `previews/` concentra testes visuais e nao deve ser tratada como fluxo real do sistema.
+
+Ela pode conter:
+
+- preview de cadastro/produto;
+- preview de design system;
+- preview de mega menu;
+- preview de dashboard antigo.
+
+Regras:
+
+- Nao apontar sidebar, login ou menus operacionais para previews.
+- Ajustar caminhos relativos ao mover previews.
+- Validar visualmente antes de aplicar um padrao em tela real.
 
 ## Teste real recente de UX
 
@@ -68,8 +100,22 @@ Regras:
 - Exibir apenas informacoes necessarias para concluir a tarefa.
 - Evitar indicadores financeiros detalhados quando nao forem essenciais.
 - Manter botoes principais bem visiveis.
+- Nao transformar listagens operacionais em analise financeira pesada.
 
 Exemplos: cadastro de origem, cadastro de peca, cadastro de venda, produtos, historico de vendas e entradas de estoque.
+
+### Produtos
+
+A tela de Produtos e operacional. O card oficial deve mostrar:
+
+- SKU;
+- nome da peca;
+- foto ou placeholder;
+- preco de venda;
+- quantidade disponivel;
+- menu de acoes.
+
+O card de Produtos nao deve mostrar lucro, custo, margem ou resultado financeiro. Essas informacoes pertencem a detalhes, painel ou analises.
 
 ### Telas de detalhes
 
@@ -172,7 +218,13 @@ Padrao recomendado:
 
 ### Filtros discretos
 
-Filtros devem ficar acima da tabela ou em painel recolhivel.
+Filtros devem seguir o padrao atual:
+
+- busca principal sempre visivel;
+- botao "Filtros" ao lado da busca;
+- filtros avancados em painel lateral direito;
+- botoes "Limpar filtros" e "Aplicar/Fechar";
+- responsividade basica para virar drawer em telas menores.
 
 Usar filtros para:
 
@@ -300,7 +352,7 @@ Exemplos:
 
 ### Laboratorio visual
 
-- Usar `preview.html` para testar ideias visuais antes de aplicar em paginas reais.
+- Usar `previews/` para testar ideias visuais antes de aplicar em paginas reais.
 - Usar `DESIGN-SYSTEM.md` para registrar padroes aprovados.
 - Validar uma tela por vez antes de espalhar o mesmo padrao.
 - Evitar transformar testes visuais em regra definitiva sem revisar o impacto operacional.

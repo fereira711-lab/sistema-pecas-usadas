@@ -26,10 +26,37 @@ Decisoes atuais:
 
 - FIFO real e a fonte oficial de custo das vendas. O custo vendido deve vir de `venda_consumos_estoque`.
 - `financeiro-utils.js` e a fonte oficial de calculos financeiros. Telas devem reutilizar essa camada para receita, custo consumido, custos, lucro e margem.
+- `painel.html` e a entrada oficial do sistema apos login.
+- `index.html` fica como entrada tecnica/compatibilidade e redireciona para `painel.html` quando a sessao esta valida.
+- `dashboard.html` e legado e deve redirecionar para `painel.html`, evitando duplicidade entre Dashboard e Painel Geral.
+- A sidebar e a navegacao principal atual do sistema.
 - `paginas/produtos.html` e a tela operacional principal para estoque/produtos.
 - Telas de detalhes funcionam como central da entidade: origem, peca e venda.
 - Telas de analise formam a area financeira, separada do fluxo operacional diario.
 - O acesso a telas de detalhes deve partir do contexto correto, como lista de produtos, historico de vendas, origem ou tabelas relacionadas, e nao de cards soltos no menu.
+
+## Estrutura atual de pastas
+
+| Pasta | Papel |
+| --- | --- |
+| `css/` | Estilos globais do sistema, mapa mental e padroes visuais. |
+| `docs/` | Documentos auxiliares, mapa mental e relatorios tecnicos. |
+| `js/` | Scripts funcionais por tela e servicos compartilhados. |
+| `paginas/` | Telas internas do ERP. |
+| `previews/` | Prototipos visuais e testes de layout. Nao faz parte do fluxo real. |
+| `sql/` | Scripts de banco, estrutura FIFO, RPCs e tabelas auxiliares. |
+
+## Entrada e navegacao
+
+- Login e entrada tecnica devem direcionar o usuario para `painel.html`.
+- `painel.html` e o Painel Geral oficial e concentra resumo operacional, alertas, ultimas vendas e atalhos.
+- `index.html` nao deve voltar a ser menu de cards; ele existe para compatibilidade e redirecionamento.
+- `dashboard.html` permanece apenas como legado/redirecionamento para `painel.html`.
+- A sidebar organiza os modulos principais: Painel Geral, Produtos, Vendas, Estoque, Origens, Custos, Analises e Sistema.
+- Paginas de detalhes nao devem aparecer como link direto no menu. Elas devem abrir pelo contexto correto:
+  - Produto -> Ver detalhes;
+  - Historico de vendas -> Ver detalhes da venda;
+  - Origens cadastradas -> Ver detalhes da origem.
 
 ## Teste real recente
 
@@ -85,8 +112,9 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 
 | Tela | Arquivo | Objetivo | Tipo |
 | --- | --- | --- | --- |
-| Inicio | `index.html` | Porta de entrada e menu por grupos | Administrativo |
-| Painel geral | `painel.html` | Resumo operacional e financeiro do negocio | Analise |
+| Entrada tecnica | `index.html` | Compatibilidade e redirecionamento para o painel oficial | Administrativo |
+| Dashboard legado | `dashboard.html` | Legado/redirecionamento para `painel.html` | Legado |
+| Painel geral | `painel.html` | Entrada oficial, resumo operacional, alertas e atalhos | Operacional |
 | Cadastrar origem | `paginas/cadastro-origem.html` | Registrar procedencia/compra/lote | Operacional |
 | Origens cadastradas | `paginas/listar-origens.html` | Listar origens e abrir detalhes | Operacional |
 | Detalhes da origem | `paginas/detalhes-origem.html` | Ver contexto completo e resultado da origem | Detalhes |
@@ -97,7 +125,7 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 | Giro de estoque | `paginas/giro-estoque.html` | Analisar velocidade e situacao das pecas | Analise |
 | Alertas | `paginas/alertas.html` | Acompanhar estoque baixo, sem estoque e pontos de atencao | Analise |
 | Cadastrar venda | `paginas/cadastro-venda.html` | Registrar venda de peca e custos da venda | Operacional |
-| Historico de vendas | `paginas/historico-vendas.html` | Consultar vendas, faturamento, custos e lucro | Operacional |
+| Historico de vendas | `paginas/historico-vendas.html` | Consultar vendas e abrir detalhes | Operacional |
 | Extrato da venda | `paginas/detalhes-venda.html` | Ver consumo FIFO e composicao financeira da venda | Detalhes |
 | Cadastrar custo da peca | `paginas/cadastro-custo.html` | Lancar custos extras da peca | Operacional |
 | Analise por produto | `paginas/analise-produto.html` | Comparar receita, custos e lucro por peca | Analise |
@@ -122,6 +150,28 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 - Analises ficam separadas do fluxo operacional para evitar excesso de informacao no dia a dia.
 - Telas operacionais devem priorizar cadastro, venda, entrada e consulta objetiva.
 - Informacoes financeiras detalhadas devem aparecer em detalhes, painel e analises, nao sobrecarregar listagens.
+- O padrao visual atual usa tema escuro operacional, cards compactos, badges suaves, dourado como destaque discreto e blocos bem separados.
+- Filtros avancados seguem o padrao de painel lateral; a busca principal deve permanecer visivel no topo das listagens.
+- Formularios devem ser organizados por blocos logicos.
+- A tela de Produtos usa card operacional com SKU, nome, foto, preco de venda, quantidade e menu de acoes. Ela nao deve mostrar lucro, custo, margem ou resultado financeiro no card.
+- Telas operacionais nao devem receber analise financeira pesada.
+
+## Previews visuais
+
+A pasta `previews/` guarda prototipos visuais usados para testar padroes antes de aplicar nas telas reais.
+
+Arquivos previstos nessa pasta:
+
+- `previews/preview.html`: prototipo visual de cadastro/produto.
+- `previews/preview-mega-menu.html`: prototipo de topbar com mega menu ERP/SaaS.
+- `previews/preview-dashboard.html`: prototipo visual legado de dashboard.
+- `previews/preview-design-system.html`: pode existir em ambientes locais como laboratorio de design system.
+
+Regras:
+
+- Previews nao fazem parte do fluxo real do sistema.
+- Previews nao devem ser usados como destino de sidebar/menu operacional.
+- Mudancas aprovadas em preview devem ser aplicadas depois nas paginas reais, com validacao.
 
 ## Arquitetura frontend
 
@@ -137,7 +187,8 @@ Os estilos ficam em `css/style.css` e `css/mapa-mental.css`. O CSS centraliza la
 
 Os scripts ficam em `js/`, separados por responsabilidade:
 
-- `app.js`: navegacao e accordion do menu inicial.
+- `app.js`: apoio de navegacao legado e comportamentos simples.
+- `sidebar.js`: navegacao principal atual do ERP.
 - `supabase-config.js`: configuracao do Supabase.
 - `supabase-service.js`: camada de acesso ao Supabase e mapeamento dos dados.
 - `financeiro-utils.js`: calculos financeiros centrais.
