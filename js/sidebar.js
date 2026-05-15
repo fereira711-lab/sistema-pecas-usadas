@@ -136,9 +136,9 @@
         <i class="ri-side-bar-line" aria-hidden="true"></i>
         <span>Recolher</span>
       </button>
-      <a class="app-sidebar__dashboard${["index.html", "painel.html"].includes(paginaAtual) ? " is-active" : ""}" href="${emPaginaInterna ? "../painel.html" : "painel.html"}">
+      <a class="app-sidebar__dashboard${["index.html", "painel.html", "dashboard.html"].includes(paginaAtual) ? " is-active" : ""}" href="${emPaginaInterna ? "../painel.html" : "painel.html"}">
         <span class="app-sidebar__item-icon" aria-hidden="true"><i class="ri-dashboard-line"></i></span>
-        <span>Dashboard</span>
+        <span>Painel Geral</span>
       </a>
       <nav class="app-sidebar__nav" aria-label="Menu do sistema">
         ${grupos.map(criarGrupo).join("")}

@@ -12,8 +12,8 @@
 
   function caminhoInicial() {
     return window.location.pathname.includes("/paginas/")
-      ? "../dashboard.html"
-      : "dashboard.html";
+      ? "../painel.html"
+      : "painel.html";
   }
 
   function definirMensagem(elemento, texto, tipo = "") {
