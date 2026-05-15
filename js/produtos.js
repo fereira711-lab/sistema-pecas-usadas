@@ -375,6 +375,20 @@ function obterClasseStatusProduto(status, quantidadeDisponivel) {
   return obterClasseStatus(status);
 }
 
+function renderizarBadgeStatusProduto(status, quantidadeDisponivel) {
+  if (quantidadeDisponivel <= 0 || status === "vendida") {
+    const classeStatus = obterClasseStatusProduto(status, quantidadeDisponivel);
+    const statusProduto = formatarStatusProduto(status, quantidadeDisponivel);
+    return `<span class="${classeStatus}">${escaparHtml(statusProduto)}</span>`;
+  }
+
+  if (quantidadeDisponivel <= 2) {
+    return '<span class="status-badge status-badge--warning">Estoque baixo</span>';
+  }
+
+  return "";
+}
+
 function renderizarMidiaProduto(peca) {
   const imagemUrl = String(peca.imagemUrl || "").trim();
 
@@ -400,9 +414,8 @@ function renderizarProdutos(pecas) {
 
   pecasPaginadas.forEach(peca => {
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-    const classeStatus = obterClasseStatusProduto(peca.status, quantidadeDisponivel);
-    const statusProduto = formatarStatusProduto(peca.status, quantidadeDisponivel);
-    const precoOperacional = Number(peca.precoVenda || 0) > 0 ? formatarMoeda(peca.precoVenda) : "Sem preco";
+    const badgeStatus = renderizarBadgeStatusProduto(peca.status, quantidadeDisponivel);
+    const precoOperacional = Number(peca.precoVenda || 0) > 0 ? formatarMoeda(peca.precoVenda) : "Sem preço";
     const card = document.createElement("article");
     card.className = "product-card";
 
@@ -433,14 +446,14 @@ function renderizarProdutos(pecas) {
 
         <div class="product-card__summary">
           <div class="product-card__price">
-            <span>Preco sugerido</span>
+            <span>Preço de venda</span>
             <strong>${escaparHtml(precoOperacional)}</strong>
           </div>
           <div class="product-card__stock">
             <span>Qtd.</span>
             <strong>${quantidadeDisponivel}</strong>
           </div>
-          <span class="${classeStatus}">${escaparHtml(statusProduto)}</span>
+          ${badgeStatus}
         </div>
       </div>
     `;

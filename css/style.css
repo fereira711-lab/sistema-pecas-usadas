@@ -1828,6 +1828,12 @@ textarea:focus {
   color: #ffb0b0;
 }
 
+.status-badge--warning {
+  border-color: rgba(248, 213, 145, 0.24);
+  background: rgba(248, 213, 145, 0.10);
+  color: #f8d591;
+}
+
 .status-badge--fast {
   border-color: rgba(142, 230, 178, 0.24);
   background: rgba(142, 230, 178, 0.12);
