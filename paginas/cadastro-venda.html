@@ -45,6 +45,8 @@
               <div id="sugestoesPecaVenda" class="autocomplete-list" role="listbox"></div>
             </div>
           </div>
+
+          <div id="resumoPecaVenda" class="sale-product-summary" aria-live="polite"></div>
         </section>
 
         <section class="form-section sale-section">
@@ -57,23 +59,23 @@
 
           <div class="form-fields">
             <div class="form-group field-span-4">
-              <label for="valorVenda">Valor unitario</label>
-              <input id="valorVenda" type="number" min="0" step="0.01" placeholder="0,00">
-            </div>
-
-            <div class="form-group field-span-4">
               <label for="quantidadeVendidaNaVenda">Quantidade</label>
               <input id="quantidadeVendidaNaVenda" type="number" min="1" placeholder="Quantidade vendida">
             </div>
 
             <div class="form-group field-span-4">
-              <label for="dataVenda">Data da venda</label>
-              <input id="dataVenda" name="data_venda" type="date" required>
+              <label for="valorVenda">Valor unitario</label>
+              <input id="valorVenda" type="number" min="0" step="0.01" placeholder="0,00">
             </div>
 
-            <div class="form-group field-span-12">
+            <div class="form-group field-span-4">
               <label for="canalVenda">Canal da venda</label>
               <input id="canalVenda" placeholder="Ex.: balcao, WhatsApp, Mercado Livre">
+            </div>
+
+            <div class="form-group field-span-4">
+              <label for="dataVenda">Data da venda</label>
+              <input id="dataVenda" name="data_venda" type="date" required>
             </div>
           </div>
         </section>
@@ -104,22 +106,20 @@
 
           <div class="summary-grid summary-grid--compact sale-summary-grid">
             <div class="summary-card">
-              <span>Valor unitario</span>
-              <strong id="resumoVendaValorUnitario">R$ 0,00</strong>
-            </div>
-            <div class="summary-card">
-              <span>Quantidade</span>
+              <span>Quantidade vendida</span>
               <strong id="resumoVendaQuantidade">0</strong>
             </div>
             <div class="summary-card">
-              <span>Total da venda</span>
+              <span>Receita prevista</span>
               <strong id="resumoVendaTotal">R$ 0,00</strong>
             </div>
             <div class="summary-card">
-              <span>Custos opcionais</span>
+              <span>Custos da venda</span>
               <strong id="resumoVendaCustos">R$ 0,00</strong>
             </div>
           </div>
+
+          <p class="sale-fifo-note">O custo real da peca sera calculado pelo FIFO depois de salvar a venda.</p>
         </section>
       </div>
 

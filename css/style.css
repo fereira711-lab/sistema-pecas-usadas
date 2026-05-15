@@ -4574,6 +4574,10 @@ textarea:focus {
     0 8px 20px rgba(0, 0, 0, 0.10);
 }
 
+.sale-cadastro-page .sale-section:hover {
+  border-color: rgba(203, 213, 225, 0.38);
+}
+
 .sale-cadastro-page .form-section__header {
   align-items: flex-start;
   margin-bottom: 10px;
@@ -4627,6 +4631,43 @@ textarea:focus {
   margin-top: 6px;
 }
 
+.sale-product-summary {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(220px, 1.5fr) minmax(120px, 0.8fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sale-product-summary:empty {
+  display: none;
+}
+
+.sale-product-summary article {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.50);
+}
+
+.sale-product-summary span {
+  display: block;
+  margin-bottom: 4px;
+  color: rgba(203, 213, 225, 0.68);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sale-product-summary strong {
+  display: block;
+  overflow: hidden;
+  color: #dbeafe;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sale-cadastro-page .cost-lines {
   gap: 8px;
 }
@@ -4646,11 +4687,14 @@ textarea:focus {
 }
 
 .sale-cadastro-page .section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 10px;
 }
 
 .sale-summary-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -4671,6 +4715,16 @@ textarea:focus {
   font-size: 1rem;
 }
 
+.sale-fifo-note {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 9px;
+  background: rgba(37, 99, 235, 0.08);
+  color: rgba(191, 219, 254, 0.86);
+  font-size: 0.76rem;
+}
+
 .sale-form-actions {
   justify-content: flex-end;
   padding: 0 16px 16px;
@@ -4688,7 +4742,8 @@ textarea:focus {
     grid-column: span 12;
   }
 
-.sale-cadastro-page .cost-line,
+  .sale-product-summary,
+  .sale-cadastro-page .cost-line,
   .sale-summary-grid {
     grid-template-columns: 1fr;
   }
@@ -4838,6 +4893,15 @@ textarea:focus {
   font-size: 1rem;
 }
 
+.cost-cadastro-page .cost-summary-placeholder strong {
+  color: rgba(203, 213, 225, 0.72);
+  font-size: 0.9rem;
+}
+
+.cost-cadastro-page .cost-section:hover {
+  border-color: rgba(203, 213, 225, 0.38);
+}
+
 .cost-cadastro-page .field-actions {
   margin-top: 8px;
 }
@@ -4943,6 +5007,10 @@ textarea:focus {
     inset 0 0 0 1px rgba(255, 255, 255, 0.035);
 }
 
+.sales-history-shell:hover {
+  border-color: rgba(203, 213, 225, 0.34);
+}
+
 .sales-history-header {
   margin: 0;
   padding: 14px 16px;
@@ -4968,6 +5036,15 @@ textarea:focus {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
     rgba(8, 17, 31, 0.54);
+}
+
+.sales-history-page .products-filter-panel .products-filters {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .sales-history-main-controls {
@@ -5050,7 +5127,8 @@ textarea:focus {
   text-transform: uppercase;
 }
 
-.sales-history-page .sales-history-filters input {
+.sales-history-page .sales-history-filters input,
+.sales-history-page .sales-history-filters select {
   min-height: 34px;
   padding: 8px 10px;
   border-color: rgba(148, 163, 184, 0.34);

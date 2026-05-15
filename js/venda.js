@@ -33,6 +33,7 @@ const resumoVendaValorUnitario = document.getElementById("resumoVendaValorUnitar
 const resumoVendaQuantidade = document.getElementById("resumoVendaQuantidade");
 const resumoVendaTotal = document.getElementById("resumoVendaTotal");
 const resumoVendaCustos = document.getElementById("resumoVendaCustos");
+const resumoPecaVenda = document.getElementById("resumoPecaVenda");
 let pecasVendaCarregadas = [];
 let origensVendaCarregadas = [];
 let entradasVendaCarregadas = [];
@@ -269,6 +270,33 @@ function calcularQuantidadeDisponivel(peca) {
   return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
 }
 
+function renderizarResumoPecaVenda(peca) {
+  if (!resumoPecaVenda) {
+    return;
+  }
+
+  if (!peca) {
+    resumoPecaVenda.innerHTML = "";
+    return;
+  }
+
+  const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
+  resumoPecaVenda.innerHTML = `
+    <article>
+      <span>SKU</span>
+      <strong>${escaparHtml(peca.sku || "-")}</strong>
+    </article>
+    <article>
+      <span>Peca</span>
+      <strong>${escaparHtml(peca.nome || "-")}</strong>
+    </article>
+    <article>
+      <span>Estoque disponivel</span>
+      <strong>${quantidadeDisponivel}</strong>
+    </article>
+  `;
+}
+
 function obterCampoPeca() {
   return document.getElementById("pecaId");
 }
@@ -497,6 +525,7 @@ function selecionarPeca(peca) {
   campoPeca.value = String(peca.id);
   campoBuscaPecaVenda.value = formatarNomePeca(peca);
   fecharSugestoesVenda();
+  renderizarResumoPecaVenda(peca);
   atualizarLimiteQuantidadeSelecionada();
 }
 
@@ -593,6 +622,7 @@ function atualizarSugestoesVenda() {
     campoPeca.value = "";
   }
 
+  renderizarResumoPecaVenda(null);
   renderizarSugestoesVenda(filtrarPecasPorBusca(pecasVendaCarregadas));
   atualizarLimiteQuantidadeSelecionada();
 }
@@ -611,10 +641,12 @@ function atualizarLimiteQuantidadeSelecionada() {
 
   if (!peca) {
     campoQuantidade.removeAttribute("max");
+    renderizarResumoPecaVenda(null);
     return;
   }
 
   campoQuantidade.max = calcularQuantidadeDisponivel(peca);
+  renderizarResumoPecaVenda(peca);
 }
 
 function obterPecaIdDaUrl() {
@@ -634,6 +666,7 @@ function selecionarPecaDaUrl() {
 
   if (!pecaIdUrl) {
     campoPeca.value = "";
+    renderizarResumoPecaVenda(null);
     return;
   }
 
@@ -822,6 +855,7 @@ function limparFormularioVenda() {
     campoBuscaPecaVenda.value = "";
   }
 
+  renderizarResumoPecaVenda(null);
   fecharSugestoesVenda();
 
   if (campoDataVenda) {

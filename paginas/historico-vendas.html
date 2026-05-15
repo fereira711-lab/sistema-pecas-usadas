@@ -12,7 +12,7 @@
       <p class="hero__tag">Vendas operacionais</p>
       <h1>Historico de vendas</h1>
       <p class="hero__description">
-        Consulte vendas registradas, filtre rapidamente e abra os detalhes quando necessario.
+        Consulte vendas registradas e abra os detalhes quando necessario.
       </p>
     </div>
   </header>
@@ -23,28 +23,27 @@
         <div>
           <span class="piece-form-eyebrow">Historico operacional</span>
           <h2>Vendas registradas</h2>
-          <p>Lista compacta para consulta e acesso aos detalhes da venda.</p>
         </div>
         <a class="button-secondary" href="../index.html">Voltar para o painel</a>
       </div>
 
-      <form id="formFiltrosHistorico" class="sales-history-filters">
-        <div class="products-main-controls sales-history-main-controls">
-          <div class="form-group sales-history-search">
+      <form id="formFiltrosHistorico" class="sales-history-filters operational-filter-toolbar">
+        <div class="products-main-controls operational-filter-main-controls sales-history-main-controls">
+          <div class="form-group products-search-field sales-history-search">
             <label for="buscaRapidaHistorico">Buscar venda</label>
-            <input id="buscaRapidaHistorico" type="search" placeholder="Buscar por SKU ou nome da peça">
+            <input id="buscaRapidaHistorico" type="search" placeholder="Buscar por SKU ou nome da peca">
           </div>
 
-          <button id="botaoAbrirFiltrosHistorico" type="button" class="button-secondary sales-history-filter-button" aria-controls="painelFiltrosHistorico" aria-expanded="false">Filtros</button>
+          <button id="botaoAbrirFiltrosHistorico" type="button" class="button-secondary products-filter-toggle sales-history-filter-button" aria-controls="painelFiltrosHistorico" aria-expanded="false">Filtros</button>
         </div>
 
-        <aside id="painelFiltrosHistorico" class="sales-history-filter-panel" aria-label="Filtros avançados de vendas">
-          <div class="sales-history-filter-panel__header">
-            <h3>Filtros avançados</h3>
+        <aside id="painelFiltrosHistorico" class="products-filter-panel sales-history-filter-panel" aria-label="Filtros avancados de vendas">
+          <div class="products-filter-panel__header sales-history-filter-panel__header">
+            <h3>Filtros avancados</h3>
             <button id="botaoFecharFiltrosHistorico" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
           </div>
 
-          <div class="sales-history-advanced">
+          <div class="products-filters sales-history-advanced">
             <div class="form-group">
               <label for="dataInicialHistorico">Data inicial</label>
               <input id="dataInicialHistorico" type="date">
@@ -66,7 +65,7 @@
             </div>
           </div>
 
-          <div class="sales-history-filter-panel__actions">
+          <div class="products-filter-panel__actions sales-history-filter-panel__actions">
             <button type="button" id="limparFiltrosHistorico" class="button-secondary">Limpar filtros</button>
             <button type="submit" class="button-primary">Aplicar/Fechar</button>
           </div>
@@ -82,7 +81,7 @@
               <th>Data</th>
               <th>SKU</th>
               <th>Peca</th>
-              <th>Qtd.</th>
+              <th>Quantidade</th>
               <th>Canal</th>
               <th>Acoes</th>
             </tr>
@@ -97,7 +96,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=16"></script>
-  <script src="../js/historico-vendas.js?v=10"></script>
+  <script src="../js/historico-vendas.js?v=11"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

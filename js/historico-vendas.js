@@ -186,7 +186,10 @@ function limparFiltrosAvancadosHistorico() {
 }
 
 function renderizarAcoesVenda(venda, indice) {
-  const botaoDetalhes = `<button class="button-secondary" type="button" data-acao="detalhes" data-id="${venda.id || ""}" data-indice="${indice}">Ver detalhes</button>`;
+  const vendaId = venda.id || venda.vendaId || venda.id_venda || "";
+  const botaoDetalhes = `<button class="button-secondary" type="button" data-acao="detalhes" data-id="${escaparHtml(vendaId)}" data-indice="${indice}" ${vendaId ? "" : "disabled"}>Ver detalhes</button>`;
+
+  return botaoDetalhes;
 
   if (historicoCarregadoDoSupabase) {
     return `
@@ -220,10 +223,10 @@ function renderizarHistorico() {
     linha.innerHTML = `
       <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
       <td data-label="SKU">${escaparHtml(obterSkuVenda(venda) || "-")}</td>
-      <td data-label="Peça">${obterNomePecaVenda(venda) || "-"}</td>
+      <td data-label="Peca"><strong class="product-name">${escaparHtml(obterNomePecaVenda(venda) || "-")}</strong></td>
       <td data-label="Quantidade">${escaparHtml(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || "-")}</td>
       <td data-label="Canal"><span class="status-badge status-badge--stock">${escaparHtml(venda.canalVenda || venda.cliente || "-")}</span></td>
-      <td data-label="Ações">
+      <td data-label="Acoes">
         <div class="table-actions">
           ${renderizarAcoesVenda(venda, indice)}
         </div>
@@ -239,8 +242,6 @@ function abrirDetalhesVenda(botao) {
     window.location.href = `detalhes-venda.html?vendaId=${encodeURIComponent(botao.dataset.id)}`;
     return;
   }
-
-  window.location.href = `detalhes-venda.html?index=${botao.dataset.indice}`;
 }
 
 function removerVendaLocal(botao) {

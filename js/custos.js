@@ -471,6 +471,20 @@ function renderizarResumoProduto() {
   resumoProdutoCusto.innerHTML = "";
 
   if (!pecaId) {
+    resumoProdutoCusto.innerHTML = `
+      <article class="summary-card cost-summary-placeholder">
+        <span>Peca</span>
+        <strong>Nenhuma peca selecionada</strong>
+      </article>
+      <article class="summary-card cost-summary-placeholder">
+        <span>SKU</span>
+        <strong>-</strong>
+      </article>
+      <article class="summary-card cost-summary-placeholder">
+        <span>Estoque disponivel</span>
+        <strong>-</strong>
+      </article>
+    `;
     return;
   }
 
@@ -487,11 +501,11 @@ function renderizarResumoProduto() {
   resumoProdutoCusto.innerHTML = `
     <article class="summary-card">
       <span>Peca</span>
-      <strong>${formatarNomePeca(produto)}</strong>
+      <strong>${escaparHtml(formatarNomePeca(produto))}</strong>
     </article>
     <article class="summary-card">
       <span>SKU</span>
-      <strong>${produto.sku || "-"}</strong>
+      <strong>${escaparHtml(produto.sku || "-")}</strong>
     </article>
     <article class="summary-card">
       <span>Estoque disponivel</span>
