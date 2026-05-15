@@ -10,6 +10,15 @@ const selectTipoCusto = document.getElementById("tipoCusto");
 const botaoNovoTipoCusto = document.getElementById("botaoNovoTipoCusto");
 const botaoSalvarCusto = document.getElementById("botaoSalvarCusto");
 const botaoCancelarEdicaoCusto = document.getElementById("botaoCancelarEdicaoCusto");
+const campoBuscaCustosLista = document.getElementById("buscaCustosLista");
+const dataInicialCustos = document.getElementById("dataInicialCustos");
+const dataFinalCustos = document.getElementById("dataFinalCustos");
+const filtroTipoCustoLista = document.getElementById("filtroTipoCustoLista");
+const shellCustos = document.querySelector(".cost-list-shell");
+const botaoAbrirFiltrosCustos = document.getElementById("botaoAbrirFiltrosCustos");
+const botaoFecharFiltrosCustos = document.getElementById("botaoFecharFiltrosCustos");
+const botaoLimparFiltrosCustos = document.getElementById("botaoLimparFiltrosCustos");
+const botaoAplicarFiltrosCustos = document.getElementById("botaoAplicarFiltrosCustos");
 let produtosCustoCarregados = [];
 let custosCustoCarregados = [];
 let origensCustoCarregadas = [];
@@ -525,6 +534,85 @@ function ordenarCustosPorMaisRecente() {
   });
 }
 
+function obterDataCusto(custo) {
+  return String(custo.data || custo.dataCusto || "").slice(0, 10);
+}
+
+function obterTipoCusto(custo) {
+  return custo.tipoCusto || custo.tipo || "-";
+}
+
+function renderizarFiltroTipoCustoLista() {
+  if (!filtroTipoCustoLista) {
+    return;
+  }
+
+  const valorAtual = filtroTipoCustoLista.value;
+  const tipos = [...new Set(custosCustoCarregados.map(obterTipoCusto).filter(tipo => tipo && tipo !== "-"))];
+  filtroTipoCustoLista.innerHTML = '<option value="">Todos</option>';
+
+  tipos
+    .sort((a, b) => String(a).localeCompare(String(b), "pt-BR"))
+    .forEach(tipo => {
+      const opcao = document.createElement("option");
+      opcao.value = tipo;
+      opcao.textContent = tipo;
+      filtroTipoCustoLista.appendChild(opcao);
+    });
+
+  filtroTipoCustoLista.value = tipos.includes(valorAtual) ? valorAtual : "";
+}
+
+function filtrarCustosLista(custos) {
+  const termo = String(campoBuscaCustosLista?.value || "").trim().toLowerCase();
+  const dataInicial = dataInicialCustos?.value || "";
+  const dataFinal = dataFinalCustos?.value || "";
+  const tipo = filtroTipoCustoLista?.value || "";
+
+  return custos.filter(custo => {
+    const produto = obterDadosProdutoDoCusto(custo);
+    const dataCusto = obterDataCusto(custo);
+    const tipoCusto = obterTipoCusto(custo);
+    const textoBusca = [
+      produto.sku,
+      produto.nome,
+      custo.descricao,
+      custo.observacoes
+    ].join(" ").toLowerCase();
+
+    if (termo && !textoBusca.includes(termo)) {
+      return false;
+    }
+
+    if (dataInicial && (!dataCusto || dataCusto < dataInicial)) {
+      return false;
+    }
+
+    if (dataFinal && (!dataCusto || dataCusto > dataFinal)) {
+      return false;
+    }
+
+    if (tipo && tipoCusto !== tipo) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+function alternarPainelFiltrosCustos(aberto) {
+  shellCustos?.classList.toggle("cost-list-shell--filters-open", aberto);
+  botaoAbrirFiltrosCustos?.setAttribute("aria-expanded", aberto ? "true" : "false");
+}
+
+function limparFiltrosCustos() {
+  if (dataInicialCustos) dataInicialCustos.value = "";
+  if (dataFinalCustos) dataFinalCustos.value = "";
+  if (filtroTipoCustoLista) filtroTipoCustoLista.value = "";
+
+  renderizarCustos();
+}
+
 function formatarData(data) {
   if (!data) {
     return "-";
@@ -557,11 +645,13 @@ function formatarMoeda(valor) {
 }
 
 function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" : "local") {
-  const custos = custosCustoCarregados;
+  const custos = filtrarCustosLista(custosCustoCarregados);
   tabelaCustos.innerHTML = "";
 
   if (custos.length === 0) {
-    mensagemListaCustos.textContent = origemDados === "erro"
+    mensagemListaCustos.textContent = custosCustoCarregados.length > 0
+      ? "Nenhum custo encontrado para os filtros informados."
+      : origemDados === "erro"
       ? "Nao foi possivel carregar os custos do Supabase."
       : origemDados === "supabase"
         ? "Nenhum custo cadastrado no Supabase."
@@ -578,16 +668,16 @@ function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" :
 
     linha.innerHTML = `
       <td data-label="Data">${formatarData(custo.data || custo.dataCusto)}</td>
-      <td data-label="SKU">${produto.sku}</td>
-      <td data-label="Nome da peca"><strong class="product-name">${produto.nome}</strong></td>
-      <td data-label="Tipo">${custo.tipoCusto || custo.tipo || "-"}</td>
-      <td data-label="Descricao">${custo.descricao || custo.observacoes || "-"}</td>
+      <td data-label="SKU">${escaparHtml(produto.sku)}</td>
+      <td data-label="Nome da peca"><strong class="product-name">${escaparHtml(produto.nome)}</strong></td>
+      <td data-label="Tipo"><span class="status-badge status-badge--stock">${escaparHtml(custo.tipoCusto || custo.tipo || "-")}</span></td>
+      <td data-label="Descricao">${escaparHtml(custo.descricao || custo.observacoes || "-")}</td>
       <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
       <td data-label="Acoes">
         <div class="table-actions">
-          <button type="button" data-acao="editar-custo" data-custo-id="${custoId}">Editar</button>
-          <button type="button" data-acao="excluir-custo" data-custo-id="${custoId}">Excluir</button>
-          <button type="button" data-acao="detalhes-produto" data-peca-id="${custo.pecaId || ""}" ${custo.pecaId ? "" : "disabled"}>Ver peca</button>
+          <button class="button-secondary" type="button" data-acao="editar-custo" data-custo-id="${custoId}">Editar</button>
+          <button class="button-secondary button-danger-soft" type="button" data-acao="excluir-custo" data-custo-id="${custoId}">Excluir</button>
+          <button class="button-secondary" type="button" data-acao="detalhes-produto" data-peca-id="${custo.pecaId || ""}" ${custo.pecaId ? "" : "disabled"}>Ver peca</button>
         </div>
       </td>
     `;
@@ -718,6 +808,7 @@ formularioCusto.addEventListener("submit", async function (evento) {
     mensagemCusto.textContent = mensagemSucesso;
     mensagemCusto.className = "form-message form-message--success";
     await carregarCustos();
+    renderizarFiltroTipoCustoLista();
     renderizarResumoProduto();
     renderizarCustos(destino);
   } catch (erro) {
@@ -734,6 +825,35 @@ selectProdutoCusto.addEventListener("change", renderizarResumoProduto);
 campoBuscaPecaCusto?.addEventListener("input", atualizarSugestoesCusto);
 botaoNovoTipoCusto?.addEventListener("click", criarNovoTipoCusto);
 botaoCancelarEdicaoCusto?.addEventListener("click", cancelarEdicaoCusto);
+
+campoBuscaCustosLista?.addEventListener("input", () => renderizarCustos());
+
+[dataInicialCustos, dataFinalCustos, filtroTipoCustoLista].forEach(campo => {
+  campo?.addEventListener("input", () => renderizarCustos());
+  campo?.addEventListener("change", () => renderizarCustos());
+});
+
+botaoAbrirFiltrosCustos?.addEventListener("click", () => {
+  const aberto = !shellCustos?.classList.contains("cost-list-shell--filters-open");
+  alternarPainelFiltrosCustos(aberto);
+});
+
+botaoFecharFiltrosCustos?.addEventListener("click", () => {
+  alternarPainelFiltrosCustos(false);
+});
+
+botaoAplicarFiltrosCustos?.addEventListener("click", () => {
+  renderizarCustos();
+  alternarPainelFiltrosCustos(false);
+});
+
+botaoLimparFiltrosCustos?.addEventListener("click", limparFiltrosCustos);
+
+document.addEventListener("keydown", evento => {
+  if (evento.key === "Escape") {
+    alternarPainelFiltrosCustos(false);
+  }
+});
 
 campoBuscaPecaCusto?.addEventListener("focus", () => {
   if (!selectProdutoCusto.value && String(campoBuscaPecaCusto.value || "").trim()) {
@@ -756,6 +876,7 @@ campoBuscaPecaCusto?.addEventListener("keydown", evento => {
 
   if (evento.key === "Escape") {
     fecharSugestoesCusto();
+    alternarPainelFiltrosCustos(false);
     return;
   }
 
@@ -824,6 +945,7 @@ async function excluirCusto(custoId) {
     }
 
     await carregarCustos();
+    renderizarFiltroTipoCustoLista();
     renderizarCustos("supabase");
     renderizarResumoProduto();
     mensagemCusto.textContent = "Custo excluido do Supabase com sucesso.";
@@ -840,6 +962,7 @@ async function iniciarTelaCustos() {
   await carregarProdutos();
   await carregarOrigensParaCustos();
   const origemDados = await carregarCustos();
+  renderizarFiltroTipoCustoLista();
   renderizarCustos(origemDados);
   renderizarResumoProduto();
 }

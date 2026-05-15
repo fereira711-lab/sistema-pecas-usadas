@@ -6,7 +6,7 @@
   <title>Origens Cadastradas</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark origins-list-page">
   <header class="page-header">
     <div>
       <p class="hero__tag">Origens</p>
@@ -40,8 +40,8 @@
       </article>
     </section>
 
-    <section class="stock-card">
-      <div class="stock-header">
+    <section class="stock-card origins-shell">
+      <div class="stock-header origins-list-header">
         <div>
           <h2>Lista de origens</h2>
           <p>Consulta operacional das origens carregadas do banco de dados.</p>
@@ -52,38 +52,58 @@
         </div>
       </div>
 
+      <section class="products-toolbar operational-filter-toolbar" aria-label="Busca e filtros de origens">
+        <div class="products-main-controls operational-filter-main-controls">
+          <div class="form-group products-search-field">
+            <label for="buscaOrigens">Buscar origem</label>
+            <input id="buscaOrigens" type="search" placeholder="Buscar por codigo ou descricao">
+          </div>
+
+          <button id="botaoAbrirFiltrosOrigens" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosOrigens" aria-expanded="false">
+            Filtros
+          </button>
+        </div>
+      </section>
+
       <p id="mensagemOrigens" class="empty-message"></p>
 
-      <div class="form-row filters-compact">
-        <div class="form-group">
-          <label for="buscaOrigens">Busca rápida</label>
-          <input id="buscaOrigens" type="search" placeholder="Código ou descrição da origem">
+      <aside id="painelFiltrosOrigens" class="products-filter-panel" aria-label="Filtros avancados de origens">
+        <div class="products-filter-panel__header">
+          <h3>Filtros avancados</h3>
+          <button id="botaoFecharFiltrosOrigens" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
         </div>
 
-        <div class="form-group">
-          <label for="filtroTipoOrigem">Tipo</label>
-          <select id="filtroTipoOrigem">
-            <option value="">Todos</option>
-          </select>
+        <div class="products-filters">
+          <div class="form-group">
+            <label for="filtroTipoOrigem">Tipo</label>
+            <select id="filtroTipoOrigem">
+              <option value="">Todos</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filtroDistribuicaoOrigem">Distribuicao</label>
+            <select id="filtroDistribuicaoOrigem">
+              <option value="">Todas</option>
+              <option value="total">Totalmente distribuida</option>
+              <option value="parcial">Parcialmente distribuida</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="ordenacaoOrigens">Ordenar por data</label>
+            <select id="ordenacaoOrigens">
+              <option value="data-desc">Mais recentes</option>
+              <option value="data-asc">Mais antigas</option>
+            </select>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="filtroDistribuicaoOrigem">Distribuição</label>
-          <select id="filtroDistribuicaoOrigem">
-            <option value="">Todas</option>
-            <option value="total">Totalmente distribuída</option>
-            <option value="parcial">Parcialmente distribuída</option>
-          </select>
+        <div class="products-filter-panel__actions">
+          <button id="botaoLimparFiltrosOrigens" class="button-secondary" type="button">Limpar filtros</button>
+          <button id="botaoAplicarFiltrosOrigens" class="button-primary" type="button">Aplicar/Fechar</button>
         </div>
-
-        <div class="form-group">
-          <label for="ordenacaoOrigens">Ordenar por data</label>
-          <select id="ordenacaoOrigens">
-            <option value="data-desc">Mais recentes</option>
-            <option value="data-asc">Mais antigas</option>
-          </select>
-        </div>
-      </div>
+      </aside>
 
       <div class="table-wrapper">
         <table class="stock-table">
@@ -107,7 +127,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=25"></script>
-  <script src="../js/listar-origens.js?v=9"></script>
+  <script src="../js/listar-origens.js?v=10"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

@@ -3,100 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Histórico de Vendas</title>
+  <title>Historico de Vendas</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark sales-history-page">
   <header class="page-header">
     <div>
-      <p class="hero__tag">Vendas</p>
-      <h1>Histórico de Vendas</h1>
+      <p class="hero__tag">Vendas operacionais</p>
+      <h1>Historico de vendas</h1>
       <p class="hero__description">
-        Consulte vendas registradas e abra os detalhes quando precisar do financeiro completo.
+        Consulte vendas registradas, filtre rapidamente e abra os detalhes quando necessario.
       </p>
     </div>
   </header>
 
-  <main class="container stock-layout">
-    <section class="summary-grid" aria-label="Resumo das vendas">
-      <article class="summary-card">
-        <span>Total de vendas</span>
-        <strong id="totalVendas">0</strong>
-      </article>
-
-      <article class="summary-card">
-        <span>Peças vendidas</span>
-        <strong id="pecasVendidas">0</strong>
-      </article>
-
-    </section>
-
-    <section class="stock-card">
-      <div class="stock-header">
+  <main class="container stock-layout sales-history-layout">
+    <section class="stock-card sales-history-shell">
+      <div class="stock-header sales-history-header">
         <div>
+          <span class="piece-form-eyebrow">Historico operacional</span>
           <h2>Vendas registradas</h2>
-          <p>Lista de vendas registradas no sistema.</p>
+          <p>Lista compacta para consulta e acesso aos detalhes da venda.</p>
         </div>
         <a class="button-secondary" href="../index.html">Voltar para o painel</a>
       </div>
 
-      <p id="mensagemHistorico" class="empty-message"></p>
-
-      <form id="formFiltrosHistorico" class="section-spaced">
-        <div class="form-row filters-compact">
-          <div class="form-group">
-            <label for="buscaRapidaHistorico">Busca rápida</label>
-            <input id="buscaRapidaHistorico" type="search" placeholder="SKU, peça ou canal">
+      <form id="formFiltrosHistorico" class="sales-history-filters">
+        <div class="products-main-controls sales-history-main-controls">
+          <div class="form-group sales-history-search">
+            <label for="buscaRapidaHistorico">Buscar venda</label>
+            <input id="buscaRapidaHistorico" type="search" placeholder="Buscar por SKU ou nome da peça">
           </div>
+
+          <button id="botaoAbrirFiltrosHistorico" type="button" class="button-secondary sales-history-filter-button" aria-controls="painelFiltrosHistorico" aria-expanded="false">Filtros</button>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="dataInicialHistorico">Data inicial</label>
-            <input id="dataInicialHistorico" type="date">
+        <aside id="painelFiltrosHistorico" class="sales-history-filter-panel" aria-label="Filtros avançados de vendas">
+          <div class="sales-history-filter-panel__header">
+            <h3>Filtros avançados</h3>
+            <button id="botaoFecharFiltrosHistorico" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
           </div>
 
-          <div class="form-group">
-            <label for="dataFinalHistorico">Data final</label>
-            <input id="dataFinalHistorico" type="date">
-          </div>
-        </div>
+          <div class="sales-history-advanced">
+            <div class="form-group">
+              <label for="dataInicialHistorico">Data inicial</label>
+              <input id="dataInicialHistorico" type="date">
+            </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="filtroSkuHistorico">SKU da peça</label>
-            <input id="filtroSkuHistorico" type="search" placeholder="Pesquisar por parte do SKU">
+            <div class="form-group">
+              <label for="dataFinalHistorico">Data final</label>
+              <input id="dataFinalHistorico" type="date">
+            </div>
+
+            <div class="form-group">
+              <label for="filtroNomeHistorico">Nome da peca</label>
+              <input id="filtroNomeHistorico" type="search" placeholder="Parte do nome">
+            </div>
+
+            <div class="form-group">
+              <label for="filtroCanalHistorico">Canal</label>
+              <input id="filtroCanalHistorico" type="search" placeholder="Ex.: WhatsApp">
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="filtroNomeHistorico">Nome da peça</label>
-            <input id="filtroNomeHistorico" type="search" placeholder="Pesquisar por parte do nome">
+          <div class="sales-history-filter-panel__actions">
+            <button type="button" id="limparFiltrosHistorico" class="button-secondary">Limpar filtros</button>
+            <button type="submit" class="button-primary">Aplicar/Fechar</button>
           </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="filtroCanalHistorico">Canal de venda</label>
-            <input id="filtroCanalHistorico" type="search" placeholder="Ex: Mercado Livre, balcão, WhatsApp">
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Filtrar vendas</button>
-          <button type="button" id="limparFiltrosHistorico" class="button-secondary">Limpar filtros</button>
-        </div>
+        </aside>
       </form>
 
+      <p id="mensagemHistorico" class="empty-message"></p>
+
       <div class="table-wrapper">
-        <table class="stock-table">
+        <table class="stock-table sales-history-table">
           <thead>
             <tr>
               <th>Data</th>
               <th>SKU</th>
-              <th>Peça</th>
-              <th>Quantidade</th>
+              <th>Peca</th>
+              <th>Qtd.</th>
               <th>Canal</th>
-              <th>Ações</th>
+              <th>Acoes</th>
             </tr>
           </thead>
           <tbody id="tabelaHistoricoVendas"></tbody>
@@ -109,7 +97,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=16"></script>
-  <script src="../js/historico-vendas.js?v=8"></script>
+  <script src="../js/historico-vendas.js?v=10"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

@@ -6,62 +6,125 @@
   <title>Cadastrar Venda</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark sale-cadastro-page">
   <header class="page-header">
     <div>
-      <p class="hero__tag">Cadastro</p>
-      <h1>Cadastrar Venda</h1>
+      <p class="hero__tag">Venda operacional</p>
+      <h1>Cadastrar venda</h1>
       <p class="hero__description">
-        Registre a venda de uma peça pelo estoque disponível, com campos diretos para finalizar a operação.
+        Registre a saida de uma peca mantendo o fluxo atual de estoque e custos.
       </p>
     </div>
   </header>
 
-  <main class="container form-layout">
-    <section class="form-card">
-      <h2>Cadastrar Venda</h2>
-
-      <div class="form-group">
-        <input id="buscaPecaVenda" type="search" placeholder="Pesquisar peça (nome ou SKU)">
-        <input id="pecaId" type="hidden">
-        <div id="sugestoesPecaVenda" class="autocomplete-list" role="listbox"></div>
+  <main class="container form-layout sale-form-layout">
+    <section class="form-card sale-form-shell">
+      <div class="piece-form-top">
+        <div>
+          <span class="piece-form-eyebrow">Cadastro operacional</span>
+          <h2>Nova venda</h2>
+          <p>Selecione o produto, informe os dados da venda e revise antes de salvar.</p>
+        </div>
+        <span class="piece-status-chip">FIFO preservado</span>
       </div>
 
-      <div class="form-group">
-        <input id="valorVenda" type="number" placeholder="Valor de venda unitário">
-      </div>
-
-      <div class="form-group">
-        <input id="quantidadeVendidaNaVenda" type="number" placeholder="Quantidade vendida">
-      </div>
-
-      <div class="form-group">
-        <label for="dataVenda">Data da venda</label>
-        <input id="dataVenda" name="data_venda" type="date" required>
-      </div>
-
-      <div class="form-group">
-        <input id="canalVenda" placeholder="Canal da venda">
-      </div>
-
-      <section class="optional-fields">
-        <div class="stock-header">
-          <div>
-            <h2>Custos adicionais da venda</h2>
-            <p>Adicione quantos custos forem necessarios para calcular o resultado da venda.</p>
+      <div class="piece-form-sections">
+        <section class="form-section sale-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Produto vendido</h3>
+              <p>Busque a peca pelo nome ou SKU e selecione um item com estoque disponivel.</p>
+            </div>
           </div>
-        </div>
 
-        <div id="listaCustosVenda" class="cost-lines"></div>
+          <div class="form-fields">
+            <div class="form-group field-span-12">
+              <label for="buscaPecaVenda">Peca</label>
+              <input id="buscaPecaVenda" type="search" placeholder="Pesquisar peca por nome ou SKU">
+              <input id="pecaId" type="hidden">
+              <div id="sugestoesPecaVenda" class="autocomplete-list" role="listbox"></div>
+            </div>
+          </div>
+        </section>
 
-        <div class="form-actions">
-          <button id="botaoAdicionarCustoVenda" type="button" class="button-secondary">+ Adicionar custo</button>
-          <button id="botaoNovoTipoCustoVenda" type="button" class="button-secondary">+ Novo tipo</button>
-        </div>
-      </section>
+        <section class="form-section sale-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Dados da venda</h3>
+              <p>Informe valor, quantidade, data e canal da operacao.</p>
+            </div>
+          </div>
 
-      <div class="form-actions">
-        <button type="button" class="button-primary" onclick="salvarVenda()">Salvar</button>
+          <div class="form-fields">
+            <div class="form-group field-span-4">
+              <label for="valorVenda">Valor unitario</label>
+              <input id="valorVenda" type="number" min="0" step="0.01" placeholder="0,00">
+            </div>
+
+            <div class="form-group field-span-4">
+              <label for="quantidadeVendidaNaVenda">Quantidade</label>
+              <input id="quantidadeVendidaNaVenda" type="number" min="1" placeholder="Quantidade vendida">
+            </div>
+
+            <div class="form-group field-span-4">
+              <label for="dataVenda">Data da venda</label>
+              <input id="dataVenda" name="data_venda" type="date" required>
+            </div>
+
+            <div class="form-group field-span-12">
+              <label for="canalVenda">Canal da venda</label>
+              <input id="canalVenda" placeholder="Ex.: balcao, WhatsApp, Mercado Livre">
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section sale-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Custos adicionais da venda</h3>
+              <p>Opcional. Use apenas quando houver frete, embalagem, taxa ou outro custo da venda.</p>
+            </div>
+          </div>
+
+          <div id="listaCustosVenda" class="cost-lines"></div>
+
+          <div class="section-actions">
+            <button id="botaoAdicionarCustoVenda" type="button" class="button-secondary">+ Adicionar custo</button>
+            <button id="botaoNovoTipoCustoVenda" type="button" class="button-secondary">+ Novo tipo</button>
+          </div>
+        </section>
+
+        <section class="form-section sale-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Resumo antes de salvar</h3>
+              <p>Confira os valores principais antes de registrar a venda.</p>
+            </div>
+          </div>
+
+          <div class="summary-grid summary-grid--compact sale-summary-grid">
+            <div class="summary-card">
+              <span>Valor unitario</span>
+              <strong id="resumoVendaValorUnitario">R$ 0,00</strong>
+            </div>
+            <div class="summary-card">
+              <span>Quantidade</span>
+              <strong id="resumoVendaQuantidade">0</strong>
+            </div>
+            <div class="summary-card">
+              <span>Total da venda</span>
+              <strong id="resumoVendaTotal">R$ 0,00</strong>
+            </div>
+            <div class="summary-card">
+              <span>Custos opcionais</span>
+              <strong id="resumoVendaCustos">R$ 0,00</strong>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="form-actions sale-form-actions">
+        <button type="button" class="button-primary" onclick="salvarVenda()">Salvar venda</button>
         <a class="button-secondary" href="historico-vendas.html">Ver vendas</a>
         <a class="button-secondary" href="../index.html">Voltar para o painel</a>
       </div>
@@ -74,7 +137,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=29"></script>
-  <script src="../js/venda.js?v=18"></script>
+  <script src="../js/venda.js?v=19"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

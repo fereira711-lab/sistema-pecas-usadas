@@ -8,6 +8,11 @@ const buscaOrigens = document.getElementById("buscaOrigens");
 const filtroTipoOrigem = document.getElementById("filtroTipoOrigem");
 const filtroDistribuicaoOrigem = document.getElementById("filtroDistribuicaoOrigem");
 const ordenacaoOrigens = document.getElementById("ordenacaoOrigens");
+const shellOrigens = document.querySelector(".origins-shell");
+const botaoAbrirFiltrosOrigens = document.getElementById("botaoAbrirFiltrosOrigens");
+const botaoFecharFiltrosOrigens = document.getElementById("botaoFecharFiltrosOrigens");
+const botaoLimparFiltrosOrigens = document.getElementById("botaoLimparFiltrosOrigens");
+const botaoAplicarFiltrosOrigens = document.getElementById("botaoAplicarFiltrosOrigens");
 
 let origensCarregadasDoSupabase = false;
 let origensCarregadas = [];
@@ -162,6 +167,19 @@ function obterOrigensVisiveis() {
   return ordenarOrigens(filtrarOrigens(origensCarregadas));
 }
 
+function alternarPainelFiltrosOrigens(aberto) {
+  shellOrigens?.classList.toggle("origins-shell--filters-open", aberto);
+  botaoAbrirFiltrosOrigens?.setAttribute("aria-expanded", aberto ? "true" : "false");
+}
+
+function limparFiltrosOrigens() {
+  if (filtroTipoOrigem) filtroTipoOrigem.value = "";
+  if (filtroDistribuicaoOrigem) filtroDistribuicaoOrigem.value = "";
+  if (ordenacaoOrigens) ordenacaoOrigens.value = "data-desc";
+
+  renderizarOrigens();
+}
+
 function atualizarResumo(origens) {
   totalOrigens.textContent = origens.length;
   totalCarros.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Carro para desmonte").length;
@@ -264,6 +282,28 @@ tabelaOrigensLista.addEventListener("click", evento => {
 [buscaOrigens, filtroTipoOrigem, filtroDistribuicaoOrigem, ordenacaoOrigens].forEach(campo => {
   campo?.addEventListener("input", renderizarOrigens);
   campo?.addEventListener("change", renderizarOrigens);
+});
+
+botaoAbrirFiltrosOrigens?.addEventListener("click", () => {
+  const aberto = !shellOrigens?.classList.contains("origins-shell--filters-open");
+  alternarPainelFiltrosOrigens(aberto);
+});
+
+botaoFecharFiltrosOrigens?.addEventListener("click", () => {
+  alternarPainelFiltrosOrigens(false);
+});
+
+botaoAplicarFiltrosOrigens?.addEventListener("click", () => {
+  renderizarOrigens();
+  alternarPainelFiltrosOrigens(false);
+});
+
+botaoLimparFiltrosOrigens?.addEventListener("click", limparFiltrosOrigens);
+
+document.addEventListener("keydown", evento => {
+  if (evento.key === "Escape") {
+    alternarPainelFiltrosOrigens(false);
+  }
 });
 
 carregarERenderizarOrigens();

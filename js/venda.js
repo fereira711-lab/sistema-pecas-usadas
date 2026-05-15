@@ -29,6 +29,10 @@ const listaCustosVenda = document.getElementById("listaCustosVenda");
 const botaoAdicionarCustoVenda = document.getElementById("botaoAdicionarCustoVenda");
 const botaoNovoTipoCustoVenda = document.getElementById("botaoNovoTipoCustoVenda");
 const mensagemVenda = document.getElementById("mensagemVenda");
+const resumoVendaValorUnitario = document.getElementById("resumoVendaValorUnitario");
+const resumoVendaQuantidade = document.getElementById("resumoVendaQuantidade");
+const resumoVendaTotal = document.getElementById("resumoVendaTotal");
+const resumoVendaCustos = document.getElementById("resumoVendaCustos");
 let pecasVendaCarregadas = [];
 let origensVendaCarregadas = [];
 let entradasVendaCarregadas = [];
@@ -76,6 +80,13 @@ function escaparHtml(texto) {
 
 function escaparRegex(texto) {
   return String(texto || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function formatarMoedaVenda(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
 }
 
 function destacarBusca(texto) {
@@ -176,6 +187,7 @@ function adicionarLinhaCustoVenda(custo = {}) {
   `;
 
   listaCustosVenda.appendChild(linha);
+  atualizarResumoVenda();
 }
 
 async function criarNovoTipoCustoVenda() {
@@ -339,6 +351,29 @@ function lerCustosVendaDoFormulario() {
 
 function somarCustosVenda(custosVenda) {
   return custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
+}
+
+function atualizarResumoVenda() {
+  const quantidade = Number(document.getElementById("quantidadeVendidaNaVenda")?.value || 0);
+  const valorUnitario = Number(document.getElementById("valorVenda")?.value || 0);
+  const custosVenda = lerCustosVendaDoFormulario();
+  const totalVenda = quantidade * valorUnitario;
+
+  if (resumoVendaValorUnitario) {
+    resumoVendaValorUnitario.textContent = formatarMoedaVenda(valorUnitario);
+  }
+
+  if (resumoVendaQuantidade) {
+    resumoVendaQuantidade.textContent = String(quantidade || 0);
+  }
+
+  if (resumoVendaTotal) {
+    resumoVendaTotal.textContent = formatarMoedaVenda(totalVenda);
+  }
+
+  if (resumoVendaCustos) {
+    resumoVendaCustos.textContent = formatarMoedaVenda(somarCustosVenda(custosVenda));
+  }
 }
 
 function existeCustoVendaNegativo() {
@@ -648,6 +683,10 @@ async function inicializarFormularioVenda() {
   }
 
   campoBuscaPecaVenda?.addEventListener("input", atualizarSugestoesVenda);
+  document.getElementById("valorVenda")?.addEventListener("input", atualizarResumoVenda);
+  document.getElementById("quantidadeVendidaNaVenda")?.addEventListener("input", atualizarResumoVenda);
+  listaCustosVenda?.addEventListener("input", atualizarResumoVenda);
+  atualizarResumoVenda();
 
   campoBuscaPecaVenda?.addEventListener("focus", () => {
     if (!campoPeca.value && String(campoBuscaPecaVenda.value || "").trim()) {
@@ -692,6 +731,7 @@ async function inicializarFormularioVenda() {
 
     if (botao) {
       botao.closest(".cost-line")?.remove();
+      atualizarResumoVenda();
     }
   });
 }

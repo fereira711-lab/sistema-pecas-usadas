@@ -3,116 +3,178 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custo de peça</title>
+  <title>Custo de peca</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark cost-cadastro-page">
   <header class="page-header">
     <div>
-      <p class="hero__tag">Custos</p>
-      <h1>Custo de peça</h1>
+      <p class="hero__tag">Custos operacionais</p>
+      <h1>Custo de peca</h1>
       <p class="hero__description">
-        Registre custos extras vinculados a uma peça.
+        Registre custos vinculados a uma peca mantendo a tela compacta e operacional.
       </p>
     </div>
   </header>
 
-  <main class="container stock-layout">
-    <section class="form-card">
+  <main class="container stock-layout cost-form-layout">
+    <section class="form-card cost-form-shell">
+      <div class="piece-form-top">
+        <div>
+          <span class="piece-form-eyebrow">Cadastro operacional</span>
+          <h2>Novo custo de peca</h2>
+          <p>Busque a peca, confira os dados e lance o custo correspondente.</p>
+        </div>
+        <span class="piece-status-chip">Operacional</span>
+      </div>
+
       <form id="formCusto">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="buscaPecaCusto">Pesquisar peça</label>
-            <input id="buscaPecaCusto" type="search" placeholder="Pesquisar peça (nome ou SKU)">
-            <input id="produtoCusto" name="produtoCusto" type="hidden" required>
-            <div id="sugestoesPecaCusto" class="autocomplete-list" role="listbox"></div>
-          </div>
-
-          <div class="form-group">
-            <label for="tipoCusto">Tipo de custo *</label>
-            <select id="tipoCusto" name="tipoCusto" required>
-            </select>
-            <div class="field-actions">
-              <button id="botaoNovoTipoCusto" type="button" class="button-secondary button-compact">+ Novo tipo</button>
+        <div class="piece-form-sections">
+          <section class="form-section cost-section">
+            <div class="form-section__header">
+              <div>
+                <h3>Buscar peca</h3>
+                <p>Localize por SKU ou nome para vincular o custo ao item correto.</p>
+              </div>
             </div>
-            <p class="field-hint">Use tipos cadastrados para evitar nomes duplicados nos relatorios.</p>
-          </div>
-        </div>
 
-        <section id="resumoProdutoCusto" class="summary-grid summary-grid--compact" aria-label="Resumo operacional da peça"></section>
+            <div class="form-fields">
+              <div class="form-group field-span-12">
+                <label for="buscaPecaCusto">Peca</label>
+                <input id="buscaPecaCusto" type="search" placeholder="Pesquisar peca por nome ou SKU">
+                <input id="produtoCusto" name="produtoCusto" type="hidden" required>
+                <div id="sugestoesPecaCusto" class="autocomplete-list" role="listbox"></div>
+              </div>
+            </div>
+          </section>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="descricaoCusto">Descrição do custo *</label>
-            <input
-              id="descricaoCusto"
-              name="descricaoCusto"
-              type="text"
-              placeholder="Ex: Solda na base do farol"
-              required
-            >
-          </div>
+          <section class="form-section cost-section">
+            <div class="form-section__header">
+              <div>
+                <h3>Dados da peca selecionada</h3>
+                <p>Resumo operacional exibido apos selecionar uma peca.</p>
+              </div>
+            </div>
 
-          <div class="form-group">
-            <label for="valorCusto">Valor do custo *</label>
-            <input
-              id="valorCusto"
-              name="valorCusto"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Ex: 35.00"
-              required
-            >
-          </div>
-        </div>
+            <section id="resumoProdutoCusto" class="summary-grid summary-grid--compact cost-summary-grid" aria-label="Resumo operacional da peca"></section>
+          </section>
 
-        <div class="form-group">
-          <label for="dataCusto">Data do custo *</label>
-          <input id="dataCusto" name="dataCusto" type="date" required>
-        </div>
+          <section class="form-section cost-section">
+            <div class="form-section__header">
+              <div>
+                <h3>Novo custo</h3>
+                <p>Informe tipo, descricao, valor e data do custo.</p>
+              </div>
+            </div>
 
-        <div class="form-group">
-          <label for="observacoesCusto">Observações</label>
-          <textarea
-            id="observacoesCusto"
-            name="observacoesCusto"
-            rows="4"
-            placeholder="Ex: Custo de preparo antes da venda"
-          ></textarea>
-        </div>
+            <div class="form-fields">
+              <div class="form-group field-span-6">
+                <label for="tipoCusto">Tipo de custo</label>
+                <select id="tipoCusto" name="tipoCusto" required></select>
+                <div class="field-actions">
+                  <button id="botaoNovoTipoCusto" type="button" class="button-secondary button-compact">+ Novo tipo</button>
+                </div>
+              </div>
 
-        <p id="mensagemCusto" class="form-message" aria-live="polite"></p>
+              <div class="form-group field-span-6">
+                <label for="dataCusto">Data do custo</label>
+                <input id="dataCusto" name="dataCusto" type="date" required>
+              </div>
 
-        <div class="form-actions">
-          <button id="botaoSalvarCusto" type="submit" class="button-primary">Salvar custo</button>
-          <button id="botaoCancelarEdicaoCusto" type="button" class="button-secondary" hidden>Cancelar edição</button>
-          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+              <div class="form-group field-span-8">
+                <label for="descricaoCusto">Descricao</label>
+                <input id="descricaoCusto" name="descricaoCusto" type="text" placeholder="Ex.: Solda na base do farol" required>
+              </div>
+
+              <div class="form-group field-span-4">
+                <label for="valorCusto">Valor</label>
+                <input id="valorCusto" name="valorCusto" type="number" min="0" step="0.01" placeholder="0,00" required>
+              </div>
+
+              <div class="form-group field-span-12">
+                <label for="observacoesCusto">Observacoes</label>
+                <textarea id="observacoesCusto" name="observacoesCusto" rows="3" placeholder="Ex.: Custo de preparo antes da venda"></textarea>
+              </div>
+            </div>
+
+            <p id="mensagemCusto" class="form-message" aria-live="polite"></p>
+
+            <div class="form-actions cost-form-actions">
+              <button id="botaoSalvarCusto" type="submit" class="button-primary">Salvar custo</button>
+              <button id="botaoCancelarEdicaoCusto" type="button" class="button-secondary" hidden>Cancelar edicao</button>
+              <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+            </div>
+          </section>
         </div>
       </form>
     </section>
 
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
+    <section class="stock-card section-spaced cost-list-shell">
+      <div class="stock-header cost-list-header">
         <div>
+          <span class="piece-form-eyebrow">Historico</span>
           <h2>Custos cadastrados</h2>
-          <p>Conferência operacional dos lançamentos; valores completos ficam nos detalhes da peça e nas análises.</p>
+          <p>Mais recentes aparecem primeiro.</p>
         </div>
       </div>
 
+      <section class="products-toolbar operational-filter-toolbar" aria-label="Busca e filtros de custos cadastrados">
+        <div class="products-main-controls operational-filter-main-controls">
+          <div class="form-group products-search-field">
+            <label for="buscaCustosLista">Buscar custo</label>
+            <input id="buscaCustosLista" type="search" placeholder="Buscar por SKU, peca ou descricao">
+          </div>
+
+          <button id="botaoAbrirFiltrosCustos" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosCustos" aria-expanded="false">
+            Filtros
+          </button>
+        </div>
+      </section>
+
       <p id="mensagemListaCustos" class="empty-message"></p>
 
+      <aside id="painelFiltrosCustos" class="products-filter-panel" aria-label="Filtros avancados de custos">
+        <div class="products-filter-panel__header">
+          <h3>Filtros avancados</h3>
+          <button id="botaoFecharFiltrosCustos" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
+        </div>
+
+        <div class="products-filters">
+          <div class="form-group">
+            <label for="dataInicialCustos">Data inicial</label>
+            <input id="dataInicialCustos" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="dataFinalCustos">Data final</label>
+            <input id="dataFinalCustos" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="filtroTipoCustoLista">Tipo</label>
+            <select id="filtroTipoCustoLista">
+              <option value="">Todos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="products-filter-panel__actions">
+          <button id="botaoLimparFiltrosCustos" class="button-secondary" type="button">Limpar filtros</button>
+          <button id="botaoAplicarFiltrosCustos" class="button-primary" type="button">Aplicar/Fechar</button>
+        </div>
+      </aside>
+
       <div class="table-wrapper">
-        <table class="stock-table">
+        <table class="stock-table cost-table">
           <thead>
             <tr>
               <th>Data</th>
               <th>SKU</th>
-              <th>Nome da peça</th>
+              <th>Nome da peca</th>
               <th>Tipo</th>
-              <th>Descrição</th>
+              <th>Descricao</th>
               <th>Valor</th>
-              <th>Ações</th>
+              <th>Acoes</th>
             </tr>
           </thead>
           <tbody id="tabelaCustos"></tbody>
@@ -125,7 +187,7 @@
   <script src="../js/supabase-config.js?v=4"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=30"></script>
-  <script src="../js/custos.js?v=16"></script>
+  <script src="../js/custos.js?v=18"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

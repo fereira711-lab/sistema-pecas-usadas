@@ -6,10 +6,12 @@ const formFiltrosHistorico = document.getElementById("formFiltrosHistorico");
 const buscaRapidaHistorico = document.getElementById("buscaRapidaHistorico");
 const dataInicialHistorico = document.getElementById("dataInicialHistorico");
 const dataFinalHistorico = document.getElementById("dataFinalHistorico");
-const filtroSkuHistorico = document.getElementById("filtroSkuHistorico");
 const filtroNomeHistorico = document.getElementById("filtroNomeHistorico");
 const filtroCanalHistorico = document.getElementById("filtroCanalHistorico");
 const limparFiltrosHistorico = document.getElementById("limparFiltrosHistorico");
+const shellHistoricoVendas = document.querySelector(".sales-history-shell");
+const botaoAbrirFiltrosHistorico = document.getElementById("botaoAbrirFiltrosHistorico");
+const botaoFecharFiltrosHistorico = document.getElementById("botaoFecharFiltrosHistorico");
 
 let historicoCarregadoDoSupabase = false;
 let vendasHistoricoCarregadas = [];
@@ -74,6 +76,15 @@ function normalizarTexto(texto) {
   return String(texto || "").trim().toLowerCase();
 }
 
+function escaparHtml(texto) {
+  return String(texto || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function buscarProdutoDaVenda(venda) {
   return produtosHistoricoCarregados.find(item => Number(item.id) === Number(venda.pecaId));
 }
@@ -98,7 +109,6 @@ function formatarNomePecaVenda(venda) {
 function filtrarVendas(vendas) {
   const dataInicial = dataInicialHistorico?.value || "";
   const dataFinal = dataFinalHistorico?.value || "";
-  const skuBusca = normalizarTexto(filtroSkuHistorico?.value);
   const nomeBusca = normalizarTexto(filtroNomeHistorico?.value);
   const canalBusca = normalizarTexto(filtroCanalHistorico?.value);
   const buscaRapida = normalizarTexto(buscaRapidaHistorico?.value);
@@ -108,17 +118,13 @@ function filtrarVendas(vendas) {
     const sku = normalizarTexto(obterSkuVenda(venda));
     const nome = normalizarTexto(obterNomePecaVenda(venda));
     const canal = normalizarTexto(venda.canalVenda || venda.cliente);
-    const textoGeral = `${sku} ${nome} ${canal}`;
+    const textoGeral = `${sku} ${nome}`;
 
     if (dataInicial && (!dataVenda || dataVenda < dataInicial)) {
       return false;
     }
 
     if (dataFinal && (!dataVenda || dataVenda > dataFinal)) {
-      return false;
-    }
-
-    if (skuBusca && !sku.includes(skuBusca)) {
       return false;
     }
 
@@ -156,12 +162,31 @@ function atualizarResumo(vendas) {
     return total + Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
   }, 0);
 
-  totalVendas.textContent = vendas.length;
-  pecasVendidas.textContent = quantidadeVendida;
+  if (totalVendas) {
+    totalVendas.textContent = vendas.length;
+  }
+
+  if (pecasVendidas) {
+    pecasVendidas.textContent = quantidadeVendida;
+  }
+}
+
+function alternarPainelFiltrosHistorico(aberto) {
+  shellHistoricoVendas?.classList.toggle("sales-history-shell--filters-open", aberto);
+  botaoAbrirFiltrosHistorico?.setAttribute("aria-expanded", aberto ? "true" : "false");
+}
+
+function limparFiltrosAvancadosHistorico() {
+  if (dataInicialHistorico) dataInicialHistorico.value = "";
+  if (dataFinalHistorico) dataFinalHistorico.value = "";
+  if (filtroNomeHistorico) filtroNomeHistorico.value = "";
+  if (filtroCanalHistorico) filtroCanalHistorico.value = "";
+
+  renderizarHistorico();
 }
 
 function renderizarAcoesVenda(venda, indice) {
-  const botaoDetalhes = `<button type="button" data-acao="detalhes" data-id="${venda.id || ""}" data-indice="${indice}">Ver detalhes</button>`;
+  const botaoDetalhes = `<button class="button-secondary" type="button" data-acao="detalhes" data-id="${venda.id || ""}" data-indice="${indice}">Ver detalhes</button>`;
 
   if (historicoCarregadoDoSupabase) {
     return `
@@ -172,7 +197,7 @@ function renderizarAcoesVenda(venda, indice) {
 
   return `
     ${botaoDetalhes}
-    <button type="button" data-acao="remover-local" data-id="${venda.id || ""}" data-indice="${indice}">Remover local</button>
+    <button class="button-secondary button-danger-soft" type="button" data-acao="remover-local" data-id="${venda.id || ""}" data-indice="${indice}">Remover local</button>
   `;
 }
 
@@ -194,10 +219,10 @@ function renderizarHistorico() {
 
     linha.innerHTML = `
       <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
-      <td data-label="SKU">${obterSkuVenda(venda) || "-"}</td>
+      <td data-label="SKU">${escaparHtml(obterSkuVenda(venda) || "-")}</td>
       <td data-label="Peça">${obterNomePecaVenda(venda) || "-"}</td>
-      <td data-label="Quantidade">${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</td>
-      <td data-label="Canal">${venda.canalVenda || venda.cliente || "-"}</td>
+      <td data-label="Quantidade">${escaparHtml(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || "-")}</td>
+      <td data-label="Canal"><span class="status-badge status-badge--stock">${escaparHtml(venda.canalVenda || venda.cliente || "-")}</span></td>
       <td data-label="Ações">
         <div class="table-actions">
           ${renderizarAcoesVenda(venda, indice)}
@@ -263,13 +288,13 @@ tabelaHistorico.addEventListener("click", function (evento) {
 formFiltrosHistorico?.addEventListener("submit", function (evento) {
   evento.preventDefault();
   renderizarHistorico();
+  alternarPainelFiltrosHistorico(false);
 });
 
 [
   buscaRapidaHistorico,
   dataInicialHistorico,
   dataFinalHistorico,
-  filtroSkuHistorico,
   filtroNomeHistorico,
   filtroCanalHistorico
 ].forEach(campo => {
@@ -277,8 +302,22 @@ formFiltrosHistorico?.addEventListener("submit", function (evento) {
 });
 
 limparFiltrosHistorico?.addEventListener("click", function () {
-  formFiltrosHistorico.reset();
-  renderizarHistorico();
+  limparFiltrosAvancadosHistorico();
+});
+
+botaoAbrirFiltrosHistorico?.addEventListener("click", function () {
+  const aberto = !shellHistoricoVendas?.classList.contains("sales-history-shell--filters-open");
+  alternarPainelFiltrosHistorico(aberto);
+});
+
+botaoFecharFiltrosHistorico?.addEventListener("click", function () {
+  alternarPainelFiltrosHistorico(false);
+});
+
+document.addEventListener("keydown", function (evento) {
+  if (evento.key === "Escape") {
+    alternarPainelFiltrosHistorico(false);
+  }
 });
 
 async function iniciarHistoricoVendas() {
