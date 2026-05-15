@@ -4,6 +4,14 @@ const tabelaAnaliseProduto = document.getElementById("tabelaAnaliseProduto");
 const buscaAnaliseProduto = document.getElementById("buscaAnaliseProduto");
 const mensagemRankingProduto = document.getElementById("mensagemRankingProduto");
 const tabelaRankingProduto = document.getElementById("tabelaRankingProduto");
+const analiseProdutoShell = document.getElementById("analiseProdutoShell");
+const botaoAbrirFiltrosAnaliseProduto = document.getElementById("botaoAbrirFiltrosAnaliseProduto");
+const botaoFecharFiltrosAnaliseProduto = document.getElementById("botaoFecharFiltrosAnaliseProduto");
+const botaoLimparFiltrosAnaliseProduto = document.getElementById("botaoLimparFiltrosAnaliseProduto");
+const botaoAplicarFiltrosAnaliseProduto = document.getElementById("botaoAplicarFiltrosAnaliseProduto");
+const filtroCustoAnaliseProduto = document.getElementById("filtroCustoAnaliseProduto");
+const filtroResultadoAnaliseProduto = document.getElementById("filtroResultadoAnaliseProduto");
+const ordenacaoAnaliseProduto = document.getElementById("ordenacaoAnaliseProduto");
 
 let dadosAnaliseProduto = {
   pecas: [],
@@ -65,7 +73,7 @@ function formatarSku(peca) {
 }
 
 function formatarNome(peca) {
-  return peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
+  return peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peça ${peca.id}`;
 }
 
 function obterDataVenda(venda) {
@@ -126,10 +134,21 @@ function criarCard(titulo, valor, classe = "") {
 
 function formatarValorOuNaoCalculado(valor) {
   if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
-    return "Custo nao calculado";
+    return "Custo não calculado";
   }
 
   return formatarMoeda(Number(valor || 0));
+}
+
+function formatarMargem(valor) {
+  if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
+    return "-";
+  }
+
+  return `${Number(valor || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  })}%`;
 }
 
 function obterPeriodoPadrao() {
@@ -244,6 +263,7 @@ function calcularAnaliseProduto(peca, agrupamentos) {
     custosVenda: resultado.custosVenda,
     custoTotal: resultado.calculado ? resultado.custoConsumido + resultado.custosPeca + resultado.custosVenda : null,
     lucro: resultado.lucro,
+    margem: resultado.margem,
     quantidadeTotal,
     quantidadeVendida,
     estoqueAtual,
@@ -270,19 +290,68 @@ function calcularAnalises(dados) {
 
 function filtrarAnalises(analises) {
   const termo = String(buscaAnaliseProduto?.value || "").trim().toLowerCase();
+  const filtroCusto = filtroCustoAnaliseProduto?.value || "";
+  const filtroResultado = filtroResultadoAnaliseProduto?.value || "";
+  const ordenacao = ordenacaoAnaliseProduto?.value || "receita";
 
-  if (!termo) {
-    return analises;
-  }
+  return [...analises]
+    .filter(analise => {
+      if (!termo) {
+        return true;
+      }
 
-  return analises.filter(analise => {
-    return analise.sku.toLowerCase().includes(termo) || analise.nome.toLowerCase().includes(termo);
-  });
+      return analise.sku.toLowerCase().includes(termo) || analise.nome.toLowerCase().includes(termo);
+    })
+    .filter(analise => {
+      if (filtroCusto === "calculado") {
+        return analise.custoCalculado;
+      }
+
+      if (filtroCusto === "pendente") {
+        return !analise.custoCalculado;
+      }
+
+      return true;
+    })
+    .filter(analise => {
+      if (filtroResultado === "lucro") {
+        return analise.lucro !== null && Number(analise.lucro) > 0;
+      }
+
+      if (filtroResultado === "prejuizo") {
+        return analise.lucro !== null && Number(analise.lucro) < 0;
+      }
+
+      if (filtroResultado === "zero") {
+        return analise.lucro !== null && Number(analise.lucro) === 0;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (ordenacao === "nome") {
+        return a.nome.localeCompare(b.nome, "pt-BR");
+      }
+
+      if (ordenacao === "lucro") {
+        return Number(b.lucro ?? Number.NEGATIVE_INFINITY) - Number(a.lucro ?? Number.NEGATIVE_INFINITY);
+      }
+
+      if (ordenacao === "margem") {
+        return Number(b.margem ?? Number.NEGATIVE_INFINITY) - Number(a.margem ?? Number.NEGATIVE_INFINITY);
+      }
+
+      if (ordenacao === "quantidade") {
+        return Number(b.quantidadeVendida || 0) - Number(a.quantidadeVendida || 0);
+      }
+
+      return Number(b.receita || 0) - Number(a.receita || 0);
+    });
 }
 
 async function carregarDados() {
   if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
-    mensagemAnaliseProduto.textContent = "Configure o Supabase para carregar a analise por produto.";
+    mensagemAnaliseProduto.textContent = "Configure o Supabase para carregar a análise por produto.";
     return null;
   }
 
@@ -307,8 +376,8 @@ async function carregarDados() {
       entradasEstoque: entradasEstoque || []
     };
   } catch (erro) {
-    console.error("Erro ao carregar analise por produto:", erro);
-    mensagemAnaliseProduto.textContent = "Nao foi possivel carregar os dados da analise por produto.";
+    console.error("Erro ao carregar análise por produto:", erro);
+    mensagemAnaliseProduto.textContent = "Não foi possível carregar os dados da análise por produto.";
     return null;
   }
 }
@@ -316,18 +385,20 @@ async function carregarDados() {
 function renderizarResumo(analises) {
   const totalReceita = somar(analises, "receita");
   const produtosComCustoPendente = analises.filter(analise => !analise.custoCalculado).length;
-  const totalCusto = produtosComCustoPendente > 0 ? null : somar(analises, "custoTotal");
+  const totalCustoFifo = produtosComCustoPendente > 0 ? null : somar(analises, "custoEstoque");
+  const totalCustosPeca = somar(analises, "custosPeca");
+  const totalCustosVenda = somar(analises, "custosVenda");
   const totalLucro = produtosComCustoPendente > 0 ? null : somar(analises, "lucro");
   const totalVendido = somar(analises, "quantidadeVendida");
-  const totalEstoque = somar(analises, "estoqueAtual");
   const classeLucro = totalLucro !== null && totalLucro >= 0 ? "summary-card--profit" : "summary-card--loss";
 
   resumoAnaliseProduto.innerHTML =
     criarCard("Receita total", formatarMoeda(totalReceita)) +
-    criarCard("Custo total", formatarValorOuNaoCalculado(totalCusto)) +
-    criarCard("Lucro total", totalLucro === null ? "Custo nao calculado" : `<span class="${obterClasseLucro(totalLucro)}">${formatarMoeda(totalLucro)}</span>`, classeLucro) +
-    criarCard("Pecas vendidas", formatarNumero(totalVendido)) +
-    criarCard("Estoque atual", formatarNumero(totalEstoque)) +
+    criarCard("Custo consumido FIFO", formatarValorOuNaoCalculado(totalCustoFifo)) +
+    criarCard("Custos da peça", formatarMoeda(totalCustosPeca)) +
+    criarCard("Custos da venda", formatarMoeda(totalCustosVenda)) +
+    criarCard("Lucro total", totalLucro === null ? "Custo não calculado" : `<span class="${obterClasseLucro(totalLucro)}">${formatarMoeda(totalLucro)}</span>`, classeLucro) +
+    criarCard("Peças vendidas", formatarNumero(totalVendido)) +
     criarCard("Produtos com custo pendente", produtosComCustoPendente);
 }
 
@@ -396,12 +467,12 @@ function criarFiltroHtml(pecaId, filtro) {
     <form class="analysis-filter" data-acao="filtrar-historico" data-peca-id="${pecaId}">
       <div class="form-row">
         <div class="form-group">
-          <label for="periodo-${pecaId}">Periodo</label>
+          <label for="periodo-${pecaId}">Período</label>
           <select id="periodo-${pecaId}" data-campo="periodo">
-            <option value="todos"${filtro.periodo === "todos" ? " selected" : ""}>Todo periodo</option>
+            <option value="todos"${filtro.periodo === "todos" ? " selected" : ""}>Todo período</option>
             <option value="hoje"${filtro.periodo === "hoje" ? " selected" : ""}>Hoje</option>
-            <option value="7"${filtro.periodo === "7" ? " selected" : ""}>Ultimos 7 dias</option>
-            <option value="30"${filtro.periodo === "30" ? " selected" : ""}>Ultimos 30 dias</option>
+            <option value="7"${filtro.periodo === "7" ? " selected" : ""}>Últimos 7 dias</option>
+            <option value="30"${filtro.periodo === "30" ? " selected" : ""}>Últimos 30 dias</option>
             <option value="personalizado"${filtro.periodo === "personalizado" ? " selected" : ""}>Personalizado</option>
           </select>
         </div>
@@ -428,17 +499,17 @@ function criarResumoDetalhadoHtml(resumo) {
     <section class="summary-grid summary-grid--compact">
       ${criarCard("Receita total", formatarMoeda(resumo.receitaTotal))}
       ${criarCard("Custo consumido FIFO", formatarValorOuNaoCalculado(resumo.custoConsumidoFifo))}
-      ${criarCard("Custos da peca", formatarMoeda(resumo.custosDaPeca))}
+      ${criarCard("Custos da peça", formatarMoeda(resumo.custosDaPeca))}
       ${criarCard("Custos da venda", formatarMoeda(resumo.custosDaVenda))}
-      ${criarCard("Lucro", resumo.lucro === null ? "Custo nao calculado" : `<span class="${obterClasseLucro(resumo.lucro)}">${formatarMoeda(resumo.lucro)}</span>`, classeLucro)}
-      ${criarCard("Margem", resumo.margem === null ? "-" : `${resumo.margem.toFixed(1)}%`)}
+      ${criarCard("Lucro", resumo.lucro === null ? "Custo não calculado" : `<span class="${obterClasseLucro(resumo.lucro)}">${formatarMoeda(resumo.lucro)}</span>`, classeLucro)}
+      ${criarCard("Margem", formatarMargem(resumo.margem))}
     </section>
   `;
 }
 
 function criarTabelaVendasHtml(dados, resumo) {
   if (dados.vendasProduto.length === 0) {
-    return `<p class="empty-message">Nenhuma venda encontrada neste periodo.</p>`;
+    return `<p class="empty-message">Nenhuma venda encontrada neste período.</p>`;
   }
 
   const linhas = dados.vendasProduto.map(venda => {
@@ -451,7 +522,7 @@ function criarTabelaVendasHtml(dados, resumo) {
         <td data-label="Quantidade">${formatarNumero(obterQuantidadeVendida(venda))}</td>
         <td data-label="Valor">${formatarMoeda(valor)}</td>
         <td data-label="Canal">${escaparHtml(venda.canalVenda || "-")}</td>
-        <td data-label="Lucro">${!resultadoVenda.calculado ? "<strong>Custo nao calculado</strong>" : `<strong class="${obterClasseLucro(resultadoVenda.lucro)}">${formatarMoeda(resultadoVenda.lucro)}</strong>`}</td>
+        <td data-label="Lucro">${!resultadoVenda.calculado ? "<strong>Custo não calculado</strong>" : `<strong class="${obterClasseLucro(resultadoVenda.lucro)}">${formatarMoeda(resultadoVenda.lucro)}</strong>`}</td>
       </tr>
     `;
   }).join("");
@@ -476,14 +547,14 @@ function criarTabelaVendasHtml(dados, resumo) {
 
 function criarTabelaCustosPecaHtml(custosPeca) {
   if (custosPeca.length === 0) {
-    return `<p class="empty-message">Nenhum custo de peca encontrado neste periodo.</p>`;
+    return `<p class="empty-message">Nenhum custo de peça encontrado neste período.</p>`;
   }
 
   const linhas = custosPeca.map(custo => `
     <tr>
       <td data-label="Tipo">${escaparHtml(custo.tipoCusto || custo.tipo || "-")}</td>
       <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
-      <td data-label="Observacao">${escaparHtml(custo.observacoes || custo.observacao || custo.descricao || "-")}</td>
+      <td data-label="Observação">${escaparHtml(custo.observacoes || custo.observacao || custo.descricao || "-")}</td>
       <td data-label="Data">${formatarData(obterDataCusto(custo))}</td>
     </tr>
   `).join("");
@@ -495,7 +566,7 @@ function criarTabelaCustosPecaHtml(custosPeca) {
           <tr>
             <th>Tipo</th>
             <th>Valor</th>
-            <th>Observacao</th>
+            <th>Observação</th>
             <th>Data</th>
           </tr>
         </thead>
@@ -507,7 +578,7 @@ function criarTabelaCustosPecaHtml(custosPeca) {
 
 function criarTabelaConsumoFifoHtml(dados) {
   if (dados.consumosEstoque.length === 0) {
-    return `<p class="empty-message">Nenhum consumo FIFO encontrado neste periodo.</p>`;
+    return `<p class="empty-message">Nenhum consumo FIFO encontrado neste período.</p>`;
   }
 
   const linhas = dados.consumosEstoque.map(consumo => {
@@ -522,7 +593,7 @@ function criarTabelaConsumoFifoHtml(dados) {
       <tr>
         <td data-label="Entrada">${escaparHtml(entradaTexto)}</td>
         <td data-label="Quantidade">${formatarNumero(consumo.quantidadeConsumida)}</td>
-        <td data-label="Custo unitario">${formatarMoeda(consumo.custoUnitario)}</td>
+        <td data-label="Custo unitário">${formatarMoeda(consumo.custoUnitario)}</td>
         <td data-label="Custo total">${formatarMoeda(consumo.custoTotal)}</td>
       </tr>
     `;
@@ -535,7 +606,7 @@ function criarTabelaConsumoFifoHtml(dados) {
           <tr>
             <th>Entrada</th>
             <th>Quantidade consumida</th>
-            <th>Custo unitario</th>
+            <th>Custo unitário</th>
             <th>Custo total</th>
           </tr>
         </thead>
@@ -553,11 +624,11 @@ function criarPainelHistorico(analise) {
 
   return `
     <tr class="analysis-detail-row">
-      <td colspan="7">
+      <td colspan="8">
         <div class="analysis-detail-panel">
           <div class="stock-header">
             <div>
-              <h3>Historico de ${escaparHtml(analise.nome)}</h3>
+              <h3>Histórico de ${escaparHtml(analise.nome)}</h3>
               <p>Custos de estoque calculados somente pelo consumo FIFO real.</p>
             </div>
           </div>
@@ -566,11 +637,11 @@ function criarPainelHistorico(analise) {
 
           <div class="analysis-detail-grid">
             <section>
-              <h4>Historico de vendas</h4>
+              <h4>Histórico de vendas</h4>
               ${criarTabelaVendasHtml(dados, resumo)}
             </section>
             <section>
-              <h4>Custos da peca</h4>
+              <h4>Custos da peça</h4>
               ${criarTabelaCustosPecaHtml(dados.custosPeca)}
             </section>
             <section>
@@ -589,8 +660,8 @@ function renderizarTabela(analises) {
 
   if (analises.length === 0) {
     mensagemAnaliseProduto.textContent = buscaAnaliseProduto?.value
-      ? "Nenhuma peca encontrada para a busca."
-      : "Nenhuma peca cadastrada para analise.";
+      ? "Nenhuma peça encontrada para a busca."
+      : "Nenhuma peça cadastrada para análise.";
     return;
   }
 
@@ -604,12 +675,13 @@ function renderizarTabela(analises) {
       <td data-label="SKU">${escaparHtml(analise.sku)}</td>
       <td data-label="Nome"><strong class="product-name">${escaparHtml(analise.nome)}</strong></td>
       <td data-label="Receita">${formatarMoeda(analise.receita)}</td>
-      <td data-label="Lucro">${analise.lucro === null ? "<strong>Custo nao calculado</strong>" : `<strong class="${obterClasseLucro(analise.lucro)}">${formatarMoeda(analise.lucro)}</strong>`}</td>
-      <td data-label="Estoque">${formatarNumero(analise.estoqueAtual)}</td>
+      <td data-label="Custo FIFO">${formatarValorOuNaoCalculado(analise.custoEstoque)}</td>
+      <td data-label="Lucro">${analise.lucro === null ? "<strong>Custo não calculado</strong>" : `<strong class="${obterClasseLucro(analise.lucro)}">${formatarMoeda(analise.lucro)}</strong>`}</td>
+      <td data-label="Margem">${formatarMargem(analise.margem)}</td>
       <td data-label="Qtd. vendida">${formatarNumero(analise.quantidadeVendida)}</td>
-      <td data-label="Acoes">
+      <td data-label="Ações">
         <button type="button" class="button-secondary button-compact" data-acao="alternar-historico" data-peca-id="${analise.pecaId}">
-          ${expandido ? "Ocultar" : "Ver historico"}
+          ${expandido ? "Ocultar" : "Ver histórico"}
         </button>
       </td>
     `;
@@ -658,12 +730,12 @@ function renderizarRanking(analises) {
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
-      <td data-label="Posicao">${indice + 1}</td>
+      <td data-label="Posição">${indice + 1}</td>
       <td data-label="SKU">${escaparHtml(analise.sku)}</td>
       <td data-label="Nome"><strong class="product-name">${escaparHtml(analise.nome)}</strong></td>
       <td data-label="Qtd. vendida">${formatarNumero(analise.quantidadeVendida)}</td>
       <td data-label="Receita total">${formatarMoeda(analise.receita)}</td>
-      <td data-label="Lucro">${analise.lucro === null ? "<strong>Custo nao calculado</strong>" : `<strong class="${obterClasseLucro(analise.lucro)}">${formatarMoeda(analise.lucro)}</strong>`}</td>
+      <td data-label="Lucro">${analise.lucro === null ? "<strong>Custo não calculado</strong>" : `<strong class="${obterClasseLucro(analise.lucro)}">${formatarMoeda(analise.lucro)}</strong>`}</td>
     `;
 
     tabelaRankingProduto.appendChild(linha);
@@ -700,6 +772,44 @@ async function iniciarAnaliseProduto() {
 }
 
 buscaAnaliseProduto?.addEventListener("input", renderizarAnalises);
+
+function definirPainelFiltrosAberto(aberto) {
+  analiseProdutoShell?.classList.toggle("product-analysis-shell--filters-open", aberto);
+  botaoAbrirFiltrosAnaliseProduto?.setAttribute("aria-expanded", aberto ? "true" : "false");
+}
+
+botaoAbrirFiltrosAnaliseProduto?.addEventListener("click", () => {
+  definirPainelFiltrosAberto(!analiseProdutoShell?.classList.contains("product-analysis-shell--filters-open"));
+});
+
+botaoFecharFiltrosAnaliseProduto?.addEventListener("click", () => {
+  definirPainelFiltrosAberto(false);
+});
+
+botaoAplicarFiltrosAnaliseProduto?.addEventListener("click", () => {
+  renderizarAnalises();
+  definirPainelFiltrosAberto(false);
+});
+
+botaoLimparFiltrosAnaliseProduto?.addEventListener("click", () => {
+  if (filtroCustoAnaliseProduto) {
+    filtroCustoAnaliseProduto.value = "";
+  }
+
+  if (filtroResultadoAnaliseProduto) {
+    filtroResultadoAnaliseProduto.value = "";
+  }
+
+  if (ordenacaoAnaliseProduto) {
+    ordenacaoAnaliseProduto.value = "receita";
+  }
+
+  renderizarAnalises();
+});
+
+[filtroCustoAnaliseProduto, filtroResultadoAnaliseProduto, ordenacaoAnaliseProduto].forEach(campo => {
+  campo?.addEventListener("change", renderizarAnalises);
+});
 
 tabelaAnaliseProduto?.addEventListener("click", evento => {
   const botao = evento.target.closest("button[data-acao='alternar-historico']");

@@ -3,35 +3,94 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analise por Periodo</title>
+  <title>Análise por Período</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark period-analysis-page">
   <header class="page-header">
     <div>
-      <p class="hero__tag">Analise</p>
-      <h1>Analise por Periodo</h1>
-      <p class="hero__description">
-        Veja o resultado financeiro filtrando as vendas por data inicial e final.
-      </p>
+      <p class="hero__tag">Análise</p>
+      <h1>Análise por Período</h1>
+      <p class="hero__description">Resultado financeiro das vendas dentro de um período, com custo real pelo FIFO.</p>
     </div>
   </header>
 
-  <main class="container stock-layout">
-    <section class="stock-card">
-      <div class="stock-header">
+  <main class="container stock-layout period-analysis-layout">
+    <section id="analisePeriodoShell" class="stock-card period-analysis-shell">
+      <div class="stock-header period-analysis-header">
         <div>
-          <h2>Filtro do periodo</h2>
-          <p>Use a data da venda informada no cadastro.</p>
+          <span class="piece-form-eyebrow">Financeiro por período</span>
+          <h2>Resultado do período</h2>
+          <p>Cálculos centralizados pelo financeiro-utils e custo real por venda_consumos_estoque.</p>
         </div>
         <div class="form-actions">
-          <a class="button-secondary" href="../index.html">Voltar para o inicio</a>
-          <a class="button-secondary" href="historico-vendas.html">Historico de vendas</a>
+          <a class="button-secondary" href="../index.html">Voltar para o início</a>
+          <a class="button-secondary" href="historico-vendas.html">Histórico de vendas</a>
         </div>
       </div>
 
-      <form id="formAnalisePeriodo">
-        <div class="form-row">
+      <p id="mensagemAnalisePeriodo" class="empty-message"></p>
+      <section id="resumoAnalisePeriodo" class="summary-grid summary-grid--compact" aria-label="Resumo da análise por período"></section>
+
+      <section class="products-toolbar period-analysis-toolbar" aria-label="Busca e filtros da análise por período">
+        <div class="products-main-controls operational-filter-main-controls">
+          <div class="form-group products-search-field">
+            <label for="buscaAnalisePeriodo">Buscar venda</label>
+            <input id="buscaAnalisePeriodo" type="search" placeholder="Buscar por SKU ou nome da peça">
+          </div>
+
+          <button id="botaoAbrirFiltrosAnalisePeriodo" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosAnalisePeriodo" aria-expanded="false">
+            Filtros
+          </button>
+        </div>
+      </section>
+
+      <section class="period-analysis-section" aria-labelledby="tituloVendasPeriodo">
+        <div class="stock-header period-analysis-section__header">
+          <div>
+            <h2 id="tituloVendasPeriodo">Vendas consideradas</h2>
+            <p>Lista das vendas que entraram no cálculo do período.</p>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="stock-table period-analysis-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>SKU</th>
+                <th>Peça</th>
+                <th>Quantidade</th>
+                <th>Valor vendido</th>
+                <th>Custo consumido</th>
+                <th>Custos da venda</th>
+                <th>Lucro</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaAnalisePeriodo"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside id="painelFiltrosAnalisePeriodo" class="products-filter-panel period-analysis-filter-panel" aria-label="Filtros avançados da análise por período">
+        <div class="products-filter-panel__header">
+          <h3>Filtros avançados</h3>
+          <button id="botaoFecharFiltrosAnalisePeriodo" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
+        </div>
+
+        <form id="formAnalisePeriodo" class="products-filters">
+          <div class="form-group">
+            <label for="periodoRapido">Período rápido</label>
+            <select id="periodoRapido" name="periodoRapido">
+              <option value="mes">Mês atual</option>
+              <option value="hoje">Hoje</option>
+              <option value="7">Últimos 7 dias</option>
+              <option value="30">Últimos 30 dias</option>
+              <option value="personalizado">Personalizado</option>
+            </select>
+          </div>
+
           <div class="form-group">
             <label for="dataInicial">Data inicial</label>
             <input id="dataInicial" name="dataInicial" type="date" required>
@@ -41,44 +100,20 @@
             <label for="dataFinal">Data final</label>
             <input id="dataFinal" name="dataFinal" type="date" required>
           </div>
-        </div>
 
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Analisar periodo</button>
-          <button type="button" id="limparPeriodo" class="button-secondary">Limpar filtro</button>
-        </div>
-      </form>
+          <div class="form-group">
+            <label for="filtroCanalAnalisePeriodo">Canal</label>
+            <select id="filtroCanalAnalisePeriodo" name="canal">
+              <option value="">Todos</option>
+            </select>
+          </div>
 
-      <p id="mensagemAnalisePeriodo" class="empty-message"></p>
-    </section>
-
-    <section id="resumoAnalisePeriodo" class="summary-grid summary-grid--compact section-spaced" aria-label="Resumo da analise por periodo"></section>
-
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Vendas consideradas</h2>
-          <p>Lista das vendas que entraram no calculo do periodo.</p>
-        </div>
-      </div>
-
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Produto</th>
-              <th>ID da peca</th>
-              <th>Quantidade</th>
-              <th>Valor total</th>
-              <th>Custo estoque</th>
-              <th>Custos venda</th>
-              <th>Lucro</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaAnalisePeriodo"></tbody>
-        </table>
-      </div>
+          <div class="products-filter-panel__actions">
+            <button id="limparPeriodo" type="button" class="button-secondary">Limpar filtros</button>
+            <button type="submit" class="button-primary">Aplicar/Fechar</button>
+          </div>
+        </form>
+      </aside>
     </section>
   </main>
 
@@ -87,7 +122,7 @@
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=28"></script>
   <script src="../js/financeiro-utils.js?v=1"></script>
-  <script src="../js/analise-periodo.js?v=4"></script>
+  <script src="../js/analise-periodo.js?v=5"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>
