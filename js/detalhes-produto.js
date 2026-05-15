@@ -385,6 +385,42 @@ function obterStatusProduto(produto) {
   return obterQuantidadeDisponivel(produto) > 0 ? "em_estoque" : "vendida";
 }
 
+function formatarStatusProduto(status) {
+  const texto = String(status || "").replaceAll("_", " ").trim();
+
+  if (!texto) {
+    return "-";
+  }
+
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function obterClasseStatusProduto(status, quantidadeDisponivel = 0) {
+  const statusNormalizado = normalizarTextoChave(status);
+
+  if (quantidadeDisponivel <= 0 || statusNormalizado.includes("vendida") || statusNormalizado.includes("sem estoque")) {
+    return "status-badge--empty";
+  }
+
+  if (quantidadeDisponivel <= 1 || statusNormalizado.includes("baixo")) {
+    return "status-badge--warning";
+  }
+
+  return "status-badge--stock";
+}
+
+function obterClasseStatusEntrada(status) {
+  if (status === "esgotada") {
+    return "status-badge--empty";
+  }
+
+  if (status === "parcial") {
+    return "status-badge--warning";
+  }
+
+  return "status-badge--stock";
+}
+
 function obterOrigemPrincipal(produto) {
   if (contextoProduto.origemPrincipal) {
     return contextoProduto.origemPrincipal;
@@ -1010,6 +1046,266 @@ function renderizarNaoEncontrado(mensagem) {
   tabelaVendasProduto.innerHTML = "";
 }
 
+function renderizarDadosProduto(produto) {
+  const nomePeca = formatarNomePeca(produto);
+  const quantidadeTotal = obterQuantidadeTotal(produto);
+  const quantidadeDisponivel = obterQuantidadeDisponivel(produto);
+  const imagemUrl = obterImagemUrlProduto(produto);
+  const statusProduto = obterStatusProduto(produto);
+  const precoVenda = Number(produto.precoVenda || produto.preco_venda || 0);
+  const observacoes = String(produto.observacoes || "").trim();
+
+  tituloProduto.textContent = nomePeca;
+  subtituloProduto.textContent = `ID ${produto.id} - ${produto.categoria || "Sem categoria"}`;
+
+  if (botaoImagemProduto) {
+    botaoImagemProduto.textContent = imagemUrl ? "Trocar imagem" : "Adicionar imagem";
+  }
+
+  dadosProduto.innerHTML = `
+    <section class="product-detail-block product-detail-block--image" aria-label="Imagem">
+      <div class="product-detail-block__header">
+        <div>
+          <span class="product-detail-eyebrow">Imagem</span>
+          <h3>Foto da peça</h3>
+        </div>
+      </div>
+      <div class="product-detail-image">
+        ${
+          imagemUrl
+            ? `<img src="${escaparHtml(imagemUrl)}" alt="Imagem de ${escaparHtml(nomePeca)}">`
+            : `<span>Sem imagem cadastrada</span>`
+        }
+      </div>
+    </section>
+
+    <section class="product-detail-block product-detail-block--data" aria-label="Dados da peça">
+      <div class="product-detail-block__header">
+        <div>
+          <span class="product-detail-eyebrow">Dados da peça</span>
+          <h3>${escaparHtml(produto.nome || produto.nome_peca || produto.nomeProduto || "-")}</h3>
+        </div>
+        <span class="status-badge ${obterClasseStatusProduto(statusProduto, quantidadeDisponivel)}">${escaparHtml(formatarStatusProduto(statusProduto))}</span>
+      </div>
+      <div class="detail-grid">
+        <article class="detail-card">
+          <span>SKU</span>
+          <strong>${escaparHtml(formatarSku(produto))}</strong>
+        </article>
+        <article class="detail-card">
+          <span>Quantidade total</span>
+          <strong>${formatarNumero(quantidadeTotal)}</strong>
+        </article>
+        <article class="detail-card">
+          <span>Quantidade disponível</span>
+          <strong>${formatarNumero(quantidadeDisponivel)}</strong>
+        </article>
+        <article class="detail-card">
+          <span>Preço de venda</span>
+          <strong>${precoVenda > 0 ? formatarMoeda(precoVenda) : "Sem preço"}</strong>
+        </article>
+        <article class="detail-card detail-card--wide">
+          <span>Observações</span>
+          <strong>${escaparHtml(observacoes || "-")}</strong>
+        </article>
+      </div>
+    </section>
+  `;
+}
+
+function renderizarOrigemVinculada(produto) {
+  if (!origemVinculadaProduto) {
+    return;
+  }
+
+  const origemId = obterOrigemIdPrincipal(produto);
+  const descricaoOrigem = obterOrigemPrincipal(produto);
+
+  origemVinculadaProduto.innerHTML = `
+    <div class="stock-header product-detail-section__header">
+      <div>
+        <h2>Origem vinculada</h2>
+        <p>Rastreio operacional da peça.</p>
+      </div>
+      <div class="form-actions">
+        <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver detalhes da origem</a>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <article class="detail-card">
+        <span>Origem</span>
+        <strong>${escaparHtml(descricaoOrigem)}</strong>
+      </article>
+      <article class="detail-card">
+        <span>ID da origem</span>
+        <strong>${origemId || "-"}</strong>
+      </article>
+    </div>
+  `;
+}
+
+function renderizarResumo() {
+  const resultado = calcularResultado();
+  const produto = contextoProduto.produto || {};
+
+  resumoFinanceiro.innerHTML = `
+    <article class="summary-card">
+      <span>Entradas</span>
+      <strong>${formatarNumero(contextoProduto.entradas.length)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Quantidade total</span>
+      <strong>${formatarNumero(obterQuantidadeTotal(produto))}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Quantidade disponível</span>
+      <strong>${formatarNumero(obterQuantidadeDisponivel(produto))}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Quantidade vendida</span>
+      <strong>${formatarNumero(resultado.quantidadeTotalVendida)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Custos cadastrados</span>
+      <strong>${formatarNumero(contextoProduto.custosPeca.length)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Vendas relacionadas</span>
+      <strong>${formatarNumero(contextoProduto.vendas.length)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Última venda</span>
+      <strong>${formatarData(resultado.ultimaVenda)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Origem</span>
+      <strong>${escaparHtml(obterOrigemPrincipal(produto))}</strong>
+    </article>
+  `;
+}
+
+function renderizarEntradas() {
+  tabelaEntradasProduto.innerHTML = "";
+
+  if (contextoProduto.entradas.length === 0) {
+    mensagemEntradasProduto.textContent = "Nenhuma entrada de estoque encontrada para esta peça.";
+    alternarTabelaVazia(tabelaEntradasProduto, true);
+    return;
+  }
+
+  mensagemEntradasProduto.textContent = "";
+  alternarTabelaVazia(tabelaEntradasProduto, false);
+
+  contextoProduto.entradas.forEach(entrada => {
+    const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
+    const statusEntrada = obterStatusEntrada(entrada);
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Origem">${escaparHtml(entrada.origemDescricao || entrada.origemId || "-")}</td>
+      <td data-label="Data entrada">${formatarData(entrada.dataEntrada)}</td>
+      <td data-label="Quantidade total">${formatarNumero(entrada.quantidadeTotal)}</td>
+      <td data-label="Quantidade consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
+      <td data-label="Saldo disponível">${formatarNumero(saldo)}</td>
+      <td data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
+      <td data-label="Status"><span class="status-badge ${obterClasseStatusEntrada(statusEntrada)}">${escaparHtml(formatarStatusProduto(statusEntrada))}</span></td>
+    `;
+
+    tabelaEntradasProduto.appendChild(linha);
+  });
+}
+
+function renderizarCustos() {
+  tabelaCustosProduto.innerHTML = "";
+
+  if (contextoProduto.custosPeca.length === 0) {
+    mensagemCustosProduto.textContent = "Nenhum custo cadastrado para esta peça.";
+    alternarTabelaVazia(tabelaCustosProduto, true);
+    return;
+  }
+
+  mensagemCustosProduto.textContent = "";
+  alternarTabelaVazia(tabelaCustosProduto, false);
+
+  contextoProduto.custosPeca.forEach(custo => {
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Data">${formatarData(custo.dataCusto || custo.data)}</td>
+      <td data-label="Tipo">${escaparHtml(custo.tipoCusto || custo.tipo || "-")}</td>
+      <td data-label="Descrição">${escaparHtml(custo.descricao || "-")}</td>
+      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
+      <td data-label="Observações">${escaparHtml(custo.observacoes || custo.observacao || "-")}</td>
+      <td data-label="Ações">
+        <div class="table-actions">
+          <button type="button" data-acao="editar-custo" data-custo-id="${escaparHtml(custo.id)}">Editar</button>
+          <button type="button" class="button-danger-soft" data-acao="excluir-custo" data-custo-id="${escaparHtml(custo.id)}">Excluir</button>
+        </div>
+      </td>
+    `;
+
+    tabelaCustosProduto.appendChild(linha);
+  });
+}
+
+function renderizarVendas() {
+  tabelaVendasProduto.innerHTML = "";
+
+  if (contextoProduto.vendas.length === 0) {
+    mensagemVendasProduto.textContent = "Nenhuma venda registrada para esta peça.";
+    alternarTabelaVazia(tabelaVendasProduto, true);
+    return;
+  }
+
+  mensagemVendasProduto.textContent = "";
+  alternarTabelaVazia(tabelaVendasProduto, false);
+
+  ordenarVendasPorData(contextoProduto.vendas).forEach(venda => {
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
+      <td data-label="Quantidade">${formatarNumero(quantidadeVendida(venda))}</td>
+      <td data-label="Valor unitário">${formatarMoeda(obterValorUnitarioVenda(venda))}</td>
+      <td data-label="Canal">${escaparHtml(venda.canalVenda || "-")}</td>
+      <td data-label="Ações">
+        <div class="table-actions table-actions--single">
+          <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes da venda</a>
+        </div>
+      </td>
+    `;
+
+    tabelaVendasProduto.appendChild(linha);
+  });
+}
+
+async function excluirCustoProduto(custoId) {
+  if (!window.supabaseService?.estaConfigurado()) {
+    mensagemCustosProduto.textContent = "Configure o Supabase antes de excluir custos.";
+    return;
+  }
+
+  const confirmar = window.confirm("Excluir este custo da peça?");
+
+  if (!confirmar) {
+    return;
+  }
+
+  mensagemCustosProduto.textContent = "Excluindo custo...";
+
+  try {
+    await window.supabaseService.excluirCustoPeca(custoId);
+    contextoProduto.custosPeca = contextoProduto.custosPeca.filter(custo => Number(custo.id) !== Number(custoId));
+    fecharFormularioEdicaoCusto();
+    renderizarCustos();
+    renderizarResumo();
+    mensagemCustosProduto.textContent = "Custo excluído com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao excluir custo:", erro);
+    mensagemCustosProduto.textContent = "Não foi possível excluir o custo.";
+  }
+}
+
 async function iniciarDetalhes() {
   await carregarTiposCustoProduto();
   const pecaId = obterPecaIdDaUrl();
@@ -1069,10 +1365,19 @@ cancelarEdicaoCusto?.addEventListener("click", fecharFormularioEdicaoCusto);
 formEditarCustoProduto?.addEventListener("submit", salvarEdicaoCusto);
 
 tabelaCustosProduto?.addEventListener("click", evento => {
-  const botao = evento.target.closest("[data-acao='editar-custo']");
+  const botao = evento.target.closest("[data-acao]");
 
-  if (botao) {
+  if (!botao) {
+    return;
+  }
+
+  if (botao.dataset.acao === "editar-custo") {
     abrirFormularioEdicaoCusto(botao.dataset.custoId);
+    return;
+  }
+
+  if (botao.dataset.acao === "excluir-custo") {
+    excluirCustoProduto(botao.dataset.custoId);
   }
 });
 

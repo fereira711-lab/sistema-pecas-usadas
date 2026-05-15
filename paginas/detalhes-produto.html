@@ -6,23 +6,21 @@
   <title>Central da Peça</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark product-detail-page">
   <header class="page-header">
     <div>
       <p class="hero__tag">Estoque</p>
       <h1>Central da Peça</h1>
-      <p class="hero__description">
-        Reúna dados, edição, imagem, entradas, custos, vendas, origem e resultado da peça.
-      </p>
+      <p class="hero__description">Central operacional da peça, com dados, imagem, origem, estoque, custos e vendas vinculadas.</p>
     </div>
   </header>
 
-  <main class="container stock-layout">
-    <section class="stock-card">
-      <div class="stock-header">
+  <main class="container stock-layout product-detail-layout">
+    <section class="stock-card product-detail-shell">
+      <div class="stock-header product-detail-header">
         <div>
           <h2 id="tituloProduto">Produto</h2>
-          <p id="subtituloProduto">Central completa do item selecionado.</p>
+          <p id="subtituloProduto">Dados principais do item selecionado.</p>
         </div>
         <div class="form-actions">
           <button type="button" id="botaoVenderProduto" class="button-primary">Vender</button>
@@ -36,9 +34,10 @@
 
       <p id="mensagemProdutoNaoEncontrado" class="empty-message"></p>
       <input id="imagemProdutoDetalhe" class="file-input-hidden" type="file" accept="image/*">
-      <div id="dadosProduto" class="detail-grid"></div>
+      <div id="dadosProduto" class="product-detail-overview"></div>
 
       <form id="formEditarProduto" class="edit-panel" hidden>
+        <div class="product-detail-form-title">Editar dados da peça</div>
         <div class="form-row">
           <div class="form-group">
             <label for="editarProdutoNome">Nome da peça</label>
@@ -52,7 +51,7 @@
         </div>
 
         <div class="form-group">
-          <label for="editarProdutoPreco">Preço sugerido</label>
+          <label for="editarProdutoPreco">Preço de venda</label>
           <input id="editarProdutoPreco" type="number" min="0" step="0.01">
         </div>
 
@@ -68,20 +67,20 @@
       </form>
     </section>
 
-    <section class="stock-card section-spaced" id="origemVinculadaProduto"></section>
+    <section class="stock-card section-spaced product-detail-section" id="origemVinculadaProduto"></section>
 
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
+    <section class="stock-card section-spaced product-detail-section">
+      <div class="stock-header product-detail-section__header">
         <div>
           <h2>Entradas de estoque</h2>
-          <p>Lotes vinculados à peça, com saldo, consumo e custo unitário.</p>
+          <p>Lotes vinculados à peça.</p>
         </div>
       </div>
 
       <p id="mensagemEntradasProduto" class="empty-message"></p>
 
       <div class="table-wrapper">
-        <table class="stock-table">
+        <table class="stock-table product-detail-table">
           <thead>
             <tr>
               <th>Origem</th>
@@ -98,17 +97,18 @@
       </div>
     </section>
 
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
+    <section class="stock-card section-spaced product-detail-section">
+      <div class="stock-header product-detail-section__header">
         <div>
-          <h2>Custos diversos da peça</h2>
-          <p>Custos cadastrados diretamente para esta peça.</p>
+          <h2>Custos da peça</h2>
+          <p>Custos operacionais cadastrados diretamente para esta peça.</p>
         </div>
       </div>
 
       <p id="mensagemCustosProduto" class="empty-message"></p>
 
       <form id="formEditarCustoProduto" class="edit-panel" hidden>
+        <div class="product-detail-form-title">Editar custo da peça</div>
         <input id="editarCustoId" type="hidden">
         <div class="form-row">
           <div class="form-group">
@@ -146,7 +146,7 @@
       </form>
 
       <div class="table-wrapper">
-        <table class="stock-table">
+        <table class="stock-table product-detail-table">
           <thead>
             <tr>
               <th>Data</th>
@@ -162,28 +162,24 @@
       </div>
     </section>
 
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
+    <section class="stock-card section-spaced product-detail-section">
+      <div class="stock-header product-detail-section__header">
         <div>
-          <h2>Vendas desta peça</h2>
-          <p>Vendas registradas para esta peça usando a data da venda.</p>
+          <h2>Vendas relacionadas</h2>
+          <p>Vendas registradas para esta peça.</p>
         </div>
       </div>
 
       <p id="mensagemVendasProduto" class="empty-message"></p>
 
       <div class="table-wrapper">
-        <table class="stock-table">
+        <table class="stock-table product-detail-table">
           <thead>
             <tr>
               <th>Data</th>
               <th>Quantidade</th>
               <th>Valor unitário</th>
-              <th>Valor total</th>
               <th>Canal</th>
-              <th>Custo entradas</th>
-              <th>Custos venda</th>
-              <th>Lucro venda</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -192,15 +188,15 @@
       </div>
     </section>
 
-    <section class="stock-card section-spaced" aria-labelledby="tituloResumoFinanceiro">
-      <div class="stock-header">
+    <section class="stock-card section-spaced product-detail-section" aria-labelledby="tituloResumoFinanceiro">
+      <div class="stock-header product-detail-section__header">
         <div>
-          <h2 id="tituloResumoFinanceiro">Resumo financeiro</h2>
-          <p>Resultado consolidado da peça com vendas, custos e consumo de estoque.</p>
+          <h2 id="tituloResumoFinanceiro">Resumo da peça</h2>
+          <p>Visão básica do estoque e movimentação.</p>
         </div>
       </div>
 
-      <div class="summary-grid" id="resumoFinanceiro" aria-label="Resumo financeiro da peça"></div>
+      <div class="summary-grid" id="resumoFinanceiro" aria-label="Resumo da peça"></div>
     </section>
   </main>
 
@@ -209,7 +205,7 @@
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=29"></script>
   <script src="../js/financeiro-utils.js?v=1"></script>
-  <script src="../js/detalhes-produto.js?v=16"></script>
+  <script src="../js/detalhes-produto.js?v=17"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

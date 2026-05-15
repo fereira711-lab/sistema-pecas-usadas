@@ -12,6 +12,7 @@ const mensagemCustoFifoVenda = document.getElementById("mensagemCustoFifoVenda")
 const tabelaCustoFifoVenda = document.getElementById("tabelaCustoFifoVenda");
 const botaoEditarVenda = document.getElementById("botaoEditarVenda");
 const formEditarVenda = document.getElementById("formEditarVenda");
+const dadosObservacoesVenda = document.getElementById("dadosObservacoesVenda");
 const editarVendaData = document.getElementById("editarVendaData");
 const editarVendaCanal = document.getElementById("editarVendaCanal");
 const editarListaCustosVenda = document.getElementById("editarListaCustosVenda");
@@ -446,6 +447,7 @@ async function salvarEdicaoVenda(evento) {
 
     fecharFormularioEdicaoVenda();
     renderizarDadosVendaCompleta(vendaAtual);
+    renderizarObservacoesVenda(vendaAtual);
     renderizarResumoFinanceiro(vendaAtual);
     renderizarCustos(vendaAtual);
     mensagemVendaNaoEncontrada.textContent = "Venda atualizada com sucesso.";
@@ -769,6 +771,207 @@ function renderizarCustoFifo() {
   tabelaCustoFifoVenda.appendChild(linhaTotal);
 }
 
+function renderizarDadosVendaCompleta(venda) {
+  tituloVenda.textContent = venda.id || "Venda sem ID";
+  const produtoAtual = contextoVenda.produto || buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
+  const dataVenda = obterDataVenda(venda);
+  const nomeVenda = formatarNomePeca({
+    id: venda.pecaId,
+    nome: venda.produtoNome || produtoAtual?.nome,
+    sku: venda.sku || produtoAtual?.sku
+  });
+  const receita = window.financeiroUtils.calcularReceitaVenda(venda);
+
+  subtituloVenda.textContent = `${nomeVenda} - ${formatarData(dataVenda)}`;
+
+  dadosVenda.innerHTML = `
+    <article class="detail-card">
+      <span>Data</span>
+      <strong>${formatarData(dataVenda)}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Canal</span>
+      <strong>${escaparHtml(venda.canalVenda || venda.canal_venda || venda.cliente || "-")}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Quantidade</span>
+      <strong>${obterQuantidadeVendida(venda)}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Valor unitario</span>
+      <strong>${formatarMoeda(obterValorUnitarioVenda(venda))}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Valor total</span>
+      <strong>${formatarMoeda(receita)}</strong>
+    </article>
+    <article class="detail-card">
+      <span>ID da venda</span>
+      <strong>${escaparHtml(venda.id || "-")}</strong>
+    </article>
+  `;
+}
+
+function renderizarProduto(venda) {
+  const produtos = buscarProdutos();
+  const produto = contextoVenda.produto || produtos.find(item => Number(item.id) === Number(venda.pecaId));
+  const sku = venda.sku || produto?.sku;
+  const nome = venda.produtoNome || produto?.nome || produto?.nome_peca || produto?.descricao || "-";
+
+  if (!produto && !venda.pecaId) {
+    mensagemProdutoVenda.textContent = "Produto nao encontrado no estoque atual.";
+    dadosProdutoVenda.innerHTML = "";
+    acaoDetalhesProduto.innerHTML = "";
+    return;
+  }
+
+  mensagemProdutoVenda.textContent = "";
+  acaoDetalhesProduto.innerHTML = venda.pecaId
+    ? `<a class="button-secondary" href="detalhes-produto.html?pecaId=${encodeURIComponent(venda.pecaId)}">Ver detalhes da peca</a>`
+    : "";
+
+  dadosProdutoVenda.innerHTML = `
+    <article class="detail-card">
+      <span>SKU</span>
+      <strong>${escaparHtml(formatarSku({ sku }))}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Nome da peca</span>
+      <strong>${escaparHtml(nome)}</strong>
+    </article>
+    <article class="detail-card">
+      <span>ID da peca</span>
+      <strong>${escaparHtml(venda.pecaId || "-")}</strong>
+    </article>
+  `;
+}
+
+function renderizarCustos(venda) {
+  const custosVenda = obterCustosVendaParaCalculo(venda);
+  tabelaCustosVenda.innerHTML = "";
+
+  if (custosVenda.length === 0) {
+    mensagemCustosVenda.textContent = "Nenhum custo vinculado diretamente a esta venda.";
+    return;
+  }
+
+  mensagemCustosVenda.textContent = "";
+
+  custosVenda.forEach(custo => {
+    const linha = document.createElement("tr");
+    const tipoCusto = custo.tipo || custo.tipoCusto;
+
+    linha.innerHTML = `
+      <td data-label="Data">${formatarData(custo.data || custo.dataCusto || obterDataVenda(venda))}</td>
+      <td data-label="Tipo"><span class="status-badge status-badge--stock">${escaparHtml(tipoCusto || "-")}</span></td>
+      <td data-label="Descricao">${escaparHtml(custo.descricao || "-")}</td>
+      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
+    `;
+
+    tabelaCustosVenda.appendChild(linha);
+  });
+
+  const linhaTotal = document.createElement("tr");
+  const totalCustosVenda = window.financeiroUtils.calcularCustosVenda(venda.id, custosVenda).valor;
+  linhaTotal.innerHTML = `
+    <td data-label="Data" colspan="3"><strong>Total dos custos da venda</strong></td>
+    <td data-label="Valor"><strong>${formatarMoeda(totalCustosVenda)}</strong></td>
+  `;
+  tabelaCustosVenda.appendChild(linhaTotal);
+}
+
+function renderizarCustoFifo() {
+  tabelaCustoFifoVenda.innerHTML = "";
+
+  if (!contextoVenda.consumosFifo.length) {
+    mensagemCustoFifoVenda.textContent = TEXTO_CUSTO_NAO_CALCULADO;
+    const linha = document.createElement("tr");
+    linha.innerHTML = `<td data-label="Entrada consumida" colspan="6"><strong>${TEXTO_CUSTO_NAO_CALCULADO}</strong></td>`;
+    tabelaCustoFifoVenda.appendChild(linha);
+    return;
+  }
+
+  mensagemCustoFifoVenda.textContent = "";
+
+  contextoVenda.consumosFifo.forEach(consumo => {
+    const entrada = obterEntradaConsumida(consumo.entradaEstoqueId);
+    const saldoEntrada = entrada
+      ? Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0)
+      : null;
+    const statusEntrada = entrada
+      ? saldoEntrada <= 0 ? "Esgotada" : "Com saldo"
+      : "-";
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+      <td data-label="Entrada consumida">Entrada ${escaparHtml(consumo.entradaEstoqueId || "-")}</td>
+      <td data-label="Data da entrada">${formatarData(entrada?.dataEntrada)}</td>
+      <td data-label="Quantidade">${escaparHtml(consumo.quantidadeConsumida || "-")}</td>
+      <td data-label="Custo unitario">${formatarMoeda(consumo.custoUnitario)}</td>
+      <td data-label="Custo total">${formatarMoeda(consumo.custoTotal)}</td>
+      <td data-label="Status"><span class="status-badge status-badge--stock">${statusEntrada}</span></td>
+    `;
+
+    tabelaCustoFifoVenda.appendChild(linha);
+  });
+
+  const linhaTotal = document.createElement("tr");
+  const custoConsumido = window.financeiroUtils.calcularCustoConsumidoVenda(vendaAtual?.id, contextoVenda.consumosFifo);
+  linhaTotal.innerHTML = `
+    <td data-label="Entrada consumida" colspan="4"><strong>Custo total consumido</strong></td>
+    <td data-label="Custo total"><strong>${formatarMoeda(custoConsumido.valor)}</strong></td>
+    <td data-label="Status">-</td>
+  `;
+  tabelaCustoFifoVenda.appendChild(linhaTotal);
+}
+
+function renderizarResumoFinanceiro(venda) {
+  const resultado = recalcularVendaComCustoAtual(venda);
+  const classeCardResultado = resultado.custoCalculado
+    ? (resultado.lucroVenda >= 0 ? "summary-card summary-card--profit" : "summary-card summary-card--loss")
+    : "summary-card";
+
+  resumoFinanceiroVenda.innerHTML = `
+    <article class="summary-card">
+      <span>Receita</span>
+      <strong>${formatarMoeda(resultado.receita)}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Custo consumido</span>
+      <strong>${resultado.custoCalculado ? formatarMoeda(resultado.custoTotal) : TEXTO_CUSTO_NAO_CALCULADO}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Custos da venda</span>
+      <strong>${formatarMoeda(resultado.custosVenda)}</strong>
+    </article>
+    <article class="${classeCardResultado}">
+      <span>Lucro</span>
+      <strong>${resultado.custoCalculado ? `<span class="${obterClasseLucro(resultado.lucroVenda)}">${formatarMoeda(resultado.lucroVenda)}</span>` : TEXTO_CUSTO_NAO_CALCULADO}</strong>
+    </article>
+    <article class="${classeCardResultado}">
+      <span>Margem</span>
+      <strong>${resultado.custoCalculado ? `<span class="${obterClasseLucro(resultado.lucroVenda)}">${formatarPorcentagem(resultado.margem)}</span>` : TEXTO_CUSTO_NAO_CALCULADO}</strong>
+    </article>
+  `;
+}
+
+function renderizarObservacoesVenda(venda) {
+  if (!dadosObservacoesVenda) {
+    return;
+  }
+
+  dadosObservacoesVenda.innerHTML = `
+    <article class="detail-card">
+      <span>Observacoes</span>
+      <strong>${escaparHtml(obterObservacoesVenda(venda))}</strong>
+    </article>
+    <article class="detail-card">
+      <span>Edicao</span>
+      <strong>Data, canal e custos da venda podem ser editados sem alterar FIFO.</strong>
+    </article>
+  `;
+}
+
 async function carregarContextoSupabase(venda) {
   if (!window.supabaseService || !window.supabaseService.estaConfigurado() || !venda?.id) {
     return venda;
@@ -828,6 +1031,7 @@ async function iniciarDetalhesVenda() {
   renderizarCustoFifo();
   renderizarProduto(venda);
   renderizarCustos(venda);
+  renderizarObservacoesVenda(venda);
 }
 
 botaoEditarVenda?.addEventListener("click", abrirFormularioEdicaoVenda);

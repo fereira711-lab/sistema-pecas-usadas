@@ -75,6 +75,15 @@ function normalizarTexto(texto) {
   return String(texto || "").trim().toLowerCase();
 }
 
+function escaparHtml(texto) {
+  return String(texto || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function obterCodigoOrigem(origem) {
   return origem.codigoOrigem || `ORI-${String(origem.id).padStart(6, "0")}`;
 }
@@ -130,9 +139,10 @@ function filtrarOrigens(origens) {
     const codigo = normalizarTexto(obterCodigoOrigem(origem));
     const descricao = normalizarTexto(origem.descricao);
     const tipoOrigem = obterTipoOrigem(origem);
+    const tipoBusca = normalizarTexto(tipoOrigem);
     const statusDistribuicao = obterStatusDistribuicao(origem);
 
-    if (termo && !`${codigo} ${descricao}`.includes(termo)) {
+    if (termo && !`${codigo} ${descricao} ${tipoBusca}`.includes(termo)) {
       return false;
     }
 
@@ -181,26 +191,14 @@ function limparFiltrosOrigens() {
 }
 
 function atualizarResumo(origens) {
-  totalOrigens.textContent = origens.length;
-  totalCarros.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Carro para desmonte").length;
-  totalLotes.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Lote").length;
-  totalComprasAvulsas.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Compra avulsa").length;
+  if (totalOrigens) totalOrigens.textContent = origens.length;
+  if (totalCarros) totalCarros.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Carro para desmonte").length;
+  if (totalLotes) totalLotes.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Lote").length;
+  if (totalComprasAvulsas) totalComprasAvulsas.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Compra avulsa").length;
 }
 
 function renderizarAcoesOrigem(origem) {
-  const botaoDetalhes = `<button type="button" data-acao="detalhes" data-origem-id="${origem.id}">Ver detalhes</button>`;
-
-  if (origensCarregadasDoSupabase) {
-    return `
-      ${botaoDetalhes}
-      <button type="button" disabled>Remocao nao disponivel</button>
-    `;
-  }
-
-  return `
-    ${botaoDetalhes}
-    <button type="button" data-acao="remover-local" data-origem-id="${origem.id}">Remover local</button>
-  `;
+  return `<button class="button-secondary" type="button" data-acao="detalhes" data-origem-id="${escaparHtml(origem.id)}">Ver detalhes</button>`;
 }
 
 function renderizarOrigens() {
@@ -218,11 +216,11 @@ function renderizarOrigens() {
   origens.forEach(origem => {
     const linha = document.createElement("tr");
     linha.innerHTML = `
-      <td data-label="Codigo">${obterCodigoOrigem(origem)}</td>
-      <td data-label="Data da compra">${formatarData(origem.dataCompra)}</td>
-      <td data-label="Tipo">${obterTipoOrigem(origem)}</td>
-      <td data-label="Descricao">${origem.descricao || "-"}</td>
-      <td data-label="Observacoes">${origem.observacoes || "-"}</td>
+      <td data-label="Codigo">${escaparHtml(obterCodigoOrigem(origem))}</td>
+      <td data-label="Tipo"><span class="status-badge status-badge--stock">${escaparHtml(obterTipoOrigem(origem))}</span></td>
+      <td data-label="Descricao"><strong class="product-name">${escaparHtml(origem.descricao || "-")}</strong></td>
+      <td data-label="Data">${formatarData(origem.dataCompra)}</td>
+      <td data-label="Observacoes">${escaparHtml(origem.observacoes || "-")}</td>
       <td data-label="Acoes">
         <div class="table-actions">
           ${renderizarAcoesOrigem(origem)}

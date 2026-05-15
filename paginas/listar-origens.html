@@ -12,7 +12,7 @@
       <p class="hero__tag">Origens</p>
       <h1>Origens Cadastradas</h1>
       <p class="hero__description">
-        Consulte as origens cadastradas antes de vincular pecas e entradas.
+        Consulte origens cadastradas e abra os detalhes quando necessario.
       </p>
     </div>
   </header>
@@ -43,8 +43,8 @@
     <section class="stock-card origins-shell">
       <div class="stock-header origins-list-header">
         <div>
+          <span class="piece-form-eyebrow">Origem operacional</span>
           <h2>Lista de origens</h2>
-          <p>Consulta operacional das origens carregadas do banco de dados.</p>
         </div>
         <div class="form-actions">
           <a class="button-secondary" href="../index.html">Voltar para o painel</a>
@@ -56,7 +56,7 @@
         <div class="products-main-controls operational-filter-main-controls">
           <div class="form-group products-search-field">
             <label for="buscaOrigens">Buscar origem</label>
-            <input id="buscaOrigens" type="search" placeholder="Buscar por codigo ou descricao">
+            <input id="buscaOrigens" type="search" placeholder="Buscar por codigo, descricao ou tipo">
           </div>
 
           <button id="botaoAbrirFiltrosOrigens" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosOrigens" aria-expanded="false">
@@ -106,13 +106,13 @@
       </aside>
 
       <div class="table-wrapper">
-        <table class="stock-table">
+        <table class="stock-table origins-table">
           <thead>
             <tr>
               <th>Codigo</th>
-              <th>Data da compra</th>
               <th>Tipo</th>
               <th>Descricao</th>
+              <th>Data</th>
               <th>Observacoes</th>
               <th>Acoes</th>
             </tr>
@@ -127,7 +127,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=25"></script>
-  <script src="../js/listar-origens.js?v=10"></script>
+  <script src="../js/listar-origens.js?v=11"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>
