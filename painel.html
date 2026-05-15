@@ -3,76 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Geral do Negocio</title>
+  <title>Painel Geral</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark general-dashboard-page">
   <header class="page-header">
     <div>
       <p class="hero__tag">Painel geral</p>
-      <h1>Painel Geral do Negocio</h1>
-      <p class="hero__description">
-        Visao operacional de estoque, vendas recentes e alertas importantes.
-      </p>
+      <h1>Painel Geral</h1>
+      <p class="hero__description">Visão inicial operacional de produtos, vendas recentes, alertas e atalhos do sistema.</p>
     </div>
   </header>
 
-  <main class="container stock-layout">
-    <section class="stock-card">
-      <div class="stock-header">
+  <main class="container stock-layout general-dashboard-layout">
+    <section class="stock-card general-dashboard-shell">
+      <div class="stock-header general-dashboard-header">
         <div>
-          <h2>Resumo do negocio</h2>
-          <p>Cards operacionais calculados no front-end com dados carregados do Supabase.</p>
+          <span class="piece-form-eyebrow">Operação</span>
+          <h2>Resumo operacional</h2>
+          <p>Indicadores rápidos para acompanhar a rotina.</p>
         </div>
         <div class="form-actions">
-          <a class="button-secondary" href="index.html">Voltar para o inicio</a>
+          <a class="button-secondary" href="index.html">Voltar para o início</a>
         </div>
       </div>
 
       <p id="mensagemPainelGeral" class="empty-message"></p>
       <section id="cardsPainelGeral" class="summary-grid" aria-label="Cards do painel geral"></section>
-      <section id="alertasPainelGeral" aria-label="Alertas inteligentes do estoque"></section>
     </section>
 
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
+    <section class="stock-card section-spaced general-dashboard-section">
+      <div class="stock-header general-dashboard-section__header">
         <div>
-          <h2>Últimas vendas por data da venda</h2>
-          <p>Vendas retroativas aparecem conforme a data da venda informada.</p>
+          <h2>Atalhos rápidos</h2>
+          <p>Acesso direto às telas principais.</p>
+        </div>
+      </div>
+
+      <nav id="atalhosPainelGeral" class="dashboard-shortcuts" aria-label="Atalhos principais"></nav>
+    </section>
+
+    <section class="stock-card section-spaced general-dashboard-section">
+      <div class="stock-header general-dashboard-section__header">
+        <div>
+          <h2>Alertas importantes</h2>
+          <p>Itens que precisam de atenção operacional.</p>
         </div>
         <div class="form-actions">
-          <a class="button-secondary" href="paginas/historico-vendas.html">Ver historico</a>
+          <a class="button-secondary" href="paginas/alertas.html">Ver alertas</a>
+        </div>
+      </div>
+
+      <section id="alertasPainelGeral" aria-label="Alertas importantes do painel"></section>
+    </section>
+
+    <section class="stock-card section-spaced general-dashboard-section">
+      <div class="stock-header general-dashboard-section__header">
+        <div>
+          <h2>Últimas vendas</h2>
+          <p>Vendas mais recentes pela data informada no cadastro.</p>
+        </div>
+        <div class="form-actions">
+          <a class="button-secondary" href="paginas/historico-vendas.html">Ver histórico</a>
         </div>
       </div>
 
       <p id="mensagemUltimasVendas" class="empty-message"></p>
 
       <div class="table-wrapper">
-        <table class="stock-table">
+        <table class="stock-table general-dashboard-table">
           <thead>
             <tr>
               <th>Data</th>
               <th>SKU</th>
-              <th>Nome da peca</th>
+              <th>Peça</th>
               <th>Quantidade</th>
+              <th>Canal</th>
+              <th>Ação</th>
             </tr>
           </thead>
           <tbody id="tabelaUltimasVendas"></tbody>
         </table>
-      </div>
-    </section>
-
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Análises financeiras</h2>
-          <p>Resultados com dinheiro, custos e lucro ficam separados nas telas de análise.</p>
-        </div>
-        <div class="form-actions">
-          <a class="button-secondary" href="paginas/analise-produto.html">Por produto</a>
-          <a class="button-secondary" href="paginas/analise-periodo.html">Por período</a>
-          <a class="button-secondary" href="paginas/analise-custos.html">Por custos</a>
-        </div>
       </div>
     </section>
   </main>
@@ -82,7 +93,7 @@
   <script src="js/auth.js?v=4"></script>
   <script src="js/supabase-service.js?v=28"></script>
   <script src="js/financeiro-utils.js?v=1"></script>
-  <script src="js/painel-geral.js?v=9"></script>
+  <script src="js/painel-geral.js?v=10"></script>
   <script src="js/sidebar.js?v=5"></script>
 </body>
 </html>

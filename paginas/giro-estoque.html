@@ -6,58 +6,137 @@
   <title>Giro de Estoque</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark inventory-turnover-page">
   <header class="page-header">
     <div>
       <p class="hero__tag">Estoque</p>
       <h1>Giro de Estoque</h1>
-      <p class="hero__description">
-        Veja quais pecas venderam recentemente, quais estao paradas e quais precisam de atencao.
-      </p>
+      <p class="hero__description">Análise operacional de giro, estoque parado, baixo estoque e produtos sem estoque.</p>
     </div>
   </header>
 
-  <main class="container stock-layout">
-    <section class="stock-card">
-      <div class="stock-header">
+  <main class="container stock-layout inventory-turnover-layout">
+    <section id="giroEstoqueShell" class="stock-card inventory-turnover-shell">
+      <div class="stock-header inventory-turnover-header">
         <div>
-          <h2>Analise de giro</h2>
-          <p>Classificacao calculada com pecas, vendas e entradas de estoque do Supabase.</p>
+          <span class="piece-form-eyebrow">Estoque operacional</span>
+          <h2>Análise de giro</h2>
+          <p>Classificação por vendas, estoque disponível, última venda e tempo parado.</p>
         </div>
         <div class="form-actions">
-          <a class="button-secondary" href="../index.html">Voltar para o inicio</a>
+          <a class="button-secondary" href="../index.html">Voltar para o início</a>
           <a class="button-secondary" href="produtos.html">Ver produtos</a>
         </div>
       </div>
 
       <p id="mensagemGiroEstoque" class="empty-message"></p>
       <section id="resumoGiroEstoque" class="summary-grid summary-grid--compact" aria-label="Resumo do giro de estoque"></section>
-    </section>
 
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Pecas analisadas</h2>
-          <p>Lista de pecas com estoque disponivel, vendas e dias sem venda.</p>
+      <section class="products-toolbar inventory-turnover-toolbar" aria-label="Busca e filtros de giro de estoque">
+        <div class="products-main-controls operational-filter-main-controls">
+          <div class="form-group products-search-field">
+            <label for="buscaGiroEstoque">Buscar produto</label>
+            <input id="buscaGiroEstoque" type="search" placeholder="Buscar por SKU ou nome da peça">
+          </div>
+
+          <button id="botaoAbrirFiltrosGiroEstoque" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosGiroEstoque" aria-expanded="false">
+            Filtros
+          </button>
         </div>
-      </div>
+      </section>
 
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Nome da peca</th>
-              <th>Estoque disponivel</th>
-              <th>Qtd. vendida</th>
-              <th>Ultima venda</th>
-              <th>Dias sem venda</th>
-              <th>Classificacao</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaGiroEstoque"></tbody>
-        </table>
-      </div>
+      <section class="inventory-turnover-section" aria-labelledby="tituloPecasGiro">
+        <div class="stock-header inventory-turnover-section__header">
+          <div>
+            <h2 id="tituloPecasGiro">Peças analisadas</h2>
+            <p>Lista operacional por giro, estoque, última venda e status.</p>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="stock-table inventory-turnover-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Peça</th>
+                <th>Estoque disponível</th>
+                <th>Qtd. vendida</th>
+                <th>Última venda</th>
+                <th>Tempo parado</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaGiroEstoque"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside id="painelFiltrosGiroEstoque" class="products-filter-panel inventory-turnover-filter-panel" aria-label="Filtros avançados de giro de estoque">
+        <div class="products-filter-panel__header">
+          <h3>Filtros avançados</h3>
+          <button id="botaoFecharFiltrosGiroEstoque" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
+        </div>
+
+        <div class="products-filters">
+          <div class="form-group">
+            <label for="periodoRapidoGiroEstoque">Período</label>
+            <select id="periodoRapidoGiroEstoque">
+              <option value="todos">Todo período</option>
+              <option value="hoje">Hoje</option>
+              <option value="7">Últimos 7 dias</option>
+              <option value="30">Últimos 30 dias</option>
+              <option value="90">Últimos 90 dias</option>
+              <option value="personalizado">Personalizado</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="dataInicialGiroEstoque">Data inicial</label>
+            <input id="dataInicialGiroEstoque" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="dataFinalGiroEstoque">Data final</label>
+            <input id="dataFinalGiroEstoque" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="filtroStatusGiroEstoque">Status</label>
+            <select id="filtroStatusGiroEstoque">
+              <option value="">Todos</option>
+              <option value="rapido">Maior giro</option>
+              <option value="parado">Parado</option>
+              <option value="estoque-baixo">Estoque baixo</option>
+              <option value="sem-estoque">Sem estoque</option>
+              <option value="sem-venda">Sem venda</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filtroOrigemGiroEstoque">Origem</label>
+            <select id="filtroOrigemGiroEstoque">
+              <option value="">Todas</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="ordenacaoGiroEstoque">Ordenar por</label>
+            <select id="ordenacaoGiroEstoque">
+              <option value="giro">Giro</option>
+              <option value="estoque">Estoque</option>
+              <option value="ultima-venda">Última venda</option>
+              <option value="parado">Tempo parado</option>
+              <option value="nome">Nome</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="products-filter-panel__actions">
+          <button id="botaoLimparFiltrosGiroEstoque" class="button-secondary" type="button">Limpar filtros</button>
+          <button id="botaoAplicarFiltrosGiroEstoque" class="button-primary" type="button">Aplicar/Fechar</button>
+        </div>
+      </aside>
     </section>
   </main>
 
@@ -65,7 +144,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=23"></script>
-  <script src="../js/giro-estoque.js?v=1"></script>
+  <script src="../js/giro-estoque.js?v=2"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

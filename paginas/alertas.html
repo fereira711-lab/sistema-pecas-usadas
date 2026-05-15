@@ -6,116 +6,107 @@
   <title>Alertas</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark alerts-page">
   <header class="page-header">
     <div>
       <p class="hero__tag">Estoque</p>
       <h1>Alertas</h1>
-      <p class="hero__description">
-        Pontos de atencao do sistema para estoque, lotes, vendas e giro das pecas.
-      </p>
+      <p class="hero__description">Pontos de atenção operacional em estoque, vendas, peças paradas e distribuição de origem.</p>
     </div>
   </header>
 
-  <main class="container stock-layout">
-    <section class="stock-card">
-      <div class="stock-header">
+  <main class="container stock-layout alerts-layout">
+    <section id="alertasShell" class="stock-card alerts-shell">
+      <div class="stock-header alerts-header">
         <div>
-          <h2>Resumo dos alertas</h2>
-          <p>Indicadores calculados com dados atuais do Supabase.</p>
+          <span class="piece-form-eyebrow">Atenção operacional</span>
+          <h2>Alertas do sistema</h2>
+          <p>Lista consolidada de itens que precisam de acompanhamento.</p>
         </div>
         <div class="form-actions">
-          <a class="button-secondary" href="../index.html">Voltar para o inicio</a>
+          <a class="button-secondary" href="../index.html">Voltar para o início</a>
           <a class="button-secondary" href="produtos.html">Ver produtos</a>
         </div>
       </div>
 
       <p id="mensagemAlertas" class="empty-message"></p>
       <section id="resumoAlertas" class="summary-grid summary-grid--compact" aria-label="Resumo dos alertas"></section>
-    </section>
 
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Pecas com alerta</h2>
-          <p>Sem estoque, estoque baixo, sem entrada ou paradas.</p>
+      <section class="products-toolbar alerts-toolbar" aria-label="Busca e filtros de alertas">
+        <div class="products-main-controls operational-filter-main-controls">
+          <div class="form-group products-search-field">
+            <label for="buscaAlertas">Buscar alerta</label>
+            <input id="buscaAlertas" type="search" placeholder="Buscar por SKU, peça, origem ou venda">
+          </div>
+
+          <button id="botaoAbrirFiltrosAlertas" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosAlertas" aria-expanded="false">
+            Filtros
+          </button>
         </div>
-      </div>
+      </section>
 
-      <p id="mensagemAlertasPecas" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Peca</th>
-              <th>Estoque</th>
-              <th>Vendida</th>
-              <th>Ultima venda</th>
-              <th>Dias sem venda</th>
-              <th>Alertas</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaAlertasPecas"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Entradas e lotes</h2>
-          <p>Lotes esgotados ou com saldo baixo.</p>
+      <section class="alerts-section" aria-labelledby="tituloListaAlertas">
+        <div class="stock-header alerts-section__header">
+          <div>
+            <h2 id="tituloListaAlertas">Lista de alertas</h2>
+            <p>Alertas operacionais com gravidade e ação relacionada.</p>
+          </div>
         </div>
-      </div>
 
-      <p id="mensagemAlertasLotes" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>Peca</th>
-              <th>Origem</th>
-              <th>Qtd. total</th>
-              <th>Consumida</th>
-              <th>Saldo</th>
-              <th>Alerta</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaAlertasLotes"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Vendas com alerta</h2>
-          <p>Vendas sem custo calculado ou com lucro negativo.</p>
+        <div class="table-wrapper">
+          <table class="stock-table alerts-table">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Descrição</th>
+                <th>Entidade relacionada</th>
+                <th>Gravidade</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaAlertas"></tbody>
+          </table>
         </div>
-      </div>
+      </section>
 
-      <p id="mensagemAlertasVendas" class="empty-message"></p>
+      <aside id="painelFiltrosAlertas" class="products-filter-panel alerts-filter-panel" aria-label="Filtros avançados de alertas">
+        <div class="products-filter-panel__header">
+          <h3>Filtros avançados</h3>
+          <button id="botaoFecharFiltrosAlertas" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
+        </div>
 
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Produto</th>
-              <th>ID da peca</th>
-              <th>Valor vendido</th>
-              <th>Custo estoque</th>
-              <th>Custos venda</th>
-              <th>Lucro</th>
-              <th>Alertas</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaAlertasVendas"></tbody>
-        </table>
-      </div>
+        <div class="products-filters">
+          <div class="form-group">
+            <label for="filtroTipoAlertas">Tipo de alerta</label>
+            <select id="filtroTipoAlertas">
+              <option value="">Todos</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filtroGravidadeAlertas">Gravidade</label>
+            <select id="filtroGravidadeAlertas">
+              <option value="">Todas</option>
+              <option value="critico">Crítico</option>
+              <option value="atencao">Atenção</option>
+              <option value="info">Informação</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filtroStatusAlertas">Status</label>
+            <select id="filtroStatusAlertas">
+              <option value="">Todos</option>
+              <option value="aberto">Aberto</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="products-filter-panel__actions">
+          <button id="botaoLimparFiltrosAlertas" class="button-secondary" type="button">Limpar filtros</button>
+          <button id="botaoAplicarFiltrosAlertas" class="button-primary" type="button">Aplicar/Fechar</button>
+        </div>
+      </aside>
     </section>
   </main>
 
@@ -123,7 +114,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=23"></script>
-  <script src="../js/alertas.js?v=1"></script>
+  <script src="../js/alertas.js?v=2"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

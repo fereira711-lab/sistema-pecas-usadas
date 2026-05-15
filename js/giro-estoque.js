@@ -1,6 +1,34 @@
 const mensagemGiroEstoque = document.getElementById("mensagemGiroEstoque");
 const resumoGiroEstoque = document.getElementById("resumoGiroEstoque");
 const tabelaGiroEstoque = document.getElementById("tabelaGiroEstoque");
+const buscaGiroEstoque = document.getElementById("buscaGiroEstoque");
+const giroEstoqueShell = document.getElementById("giroEstoqueShell");
+const botaoAbrirFiltrosGiroEstoque = document.getElementById("botaoAbrirFiltrosGiroEstoque");
+const botaoFecharFiltrosGiroEstoque = document.getElementById("botaoFecharFiltrosGiroEstoque");
+const botaoLimparFiltrosGiroEstoque = document.getElementById("botaoLimparFiltrosGiroEstoque");
+const botaoAplicarFiltrosGiroEstoque = document.getElementById("botaoAplicarFiltrosGiroEstoque");
+const periodoRapidoGiroEstoque = document.getElementById("periodoRapidoGiroEstoque");
+const dataInicialGiroEstoque = document.getElementById("dataInicialGiroEstoque");
+const dataFinalGiroEstoque = document.getElementById("dataFinalGiroEstoque");
+const filtroStatusGiroEstoque = document.getElementById("filtroStatusGiroEstoque");
+const filtroOrigemGiroEstoque = document.getElementById("filtroOrigemGiroEstoque");
+const ordenacaoGiroEstoque = document.getElementById("ordenacaoGiroEstoque");
+
+let dadosGiroEstoque = {
+  pecas: [],
+  vendas: [],
+  entradasEstoque: []
+};
+let linhasGiroEstoque = [];
+
+function escaparHtml(valor) {
+  return String(valor ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
 function formatarData(data) {
   if (!data) {
@@ -17,12 +45,35 @@ function formatarData(data) {
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
+function formatarDataInput(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+function formatarNumero(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
+}
+
+function normalizarTexto(valor) {
+  return String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function formatarSku(peca) {
   return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
 }
 
 function formatarNome(peca) {
-  return peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
+  return peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peça ${peca.id}`;
 }
 
 function obterDataVenda(venda) {
@@ -46,6 +97,10 @@ function somarQuantidadeVendida(vendas) {
   return vendas.reduce((total, venda) => {
     return total + Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0);
   }, 0);
+}
+
+function somarCampo(lista, campo) {
+  return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
 }
 
 function obterUltimaVenda(vendas) {
@@ -88,6 +143,76 @@ function calcularDiasDesde(dataIso) {
   return Math.max(0, Math.floor((inicioHoje - data) / milissegundosPorDia));
 }
 
+function definirPeriodoPadrao() {
+  if (periodoRapidoGiroEstoque) {
+    periodoRapidoGiroEstoque.value = "todos";
+  }
+
+  dataInicialGiroEstoque.value = "";
+  dataFinalGiroEstoque.value = "";
+}
+
+function aplicarPeriodoRapido() {
+  if (!periodoRapidoGiroEstoque || periodoRapidoGiroEstoque.value === "personalizado") {
+    return;
+  }
+
+  if (periodoRapidoGiroEstoque.value === "todos") {
+    dataInicialGiroEstoque.value = "";
+    dataFinalGiroEstoque.value = "";
+    return;
+  }
+
+  const hoje = new Date();
+  const fim = formatarDataInput(hoje);
+  let inicio = fim;
+
+  if (periodoRapidoGiroEstoque.value === "7") {
+    const data = new Date(hoje);
+    data.setDate(data.getDate() - 6);
+    inicio = formatarDataInput(data);
+  }
+
+  if (periodoRapidoGiroEstoque.value === "30") {
+    const data = new Date(hoje);
+    data.setDate(data.getDate() - 29);
+    inicio = formatarDataInput(data);
+  }
+
+  if (periodoRapidoGiroEstoque.value === "90") {
+    const data = new Date(hoje);
+    data.setDate(data.getDate() - 89);
+    inicio = formatarDataInput(data);
+  }
+
+  dataInicialGiroEstoque.value = inicio;
+  dataFinalGiroEstoque.value = fim;
+}
+
+function itemDentroDoPeriodo(data) {
+  const inicio = dataInicialGiroEstoque?.value || "";
+  const fim = dataFinalGiroEstoque?.value || "";
+  const dataIso = String(data || "").slice(0, 10);
+
+  if (!inicio && !fim) {
+    return true;
+  }
+
+  if (!dataIso) {
+    return false;
+  }
+
+  if (inicio && dataIso < inicio) {
+    return false;
+  }
+
+  if (fim && dataIso > fim) {
+    return false;
+  }
+
+  return true;
+}
+
 function classificarGiro(quantidadeVendida, diasSemVenda) {
   if (quantidadeVendida <= 0) {
     return "sem venda";
@@ -104,26 +229,49 @@ function classificarGiro(quantidadeVendida, diasSemVenda) {
   return "parado";
 }
 
-function obterClasseClassificacao(classificacao) {
+function obterStatusEstoque(estoqueDisponivel) {
+  if (estoqueDisponivel <= 0) {
+    return "sem-estoque";
+  }
+
+  if (estoqueDisponivel <= 1) {
+    return "estoque-baixo";
+  }
+
+  return "em-estoque";
+}
+
+function obterClasseClassificacao(status) {
   const classes = {
     rapido: "status-badge status-badge--fast",
     atencao: "status-badge status-badge--attention",
     parado: "status-badge status-badge--stopped",
-    "sem venda": "status-badge status-badge--no-sale"
+    "sem venda": "status-badge status-badge--no-sale",
+    "sem-estoque": "status-badge status-badge--empty",
+    "estoque-baixo": "status-badge status-badge--warning",
+    "em-estoque": "status-badge status-badge--stock"
   };
 
-  return classes[classificacao] || "status-badge";
+  return classes[status] || "status-badge";
 }
 
-function formatarClassificacao(classificacao) {
+function formatarStatus(linha) {
+  if (linha.statusEstoque === "sem-estoque") {
+    return "Sem estoque";
+  }
+
+  if (linha.statusEstoque === "estoque-baixo") {
+    return "Estoque baixo";
+  }
+
   const nomes = {
-    rapido: "Rapido",
-    atencao: "Atencao",
+    rapido: "Maior giro",
+    atencao: "Atenção",
     parado: "Parado",
     "sem venda": "Sem venda"
   };
 
-  return nomes[classificacao] || classificacao;
+  return nomes[linha.classificacao] || linha.classificacao;
 }
 
 function criarCard(titulo, valor, classe = "") {
@@ -137,6 +285,11 @@ function criarCard(titulo, valor, classe = "") {
   `;
 }
 
+function obterOrigemTexto(entradasDaPeca) {
+  const entrada = entradasDaPeca.find(item => item.origemDescricao || item.origemId);
+  return String(entrada?.origemDescricao || entrada?.origemId || "").trim();
+}
+
 function calcularGiro(dados) {
   const vendasPorPeca = agruparPorId(dados.vendas, "pecaId");
   const entradasPorPeca = agruparPorId(dados.entradasEstoque, "pecaId");
@@ -145,48 +298,128 @@ function calcularGiro(dados) {
     const pecaId = Number(peca.id);
     const vendasDaPeca = vendasPorPeca[pecaId] || [];
     const entradasDaPeca = entradasPorPeca[pecaId] || [];
-    const quantidadeVendidaPorVendas = somarQuantidadeVendida(vendasDaPeca);
-    const quantidadeVendidaPeca = Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
-    const quantidadeVendida = quantidadeVendidaPorVendas || quantidadeVendidaPeca;
-    const estoqueDisponivel = Math.max(0, Number(peca.quantidade || 0) - quantidadeVendida);
+    const vendasNoPeriodo = vendasDaPeca.filter(venda => itemDentroDoPeriodo(obterDataVenda(venda)));
+    const quantidadeVendidaNoPeriodo = somarQuantidadeVendida(vendasNoPeriodo);
+    const quantidadeVendidaTotal = somarQuantidadeVendida(vendasDaPeca) || Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
+    const totalEntradas = somarCampo(entradasDaPeca, "quantidadeTotal");
+    const quantidadeTotal = totalEntradas > 0 ? totalEntradas : Number(peca.quantidade || 0);
+    const estoqueDisponivel = Math.max(0, quantidadeTotal - quantidadeVendidaTotal);
     const ultimaVenda = obterUltimaVenda(vendasDaPeca);
+    const ultimaVendaNoPeriodo = obterUltimaVenda(vendasNoPeriodo);
     const dataBaseSemVenda = ultimaVenda || obterDataEntradaOuCadastro(peca, entradasDaPeca);
     const diasSemVenda = calcularDiasDesde(dataBaseSemVenda);
-    const classificacao = classificarGiro(quantidadeVendidaPorVendas, diasSemVenda);
+    const classificacao = classificarGiro(quantidadeVendidaNoPeriodo, diasSemVenda);
+    const statusEstoque = obterStatusEstoque(estoqueDisponivel);
 
     return {
+      pecaId,
       sku: formatarSku(peca),
       nome: formatarNome(peca),
+      origem: obterOrigemTexto(entradasDaPeca),
       estoqueDisponivel,
-      quantidadeVendida,
+      quantidadeVendida: quantidadeVendidaNoPeriodo,
+      quantidadeVendidaTotal,
       ultimaVenda,
+      ultimaVendaNoPeriodo,
       diasSemVenda,
-      classificacao
+      classificacao,
+      statusEstoque
     };
-  }).sort((a, b) => {
-    const prioridade = { parado: 1, atencao: 2, "sem venda": 3, rapido: 4 };
-    return prioridade[a.classificacao] - prioridade[b.classificacao] || b.diasSemVenda - a.diasSemVenda;
+  });
+}
+
+function preencherOrigens(linhas) {
+  if (!filtroOrigemGiroEstoque) {
+    return;
+  }
+
+  const valorAtual = filtroOrigemGiroEstoque.value;
+  const origens = Array.from(new Set(linhas.map(linha => linha.origem).filter(Boolean))).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  filtroOrigemGiroEstoque.innerHTML = '<option value="">Todas</option>';
+  origens.forEach(origem => {
+    const opcao = document.createElement("option");
+    opcao.value = origem;
+    opcao.textContent = origem;
+    filtroOrigemGiroEstoque.appendChild(opcao);
+  });
+
+  filtroOrigemGiroEstoque.value = origens.includes(valorAtual) ? valorAtual : "";
+}
+
+function linhaDentroDosFiltros(linha) {
+  const termo = normalizarTexto(buscaGiroEstoque?.value || "");
+  const status = filtroStatusGiroEstoque?.value || "";
+  const origem = filtroOrigemGiroEstoque?.value || "";
+
+  if (termo && !normalizarTexto(`${linha.sku} ${linha.nome}`).includes(termo)) {
+    return false;
+  }
+
+  if (origem && linha.origem !== origem) {
+    return false;
+  }
+
+  if (status === "sem-estoque" || status === "estoque-baixo") {
+    return linha.statusEstoque === status;
+  }
+
+  if (status === "sem-venda") {
+    return linha.classificacao === "sem venda";
+  }
+
+  if (status && linha.classificacao !== status) {
+    return false;
+  }
+
+  return true;
+}
+
+function ordenarLinhas(linhas) {
+  const ordenacao = ordenacaoGiroEstoque?.value || "giro";
+  const ordenadas = [...linhas];
+
+  return ordenadas.sort((a, b) => {
+    if (ordenacao === "nome") {
+      return a.nome.localeCompare(b.nome, "pt-BR");
+    }
+
+    if (ordenacao === "estoque") {
+      return a.estoqueDisponivel - b.estoqueDisponivel;
+    }
+
+    if (ordenacao === "ultima-venda") {
+      return String(b.ultimaVenda || "").localeCompare(String(a.ultimaVenda || ""));
+    }
+
+    if (ordenacao === "parado") {
+      return Number(b.diasSemVenda || 0) - Number(a.diasSemVenda || 0);
+    }
+
+    return Number(b.quantidadeVendida || 0) - Number(a.quantidadeVendida || 0);
   });
 }
 
 function renderizarResumo(linhas) {
-  const totais = linhas.reduce((mapa, linha) => {
-    mapa[linha.classificacao] = (mapa[linha.classificacao] || 0) + 1;
-    return mapa;
-  }, {});
+  const maiorGiro = linhas.filter(linha => linha.classificacao === "rapido").length;
+  const parados = linhas.filter(linha => linha.classificacao === "parado").length;
+  const estoqueBaixo = linhas.filter(linha => linha.statusEstoque === "estoque-baixo").length;
+  const semEstoque = linhas.filter(linha => linha.statusEstoque === "sem-estoque").length;
+  const quantidadeVendida = linhas.reduce((total, linha) => total + Number(linha.quantidadeVendida || 0), 0);
 
   resumoGiroEstoque.innerHTML =
-    criarCard("Rapido", totais.rapido || 0, "summary-card--profit") +
-    criarCard("Atencao", totais.atencao || 0) +
-    criarCard("Parado", totais.parado || 0, "summary-card--loss") +
-    criarCard("Sem venda", totais["sem venda"] || 0);
+    criarCard("Produtos com maior giro", formatarNumero(maiorGiro), "summary-card--profit") +
+    criarCard("Produtos parados", formatarNumero(parados), "summary-card--loss") +
+    criarCard("Estoque baixo", formatarNumero(estoqueBaixo)) +
+    criarCard("Sem estoque", formatarNumero(semEstoque), "summary-card--loss") +
+    criarCard("Quantidade vendida", formatarNumero(quantidadeVendida));
 }
 
 function renderizarTabela(linhas) {
   tabelaGiroEstoque.innerHTML = "";
 
   if (linhas.length === 0) {
-    mensagemGiroEstoque.textContent = "Nenhuma peca cadastrada para analisar.";
+    mensagemGiroEstoque.textContent = "Nenhuma peça encontrada para os filtros selecionados.";
     return;
   }
 
@@ -194,22 +427,44 @@ function renderizarTabela(linhas) {
 
   linhas.forEach(linha => {
     const tr = document.createElement("tr");
-    const diasSemVenda = linha.diasSemVenda === null ? "-" : linha.diasSemVenda;
+    const diasSemVenda = linha.diasSemVenda === null ? "-" : `${formatarNumero(linha.diasSemVenda)} dias`;
+    const statusClasse = linha.statusEstoque === "em-estoque"
+      ? obterClasseClassificacao(linha.classificacao)
+      : obterClasseClassificacao(linha.statusEstoque);
 
     tr.innerHTML = `
-      <td data-label="SKU">${linha.sku}</td>
-      <td data-label="Nome da peca"><strong class="product-name">${linha.nome}</strong></td>
-      <td data-label="Estoque disponivel">${linha.estoqueDisponivel}</td>
-      <td data-label="Qtd. vendida">${linha.quantidadeVendida}</td>
-      <td data-label="Ultima venda">${formatarData(linha.ultimaVenda)}</td>
-      <td data-label="Dias sem venda">${diasSemVenda}</td>
-      <td data-label="Classificacao">
-        <span class="${obterClasseClassificacao(linha.classificacao)}">${formatarClassificacao(linha.classificacao)}</span>
+      <td data-label="SKU">${escaparHtml(linha.sku)}</td>
+      <td data-label="Peça"><strong class="product-name">${escaparHtml(linha.nome)}</strong></td>
+      <td data-label="Estoque disponível">${formatarNumero(linha.estoqueDisponivel)}</td>
+      <td data-label="Qtd. vendida">${formatarNumero(linha.quantidadeVendida)}</td>
+      <td data-label="Última venda">${formatarData(linha.ultimaVenda)}</td>
+      <td data-label="Tempo parado">${diasSemVenda}</td>
+      <td data-label="Status">
+        <span class="${statusClasse}">${escaparHtml(formatarStatus(linha))}</span>
+      </td>
+      <td data-label="Ações">
+        <div class="table-actions table-actions--single">
+          <a class="table-link" href="detalhes-produto.html?pecaId=${encodeURIComponent(linha.pecaId)}">Ver detalhes da peça</a>
+        </div>
       </td>
     `;
 
     tabelaGiroEstoque.appendChild(tr);
   });
+}
+
+function renderizarGiroEstoque() {
+  linhasGiroEstoque = calcularGiro(dadosGiroEstoque);
+  preencherOrigens(linhasGiroEstoque);
+  const filtradas = ordenarLinhas(linhasGiroEstoque.filter(linhaDentroDosFiltros));
+
+  renderizarResumo(filtradas);
+  renderizarTabela(filtradas);
+}
+
+function definirPainelFiltrosAberto(aberto) {
+  giroEstoqueShell?.classList.toggle("inventory-turnover-shell--filters-open", aberto);
+  botaoAbrirFiltrosGiroEstoque?.setAttribute("aria-expanded", aberto ? "true" : "false");
 }
 
 async function carregarDados() {
@@ -232,12 +487,13 @@ async function carregarDados() {
     };
   } catch (erro) {
     console.error("Erro ao carregar giro de estoque:", erro);
-    mensagemGiroEstoque.textContent = "Nao foi possivel carregar os dados do giro de estoque.";
+    mensagemGiroEstoque.textContent = "Não foi possível carregar os dados do giro de estoque.";
     return null;
   }
 }
 
 async function iniciarGiroEstoque() {
+  definirPeriodoPadrao();
   const dados = await carregarDados();
 
   if (!dados) {
@@ -246,9 +502,59 @@ async function iniciarGiroEstoque() {
     return;
   }
 
-  const linhas = calcularGiro(dados);
-  renderizarResumo(linhas);
-  renderizarTabela(linhas);
+  dadosGiroEstoque = dados;
+  renderizarGiroEstoque();
 }
+
+buscaGiroEstoque?.addEventListener("input", renderizarGiroEstoque);
+
+periodoRapidoGiroEstoque?.addEventListener("change", () => {
+  aplicarPeriodoRapido();
+  renderizarGiroEstoque();
+});
+
+[dataInicialGiroEstoque, dataFinalGiroEstoque].forEach(campo => {
+  campo?.addEventListener("change", () => {
+    if (periodoRapidoGiroEstoque) {
+      periodoRapidoGiroEstoque.value = "personalizado";
+    }
+    renderizarGiroEstoque();
+  });
+});
+
+[filtroStatusGiroEstoque, filtroOrigemGiroEstoque, ordenacaoGiroEstoque].forEach(campo => {
+  campo?.addEventListener("change", renderizarGiroEstoque);
+});
+
+botaoAbrirFiltrosGiroEstoque?.addEventListener("click", () => {
+  definirPainelFiltrosAberto(!giroEstoqueShell?.classList.contains("inventory-turnover-shell--filters-open"));
+});
+
+botaoFecharFiltrosGiroEstoque?.addEventListener("click", () => {
+  definirPainelFiltrosAberto(false);
+});
+
+botaoAplicarFiltrosGiroEstoque?.addEventListener("click", () => {
+  aplicarPeriodoRapido();
+  renderizarGiroEstoque();
+  definirPainelFiltrosAberto(false);
+});
+
+botaoLimparFiltrosGiroEstoque?.addEventListener("click", () => {
+  definirPeriodoPadrao();
+  if (buscaGiroEstoque) {
+    buscaGiroEstoque.value = "";
+  }
+  if (filtroStatusGiroEstoque) {
+    filtroStatusGiroEstoque.value = "";
+  }
+  if (filtroOrigemGiroEstoque) {
+    filtroOrigemGiroEstoque.value = "";
+  }
+  if (ordenacaoGiroEstoque) {
+    ordenacaoGiroEstoque.value = "giro";
+  }
+  renderizarGiroEstoque();
+});
 
 document.addEventListener("DOMContentLoaded", iniciarGiroEstoque);
