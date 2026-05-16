@@ -1,9 +1,8 @@
 const tabelaHistorico = document.getElementById("tabelaHistoricoVendas");
 const mensagemHistorico = document.getElementById("mensagemHistorico");
-const totalVendas = document.getElementById("totalVendas");
-const pecasVendidas = document.getElementById("pecasVendidas");
 const formFiltrosHistorico = document.getElementById("formFiltrosHistorico");
 const buscaRapidaHistorico = document.getElementById("buscaRapidaHistorico");
+const quantidadePaginaHistorico = document.getElementById("quantidadePaginaHistorico");
 const dataInicialHistorico = document.getElementById("dataInicialHistorico");
 const dataFinalHistorico = document.getElementById("dataFinalHistorico");
 const filtroNomeHistorico = document.getElementById("filtroNomeHistorico");
@@ -157,20 +156,6 @@ function ordenarVendasPorData(vendas) {
   });
 }
 
-function atualizarResumo(vendas) {
-  const quantidadeVendida = vendas.reduce((total, venda) => {
-    return total + Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
-  }, 0);
-
-  if (totalVendas) {
-    totalVendas.textContent = vendas.length;
-  }
-
-  if (pecasVendidas) {
-    pecasVendidas.textContent = quantidadeVendida;
-  }
-}
-
 function alternarPainelFiltrosHistorico(aberto) {
   shellHistoricoVendas?.classList.toggle("sales-history-shell--filters-open", aberto);
   botaoAbrirFiltrosHistorico?.setAttribute("aria-expanded", aberto ? "true" : "false");
@@ -187,7 +172,7 @@ function limparFiltrosAvancadosHistorico() {
 
 function renderizarAcoesVenda(venda, indice) {
   const vendaId = venda.id || venda.vendaId || venda.id_venda || "";
-  const botaoDetalhes = `<button class="button-secondary" type="button" data-acao="detalhes" data-id="${escaparHtml(vendaId)}" data-indice="${indice}" ${vendaId ? "" : "disabled"}>Ver detalhes</button>`;
+  const botaoDetalhes = `<button class="button-secondary sales-history-detail-button" type="button" data-acao="detalhes" data-id="${escaparHtml(vendaId)}" data-indice="${indice}" ${vendaId ? "" : "disabled"}>Ver detalhes</button>`;
 
   return botaoDetalhes;
 
@@ -206,9 +191,10 @@ function renderizarAcoesVenda(venda, indice) {
 
 function renderizarHistorico() {
   const vendas = ordenarVendasPorData(filtrarVendas(vendasHistoricoCarregadas));
+  const limite = Number(quantidadePaginaHistorico?.value || 24);
+  const vendasVisiveis = Number.isFinite(limite) && limite > 0 ? vendas.slice(0, limite) : vendas;
 
   tabelaHistorico.innerHTML = "";
-  atualizarResumo(vendas);
 
   if (vendas.length === 0) {
     mensagemHistorico.textContent = "Nenhuma venda encontrada para os filtros informados.";
@@ -217,7 +203,7 @@ function renderizarHistorico() {
 
   mensagemHistorico.textContent = "";
 
-  vendas.forEach((venda, indice) => {
+  vendasVisiveis.forEach((venda, indice) => {
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -225,7 +211,7 @@ function renderizarHistorico() {
       <td data-label="SKU">${escaparHtml(obterSkuVenda(venda) || "-")}</td>
       <td data-label="Peca"><strong class="product-name">${escaparHtml(obterNomePecaVenda(venda) || "-")}</strong></td>
       <td data-label="Quantidade">${escaparHtml(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || "-")}</td>
-      <td data-label="Canal"><span class="status-badge status-badge--stock">${escaparHtml(venda.canalVenda || venda.cliente || "-")}</span></td>
+      <td data-label="Canal"><span class="sales-history-channel">${escaparHtml(venda.canalVenda || venda.cliente || "-")}</span></td>
       <td data-label="Acoes">
         <div class="table-actions">
           ${renderizarAcoesVenda(venda, indice)}
@@ -294,12 +280,14 @@ formFiltrosHistorico?.addEventListener("submit", function (evento) {
 
 [
   buscaRapidaHistorico,
+  quantidadePaginaHistorico,
   dataInicialHistorico,
   dataFinalHistorico,
   filtroNomeHistorico,
   filtroCanalHistorico
 ].forEach(campo => {
   campo?.addEventListener("input", renderizarHistorico);
+  campo?.addEventListener("change", renderizarHistorico);
 });
 
 limparFiltrosHistorico?.addEventListener("click", function () {

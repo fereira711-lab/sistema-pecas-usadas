@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Historico de vendas</title>
+  <link rel="stylesheet" href="historico-vendas-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Vendas</span>
+        <h1>Historico de vendas</h1>
+        <p>Consulta operacional das vendas registradas.</p>
+      </div>
+    </header>
+
+    <section class="ops-bar" aria-label="Barra operacional">
+      <label class="field field-search">
+        <span>Buscar</span>
+        <input type="search" placeholder="Buscar por SKU ou nome da peca">
+      </label>
+
+      <label class="field field-size">
+        <span>Mostrar</span>
+        <select>
+          <option>12</option>
+          <option selected>24</option>
+          <option>48</option>
+        </select>
+      </label>
+
+      <button class="btn btn-filter" type="button">Filtros</button>
+    </section>
+
+    <section class="content-grid">
+      <section class="table-shell" aria-label="Historico de vendas">
+        <div class="table-head">
+          <span>Data</span>
+          <span>SKU</span>
+          <span>Peca</span>
+          <span>Qtd.</span>
+          <span>Canal</span>
+          <span>Acoes</span>
+        </div>
+
+        <article class="sale-line">
+          <time datetime="2026-05-16">16/05/2026</time>
+          <strong class="sku">SKU FAR-023</strong>
+          <div class="piece">Farol dianteiro Gol G5 lado direito</div>
+          <div class="qty">1</div>
+          <span class="channel">WhatsApp</span>
+          <button class="btn btn-small" type="button">Ver detalhes</button>
+        </article>
+
+        <article class="sale-line">
+          <time datetime="2026-05-15">15/05/2026</time>
+          <strong class="sku">SKU RET-009</strong>
+          <div class="piece">Retrovisor externo Corolla esquerdo</div>
+          <div class="qty">2</div>
+          <span class="channel">Balcao</span>
+          <button class="btn btn-small" type="button">Ver detalhes</button>
+        </article>
+
+        <article class="sale-line">
+          <time datetime="2026-05-14">14/05/2026</time>
+          <strong class="sku">SKU POR-118</strong>
+          <div class="piece">Porta traseira Fiat Uno 2012 prata</div>
+          <div class="qty">1</div>
+          <span class="channel">Marketplace</span>
+          <button class="btn btn-small" type="button">Ver detalhes</button>
+        </article>
+
+        <article class="sale-line">
+          <time datetime="2026-05-13">13/05/2026</time>
+          <strong class="sku">SKU ROD-044</strong>
+          <div class="piece">Roda aro 15 Honda Civic</div>
+          <div class="qty">4</div>
+          <span class="channel">Instagram</span>
+          <button class="btn btn-small" type="button">Ver detalhes</button>
+        </article>
+
+        <article class="sale-line">
+          <time datetime="2026-05-12">12/05/2026</time>
+          <strong class="sku">SKU PAR-071</strong>
+          <div class="piece">Parachoque dianteiro Corsa Classic</div>
+          <div class="qty">1</div>
+          <span class="channel">Telefone</span>
+          <button class="btn btn-small" type="button">Ver detalhes</button>
+        </article>
+      </section>
+
+      <aside class="filter-panel filter-panel--preview-open" aria-label="Filtros laterais">
+        <div class="filter-head">
+          <h2>Filtros</h2>
+          <button type="button" aria-label="Fechar filtros">X</button>
+        </div>
+
+        <label class="field">
+          <span>Data inicial</span>
+          <input type="date" value="2026-05-01">
+        </label>
+
+        <label class="field">
+          <span>Data final</span>
+          <input type="date" value="2026-05-16">
+        </label>
+
+        <label class="field">
+          <span>Canal</span>
+          <select>
+            <option>Todos</option>
+            <option>WhatsApp</option>
+            <option>Balcao</option>
+            <option>Marketplace</option>
+            <option>Instagram</option>
+          </select>
+        </label>
+
+        <div class="filter-actions">
+          <button class="btn btn-secondary" type="button">Limpar filtros</button>
+          <button class="btn btn-apply" type="button">Aplicar/Fechar</button>
+        </div>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

@@ -40,6 +40,17 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Separar responsabilidades no JavaScript e evitar funcoes muito grandes.
 - Tratar erros de forma clara para o usuario.
 
+## Padrao da tela Produtos
+
+- `paginas/produtos.html` e uma tela operacional de consulta rapida.
+- O padrao principal e lista operacional compacta, nao cards grandes.
+- Cada item deve priorizar imagem pequena, SKU, nome, preco de venda, quantidade disponivel, status e acoes.
+- Acoes principais visiveis: `Detalhes` e `Vender`.
+- Menu de tres pontos apenas para acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir.
+- Edicao dos dados da peca deve ficar dentro de `detalhes-produto.html`.
+- Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo FIFO, margem ou resultado financeiro.
+- Analise financeira deve ficar em detalhes, painel e telas de analise.
+
 ## Tarefas grandes
 
 Antes de executar uma tarefa grande:
@@ -77,5 +88,7 @@ Fluxo recomendado:
 3. validar visualmente
 4. ajustar
 5. aplicar na tela real somente depois de aprovado
+
+Observacao: o preview `produtos-lista-ui-preview` foi usado como base para validar a UX/UI da lista operacional compacta antes de aplicar em `paginas/produtos.html`.
 
 A pasta previews/ é usada como laboratório visual e não faz parte do fluxo operacional real do sistema.

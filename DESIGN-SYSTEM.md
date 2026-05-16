@@ -25,6 +25,7 @@ Decisoes atuais:
 - Manter o padrao visual atual enquanto a nova direcao e estudada.
 - Evitar mudancas que alterem regra de negocio, FIFO ou calculos financeiros.
 - Registrar decisoes novas antes de espalhar padroes para outras telas.
+- A lista operacional compacta de Produtos foi validada primeiro em `previews/produtos-lista-ui-preview` antes de ser aplicada em `paginas/produtos.html`.
 - Manter `painel.html` como entrada oficial apos login.
 - Manter a sidebar como navegacao principal atual.
 - Manter `index.html` como entrada tecnica/redirecionamento.
@@ -284,26 +285,41 @@ Quando evitar cards:
 - Cards dentro de cards.
 - Telas operacionais que precisam ser rapidas e densas.
 
-### Card de produto oficial
+### Lista operacional de produto oficial
 
-O card operacional da pagina Produtos deve exibir:
+A pagina Produtos nao usa mais cards grandes como padrao principal. O padrao oficial e lista operacional compacta, feita para consulta rapida de estoque e acao diaria.
 
+Cada linha deve exibir:
+
+- Imagem pequena ou placeholder.
 - SKU.
 - Nome da peca.
-- Foto ou placeholder.
 - Preco de venda.
 - Quantidade disponivel.
-- Status apenas quando relevante, como sem estoque ou estoque baixo.
-- Menu de acoes.
+- Status operacional.
+- Acoes principais visiveis: `Detalhes` e `Vender`.
+- Menu de tres pontos para acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir.
 
-Nao exibir no card:
+Editar dados deve ficar dentro da tela de detalhes do produto, para evitar duplicidade entre `Detalhes` e `Editar` na listagem.
+
+Nao exibir na lista:
 
 - Lucro.
-- Custo.
+- Custo FIFO.
 - Margem.
 - Resultado financeiro.
 
 Essas informacoes pertencem a detalhes, painel ou analises.
+
+Regras visuais:
+
+- Busca principal sempre visivel.
+- Seletor de quantidade por pagina ao lado da busca.
+- Filtros em painel lateral.
+- Linhas horizontais compactas no desktop.
+- Blocos compactos empilhados no mobile.
+- Badges suaves; `Estoque baixo` e `Sem estoque` devem chamar mais atencao que `Em estoque`.
+- Dourado apenas como detalhe discreto, principalmente em SKU e pequenos acentos.
 
 ## Tabelas
 

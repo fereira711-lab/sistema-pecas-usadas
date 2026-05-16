@@ -92,6 +92,8 @@ Representado por `paginas/cadastro-origem.html`, `paginas/listar-origens.html`, 
 
 Representado por `paginas/cadastro-peca.html`, `paginas/produtos.html`, `paginas/detalhes-produto.html` e scripts relacionados. Controla cadastro, consulta, detalhes e custos da peca.
 
+`paginas/produtos.html` usa como padrao principal uma lista operacional compacta, nao cards grandes. A tela existe para consulta rapida e operacao diaria do estoque, mostrando imagem pequena, SKU, nome da peca, preco de venda, quantidade disponivel, status operacional e acoes.
+
 ### Estoque
 
 Representado por `paginas/produtos.html`, `paginas/lotes.html`, `paginas/giro-estoque.html`, `paginas/alertas.html` e scripts de estoque. Controla saldo, entradas por lote, consumo e disponibilidade.
@@ -119,7 +121,7 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 | Origens cadastradas | `paginas/listar-origens.html` | Listar origens e abrir detalhes | Operacional |
 | Detalhes da origem | `paginas/detalhes-origem.html` | Ver contexto completo e resultado da origem | Detalhes |
 | Cadastrar peca | `paginas/cadastro-peca.html` | Cadastrar peca vinculada a origem e entrada | Operacional |
-| Produtos / Estoque | `paginas/produtos.html` | Listar pecas, estoque, filtros e acoes | Operacional |
+| Produtos / Estoque | `paginas/produtos.html` | Listar pecas em lista operacional compacta, com estoque, filtros e acoes rapidas | Operacional |
 | Central da peca | `paginas/detalhes-produto.html` | Ver dados completos, custos, vendas e lucro da peca | Detalhes |
 | Entradas de estoque | `paginas/lotes.html` | Consultar lotes FIFO, consumo e saldo | Operacional |
 | Giro de estoque | `paginas/giro-estoque.html` | Analisar velocidade e situacao das pecas | Analise |
@@ -153,12 +155,16 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 - O padrao visual atual usa tema escuro operacional, cards compactos, badges suaves, dourado como destaque discreto e blocos bem separados.
 - Filtros avancados seguem o padrao de painel lateral; a busca principal deve permanecer visivel no topo das listagens.
 - Formularios devem ser organizados por blocos logicos.
-- A tela de Produtos usa card operacional com SKU, nome, foto, preco de venda, quantidade e menu de acoes. Ela nao deve mostrar lucro, custo, margem ou resultado financeiro no card.
+- A tela de Produtos usa lista operacional compacta com imagem pequena, SKU, nome, preco de venda, quantidade disponivel, status e acoes rapidas. Ela nao deve usar cards grandes como padrao principal.
+- Na lista de Produtos, as acoes principais visiveis sao `Detalhes` e `Vender`. O menu de tres pontos concentra acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir. A edicao dos dados da peca deve ficar dentro da central/detalhes do produto.
+- Produtos continua sendo tela operacional: pode mostrar preco de venda, mas nao deve mostrar lucro, custo FIFO, margem ou resultado financeiro. Analise financeira fica em detalhes, painel e telas de analise.
 - Telas operacionais nao devem receber analise financeira pesada.
 
 ## Previews visuais
 
 A pasta `previews/` guarda prototipos visuais usados para testar padroes antes de aplicar nas telas reais.
+
+`previews/` funciona como laboratorio visual. O prototipo `produtos-lista-ui-preview` foi usado como base para validar a nova UX/UI de Produtos antes de aplicar a lista operacional compacta na tela real.
 
 Arquivos previstos nessa pasta:
 

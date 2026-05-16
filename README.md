@@ -31,6 +31,8 @@ ERP web para gestao operacional de pecas usadas, origens, estoque, vendas, custo
 
 A pasta `previews/` contem testes visuais, como cadastro, design system, dashboard legado e mega menu.
 
+Tambem funciona como laboratorio visual para validar UX/UI antes de alterar telas reais. O preview `produtos-lista-ui-preview` foi usado como base para a nova lista operacional compacta de Produtos.
+
 Regras:
 
 - Nao usar previews como fluxo real do sistema.
@@ -49,14 +51,27 @@ Regras:
 
 ## Produtos
 
-A pagina Produtos e operacional. O card oficial mostra SKU, nome, foto, preco de venda, quantidade e menu de acoes.
+A pagina Produtos e operacional. O padrao principal agora e uma lista operacional compacta, feita para consulta rapida e uso diario do estoque.
 
-Nao mostrar no card de produto:
+Cada linha mostra:
+
+- imagem pequena;
+- SKU;
+- nome da peca;
+- preco de venda;
+- quantidade disponivel;
+- status operacional;
+- acoes visiveis `Detalhes` e `Vender`;
+- menu de tres pontos para acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir.
+
+Nao mostrar na lista de Produtos:
 
 - lucro;
-- custo;
+- custo FIFO;
 - margem;
 - resultado financeiro.
+
+Analise financeira deve ficar em detalhes, painel e telas de analise.
 
 ## Regras financeiras
 

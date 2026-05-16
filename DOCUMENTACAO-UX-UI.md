@@ -56,6 +56,8 @@ Regras consolidadas nesta fase:
 
 A pasta `previews/` concentra testes visuais e nao deve ser tratada como fluxo real do sistema.
 
+Ela tambem serve para validar UX/UI antes de alterar telas reais. O preview `produtos-lista-ui-preview` foi usado como laboratorio para aprovar a lista operacional compacta de Produtos.
+
 Ela pode conter:
 
 - preview de cadastro/produto;
@@ -106,16 +108,22 @@ Exemplos: cadastro de origem, cadastro de peca, cadastro de venda, produtos, his
 
 ### Produtos
 
-A tela de Produtos e operacional. O card oficial deve mostrar:
+A tela de Produtos e operacional e usa lista compacta como padrao principal. Ela deve ajudar Rafael a encontrar uma peca rapidamente, conferir disponibilidade e executar acoes do dia a dia sem entrar em analise financeira pesada.
 
+Cada linha da lista deve mostrar:
+
+- imagem pequena ou placeholder;
 - SKU;
 - nome da peca;
-- foto ou placeholder;
 - preco de venda;
 - quantidade disponivel;
-- menu de acoes.
+- status operacional;
+- acoes principais visiveis: `Detalhes` e `Vender`;
+- menu de tres pontos para acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir.
 
-O card de Produtos nao deve mostrar lucro, custo, margem ou resultado financeiro. Essas informacoes pertencem a detalhes, painel ou analises.
+O comando de editar dados deve ficar dentro da central/detalhes do produto, acessada pelo botao `Detalhes`.
+
+A lista de Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo FIFO, margem ou resultado financeiro. Essas informacoes pertencem a detalhes, painel ou analises.
 
 ### Telas de detalhes
 
@@ -215,6 +223,23 @@ Padrao recomendado:
 - Acoes no fim da linha.
 - Ordenacao e filtros quando fizer sentido.
 - Valores monetarios alinhados e formatados.
+
+### Lista operacional compacta
+
+Usar em telas de consulta diaria, especialmente Produtos.
+
+Padrao:
+
+- busca principal sempre visivel;
+- seletor de quantidade por pagina;
+- filtros avancados em painel lateral;
+- linhas horizontais compactas no desktop;
+- blocos empilhados compactos no celular;
+- imagem pequena e bem enquadrada;
+- SKU com leitura forte, nome logo abaixo;
+- preco e estoque em colunas curtas;
+- badges suaves, com `Estoque baixo` e `Sem estoque` mais visiveis que `Em estoque`;
+- acoes rapidas sem poluir a interface.
 
 ### Filtros discretos
 

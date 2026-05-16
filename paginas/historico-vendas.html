@@ -12,7 +12,7 @@
       <p class="hero__tag">Vendas operacionais</p>
       <h1>Historico de vendas</h1>
       <p class="hero__description">
-        Consulte vendas registradas e abra os detalhes quando necessario.
+        Consulta operacional das vendas registradas.
       </p>
     </div>
   </header>
@@ -32,6 +32,15 @@
           <div class="form-group products-search-field sales-history-search">
             <label for="buscaRapidaHistorico">Buscar venda</label>
             <input id="buscaRapidaHistorico" type="search" placeholder="Buscar por SKU ou nome da peca">
+          </div>
+
+          <div class="form-group sales-history-page-size-field">
+            <label for="quantidadePaginaHistorico">Mostrar</label>
+            <select id="quantidadePaginaHistorico">
+              <option value="12">12</option>
+              <option value="24" selected>24</option>
+              <option value="48">48</option>
+            </select>
           </div>
 
           <button id="botaoAbrirFiltrosHistorico" type="button" class="button-secondary products-filter-toggle sales-history-filter-button" aria-controls="painelFiltrosHistorico" aria-expanded="false">Filtros</button>
@@ -55,11 +64,6 @@
             </div>
 
             <div class="form-group">
-              <label for="filtroNomeHistorico">Nome da peca</label>
-              <input id="filtroNomeHistorico" type="search" placeholder="Parte do nome">
-            </div>
-
-            <div class="form-group">
               <label for="filtroCanalHistorico">Canal</label>
               <input id="filtroCanalHistorico" type="search" placeholder="Ex.: WhatsApp">
             </div>
@@ -74,7 +78,7 @@
 
       <p id="mensagemHistorico" class="empty-message"></p>
 
-      <div class="table-wrapper">
+      <div class="table-wrapper sales-history-table-wrapper">
         <table class="stock-table sales-history-table">
           <thead>
             <tr>
