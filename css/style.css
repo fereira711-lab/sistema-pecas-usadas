@@ -4703,6 +4703,322 @@ textarea:focus {
   }
 }
 
+/* Lista operacional compacta da tela Produtos. */
+.products-operational-page .products-header h2 {
+  font-size: 1.02rem;
+}
+
+.products-operational-page .products-action-primary {
+  min-height: 32px;
+  border-color: rgba(148, 163, 184, 0.26);
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+}
+
+.products-operational-page .products-main-controls {
+  grid-template-columns: minmax(320px, 1fr) 124px auto;
+}
+
+.products-list-head,
+.products-operational-list,
+.product-line {
+  min-width: 0;
+}
+
+.products-list-head {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 110px 82px 116px auto;
+  gap: 12px;
+  align-items: center;
+  padding: 0 10px 4px 76px;
+  color: rgba(148, 163, 184, 0.78);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.products-operational-list {
+  display: grid;
+  gap: 7px;
+}
+
+.products-operational-page .product-line {
+  display: grid;
+  grid-template-columns: 54px minmax(230px, 1fr) 110px 82px 116px auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 70px;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.52);
+}
+
+.products-operational-page .product-line:hover {
+  border-color: rgba(203, 213, 225, 0.38);
+  background: rgba(15, 23, 42, 0.76);
+}
+
+.products-operational-page .product-line--muted {
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.product-line__thumb {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  background: #0b1220;
+  color: rgba(248, 213, 145, 0.86);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.product-line__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-line__thumb span {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  background:
+    linear-gradient(135deg, rgba(248, 213, 145, 0.16), rgba(56, 189, 248, 0.10)),
+    #0b1220;
+}
+
+.product-line__identity {
+  min-width: 0;
+}
+
+.product-line__identity strong {
+  display: block;
+  overflow: hidden;
+  color: rgba(248, 213, 145, 0.88);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.product-line__identity h3 {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 4px 0 0;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #f8fafc;
+  font-size: 0.96rem;
+  line-height: 1.22;
+}
+
+.product-line__price {
+  color: #e2e8f0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.product-line__stock span {
+  display: inline-flex;
+  min-width: 36px;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.62);
+  color: #f8fafc;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.products-operational-page .product-line .status-badge {
+  justify-self: start;
+  min-width: auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.products-operational-page .product-line .status-badge--stock {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(148, 163, 184, 0.06);
+  color: #cbd5e1;
+  font-weight: 800;
+}
+
+.products-operational-page .product-line__actions {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.product-line__button,
+.product-line__menu summary {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.64);
+  color: #f8fafc;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.product-line__button {
+  padding: 0 10px;
+}
+
+.product-line__button:hover,
+.product-line__menu summary:hover {
+  border-color: rgba(203, 213, 225, 0.46);
+  background: rgba(30, 41, 59, 0.86);
+}
+
+.product-line__button:disabled,
+.product-line__menu-list button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.product-line__button--sale {
+  border-color: rgba(34, 197, 94, 0.34);
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
+}
+
+.product-line__menu {
+  position: relative;
+}
+
+.product-line__menu summary {
+  width: 32px;
+  min-width: 32px;
+  padding: 0;
+  list-style: none;
+}
+
+.product-line__menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.product-line__menu-list {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  z-index: 20;
+  display: grid;
+  min-width: 154px;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 10px;
+  background: #0f172a;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.36);
+}
+
+.product-line__menu-list button {
+  min-height: 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #f8fafc;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.product-line__menu-list button:hover {
+  background: rgba(226, 232, 240, 0.10);
+}
+
+@media (max-width: 1040px) {
+  .products-list-head {
+    display: none;
+  }
+
+  .products-operational-page .product-line {
+    grid-template-columns: 54px minmax(0, 1fr) 96px 70px;
+    grid-template-areas:
+      "thumb identity price stock"
+      "thumb badge actions actions";
+  }
+
+  .product-line__thumb {
+    grid-area: thumb;
+  }
+
+  .product-line__identity {
+    grid-area: identity;
+  }
+
+  .product-line__price {
+    grid-area: price;
+  }
+
+  .product-line__stock {
+    grid-area: stock;
+  }
+
+  .products-operational-page .product-line .status-badge {
+    grid-area: badge;
+  }
+
+  .products-operational-page .product-line__actions {
+    grid-area: actions;
+  }
+}
+
+@media (max-width: 980px) {
+  .products-operational-page .products-main-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .products-operational-page .product-line {
+    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-areas:
+      "thumb identity"
+      "price stock"
+      "badge badge"
+      "actions actions";
+    gap: 10px;
+  }
+
+  .product-line__thumb {
+    width: 52px;
+    height: 52px;
+  }
+
+  .products-operational-page .product-line__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 32px;
+    width: 100%;
+  }
+
+  .product-line__button {
+    min-width: 0;
+    padding-inline: 6px;
+  }
+}
+
 /* Padrao operacional aplicado ao cadastro de venda. */
 .sale-cadastro-page .sale-form-layout {
   max-width: 1120px;

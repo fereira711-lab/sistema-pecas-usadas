@@ -10,9 +10,9 @@
   <header class="page-header">
     <div>
       <p class="hero__tag">Estoque</p>
-      <h1>Estoque / Produtos</h1>
+      <h1>Produtos</h1>
       <p class="hero__description">
-        Localize pecas disponiveis e execute as acoes principais do estoque.
+        Lista operacional compacta para consulta rapida de estoque.
       </p>
     </div>
   </header>
@@ -22,31 +22,30 @@
       <div class="stock-header products-header">
         <div>
           <span class="piece-form-eyebrow">Estoque operacional</span>
-          <h2>Produtos cadastrados</h2>
-          <p>Consulta rapida de pecas, estoque, status e acoes principais.</p>
+          <h2>Produtos</h2>
+          <p>Consulta rapida de pecas, estoque e acoes principais.</p>
         </div>
 
         <div class="products-header__actions">
-          <span class="piece-status-chip">Operacional</span>
-          <a class="button-secondary products-action-primary" href="cadastro-peca.html">Cadastrar peca</a>
+          <a class="button-secondary products-action-primary" href="cadastro-peca.html">+ Nova peca</a>
         </div>
       </div>
 
       <section class="products-toolbar" aria-label="Filtros e busca de produtos">
         <div class="products-main-controls">
+          <div class="form-group products-search-field">
+            <label for="buscaProdutos">Buscar</label>
+            <input id="buscaProdutos" type="search" placeholder="Buscar por SKU, nome ou codigo">
+          </div>
+
           <div class="form-group products-page-size-field">
-            <label for="quantidadePaginaProdutos">Por pagina</label>
+            <label for="quantidadePaginaProdutos">Mostrar</label>
             <select id="quantidadePaginaProdutos">
               <option value="12">12</option>
               <option value="24" selected>24</option>
               <option value="48">48</option>
               <option value="todos">Todos</option>
             </select>
-          </div>
-
-          <div class="form-group products-search-field">
-            <label for="buscaProdutos">Buscar produto</label>
-            <input id="buscaProdutos" type="search" placeholder="Buscar por SKU, nome ou codigo">
           </div>
 
           <button id="botaoAbrirFiltrosProdutos" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosProdutos" aria-expanded="false">
@@ -67,7 +66,15 @@
             </div>
           </div>
 
-          <div id="tabelaProdutos" class="product-card-grid" aria-label="Produtos cadastrados"></div>
+          <div class="products-list-head" aria-hidden="true">
+            <span>Produto</span>
+            <span>Preco</span>
+            <span>Estoque</span>
+            <span>Status</span>
+            <span>Acoes</span>
+          </div>
+
+          <div id="tabelaProdutos" class="products-operational-list" aria-label="Produtos cadastrados"></div>
         </section>
       </div>
 

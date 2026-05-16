@@ -66,3 +66,16 @@ Apos alteracoes, sugerir quando fizer sentido:
 - Responder em linguagem simples, como professor.
 - Ser direto, mas explicar o motivo das decisoes importantes.
 - Ajudar Rafael a entender o sistema, nao apenas copiar codigo.
+
+## Processo de UX/UI com preview
+
+Mudanças grandes de interface não devem ser aplicadas diretamente nas telas reais.
+
+Fluxo recomendado:
+1. analisar a tela
+2. criar protótipo em previews/
+3. validar visualmente
+4. ajustar
+5. aplicar na tela real somente depois de aprovado
+
+A pasta previews/ é usada como laboratório visual e não faz parte do fluxo operacional real do sistema.

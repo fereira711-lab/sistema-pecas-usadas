@@ -124,10 +124,6 @@ function abrirLancamentoCusto(pecaId) {
   window.location.href = `cadastro-custo.html?pecaId=${encodeURIComponent(pecaId)}`;
 }
 
-function abrirEdicaoProduto(pecaId) {
-  window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}&editar=1`;
-}
-
 function filtrarPecasPorBusca(pecas) {
   const termo = String(campoBuscaProdutos?.value || "").trim().toLowerCase();
 
@@ -386,7 +382,7 @@ function renderizarBadgeStatusProduto(status, quantidadeDisponivel) {
     return '<span class="status-badge status-badge--warning">Estoque baixo</span>';
   }
 
-  return "";
+  return '<span class="status-badge status-badge--stock">Em estoque</span>';
 }
 
 function renderizarMidiaProduto(peca) {
@@ -415,50 +411,43 @@ function renderizarProdutos(pecas) {
   pecasPaginadas.forEach(peca => {
     const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
     const badgeStatus = renderizarBadgeStatusProduto(peca.status, quantidadeDisponivel);
-    const precoOperacional = Number(peca.precoVenda || 0) > 0 ? formatarMoeda(peca.precoVenda) : "Sem preço";
-    const card = document.createElement("article");
-    card.className = "product-card";
+    const precoOperacional = Number(peca.precoVenda || 0) > 0 ? formatarMoeda(peca.precoVenda) : "Sem preco";
+    const linha = document.createElement("article");
+    linha.className = `product-line${quantidadeDisponivel <= 0 ? " product-line--muted" : ""}`;
 
-    card.innerHTML = `
-      <div class="product-card__body">
-        <div class="product-card__header">
-          <div class="product-card__title-block">
-            <p class="product-card__sku">${escaparHtml(formatarSku(peca))}</p>
-            <h3>${escaparHtml(peca.nome || "-")}</h3>
+    linha.innerHTML = `
+      <div class="product-line__thumb">
+        ${renderizarMidiaProduto(peca)}
+      </div>
+
+      <div class="product-line__identity">
+        <strong>${escaparHtml(formatarSku(peca))}</strong>
+        <h3>${escaparHtml(peca.nome || "-")}</h3>
+      </div>
+
+      <div class="product-line__price">${escaparHtml(precoOperacional)}</div>
+
+      <div class="product-line__stock">
+        <span>${quantidadeDisponivel}</span>
+      </div>
+
+      ${badgeStatus}
+
+      <div class="product-line__actions">
+        <button class="product-line__button" type="button" data-acao="detalhes" data-peca-id="${peca.id}">Detalhes</button>
+        <button class="product-line__button product-line__button--sale" type="button" data-acao="venda" data-peca-id="${peca.id}" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
+        <details class="product-line__menu">
+          <summary aria-label="Mais acoes">...</summary>
+          <div class="product-line__menu-list">
+            <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lancar custo</button>
+            <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
+            <button type="button" data-acao="imagem" data-peca-id="${peca.id}">Trocar imagem</button>
           </div>
-
-          <details class="product-card__menu">
-            <summary aria-label="Acoes do produto">...</summary>
-            <div class="product-card__menu-list">
-              <button type="button" data-acao="detalhes" data-peca-id="${peca.id}">Ver detalhes</button>
-              <button type="button" data-acao="venda" data-peca-id="${peca.id}" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
-              <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lancar custo</button>
-              <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
-              <button type="button" data-acao="editar" data-peca-id="${peca.id}">Editar dados</button>
-              <button type="button" data-acao="imagem" data-peca-id="${peca.id}">Trocar imagem</button>
-            </div>
-          </details>
-        </div>
-
-        <div class="product-card__media">
-          ${renderizarMidiaProduto(peca)}
-        </div>
-
-        <div class="product-card__summary">
-          <div class="product-card__price">
-            <span>Preço de venda</span>
-            <strong>${escaparHtml(precoOperacional)}</strong>
-          </div>
-          <div class="product-card__stock">
-            <span>Qtd.</span>
-            <strong>${quantidadeDisponivel}</strong>
-          </div>
-          ${badgeStatus}
-        </div>
+        </details>
       </div>
     `;
 
-    tabelaProdutos.appendChild(card);
+    tabelaProdutos.appendChild(linha);
   });
 }
 
@@ -519,11 +508,6 @@ tabelaProdutos.addEventListener("click", evento => {
 
   if (botao.dataset.acao === "custo" && botao.dataset.pecaId) {
     abrirLancamentoCusto(botao.dataset.pecaId);
-    return;
-  }
-
-  if (botao.dataset.acao === "editar" && botao.dataset.pecaId) {
-    abrirEdicaoProduto(botao.dataset.pecaId);
     return;
   }
 
