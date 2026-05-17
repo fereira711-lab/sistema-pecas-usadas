@@ -62,6 +62,21 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Custo de peca pode mostrar valores de custo lancados, mas nao deve virar analise financeira pesada.
 - Evitar layout dividido em duas colunas quando apertar o conteudo.
 
+## Padrao da tela Cadastro de venda
+
+- `paginas/cadastro-venda.html` usa fluxo operacional organizado em blocos.
+- Ordem da tela: Produto vendido, Dados da venda, Custos da venda e Resumo antes de salvar.
+- A tela e focada em registrar venda, custos opcionais da venda e baixa de estoque via FIFO.
+- Nao transformar Cadastro de venda em tela de analise financeira pesada.
+- Ao selecionar uma peca, mostrar SKU, nome, preco de venda, estoque disponivel e alerta de estoque baixo/sem estoque quando aplicavel.
+- Custos da venda sao opcionais, podem ser adicionados/removidos antes de salvar e devem aparecer em lista compacta.
+- A venda deve poder ser salva sem custo adicional.
+- O resumo antes de salvar deve mostrar quantidade vendida, receita prevista, custos da venda e aviso de que o custo real da peca sera calculado pelo FIFO apos salvar.
+- Ao limpar o formulario, peca, campos, custos e resumo devem voltar ao estado vazio/zero.
+- Venda deve respeitar estoque disponivel.
+- Nao alterar FIFO manualmente; o custo real da venda vem de `venda_consumos_estoque`.
+- `financeiro-utils.js` continua sendo a fonte oficial de calculo financeiro.
+
 ## Tarefas grandes
 
 Antes de executar uma tarefa grande:

@@ -102,6 +102,8 @@ Representado por `paginas/produtos.html`, `paginas/lotes.html`, `paginas/giro-es
 
 Representado por `paginas/cadastro-venda.html`, `paginas/historico-vendas.html`, `paginas/detalhes-venda.html` e scripts de venda. Registra vendas e aciona o consumo FIFO via Supabase.
 
+`paginas/cadastro-venda.html` usa fluxo operacional organizado em blocos: Produto vendido, Dados da venda, Custos da venda e Resumo antes de salvar. A tela e focada em registrar venda, custos opcionais da venda e baixa de estoque via FIFO, sem virar analise financeira pesada.
+
 ### Financeiro
 
 Representado por `js/financeiro-utils.js`, telas de analise e custos. Centraliza calculos de receita, custo consumido, custos de peca, custos de venda, lucro e margem.
@@ -144,6 +146,7 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 - FIFO e a fonte oficial de custo. A venda consome lotes em ordem e grava o resultado em `venda_consumos_estoque`.
 - `financeiro-utils.js` e a central financeira. As telas devem usar essa camada para calcular receita, custo consumido, custos, lucro e margem.
 - O fallback de custo antigo existe apenas para registros antigos sem consumo FIFO.
+- Cadastro de venda deve respeitar estoque disponivel e nao alterar FIFO manualmente. O custo real da venda vem de `venda_consumos_estoque`.
 
 ## Estrutura visual/UX
 
@@ -161,6 +164,9 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 - `paginas/cadastro-custo.html` usa fluxo operacional vertical: Buscar peca, Dados da peca selecionada, Novo custo e Historico de custos cadastrados. A tela e focada em localizar a peca, lancar custo, editar custo e excluir custo, sem virar analise financeira pesada.
 - O Historico de custos fica abaixo do formulario, mostra custos do mais recente para o mais antigo, usa lista compacta sem barra horizontal e exibe data, tipo, valor, observacao e acoes `Editar` e `Excluir`.
 - Custo de peca pode mostrar os valores de custo lancados, porque e uma tela operacional de custo. Isso nao muda a regra de Produtos: Produtos continua sem mostrar custo, lucro, margem ou resultado financeiro.
+- Cadastro de venda deve mostrar, apos selecionar uma peca, SKU, nome, preco de venda, estoque disponivel e alerta de estoque baixo/sem estoque quando aplicavel.
+- Custos da venda sao opcionais, podem ser adicionados/removidos antes de salvar, aparecem em lista compacta e nao devem impedir salvar venda sem custo adicional.
+- O resumo antes de salvar mostra quantidade vendida, receita prevista, custos da venda e o aviso de que o custo real da peca sera calculado pelo FIFO apos salvar. Ao limpar o formulario, esse resumo deve voltar para zero.
 - Telas operacionais nao devem receber analise financeira pesada.
 
 ## Previews visuais

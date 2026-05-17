@@ -147,6 +147,36 @@ Regras:
 - Exclusao exige confirmacao visual antes de remover do Supabase.
 - Nao transformar a tela em analise financeira pesada.
 
+### Cadastro de venda
+
+A tela `cadastro-venda.html` e operacional. Ela deve registrar venda, custos opcionais da venda e baixa de estoque via FIFO, sem virar tela de analise financeira pesada.
+
+Fluxo UX aprovado:
+
+- Produto vendido.
+- Dados da venda.
+- Custos da venda.
+- Resumo antes de salvar.
+
+No bloco Produto vendido, depois da selecao da peca, mostrar contexto suficiente para vender com seguranca:
+
+- SKU.
+- Nome da peca.
+- Preco de venda.
+- Estoque disponivel.
+- Alerta de estoque baixo ou sem estoque quando aplicavel.
+
+Custos da venda sao opcionais. Eles podem ser adicionados/removidos antes de salvar, devem aparecer em lista compacta e nao podem bloquear uma venda sem custo adicional.
+
+O resumo antes de salvar mostra quantidade vendida, receita prevista e custos da venda. Tambem deve exibir o aviso de que o custo real da peca sera calculado pelo FIFO apos salvar. Ao limpar o formulario, o resumo deve zerar corretamente.
+
+Regras:
+
+- Venda deve respeitar estoque disponivel.
+- Nao alterar FIFO manualmente.
+- O custo real da venda vem de `venda_consumos_estoque`.
+- `financeiro-utils.js` continua sendo a fonte oficial de calculo financeiro.
+
 ### Telas de detalhes
 
 Telas que concentram o contexto completo de uma entidade.

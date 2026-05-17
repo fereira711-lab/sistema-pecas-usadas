@@ -344,6 +344,33 @@ Padroes:
 
 Custo de peca pode exibir valores de custo lancados. Isso e diferente de Produtos, que continua sem exibir custo, lucro, margem ou resultado financeiro.
 
+### Tela operacional de cadastro de venda
+
+`cadastro-venda.html` segue fluxo operacional em blocos para registrar venda com rapidez e seguranca:
+
+1. Produto vendido.
+2. Dados da venda.
+3. Custos da venda.
+4. Resumo antes de salvar.
+
+Padroes:
+
+- Produto vendido deve manter a busca no topo e, apos selecao, mostrar SKU, nome da peca, preco de venda, estoque disponivel e alerta de estoque baixo/sem estoque quando aplicavel.
+- Custos da venda sao opcionais e nao devem impedir salvar uma venda sem custo adicional.
+- Custos adicionados/removidos antes de salvar aparecem em lista compacta.
+- Resumo antes de salvar mostra quantidade vendida, receita prevista e custos da venda.
+- O resumo deve exibir o aviso: o custo real da peca sera calculado pelo FIFO apos salvar.
+- Ao limpar o formulario, peca, campos, custos e resumo devem voltar ao estado vazio/zero.
+- Dourado deve aparecer apenas como destaque discreto.
+- A tela nao deve exibir lucro, margem ou analise financeira pesada.
+
+Regras de negocio preservadas:
+
+- Venda deve respeitar estoque disponivel.
+- FIFO nao deve ser alterado manualmente pela interface.
+- O custo real da venda vem de `venda_consumos_estoque`.
+- `financeiro-utils.js` continua sendo a fonte oficial de calculos financeiros.
+
 ## Tabelas
 
 Padrao:

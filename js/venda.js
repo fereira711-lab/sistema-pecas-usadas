@@ -217,6 +217,15 @@ function renderizarEstadoCustosVenda() {
   }
 }
 
+function limparCustosVenda() {
+  if (!listaCustosVenda) {
+    return;
+  }
+
+  listaCustosVenda.innerHTML = "";
+  renderizarEstadoCustosVenda();
+}
+
 async function carregarTiposCustoVenda() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
@@ -465,6 +474,22 @@ function zerarResumoVenda() {
 
   if (resumoVendaCustos) {
     resumoVendaCustos.textContent = formatarMoedaVenda(0);
+  }
+}
+
+function limparCamposOperacionaisVenda() {
+  document.getElementById("pecaId").value = "";
+  document.getElementById("valorVenda").value = "";
+  document.getElementById("quantidadeVendidaNaVenda").value = "";
+  document.getElementById("canalVenda").value = "";
+  document.getElementById("observacoesVenda").value = "";
+
+  if (campoBuscaPecaVenda) {
+    campoBuscaPecaVenda.value = "";
+  }
+
+  if (campoDataVenda) {
+    campoDataVenda.value = obterDataLocalHoje();
   }
 }
 
@@ -952,28 +977,11 @@ function atualizarPecaNaListaVenda(pecaAtualizada) {
 }
 
 function limparFormularioVenda(opcoes = {}) {
-  document.getElementById("pecaId").value = "";
-  document.getElementById("valorVenda").value = "";
-  document.getElementById("quantidadeVendidaNaVenda").value = "";
-  document.getElementById("canalVenda").value = "";
-  document.getElementById("observacoesVenda").value = "";
-
-  if (campoBuscaPecaVenda) {
-    campoBuscaPecaVenda.value = "";
-  }
-
+  limparCamposOperacionaisVenda();
+  limparCustosVenda();
   renderizarResumoPecaVenda(null);
   fecharSugestoesVenda();
   zerarResumoVenda();
-
-  if (campoDataVenda) {
-    campoDataVenda.value = obterDataLocalHoje();
-  }
-
-  if (listaCustosVenda) {
-    listaCustosVenda.innerHTML = "";
-    renderizarEstadoCustosVenda();
-  }
 
   if (!opcoes.manterMensagem) {
     mostrarMensagemVenda("");

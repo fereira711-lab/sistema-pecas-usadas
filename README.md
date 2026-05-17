@@ -86,8 +86,26 @@ Ela serve para localizar uma peca, lancar custo, editar custo e excluir custo. O
 
 Custo de peca pode mostrar valores de custo lancados. Produtos continua sem mostrar custo, lucro, margem ou resultado financeiro.
 
+## Cadastro de venda
+
+A pagina `paginas/cadastro-venda.html` usa fluxo operacional organizado em blocos:
+
+- Produto vendido.
+- Dados da venda.
+- Custos da venda.
+- Resumo antes de salvar.
+
+Ela serve para registrar venda, custos opcionais da venda e baixa de estoque via FIFO. Nao e tela de analise financeira pesada.
+
+Produto vendido deve mostrar, apos selecao da peca, SKU, nome, preco de venda, estoque disponivel e alerta de estoque baixo/sem estoque quando aplicavel.
+
+Custos da venda sao opcionais, podem ser adicionados/removidos antes de salvar e aparecem em lista compacta. A venda deve poder ser salva sem custo adicional.
+
+O resumo antes de salvar mostra quantidade vendida, receita prevista, custos da venda e o aviso de que o custo real da peca sera calculado pelo FIFO apos salvar. Ao limpar o formulario, o resumo deve voltar para zero.
+
 ## Regras financeiras
 
 - FIFO e a fonte oficial de custo real.
 - `financeiro-utils.js` e a fonte oficial de calculos financeiros.
 - Telas operacionais nao devem receber analise financeira pesada.
+- O custo real da venda vem de `venda_consumos_estoque`.
