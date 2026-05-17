@@ -195,6 +195,28 @@ function atualizarSelectsTiposCustoVenda() {
   });
 }
 
+function renderizarEstadoCustosVenda() {
+  if (!listaCustosVenda) {
+    return;
+  }
+
+  const temCustos = listaCustosVenda.querySelector(".cost-line");
+  const estadoVazio = listaCustosVenda.querySelector(".sale-costs-empty");
+
+  if (temCustos) {
+    estadoVazio?.remove();
+    return;
+  }
+
+  if (!estadoVazio) {
+    listaCustosVenda.innerHTML = `
+      <div class="sale-costs-empty">
+        Nenhum custo da venda adicionado.
+      </div>
+    `;
+  }
+}
+
 async function carregarTiposCustoVenda() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
@@ -216,6 +238,8 @@ function adicionarLinhaCustoVenda(custo = {}) {
     return;
   }
 
+  listaCustosVenda.querySelector(".sale-costs-empty")?.remove();
+
   const linha = document.createElement("div");
   linha.className = "cost-line";
   linha.innerHTML = `
@@ -229,6 +253,7 @@ function adicionarLinhaCustoVenda(custo = {}) {
 
   listaCustosVenda.appendChild(linha);
   atualizarResumoVenda();
+  renderizarEstadoCustosVenda();
 }
 
 async function criarNovoTipoCustoVenda() {
@@ -425,7 +450,32 @@ function somarCustosVenda(custosVenda) {
   return custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
 }
 
+function zerarResumoVenda() {
+  if (resumoVendaValorUnitario) {
+    resumoVendaValorUnitario.textContent = formatarMoedaVenda(0);
+  }
+
+  if (resumoVendaQuantidade) {
+    resumoVendaQuantidade.textContent = "0";
+  }
+
+  if (resumoVendaTotal) {
+    resumoVendaTotal.textContent = formatarMoedaVenda(0);
+  }
+
+  if (resumoVendaCustos) {
+    resumoVendaCustos.textContent = formatarMoedaVenda(0);
+  }
+}
+
 function atualizarResumoVenda() {
+  const pecaId = Number(obterCampoPeca()?.value || 0);
+
+  if (!pecaId) {
+    zerarResumoVenda();
+    return;
+  }
+
   const quantidade = Number(document.getElementById("quantidadeVendidaNaVenda")?.value || 0);
   const valorUnitario = Number(document.getElementById("valorVenda")?.value || 0);
   const custosVenda = lerCustosVendaDoFormulario();
@@ -676,6 +726,7 @@ function atualizarSugestoesVenda() {
   renderizarResumoPecaVenda(null);
   renderizarSugestoesVenda(filtrarPecasPorBusca(pecasVendaCarregadas));
   atualizarLimiteQuantidadeSelecionada();
+  atualizarResumoVenda();
 }
 
 function atualizarLimiteQuantidadeSelecionada() {
@@ -693,6 +744,7 @@ function atualizarLimiteQuantidadeSelecionada() {
   if (!peca) {
     campoQuantidade.removeAttribute("max");
     renderizarResumoPecaVenda(null);
+    atualizarResumoVenda();
     return;
   }
 
@@ -718,6 +770,7 @@ function selecionarPecaDaUrl() {
   if (!pecaIdUrl) {
     campoPeca.value = "";
     renderizarResumoPecaVenda(null);
+    atualizarResumoVenda();
     return;
   }
 
@@ -736,7 +789,7 @@ async function inicializarFormularioVenda() {
 
   preencherDataVendaPadrao();
   await carregarTiposCustoVenda();
-  adicionarLinhaCustoVenda();
+  renderizarEstadoCustosVenda();
 
   if (!campoPeca) {
     return;
@@ -816,6 +869,7 @@ async function inicializarFormularioVenda() {
     if (botao) {
       botao.closest(".cost-line")?.remove();
       atualizarResumoVenda();
+      renderizarEstadoCustosVenda();
     }
   });
 }
@@ -897,7 +951,7 @@ function atualizarPecaNaListaVenda(pecaAtualizada) {
   pecasVendaCarregadas.push(pecaNormalizada);
 }
 
-function limparFormularioVenda() {
+function limparFormularioVenda(opcoes = {}) {
   document.getElementById("pecaId").value = "";
   document.getElementById("valorVenda").value = "";
   document.getElementById("quantidadeVendidaNaVenda").value = "";
@@ -910,6 +964,7 @@ function limparFormularioVenda() {
 
   renderizarResumoPecaVenda(null);
   fecharSugestoesVenda();
+  zerarResumoVenda();
 
   if (campoDataVenda) {
     campoDataVenda.value = obterDataLocalHoje();
@@ -917,10 +972,12 @@ function limparFormularioVenda() {
 
   if (listaCustosVenda) {
     listaCustosVenda.innerHTML = "";
-    adicionarLinhaCustoVenda();
+    renderizarEstadoCustosVenda();
   }
 
-  mostrarMensagemVenda("");
+  if (!opcoes.manterMensagem) {
+    mostrarMensagemVenda("");
+  }
   campoBuscaPecaVenda?.focus();
 
   if (window.location.search) {
@@ -978,7 +1035,7 @@ async function salvarVenda() {
       mostrarMensagemVenda("Venda cadastrada no armazenamento temporario. Configure o Supabase para salvar no banco.", "warning");
     }
 
-    limparFormularioVenda();
+    limparFormularioVenda({ manterMensagem: true });
   } catch (erro) {
     console.error("Erro ao cadastrar venda:", erro);
     mostrarMensagemVenda(`Nao foi possivel salvar a venda: ${erro.message || "erro desconhecido"}`, "warning");

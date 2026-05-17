@@ -5257,11 +5257,12 @@ textarea:focus {
 }
 
 .sale-cadastro-page .cost-lines {
-  gap: 8px;
+  gap: 7px;
+  margin-bottom: 0;
 }
 
 .sale-cadastro-page .cost-line {
-  grid-template-columns: minmax(150px, 1fr) minmax(110px, 0.7fr) minmax(180px, 1.2fr) auto;
+  grid-template-columns: minmax(160px, 1fr) 118px minmax(180px, 1.25fr) auto;
   gap: 8px;
   min-height: 0;
   padding: 8px;
@@ -5270,10 +5271,24 @@ textarea:focus {
   background: rgba(15, 23, 42, 0.44);
 }
 
+.sale-cadastro-page .cost-line select,
+.sale-cadastro-page .cost-line input {
+  min-height: 34px;
+}
+
 .sale-cadastro-page .cost-line button {
   min-height: 34px;
   border-radius: 8px;
   white-space: nowrap;
+}
+
+.sale-costs-empty {
+  padding: 9px 10px;
+  border: 1px dashed rgba(148, 163, 184, 0.28);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.30);
+  color: rgba(203, 213, 225, 0.72);
+  font-size: 0.82rem;
 }
 
 .sale-cadastro-page .section-actions {
