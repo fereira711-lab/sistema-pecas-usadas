@@ -12,20 +12,19 @@
       <p class="hero__tag">Custos operacionais</p>
       <h1>Custo de peca</h1>
       <p class="hero__description">
-        Registre custos vinculados a uma peca mantendo a tela compacta e operacional.
+        Lance, edite e acompanhe custos operacionais vinculados a peca.
       </p>
     </div>
   </header>
 
-  <main class="container stock-layout cost-form-layout">
+  <main class="container stock-layout cost-form-layout cost-operational-flow">
     <section class="form-card cost-form-shell">
       <div class="piece-form-top">
         <div>
           <span class="piece-form-eyebrow">Cadastro operacional</span>
-          <h2>Novo custo de peca</h2>
-          <p>Busque a peca, confira os dados e lance o custo correspondente.</p>
+          <h2>Custo de peca</h2>
+          <p>Busque a peca e lance o custo correspondente.</p>
         </div>
-        <span class="piece-status-chip">Operacional</span>
       </div>
 
       <form id="formCusto">
@@ -34,13 +33,12 @@
             <div class="form-section__header">
               <div>
                 <h3>Buscar peca</h3>
-                <p>Localize por SKU ou nome para vincular o custo ao item correto.</p>
               </div>
             </div>
 
             <div class="form-fields">
               <div class="form-group field-span-12">
-                <label for="buscaPecaCusto">Peca</label>
+                <label for="buscaPecaCusto">Buscar por SKU ou nome</label>
                 <input id="buscaPecaCusto" type="search" placeholder="Pesquisar peca por nome ou SKU">
                 <input id="produtoCusto" name="produtoCusto" type="hidden" required>
                 <div id="sugestoesPecaCusto" class="autocomplete-list" role="listbox"></div>
@@ -52,7 +50,6 @@
             <div class="form-section__header">
               <div>
                 <h3>Dados da peca selecionada</h3>
-                <p>Resumo operacional exibido apos selecionar uma peca.</p>
               </div>
             </div>
 
@@ -63,7 +60,6 @@
             <div class="form-section__header">
               <div>
                 <h3>Novo custo</h3>
-                <p>Informe tipo, descricao, valor e data do custo.</p>
               </div>
             </div>
 
@@ -93,7 +89,7 @@
 
               <div class="form-group field-span-12">
                 <label for="observacoesCusto">Observacoes</label>
-                <textarea id="observacoesCusto" name="observacoesCusto" rows="3" placeholder="Ex.: Custo de preparo antes da venda"></textarea>
+                <textarea id="observacoesCusto" name="observacoesCusto" rows="2" placeholder="Ex.: Custo de preparo antes da venda"></textarea>
               </div>
             </div>
 
@@ -102,7 +98,6 @@
             <div class="form-actions cost-form-actions">
               <button id="botaoSalvarCusto" type="submit" class="button-primary">Salvar custo</button>
               <button id="botaoCancelarEdicaoCusto" type="button" class="button-secondary" hidden>Cancelar edicao</button>
-              <a class="button-secondary" href="../index.html">Voltar para o painel</a>
             </div>
           </section>
         </div>
@@ -164,21 +159,15 @@
         </div>
       </aside>
 
-      <div class="table-wrapper">
-        <table class="stock-table cost-table">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>SKU</th>
-              <th>Nome da peca</th>
-              <th>Tipo</th>
-              <th>Descricao</th>
-              <th>Valor</th>
-              <th>Acoes</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaCustos"></tbody>
-        </table>
+      <div class="cost-lines-wrapper">
+        <div class="cost-lines-head" aria-hidden="true">
+          <span>Data</span>
+          <span>Tipo</span>
+          <span>Valor</span>
+          <span>Observacao</span>
+          <span>Acoes</span>
+        </div>
+        <div id="tabelaCustos" class="cost-lines-list" aria-label="Custos cadastrados"></div>
       </div>
     </section>
   </main>

@@ -26,6 +26,7 @@ let tiposCustoCarregados = [];
 let sugestoesCustoAtuais = [];
 let indiceSugestaoCusto = -1;
 let custoEmEdicaoId = null;
+let custoExclusaoPendenteId = null;
 const tiposCustoPadrao = ["Limpeza", "Solda", "Pintura", "Conserto", "Preparo"];
 const categoriasTipoCusto = ["peca", "venda", "ambos"];
 
@@ -472,17 +473,12 @@ function renderizarResumoProduto() {
 
   if (!pecaId) {
     resumoProdutoCusto.innerHTML = `
-      <article class="summary-card cost-summary-placeholder">
-        <span>Peca</span>
-        <strong>Nenhuma peca selecionada</strong>
-      </article>
-      <article class="summary-card cost-summary-placeholder">
-        <span>SKU</span>
-        <strong>-</strong>
-      </article>
-      <article class="summary-card cost-summary-placeholder">
-        <span>Estoque disponivel</span>
-        <strong>-</strong>
+      <article class="cost-selected-piece cost-selected-piece--empty">
+        <div>
+          <span>Peca selecionada</span>
+          <strong>Nenhuma peca selecionada</strong>
+          <p>Use a busca acima para vincular um custo.</p>
+        </div>
       </article>
     `;
     return;
@@ -499,17 +495,17 @@ function renderizarResumoProduto() {
   const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
 
   resumoProdutoCusto.innerHTML = `
-    <article class="summary-card">
-      <span>Peca</span>
-      <strong>${escaparHtml(formatarNomePeca(produto))}</strong>
-    </article>
-    <article class="summary-card">
-      <span>SKU</span>
-      <strong>${escaparHtml(produto.sku || "-")}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Estoque disponivel</span>
-      <strong>${quantidadeDisponivel}</strong>
+    <article class="cost-selected-piece">
+      <div>
+        <span>Peca selecionada</span>
+        <strong>${escaparHtml(produto.sku || "-")}</strong>
+        <h4>${escaparHtml(produto.nome || produto.nome_peca || produto.nomePeca || produto.nomeProduto || produto.descricao || "-")}</h4>
+      </div>
+      <div class="cost-selected-piece__stock">
+        <span>Estoque disponivel</span>
+        <strong>${quantidadeDisponivel}</strong>
+      </div>
+      <button class="button-secondary" type="button" data-acao="detalhes-produto" data-peca-id="${produto.id}">Ver detalhes</button>
     </article>
   `;
 }
@@ -674,29 +670,39 @@ function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" :
   }
 
   mensagemListaCustos.textContent = "";
+  custoExclusaoPendenteId = custos.some(custo => Number(custo.id) === Number(custoExclusaoPendenteId)) ? custoExclusaoPendenteId : null;
 
   custos.forEach((custo) => {
-    const linha = document.createElement("tr");
-    const produto = obterDadosProdutoDoCusto(custo);
+    const linha = document.createElement("article");
     const custoId = custo.id || "";
+    const observacaoCurta = custo.descricao || custo.observacoes || "-";
 
+    linha.className = `cost-line${Number(custoExclusaoPendenteId) === Number(custoId) ? " cost-line--confirm" : ""}`;
     linha.innerHTML = `
-      <td data-label="Data">${formatarData(custo.data || custo.dataCusto)}</td>
-      <td data-label="SKU">${escaparHtml(produto.sku)}</td>
-      <td data-label="Nome da peca"><strong class="product-name">${escaparHtml(produto.nome)}</strong></td>
-      <td data-label="Tipo"><span class="status-badge status-badge--stock">${escaparHtml(custo.tipoCusto || custo.tipo || "-")}</span></td>
-      <td data-label="Descricao">${escaparHtml(custo.descricao || custo.observacoes || "-")}</td>
-      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
-      <td data-label="Acoes">
-        <div class="table-actions">
-          <button class="button-secondary" type="button" data-acao="editar-custo" data-custo-id="${custoId}">Editar</button>
-          <button class="button-secondary button-danger-soft" type="button" data-acao="excluir-custo" data-custo-id="${custoId}">Excluir</button>
-          <button class="button-secondary" type="button" data-acao="detalhes-produto" data-peca-id="${custo.pecaId || ""}" ${custo.pecaId ? "" : "disabled"}>Ver peca</button>
-        </div>
-      </td>
+      <time datetime="${escaparHtml(obterDataCusto(custo))}">${formatarData(custo.data || custo.dataCusto)}</time>
+      <span class="cost-line__type">${escaparHtml(custo.tipoCusto || custo.tipo || "-")}</span>
+      <strong class="cost-line__value">${formatarMoeda(custo.valor)}</strong>
+      <p title="${escaparHtml(observacaoCurta)}">${escaparHtml(observacaoCurta)}</p>
+      <div class="cost-line__actions">
+        <button class="button-secondary" type="button" data-acao="editar-custo" data-custo-id="${custoId}">Editar</button>
+        <button class="button-secondary button-danger-soft" type="button" data-acao="excluir-custo" data-custo-id="${custoId}">Excluir</button>
+      </div>
     `;
 
     tabelaCustos.appendChild(linha);
+
+    if (Number(custoExclusaoPendenteId) === Number(custoId)) {
+      const linhaConfirmacao = document.createElement("div");
+      linhaConfirmacao.className = "cost-delete-confirm-row";
+      linhaConfirmacao.innerHTML = `
+        <div class="cost-delete-confirm">
+          <span>Excluir este custo?</span>
+          <button class="button-secondary button-danger-soft" type="button" data-acao="confirmar-exclusao-custo" data-custo-id="${custoId}">Confirmar exclusao</button>
+          <button class="button-secondary" type="button" data-acao="cancelar-exclusao-custo">Cancelar</button>
+        </div>
+      `;
+      tabelaCustos.appendChild(linhaConfirmacao);
+    }
   });
 }
 
@@ -926,7 +932,25 @@ tabelaCustos.addEventListener("click", function (evento) {
   }
 
   if (botao.dataset.acao === "excluir-custo") {
+    custoExclusaoPendenteId = Number(botao.dataset.custoId);
+    renderizarCustos();
+  }
+
+  if (botao.dataset.acao === "cancelar-exclusao-custo") {
+    custoExclusaoPendenteId = null;
+    renderizarCustos();
+  }
+
+  if (botao.dataset.acao === "confirmar-exclusao-custo") {
     excluirCusto(botao.dataset.custoId);
+  }
+});
+
+resumoProdutoCusto.addEventListener("click", function (evento) {
+  const botao = evento.target.closest("button[data-acao='detalhes-produto']");
+
+  if (botao?.dataset.pecaId) {
+    abrirDetalhesProduto(botao.dataset.pecaId);
   }
 });
 
@@ -945,14 +969,9 @@ async function excluirCusto(custoId) {
     return;
   }
 
-  const confirmou = confirm(`Deseja excluir o custo "${custo.descricao || custo.tipoCusto || custo.tipo}"?`);
-
-  if (!confirmou) {
-    return;
-  }
-
   try {
     await window.supabaseService.excluirCustoPeca(custo.id);
+    custoExclusaoPendenteId = null;
 
     if (Number(custoEmEdicaoId) === Number(custo.id)) {
       cancelarEdicaoCusto();

@@ -5255,8 +5255,15 @@ textarea:focus {
 }
 
 /* Padrao operacional aplicado ao cadastro de custo de peca. */
-.cost-cadastro-page .cost-form-layout {
+.cost-cadastro-page .cost-form-layout,
+.cost-operational-flow {
   max-width: 1120px;
+}
+
+.cost-operational-flow {
+  display: grid;
+  gap: 8px;
+  align-items: stretch;
 }
 
 .cost-cadastro-page .cost-form-shell,
@@ -5299,13 +5306,17 @@ textarea:focus {
 
 .cost-cadastro-page .piece-form-sections {
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 7px;
+  padding: 10px 14px 12px;
+}
+
+.cost-cadastro-page .piece-form-sections .cost-section {
+  grid-column: span 12;
 }
 
 .cost-cadastro-page .cost-section {
   grid-column: span 12;
-  padding: 12px 14px;
+  padding: 9px 12px;
   border-color: rgba(148, 163, 184, 0.30);
   border-radius: 12px;
   background:
@@ -5318,7 +5329,7 @@ textarea:focus {
 
 .cost-cadastro-page .form-section__header {
   align-items: flex-start;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   padding-bottom: 0;
   border-bottom: 0;
 }
@@ -5344,8 +5355,8 @@ textarea:focus {
 .cost-cadastro-page .form-section input,
 .cost-cadastro-page .form-section select,
 .cost-cadastro-page .form-section textarea {
-  min-height: 34px;
-  padding: 8px 10px;
+  min-height: 32px;
+  padding: 7px 10px;
   border-color: rgba(148, 163, 184, 0.34);
   border-radius: 8px;
   background: rgba(15, 23, 42, 0.58);
@@ -5354,7 +5365,7 @@ textarea:focus {
 }
 
 .cost-cadastro-page .form-section textarea {
-  min-height: 78px;
+  min-height: 48px;
 }
 
 .cost-cadastro-page .form-section input:hover,
@@ -5373,8 +5384,72 @@ textarea:focus {
 }
 
 .cost-summary-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 8px;
+}
+
+.cost-selected-piece {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.52);
+}
+
+.cost-selected-piece--empty {
+  grid-template-columns: 1fr;
+}
+
+.cost-selected-piece span,
+.cost-selected-piece__stock span {
+  display: block;
+  margin-bottom: 4px;
+  color: rgba(148, 163, 184, 0.78);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.cost-selected-piece strong {
+  display: block;
+  overflow: hidden;
+  color: rgba(248, 213, 145, 0.88);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cost-selected-piece h4 {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 4px 0 0;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  line-height: 1.22;
+}
+
+.cost-selected-piece p {
+  margin: 4px 0 0;
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
+.cost-selected-piece__stock {
+  padding: 8px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 9px;
+  background: rgba(30, 41, 59, 0.58);
+}
+
+.cost-selected-piece__stock strong {
+  color: #f8fafc;
+  font-size: 1rem;
 }
 
 .cost-cadastro-page .summary-card {
@@ -5409,40 +5484,130 @@ textarea:focus {
 
 .cost-form-actions {
   justify-content: flex-end;
-  margin-top: 12px;
+  margin-top: 6px;
+}
+
+.cost-cadastro-page .section-spaced {
+  margin-top: 0;
 }
 
 .cost-cadastro-page .form-message {
   margin-top: 10px;
 }
 
-.cost-cadastro-page .table-wrapper {
-  margin: 14px 16px 16px;
-}
-
 .cost-cadastro-page .empty-message {
   margin: 12px 16px 0;
 }
 
-.cost-cadastro-page .cost-table th,
-.cost-cadastro-page .cost-table td {
-  padding: 10px;
+.cost-lines-wrapper {
+  display: grid;
+  gap: 7px;
+  margin: 14px 16px 16px;
+  overflow: hidden;
 }
 
-.cost-cadastro-page .cost-table .status-badge {
-  min-width: auto;
-  padding: 4px 8px;
-  font-size: 0.68rem;
+.cost-lines-head,
+.cost-line {
+  display: grid;
+  grid-template-columns: 104px 150px 110px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
 }
 
-.cost-cadastro-page .table-actions {
+.cost-lines-head {
+  padding: 0 8px 2px;
+  color: rgba(148, 163, 184, 0.78);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cost-lines-list {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.cost-line {
+  min-height: 58px;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.52);
+}
+
+.cost-line:hover {
+  border-color: rgba(203, 213, 225, 0.38);
+  background: rgba(15, 23, 42, 0.76);
+}
+
+.cost-line--confirm {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.cost-line time,
+.cost-line__type,
+.cost-line__value,
+.cost-line p {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cost-line time,
+.cost-line__type {
+  color: #cbd5e1;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.cost-line__value {
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.cost-line p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.86rem;
+}
+
+.cost-line__actions {
+  display: flex;
+  justify-content: flex-end;
   gap: 6px;
 }
 
-.cost-cadastro-page .table-actions button {
+.cost-line__actions button {
   min-height: 30px;
   border-radius: 8px;
   font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.cost-delete-confirm-row {
+  min-width: 0;
+}
+
+.cost-delete-confirm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.54);
+}
+
+.cost-delete-confirm span {
+  color: #fecaca;
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .button-danger-soft {
@@ -5459,12 +5624,70 @@ textarea:focus {
     grid-column: span 12;
   }
 
+  .cost-operational-flow,
+  .cost-selected-piece {
+    grid-template-columns: 1fr;
+  }
+
   .cost-summary-grid {
     grid-template-columns: 1fr;
   }
 
   .cost-form-actions {
     justify-content: flex-start;
+  }
+
+  .cost-delete-confirm {
+    grid-template-columns: 1fr;
+  }
+
+  .cost-lines-head {
+    display: none;
+  }
+
+  .cost-line {
+    grid-template-columns: 90px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "date type value"
+      "note note actions";
+  }
+
+  .cost-line time {
+    grid-area: date;
+  }
+
+  .cost-line__type {
+    grid-area: type;
+  }
+
+  .cost-line__value {
+    grid-area: value;
+  }
+
+  .cost-line p {
+    grid-area: note;
+  }
+
+  .cost-line__actions {
+    grid-area: actions;
+  }
+}
+
+@media (max-width: 560px) {
+  .cost-line {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "date"
+      "type"
+      "value"
+      "note"
+      "actions";
+  }
+
+  .cost-line__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
   }
 }
 

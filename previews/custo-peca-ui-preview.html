@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Custo de peca</title>
+  <link rel="stylesheet" href="custo-peca-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Custos operacionais</span>
+        <h1>Custo de peca</h1>
+        <p>Lance, edite e acompanhe custos operacionais vinculados a peca.</p>
+      </div>
+    </header>
+
+    <section class="ops-bar" aria-label="Busca de peca">
+      <label class="field field-search">
+        <span>Buscar peca</span>
+        <input type="search" placeholder="Buscar por SKU ou nome da peca" value="SKU FAR-023">
+      </label>
+
+      <button class="btn btn-filter" type="button">Filtros</button>
+    </section>
+
+    <section class="selected-piece">
+      <div>
+        <span class="eyebrow">Peca selecionada</span>
+        <strong>SKU FAR-023</strong>
+        <h2>Farol dianteiro Gol G5 lado direito</h2>
+      </div>
+
+      <div class="piece-stock">
+        <span>Estoque disponivel</span>
+        <strong>3</strong>
+      </div>
+
+      <button class="btn btn-secondary" type="button">Ver detalhes</button>
+    </section>
+
+    <section class="workspace">
+      <section class="new-cost-card" aria-labelledby="tituloNovoCusto">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Lancamento</span>
+            <h2 id="tituloNovoCusto">Novo custo</h2>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <label class="field">
+            <span>Tipo de custo</span>
+            <select>
+              <option>Preparacao</option>
+              <option>Lavagem</option>
+              <option>Transporte</option>
+              <option>Manutencao</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Valor</span>
+            <input type="number" value="85.00" min="0" step="0.01">
+          </label>
+
+          <label class="field">
+            <span>Data</span>
+            <input type="date" value="2026-05-16">
+          </label>
+
+          <label class="field field-wide">
+            <span>Observacao</span>
+            <input type="text" placeholder="Ex.: Reparo na presilha do farol" value="Reparo na presilha e limpeza final">
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="button">Salvar custo</button>
+        </div>
+      </section>
+
+      <section class="cost-list-card" aria-labelledby="tituloCustos">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Historico</span>
+            <h2 id="tituloCustos">Custos cadastrados</h2>
+            <p>Mais recentes aparecem primeiro.</p>
+          </div>
+        </div>
+
+        <div class="cost-table-head">
+          <span>Data</span>
+          <span>Tipo</span>
+          <span>Valor</span>
+          <span>Observacao</span>
+          <span>Acoes</span>
+        </div>
+
+        <article class="cost-line">
+          <time datetime="2026-05-16">16/05/2026</time>
+          <span class="cost-type">Preparacao</span>
+          <strong class="cost-value">R$ 85,00</strong>
+          <p>Reparo na presilha e limpeza final.</p>
+          <div class="line-actions">
+            <button class="btn btn-small" type="button">Editar</button>
+            <button class="btn btn-small btn-danger" type="button">Excluir</button>
+          </div>
+        </article>
+
+        <article class="cost-line">
+          <time datetime="2026-05-14">14/05/2026</time>
+          <span class="cost-type">Transporte</span>
+          <strong class="cost-value">R$ 35,00</strong>
+          <p>Retirada da peca no fornecedor.</p>
+          <div class="line-actions">
+            <button class="btn btn-small" type="button">Editar</button>
+            <button class="btn btn-small btn-danger" type="button">Excluir</button>
+          </div>
+        </article>
+
+        <article class="cost-line cost-line--confirm">
+          <time datetime="2026-05-12">12/05/2026</time>
+          <span class="cost-type">Lavagem</span>
+          <strong class="cost-value">R$ 20,00</strong>
+          <p>Confirmar exclusao antes de remover este custo.</p>
+          <div class="line-actions">
+            <button class="btn btn-small" type="button">Editar</button>
+            <button class="btn btn-small btn-danger" type="button">Excluir</button>
+          </div>
+          <div class="delete-confirm">
+            <span>Excluir este custo?</span>
+            <button class="btn btn-small btn-danger" type="button">Confirmar exclusao</button>
+            <button class="btn btn-small" type="button">Cancelar</button>
+          </div>
+        </article>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
