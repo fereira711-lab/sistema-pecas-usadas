@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalhes da Venda</title>
+  <title>Detalhes da venda</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body data-auth="protected" class="auth-checking ui-soft-dark sale-detail-page">
   <header class="page-header">
     <div>
-      <p class="hero__tag">Vendas operacionais</p>
-      <h1>Extrato da venda</h1>
+      <p class="hero__tag">Extrato da venda</p>
+      <h1>Detalhes da venda</h1>
       <p class="hero__description">
         Consulte o extrato completo de uma venda registrada.
       </p>
@@ -21,19 +21,18 @@
     <section class="stock-card sale-detail-shell">
       <div class="stock-header sale-detail-header">
         <div>
-          <span class="piece-form-eyebrow">Dados da venda</span>
-          <h2 id="tituloVenda">Venda</h2>
+          <span class="piece-form-eyebrow">Extrato da venda</span>
+          <h2 id="tituloVenda">Detalhes da venda</h2>
           <p id="subtituloVenda">Venda selecionada no historico.</p>
         </div>
         <div class="form-actions">
           <button type="button" id="botaoEditarVenda" class="button-secondary">Editar venda</button>
-          <a class="button-secondary" href="historico-vendas.html">Voltar para historico</a>
-          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+          <a class="button-secondary" href="historico-vendas.html">Voltar ao historico</a>
         </div>
       </div>
 
       <p id="mensagemVendaNaoEncontrada" class="empty-message"></p>
-      <div id="dadosVenda" class="detail-grid"></div>
+      <div id="resumoRapidoVenda" class="summary-grid summary-grid--compact sale-detail-result-grid" aria-label="Resumo rapido da venda"></div>
     </section>
 
     <section class="stock-card section-spaced sale-detail-section">
@@ -46,7 +45,18 @@
       </div>
 
       <p id="mensagemProdutoVenda" class="empty-message"></p>
-      <div id="dadosProdutoVenda" class="detail-grid"></div>
+      <div id="dadosProdutoVenda" class="sale-detail-product"></div>
+    </section>
+
+    <section class="stock-card section-spaced sale-detail-section">
+      <div class="stock-header sale-detail-section__header">
+        <div>
+          <span class="piece-form-eyebrow">Dados</span>
+          <h2>Dados da venda</h2>
+        </div>
+      </div>
+
+      <div id="dadosVenda" class="detail-grid"></div>
     </section>
 
     <section class="stock-card section-spaced sale-detail-section">
@@ -93,7 +103,6 @@
               <th>Quantidade</th>
               <th>Custo unitario</th>
               <th>Custo total</th>
-              <th>Status</th>
             </tr>
           </thead>
           <tbody id="tabelaCustoFifoVenda"></tbody>
@@ -109,21 +118,21 @@
         </div>
       </div>
 
-      <div class="summary-grid summary-grid--compact sale-detail-result-grid" id="resumoFinanceiroVenda" aria-label="Resultado da venda"></div>
+      <div id="resumoFinanceiroVenda" class="sale-detail-result-text" aria-label="Resultado da venda"></div>
     </section>
 
     <section class="stock-card section-spaced sale-detail-section">
       <div class="stock-header sale-detail-section__header">
         <div>
-          <span class="piece-form-eyebrow">Observacoes e edicao</span>
-          <h2>Observacoes / edicao</h2>
+          <span class="piece-form-eyebrow">Ajustes permitidos</span>
+          <h2>Ajustes permitidos</h2>
         </div>
       </div>
 
       <div id="dadosObservacoesVenda" class="detail-grid"></div>
 
       <form id="formEditarVenda" class="edit-panel" hidden>
-        <p class="form-note">A quantidade vendida e o consumo FIFO ficam bloqueados para preservar o estoque.</p>
+        <p class="form-note">A quantidade vendida e o consumo FIFO ficam protegidos neste extrato.</p>
 
         <div class="form-row">
           <div class="form-group">
@@ -136,21 +145,6 @@
             <input id="editarVendaCanal" type="text">
           </div>
         </div>
-
-        <section class="optional-fields">
-          <div class="stock-header">
-            <div>
-              <h2>Custos da venda</h2>
-              <p>Edite custos sem alterar quantidade vendida nem consumo FIFO.</p>
-            </div>
-          </div>
-
-          <div id="editarListaCustosVenda" class="cost-lines"></div>
-
-          <div class="form-actions">
-            <button id="botaoEditarAdicionarCustoVenda" type="button" class="button-secondary">+ Adicionar custo</button>
-          </div>
-        </section>
 
         <div class="form-actions">
           <button type="submit" class="button-primary">Salvar venda</button>
@@ -165,7 +159,7 @@
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=29"></script>
   <script src="../js/financeiro-utils.js?v=1"></script>
-  <script src="../js/detalhes-venda.js?v=16"></script>
+  <script src="../js/detalhes-venda.js?v=17"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

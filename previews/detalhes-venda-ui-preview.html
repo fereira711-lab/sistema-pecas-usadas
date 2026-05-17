@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Detalhes da venda</title>
+  <link rel="stylesheet" href="detalhes-venda-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Extrato da venda</span>
+        <h1>Detalhes da venda</h1>
+        <p>Extrato completo da venda registrada.</p>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn" type="button">Voltar ao historico</button>
+        <button class="btn btn-primary" type="button">Editar venda</button>
+      </div>
+    </header>
+
+    <section class="summary-strip" aria-label="Resumo financeiro da venda">
+      <article>
+        <span>Receita</span>
+        <strong>R$ 480,00</strong>
+      </article>
+      <article>
+        <span>Custo FIFO</span>
+        <strong>R$ 220,00</strong>
+      </article>
+      <article>
+        <span>Custos da venda</span>
+        <strong>R$ 34,00</strong>
+      </article>
+      <article class="summary-profit">
+        <span>Lucro</span>
+        <strong>R$ 226,00</strong>
+      </article>
+      <article>
+        <span>Margem</span>
+        <strong>47,1%</strong>
+      </article>
+    </section>
+
+    <section class="product-card" aria-labelledby="tituloProduto">
+      <div class="card-header">
+        <div>
+          <span class="eyebrow">Produto vendido</span>
+          <h2 id="tituloProduto">Motor de partida Corolla 2016</h2>
+        </div>
+        <button class="btn btn-secondary" type="button">Ver produto</button>
+      </div>
+
+      <div class="product-line">
+        <div class="piece-image" aria-hidden="true">IMG</div>
+        <div class="piece-info">
+          <span class="sku">SKU MOT-118</span>
+          <strong>Motor de partida Corolla 2016</strong>
+          <small>Origem: Compra lote ORI-000142</small>
+        </div>
+        <div class="metric">
+          <span>Qtd.</span>
+          <strong>1</strong>
+        </div>
+        <div class="metric">
+          <span>Unitario</span>
+          <strong>R$ 480,00</strong>
+        </div>
+        <div class="metric metric-total">
+          <span>Total</span>
+          <strong>R$ 480,00</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <section class="info-card" aria-labelledby="tituloDados">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Dados</span>
+            <h2 id="tituloDados">Dados da venda</h2>
+          </div>
+          <span class="badge badge-ok">Registrada</span>
+        </div>
+
+        <div class="info-list">
+          <div>
+            <span>Data da venda</span>
+            <strong>17/05/2026</strong>
+          </div>
+          <div>
+            <span>Canal</span>
+            <strong>Mercado Livre</strong>
+          </div>
+          <div class="info-wide">
+            <span>Observacao</span>
+            <strong>Cliente retirou no balcao apos confirmacao do pagamento.</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-card" aria-labelledby="tituloCustos">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Custos operacionais</span>
+            <h2 id="tituloCustos">Custos da venda</h2>
+          </div>
+          <strong class="card-total">R$ 34,00</strong>
+        </div>
+
+        <div class="cost-list">
+          <article class="cost-line">
+            <span>Taxa marketplace</span>
+            <strong>R$ 28,00</strong>
+            <p>Taxa do canal da venda.</p>
+          </article>
+          <article class="cost-line">
+            <span>Embalagem</span>
+            <strong>R$ 6,00</strong>
+            <p>Caixa reforcada para envio.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="info-card fifo-card" aria-labelledby="tituloFifo">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Consumo de estoque</span>
+            <h2 id="tituloFifo">Consumo FIFO</h2>
+          </div>
+          <span class="badge badge-fifo">FIFO calculado</span>
+        </div>
+
+        <div class="fifo-head">
+          <span>Entrada</span>
+          <span>Data</span>
+          <span>Qtd.</span>
+          <span>Custo unit.</span>
+          <span>Custo total</span>
+        </div>
+
+        <article class="fifo-line">
+          <strong>ENT-000328</strong>
+          <time datetime="2026-04-22">22/04/2026</time>
+          <span>1</span>
+          <span>R$ 220,00</span>
+          <strong>R$ 220,00</strong>
+        </article>
+      </section>
+
+      <section class="info-card result-card" aria-labelledby="tituloResultado">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Conferencia</span>
+            <h2 id="tituloResultado">Resultado da venda</h2>
+          </div>
+        </div>
+
+        <div class="result-detail">
+          <p>Receita de R$ 480,00 menos R$ 220,00 de custo FIFO e R$ 34,00 de custos da venda.</p>
+          <strong>Resultado final: R$ 226,00 de lucro, margem de 47,1%.</strong>
+        </div>
+
+        <p class="fifo-note">Se nao houver consumo FIFO registrado, este bloco deve mostrar: Custo nao calculado.</p>
+      </section>
+
+      <section class="info-card edit-card" aria-labelledby="tituloEdicao">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Ajustes permitidos</span>
+            <h2 id="tituloEdicao">Edicao e observacoes</h2>
+          </div>
+        </div>
+
+        <div class="edit-grid">
+          <label class="field">
+            <span>Data da venda</span>
+            <input type="date" value="2026-05-17">
+          </label>
+          <label class="field">
+            <span>Canal</span>
+            <select>
+              <option>Mercado Livre</option>
+              <option>Balcao</option>
+              <option>WhatsApp</option>
+            </select>
+          </label>
+          <label class="field field-wide">
+            <span>Observacao</span>
+            <input type="text" value="Cliente retirou no balcao apos confirmacao do pagamento.">
+          </label>
+        </div>
+
+        <p class="edit-note">Quantidade vendida e consumo FIFO ficam protegidos neste extrato e nao devem ser alterados aqui.</p>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="button">Salvar edicao</button>
+          <button class="btn" type="button">Cancelar</button>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
