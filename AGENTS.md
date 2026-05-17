@@ -51,6 +51,17 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo FIFO, margem ou resultado financeiro.
 - Analise financeira deve ficar em detalhes, painel e telas de analise.
 
+## Padrao da tela Custo de peca
+
+- `paginas/cadastro-custo.html` usa fluxo operacional vertical.
+- Ordem da tela: Buscar peca, Dados da peca selecionada, Novo custo e Historico de custos cadastrados.
+- A tela e focada em localizar peca, lancar custo, editar custo e excluir custo.
+- Historico fica abaixo do formulario, em lista compacta sem barra horizontal.
+- Cada custo deve mostrar data, tipo, valor, observacao e acoes `Editar` e `Excluir`.
+- Exclusao exige confirmacao antes de remover do Supabase.
+- Custo de peca pode mostrar valores de custo lancados, mas nao deve virar analise financeira pesada.
+- Evitar layout dividido em duas colunas quando apertar o conteudo.
+
 ## Tarefas grandes
 
 Antes de executar uma tarefa grande:
@@ -88,6 +99,7 @@ Fluxo recomendado:
 3. validar visualmente
 4. ajustar
 5. aplicar na tela real somente depois de aprovado
+6. testar e documentar o padrao aplicado
 
 Observacao: o preview `produtos-lista-ui-preview` foi usado como base para validar a UX/UI da lista operacional compacta antes de aplicar em `paginas/produtos.html`.
 

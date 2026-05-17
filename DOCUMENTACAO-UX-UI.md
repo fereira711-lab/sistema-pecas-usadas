@@ -125,6 +125,28 @@ O comando de editar dados deve ficar dentro da central/detalhes do produto, aces
 
 A lista de Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo FIFO, margem ou resultado financeiro. Essas informacoes pertencem a detalhes, painel ou analises.
 
+### Custo de peca
+
+A tela `cadastro-custo.html` e operacional. Ela pode mostrar valores de custo lancados, porque sua funcao e registrar, editar e excluir custos vinculados a uma peca.
+
+Fluxo UX aprovado:
+
+- Buscar peca.
+- Dados da peca selecionada.
+- Novo custo.
+- Historico de custos cadastrados.
+
+Regras:
+
+- Usar fluxo vertical, evitando duas colunas grandes quando isso apertar o conteudo.
+- Manter formulario compacto e com campos alinhados.
+- Historico sempre abaixo do formulario.
+- Historico em lista compacta sem barra horizontal.
+- Custos ordenados do mais recente para o mais antigo.
+- Cada item mostra data, tipo, valor, observacao curta, `Editar` e `Excluir`.
+- Exclusao exige confirmacao visual antes de remover do Supabase.
+- Nao transformar a tela em analise financeira pesada.
+
 ### Telas de detalhes
 
 Telas que concentram o contexto completo de uma entidade.
@@ -378,6 +400,7 @@ Exemplos:
 ### Laboratorio visual
 
 - Usar `previews/` para testar ideias visuais antes de aplicar em paginas reais.
+- Para mudancas grandes de tela: criar prototipo visual, avaliar UX/UI, aplicar na tela real, testar e documentar.
 - Usar `DESIGN-SYSTEM.md` para registrar padroes aprovados.
 - Validar uma tela por vez antes de espalhar o mesmo padrao.
 - Evitar transformar testes visuais em regra definitiva sem revisar o impacto operacional.

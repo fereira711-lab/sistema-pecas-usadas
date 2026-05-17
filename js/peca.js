@@ -61,6 +61,15 @@ function obterMensagemErroSupabase(erro) {
   return erro?.message || erro?.details || erro?.hint || "erro desconhecido";
 }
 
+function obterDataLocalHoje() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 function obterOrigemIdDaUrl() {
   const parametros = new URLSearchParams(window.location.search);
   return Number(parametros.get("origemId") || 0);
@@ -300,7 +309,7 @@ function montarEntradaEstoque(peca, origem, quantidade, custoUnitario) {
     quantidadeTotal: quantidade,
     quantidadeConsumida: 0,
     custoUnitario,
-    dataEntrada: origem.dataCompra || new Date().toISOString().slice(0, 10),
+    dataEntrada: origem.dataCompra || obterDataLocalHoje(),
     sku: peca.sku,
     nomePeca: peca.nome,
     origemDescricao: origem.descricao || ""

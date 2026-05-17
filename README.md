@@ -73,6 +73,19 @@ Nao mostrar na lista de Produtos:
 
 Analise financeira deve ficar em detalhes, painel e telas de analise.
 
+## Custo de peca
+
+A pagina `paginas/cadastro-custo.html` usa fluxo operacional vertical:
+
+- Buscar peca.
+- Dados da peca selecionada.
+- Novo custo.
+- Historico de custos cadastrados.
+
+Ela serve para localizar uma peca, lancar custo, editar custo e excluir custo. O historico fica abaixo do formulario, em lista compacta sem barra horizontal, mostrando data, tipo, valor, observacao e acoes `Editar` e `Excluir`.
+
+Custo de peca pode mostrar valores de custo lancados. Produtos continua sem mostrar custo, lucro, margem ou resultado financeiro.
+
 ## Regras financeiras
 
 - FIFO e a fonte oficial de custo real.

@@ -34,6 +34,15 @@
     return clienteSupabase;
   }
 
+  function obterDataLocalHoje() {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+    const dia = String(hoje.getDate()).padStart(2, "0");
+
+    return `${ano}-${mes}-${dia}`;
+  }
+
   function formatarCodigoOrigem(valor) {
     return `ORI-${String(valor || "").padStart(6, "0")}`;
   }
@@ -78,7 +87,7 @@
       custo_total: Number(custoTotal || 0),
       custo_tipo: origem.custoTipo || null,
       valor_pago: Number(custoTotal || 0),
-      data_compra: origem.dataCompra || new Date().toISOString().slice(0, 10),
+      data_compra: origem.dataCompra || obterDataLocalHoje(),
       observacoes: origem.observacoes || null
     };
   }
@@ -236,7 +245,7 @@
       descricao: custo.descricao || null,
       observacoes: custo.observacoes || custo.observacao || null,
       valor: Number(custo.valor || 0),
-      data_custo: custo.dataCusto || custo.data || new Date().toISOString().slice(0, 10)
+      data_custo: custo.dataCusto || custo.data || obterDataLocalHoje()
     };
   }
 
@@ -285,7 +294,7 @@
       quantidade_vendida: quantidadeVendida,
       valor_unitario: valorUnitario,
       canal_venda: venda.canalVenda || null,
-      data_venda: venda.dataVenda || new Date().toISOString().slice(0, 10)
+      data_venda: venda.dataVenda || obterDataLocalHoje()
     };
   }
 
@@ -316,7 +325,7 @@
       descricao: custo.descricao || null,
       observacoes: custo.observacoes || custo.observacao || null,
       valor: Number(custo.valor || 0),
-      data_custo: custo.dataCusto || custo.data || new Date().toISOString().slice(0, 10)
+      data_custo: custo.dataCusto || custo.data || obterDataLocalHoje()
     };
   }
 
@@ -363,7 +372,7 @@
       quantidade_total: Number(entrada.quantidadeTotal),
       quantidade_consumida: Number(entrada.quantidadeConsumida || 0),
       custo_unitario: Number(entrada.custoUnitario || 0),
-      data_entrada: entrada.dataEntrada || new Date().toISOString().slice(0, 10)
+      data_entrada: entrada.dataEntrada || obterDataLocalHoje()
     };
   }
 
@@ -996,7 +1005,7 @@
         descricao: custo.descricao || null,
         observacoes: custo.observacoes || custo.observacao || null,
         valor: Number(custo.valor || 0),
-        data_custo: custo.dataCusto || custo.data || new Date().toISOString().slice(0, 10)
+        data_custo: custo.dataCusto || custo.data || obterDataLocalHoje()
       })
       .eq("id", custo.id)
       .select("*, tipos_custo:tipo_custo_id(nome)")

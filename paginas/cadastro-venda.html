@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastrar Venda</title>
+  <title>Cadastro de venda</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body data-auth="protected" class="auth-checking ui-soft-dark sale-cadastro-page">
   <header class="page-header">
     <div>
       <p class="hero__tag">Venda operacional</p>
-      <h1>Cadastrar venda</h1>
+      <h1>Cadastro de venda</h1>
       <p class="hero__description">
-        Registre a saida de uma peca mantendo o fluxo atual de estoque e custos.
+        Registre venda, custos da venda e baixa de estoque via FIFO.
       </p>
     </div>
   </header>
@@ -22,7 +22,7 @@
       <div class="piece-form-top">
         <div>
           <span class="piece-form-eyebrow">Cadastro operacional</span>
-          <h2>Nova venda</h2>
+          <h2>Venda operacional</h2>
           <p>Selecione o produto, informe os dados da venda e revise antes de salvar.</p>
         </div>
         <span class="piece-status-chip">FIFO preservado</span>
@@ -33,7 +33,7 @@
           <div class="form-section__header">
             <div>
               <h3>Produto vendido</h3>
-              <p>Busque a peca pelo nome ou SKU e selecione um item com estoque disponivel.</p>
+              <p>Busque a peca pelo nome ou SKU e confira o estoque antes de vender.</p>
             </div>
           </div>
 
@@ -58,24 +58,29 @@
           </div>
 
           <div class="form-fields">
-            <div class="form-group field-span-4">
+            <div class="form-group field-span-6">
               <label for="quantidadeVendidaNaVenda">Quantidade</label>
               <input id="quantidadeVendidaNaVenda" type="number" min="1" placeholder="Quantidade vendida">
             </div>
 
-            <div class="form-group field-span-4">
+            <div class="form-group field-span-6">
               <label for="valorVenda">Valor unitario</label>
               <input id="valorVenda" type="number" min="0" step="0.01" placeholder="0,00">
             </div>
 
-            <div class="form-group field-span-4">
+            <div class="form-group field-span-6">
               <label for="canalVenda">Canal da venda</label>
               <input id="canalVenda" placeholder="Ex.: balcao, WhatsApp, Mercado Livre">
             </div>
 
-            <div class="form-group field-span-4">
+            <div class="form-group field-span-6">
               <label for="dataVenda">Data da venda</label>
               <input id="dataVenda" name="data_venda" type="date" required>
+            </div>
+
+            <div class="form-group field-span-12">
+              <label for="observacoesVenda">Observacao</label>
+              <input id="observacoesVenda" type="text" placeholder="Observacao curta da venda">
             </div>
           </div>
         </section>
@@ -83,7 +88,7 @@
         <section class="form-section sale-section">
           <div class="form-section__header">
             <div>
-              <h3>Custos adicionais da venda</h3>
+              <h3>Custos da venda</h3>
               <p>Opcional. Use apenas quando houver frete, embalagem, taxa ou outro custo da venda.</p>
             </div>
           </div>
@@ -119,14 +124,14 @@
             </div>
           </div>
 
-          <p class="sale-fifo-note">O custo real da peca sera calculado pelo FIFO depois de salvar a venda.</p>
+          <p class="sale-fifo-note">O custo real da peça será calculado pelo FIFO após salvar.</p>
         </section>
       </div>
 
       <div class="form-actions sale-form-actions">
         <button type="button" class="button-primary" onclick="salvarVenda()">Salvar venda</button>
+        <button type="button" class="button-secondary" onclick="limparFormularioVenda()">Limpar</button>
         <a class="button-secondary" href="historico-vendas.html">Ver vendas</a>
-        <a class="button-secondary" href="../index.html">Voltar para o painel</a>
       </div>
 
       <p id="mensagemVenda" class="form-message" aria-live="polite"></p>
@@ -137,7 +142,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=29"></script>
-  <script src="../js/venda.js?v=19"></script>
+  <script src="../js/venda.js?v=20"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

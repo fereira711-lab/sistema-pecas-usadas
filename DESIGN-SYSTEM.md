@@ -321,6 +321,29 @@ Regras visuais:
 - Badges suaves; `Estoque baixo` e `Sem estoque` devem chamar mais atencao que `Em estoque`.
 - Dourado apenas como detalhe discreto, principalmente em SKU e pequenos acentos.
 
+### Tela operacional de custo de peca
+
+`cadastro-custo.html` segue fluxo vertical para evitar layout apertado:
+
+1. Buscar peca.
+2. Dados da peca selecionada.
+3. Novo custo.
+4. Historico de custos cadastrados.
+
+Padroes:
+
+- Blocos verticais bem separados.
+- Formulario compacto, com campos alinhados em duas colunas quando houver espaco.
+- Historico abaixo do formulario.
+- Lista compacta sem barra horizontal.
+- Cada custo mostra data, tipo, valor, observacao e acoes.
+- Acoes por item: `Editar` e `Excluir`.
+- Exclusao deve pedir confirmacao antes de remover do Supabase.
+- Dourado apenas como destaque discreto.
+- Evitar layout dividido em duas colunas quando apertar o conteudo.
+
+Custo de peca pode exibir valores de custo lancados. Isso e diferente de Produtos, que continua sem exibir custo, lucro, margem ou resultado financeiro.
+
 ## Tabelas
 
 Padrao:

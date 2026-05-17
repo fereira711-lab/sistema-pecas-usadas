@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Cadastro de venda</title>
+  <link rel="stylesheet" href="cadastro-venda-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Vendas</span>
+        <h1>Cadastro de venda</h1>
+        <p>Registre venda, custos adicionais e baixa de estoque via FIFO.</p>
+      </div>
+    </header>
+
+    <section class="product-card" aria-labelledby="tituloProduto">
+      <div class="card-header">
+        <div>
+          <span class="eyebrow">Produto vendido</span>
+          <h2 id="tituloProduto">Selecionar peca</h2>
+        </div>
+        <span class="stock-badge stock-badge--low">Estoque baixo</span>
+      </div>
+
+      <label class="field field-search">
+        <span>Buscar peca</span>
+        <input type="search" value="SKU MOT-118" placeholder="Buscar por SKU, nome ou codigo">
+      </label>
+
+      <div class="selected-product">
+        <div class="piece-image" aria-hidden="true">IMG</div>
+        <div class="piece-info">
+          <span class="sku">SKU MOT-118</span>
+          <strong>Motor de partida Corolla 2016</strong>
+          <small>Preco de venda: R$ 480,00</small>
+        </div>
+        <div class="stock-box">
+          <span>Estoque disponivel</span>
+          <strong>2</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <section class="form-card" aria-labelledby="tituloVenda">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Dados principais</span>
+            <h2 id="tituloVenda">Dados da venda</h2>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <label class="field">
+            <span>Quantidade vendida</span>
+            <input id="quantidadeVenda" type="number" value="1" min="1">
+          </label>
+
+          <label class="field">
+            <span>Valor unitario</span>
+            <input id="valorUnitario" type="number" value="480.00" min="0" step="0.01">
+          </label>
+
+          <label class="field">
+            <span>Canal de venda</span>
+            <select id="tipoCusto">
+              <option>Mercado Livre</option>
+              <option>Balcao</option>
+              <option>WhatsApp</option>
+              <option>Oficina parceira</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Data da venda</span>
+            <input type="date" value="2026-05-16">
+          </label>
+
+          <label class="field field-wide">
+            <span>Observacao</span>
+            <input type="text" value="Cliente retirou no balcao" placeholder="Observacao curta da venda">
+          </label>
+        </div>
+      </section>
+
+      <section class="cost-card" aria-labelledby="tituloCustos">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Opcional</span>
+            <h2 id="tituloCustos">Custos da venda</h2>
+          </div>
+        </div>
+
+        <div class="cost-form">
+          <label class="field">
+            <span>Tipo de custo</span>
+            <select>
+              <option>Comissao</option>
+              <option>Frete</option>
+              <option>Embalagem</option>
+              <option>Taxa do canal</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Valor</span>
+            <input id="valorCusto" type="number" value="28.00" min="0" step="0.01">
+          </label>
+
+          <label class="field field-wide">
+            <span>Observacao</span>
+            <input id="observacaoCusto" type="text" value="Taxa de venda do canal" placeholder="Ex.: taxa, frete, embalagem">
+          </label>
+
+          <button id="adicionarCusto" class="btn btn-secondary" type="button">Adicionar custo</button>
+        </div>
+
+        <div id="listaCustos" class="added-costs">
+          <article class="cost-line" data-valor="28">
+            <span>Taxa do canal</span>
+            <strong>R$ 28,00</strong>
+            <button class="btn btn-small btn-ghost" type="button">Remover</button>
+          </article>
+          <article class="cost-line" data-valor="6">
+            <span>Embalagem</span>
+            <strong>R$ 6,00</strong>
+            <button class="btn btn-small btn-ghost" type="button">Remover</button>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <section class="summary-card" aria-labelledby="tituloResumo">
+      <div>
+        <span class="eyebrow">Conferencia</span>
+        <h2 id="tituloResumo">Resumo antes de salvar</h2>
+      </div>
+
+      <div class="summary-grid">
+        <div>
+          <span>Quantidade</span>
+          <strong id="resumoQuantidade">1 unidade</strong>
+        </div>
+        <div>
+          <span>Receita prevista</span>
+          <strong id="resumoReceita">R$ 480,00</strong>
+        </div>
+        <div>
+          <span>Custos da venda</span>
+          <strong id="resumoCustos">R$ 34,00</strong>
+        </div>
+      </div>
+
+      <p class="fifo-note">O custo real da peca sera calculado pelo FIFO apos salvar.</p>
+
+      <div class="page-actions">
+        <button class="btn btn-primary" type="button">Salvar venda</button>
+        <button id="limparFormulario" class="btn" type="button">Limpar</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const dinheiro = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+
+    const quantidadeVenda = document.querySelector('#quantidadeVenda');
+    const valorUnitario = document.querySelector('#valorUnitario');
+    const tipoCusto = document.querySelector('#tipoCusto');
+    const valorCusto = document.querySelector('#valorCusto');
+    const observacaoCusto = document.querySelector('#observacaoCusto');
+    const adicionarCusto = document.querySelector('#adicionarCusto');
+    const listaCustos = document.querySelector('#listaCustos');
+    const resumoQuantidade = document.querySelector('#resumoQuantidade');
+    const resumoReceita = document.querySelector('#resumoReceita');
+    const resumoCustos = document.querySelector('#resumoCustos');
+    const limparFormulario = document.querySelector('#limparFormulario');
+
+    function atualizarResumo() {
+      const quantidade = Number(quantidadeVenda.value) || 0;
+      const valor = Number(valorUnitario.value) || 0;
+      const totalCustos = [...listaCustos.querySelectorAll('.cost-line')]
+        .reduce((total, item) => total + (Number(item.dataset.valor) || 0), 0);
+
+      resumoQuantidade.textContent = quantidade === 1 ? '1 unidade' : `${quantidade} unidades`;
+      resumoReceita.textContent = dinheiro.format(quantidade * valor);
+      resumoCustos.textContent = dinheiro.format(totalCustos);
+    }
+
+    function criarLinhaCusto(tipo, valor) {
+      const linha = document.createElement('article');
+      linha.className = 'cost-line';
+      linha.dataset.valor = String(valor);
+      linha.innerHTML = `
+        <span>${tipo}</span>
+        <strong>${dinheiro.format(valor)}</strong>
+        <button class="btn btn-small btn-ghost" type="button">Remover</button>
+      `;
+      return linha;
+    }
+
+    adicionarCusto.addEventListener('click', () => {
+      const valor = Number(valorCusto.value) || 0;
+      if (valor <= 0) {
+        valorCusto.focus();
+        return;
+      }
+
+      const tipo = observacaoCusto.value.trim()
+        ? `${tipoCusto.value} - ${observacaoCusto.value.trim()}`
+        : tipoCusto.value;
+
+      listaCustos.appendChild(criarLinhaCusto(tipo, valor));
+      valorCusto.value = '';
+      observacaoCusto.value = '';
+      valorCusto.focus();
+      atualizarResumo();
+    });
+
+    listaCustos.addEventListener('click', (event) => {
+      if (!event.target.matches('button')) return;
+      event.target.closest('.cost-line').remove();
+      atualizarResumo();
+    });
+
+    quantidadeVenda.addEventListener('input', atualizarResumo);
+    valorUnitario.addEventListener('input', atualizarResumo);
+
+    limparFormulario.addEventListener('click', () => {
+      quantidadeVenda.value = '1';
+      valorUnitario.value = '480.00';
+      valorCusto.value = '';
+      observacaoCusto.value = '';
+      listaCustos.innerHTML = '';
+      atualizarResumo();
+    });
+  </script>
+</body>
+</html>

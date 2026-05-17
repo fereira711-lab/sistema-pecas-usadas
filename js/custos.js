@@ -94,6 +94,23 @@ function normalizarNomeTipoCusto(nome) {
   return String(nome || "").trim().toLowerCase();
 }
 
+function obterDataLocalHoje() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+function preencherDataCustoPadrao() {
+  const campoDataCusto = document.getElementById("dataCusto");
+
+  if (campoDataCusto && !campoDataCusto.value) {
+    campoDataCusto.value = obterDataLocalHoje();
+  }
+}
+
 function buscarTiposCustoLocais() {
   const tipos = JSON.parse(localStorage.getItem("tiposCusto")) || [];
 
@@ -737,6 +754,7 @@ function cancelarEdicaoCusto() {
   custoEmEdicaoId = null;
   formularioCusto.reset();
   renderizarTiposCusto();
+  preencherDataCustoPadrao();
   renderizarResumoProduto();
   botaoSalvarCusto.textContent = "Salvar custo";
   botaoCancelarEdicaoCusto.hidden = true;
@@ -991,6 +1009,7 @@ async function excluirCusto(custoId) {
 }
 
 async function iniciarTelaCustos() {
+  preencherDataCustoPadrao();
   await carregarTiposCusto();
   await carregarProdutos();
   await carregarOrigensParaCustos();

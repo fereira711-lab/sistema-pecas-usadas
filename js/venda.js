@@ -90,6 +90,46 @@ function formatarMoedaVenda(valor) {
   });
 }
 
+function obterPrecoVendaPeca(peca) {
+  return Number(peca.precoVenda || peca.preco_venda || peca.valorVenda || peca.valor_venda || peca.preco_sugerido || 0);
+}
+
+function obterImagemPecaVenda(peca) {
+  return String(peca.imagemUrl || peca.imagem_url || "").trim();
+}
+
+function renderizarImagemPecaVenda(peca) {
+  const imagemUrl = obterImagemPecaVenda(peca);
+  const nome = peca.nome || peca.nome_peca || "peca";
+
+  if (imagemUrl) {
+    return `<img src="${escaparHtml(imagemUrl)}" alt="Imagem de ${escaparHtml(nome)}" loading="lazy">`;
+  }
+
+  return "<span>IMG</span>";
+}
+
+function obterStatusEstoqueVenda(quantidadeDisponivel) {
+  if (quantidadeDisponivel <= 0) {
+    return {
+      texto: "Sem estoque",
+      classe: "sale-stock-badge sale-stock-badge--empty"
+    };
+  }
+
+  if (quantidadeDisponivel <= 2) {
+    return {
+      texto: "Estoque baixo",
+      classe: "sale-stock-badge sale-stock-badge--low"
+    };
+  }
+
+  return {
+    texto: "Em estoque",
+    classe: "sale-stock-badge sale-stock-badge--ok"
+  };
+}
+
 function destacarBusca(texto) {
   const termo = String(campoBuscaPecaVenda?.value || "").trim();
   const textoSeguro = escaparHtml(texto);
@@ -281,18 +321,22 @@ function renderizarResumoPecaVenda(peca) {
   }
 
   const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
+  const precoVenda = obterPrecoVendaPeca(peca);
+  const statusEstoque = obterStatusEstoqueVenda(quantidadeDisponivel);
+
   resumoPecaVenda.innerHTML = `
-    <article>
-      <span>SKU</span>
-      <strong>${escaparHtml(peca.sku || "-")}</strong>
-    </article>
-    <article>
-      <span>Peca</span>
-      <strong>${escaparHtml(peca.nome || "-")}</strong>
-    </article>
-    <article>
-      <span>Estoque disponivel</span>
-      <strong>${quantidadeDisponivel}</strong>
+    <article class="sale-selected-product">
+      <div class="sale-selected-product__image">${renderizarImagemPecaVenda(peca)}</div>
+      <div class="sale-selected-product__info">
+        <span>SKU ${escaparHtml(peca.sku || "-")}</span>
+        <strong>${escaparHtml(peca.nome || "-")}</strong>
+        <small>Preco de venda: ${precoVenda > 0 ? formatarMoedaVenda(precoVenda) : "Nao informado"}</small>
+      </div>
+      <div class="sale-selected-product__stock">
+        <span>Estoque disponivel</span>
+        <strong>${quantidadeDisponivel}</strong>
+      </div>
+      <span class="${statusEstoque.classe}">${statusEstoque.texto}</span>
     </article>
   `;
 }
@@ -330,7 +374,7 @@ function lerValorCampo(id) {
   return Number(campo.value);
 }
 
-function obterDataHoje() {
+function obterDataLocalHoje() {
   const hoje = new Date();
   const ano = hoje.getFullYear();
   const mes = String(hoje.getMonth() + 1).padStart(2, "0");
@@ -341,7 +385,7 @@ function obterDataHoje() {
 
 function preencherDataVendaPadrao() {
   if (campoDataVenda && !campoDataVenda.value) {
-    campoDataVenda.value = obterDataHoje();
+    campoDataVenda.value = obterDataLocalHoje();
   }
 }
 
@@ -351,8 +395,8 @@ function criarCustoVenda(tipo, descricao, valor) {
     tipoCusto: tipo,
     descricao,
     valor,
-    data: new Date().toISOString().slice(0, 10),
-    dataCusto: new Date().toISOString().slice(0, 10)
+    data: obterDataLocalHoje(),
+    dataCusto: obterDataLocalHoje()
   };
 }
 
@@ -518,14 +562,21 @@ function selecionarPeca(peca) {
   const campoPeca = obterCampoPeca();
   const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
 
-  if (!campoPeca || quantidadeDisponivel <= 0) {
+  if (!campoPeca) {
+    return;
+  }
+
+  campoBuscaPecaVenda.value = formatarNomePeca(peca);
+  fecharSugestoesVenda();
+  renderizarResumoPecaVenda(peca);
+
+  if (quantidadeDisponivel <= 0) {
+    document.getElementById("quantidadeVendidaNaVenda")?.removeAttribute("max");
+    campoPeca.value = "";
     return;
   }
 
   campoPeca.value = String(peca.id);
-  campoBuscaPecaVenda.value = formatarNomePeca(peca);
-  fecharSugestoesVenda();
-  renderizarResumoPecaVenda(peca);
   atualizarLimiteQuantidadeSelecionada();
 }
 
@@ -785,7 +836,8 @@ function lerVendaDoFormulario() {
     valorVenda: quantidadeVendida * valorUnitario,
     valorTotal: quantidadeVendida * valorUnitario,
     canalVenda: document.getElementById("canalVenda").value.trim(),
-    dataVenda: campoDataVenda?.value || obterDataHoje(),
+    observacoes: document.getElementById("observacoesVenda")?.value.trim() || "",
+    dataVenda: campoDataVenda?.value || obterDataLocalHoje(),
     custosVenda,
     totalCustosVenda
   };
@@ -850,6 +902,7 @@ function limparFormularioVenda() {
   document.getElementById("valorVenda").value = "";
   document.getElementById("quantidadeVendidaNaVenda").value = "";
   document.getElementById("canalVenda").value = "";
+  document.getElementById("observacoesVenda").value = "";
 
   if (campoBuscaPecaVenda) {
     campoBuscaPecaVenda.value = "";
@@ -859,7 +912,7 @@ function limparFormularioVenda() {
   fecharSugestoesVenda();
 
   if (campoDataVenda) {
-    campoDataVenda.value = obterDataHoje();
+    campoDataVenda.value = obterDataLocalHoje();
   }
 
   if (listaCustosVenda) {
@@ -867,6 +920,7 @@ function limparFormularioVenda() {
     adicionarLinhaCustoVenda();
   }
 
+  mostrarMensagemVenda("");
   campoBuscaPecaVenda?.focus();
 
   if (window.location.search) {

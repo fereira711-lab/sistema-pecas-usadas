@@ -158,6 +158,9 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 - A tela de Produtos usa lista operacional compacta com imagem pequena, SKU, nome, preco de venda, quantidade disponivel, status e acoes rapidas. Ela nao deve usar cards grandes como padrao principal.
 - Na lista de Produtos, as acoes principais visiveis sao `Detalhes` e `Vender`. O menu de tres pontos concentra acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir. A edicao dos dados da peca deve ficar dentro da central/detalhes do produto.
 - Produtos continua sendo tela operacional: pode mostrar preco de venda, mas nao deve mostrar lucro, custo FIFO, margem ou resultado financeiro. Analise financeira fica em detalhes, painel e telas de analise.
+- `paginas/cadastro-custo.html` usa fluxo operacional vertical: Buscar peca, Dados da peca selecionada, Novo custo e Historico de custos cadastrados. A tela e focada em localizar a peca, lancar custo, editar custo e excluir custo, sem virar analise financeira pesada.
+- O Historico de custos fica abaixo do formulario, mostra custos do mais recente para o mais antigo, usa lista compacta sem barra horizontal e exibe data, tipo, valor, observacao e acoes `Editar` e `Excluir`.
+- Custo de peca pode mostrar os valores de custo lancados, porque e uma tela operacional de custo. Isso nao muda a regra de Produtos: Produtos continua sem mostrar custo, lucro, margem ou resultado financeiro.
 - Telas operacionais nao devem receber analise financeira pesada.
 
 ## Previews visuais
