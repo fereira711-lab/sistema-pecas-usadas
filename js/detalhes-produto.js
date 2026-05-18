@@ -1048,7 +1048,9 @@ function renderizarNaoEncontrado(mensagem) {
 
 function renderizarDadosProduto(produto) {
   const nomePeca = formatarNomePeca(produto);
-  const quantidadeTotal = obterQuantidadeTotal(produto);
+  const nomeBase = produto.nome || produto.nome_peca || produto.nomeProduto || produto.produtoNome || produto.descricao || nomePeca;
+  const resultado = calcularResultado();
+  const quantidadeVendidaTotal = resultado.quantidadeTotalVendida;
   const quantidadeDisponivel = obterQuantidadeDisponivel(produto);
   const imagemUrl = obterImagemUrlProduto(produto);
   const statusProduto = obterStatusProduto(produto);
@@ -1063,52 +1065,39 @@ function renderizarDadosProduto(produto) {
   }
 
   dadosProduto.innerHTML = `
-    <section class="product-detail-block product-detail-block--image" aria-label="Imagem">
-      <div class="product-detail-block__header">
-        <div>
-          <span class="product-detail-eyebrow">Imagem</span>
-          <h3>Foto da peça</h3>
-        </div>
-      </div>
-      <div class="product-detail-image">
+    <section class="product-detail-main-card" aria-label="Dados principais da peça">
+      <div class="product-detail-photo">
         ${
           imagemUrl
             ? `<img src="${escaparHtml(imagemUrl)}" alt="Imagem de ${escaparHtml(nomePeca)}">`
             : `<span>Sem imagem cadastrada</span>`
         }
       </div>
-    </section>
 
-    <section class="product-detail-block product-detail-block--data" aria-label="Dados da peça">
-      <div class="product-detail-block__header">
-        <div>
-          <span class="product-detail-eyebrow">Dados da peça</span>
-          <h3>${escaparHtml(produto.nome || produto.nome_peca || produto.nomeProduto || "-")}</h3>
-        </div>
+      <div class="product-detail-main-info">
+        <span class="product-detail-eyebrow">${escaparHtml(formatarSku(produto))}</span>
+        <h3>${escaparHtml(nomeBase)}</h3>
+        <p>${escaparHtml(observacoes || "Sem observações cadastradas.")}</p>
+        <div class="product-detail-badges">
         <span class="status-badge ${obterClasseStatusProduto(statusProduto, quantidadeDisponivel)}">${escaparHtml(formatarStatusProduto(statusProduto))}</span>
+          <span class="status-badge status-badge--info">ID ${escaparHtml(produto.id)}</span>
+        </div>
       </div>
-      <div class="detail-grid">
-        <article class="detail-card">
-          <span>SKU</span>
-          <strong>${escaparHtml(formatarSku(produto))}</strong>
-        </article>
-        <article class="detail-card">
-          <span>Quantidade total</span>
-          <strong>${formatarNumero(quantidadeTotal)}</strong>
-        </article>
-        <article class="detail-card">
-          <span>Quantidade disponível</span>
-          <strong>${formatarNumero(quantidadeDisponivel)}</strong>
-        </article>
+
+      <aside class="product-detail-main-metrics" aria-label="Resumo operacional do produto">
         <article class="detail-card">
           <span>Preço de venda</span>
           <strong>${precoVenda > 0 ? formatarMoeda(precoVenda) : "Sem preço"}</strong>
         </article>
-        <article class="detail-card detail-card--wide">
-          <span>Observações</span>
-          <strong>${escaparHtml(observacoes || "-")}</strong>
+        <article class="detail-card">
+          <span>Disponível</span>
+          <strong>${formatarNumero(quantidadeDisponivel)}</strong>
         </article>
-      </div>
+        <article class="detail-card">
+          <span>Total vendido</span>
+          <strong>${formatarNumero(quantidadeVendidaTotal)}</strong>
+        </article>
+      </aside>
     </section>
   `;
 }
@@ -1120,24 +1109,35 @@ function renderizarOrigemVinculada(produto) {
 
   const origemId = obterOrigemIdPrincipal(produto);
   const descricaoOrigem = obterOrigemPrincipal(produto);
+  const primeiraEntrada = contextoProduto.entradas[0] || {};
+  const tipoOrigem = produto.origemTipo || produto.tipoOrigem || produto.tipo_origem || primeiraEntrada.origemTipo || primeiraEntrada.tipoOrigem || primeiraEntrada.tipo_origem || "Origem vinculada";
 
   origemVinculadaProduto.innerHTML = `
     <div class="stock-header product-detail-section__header">
       <div>
+        <span class="product-detail-eyebrow">Origem vinculada</span>
         <h2>Origem vinculada</h2>
         <p>Rastreio operacional da peça.</p>
       </div>
       <div class="form-actions">
-        <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver detalhes da origem</a>
+        <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver origem</a>
       </div>
     </div>
     <div class="detail-grid">
       <article class="detail-card">
-        <span>Origem</span>
+        <span>Código/nome</span>
         <strong>${escaparHtml(descricaoOrigem)}</strong>
       </article>
       <article class="detail-card">
-        <span>ID da origem</span>
+        <span>Tipo</span>
+        <strong>${escaparHtml(tipoOrigem)}</strong>
+      </article>
+      <article class="detail-card detail-card--wide">
+        <span>Descrição</span>
+        <strong>${escaparHtml(descricaoOrigem || "-")}</strong>
+      </article>
+      <article class="detail-card">
+        <span>ID</span>
         <strong>${origemId || "-"}</strong>
       </article>
     </div>
@@ -1150,36 +1150,24 @@ function renderizarResumo() {
 
   resumoFinanceiro.innerHTML = `
     <article class="summary-card">
-      <span>Entradas</span>
-      <strong>${formatarNumero(contextoProduto.entradas.length)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Quantidade total</span>
-      <strong>${formatarNumero(obterQuantidadeTotal(produto))}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Quantidade disponível</span>
+      <span>Estoque atual</span>
       <strong>${formatarNumero(obterQuantidadeDisponivel(produto))}</strong>
     </article>
     <article class="summary-card">
-      <span>Quantidade vendida</span>
+      <span>Total vendido</span>
       <strong>${formatarNumero(resultado.quantidadeTotalVendida)}</strong>
     </article>
-    <article class="summary-card">
-      <span>Custos cadastrados</span>
-      <strong>${formatarNumero(contextoProduto.custosPeca.length)}</strong>
+    <article class="summary-card summary-card--muted">
+      <span>Receita relacionada</span>
+      <strong>${formatarMoeda(resultado.receitaTotal)}</strong>
     </article>
-    <article class="summary-card">
-      <span>Vendas relacionadas</span>
-      <strong>${formatarNumero(contextoProduto.vendas.length)}</strong>
+    <article class="summary-card summary-card--muted">
+      <span>Custo consumido</span>
+      <strong>${formatarValorOuNaoCalculado(resultado.custoEntradasConsumidas)}</strong>
     </article>
-    <article class="summary-card">
-      <span>Última venda</span>
-      <strong>${formatarData(resultado.ultimaVenda)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Origem</span>
-      <strong>${escaparHtml(obterOrigemPrincipal(produto))}</strong>
+    <article class="summary-card summary-card--muted">
+      <span>Custo da peça</span>
+      <strong>${resultado.custoCalculado ? "Custo calculado" : "Custo não calculado"}</strong>
     </article>
   `;
 }
@@ -1198,17 +1186,18 @@ function renderizarEntradas() {
 
   contextoProduto.entradas.forEach(entrada => {
     const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
-    const statusEntrada = obterStatusEntrada(entrada);
+    const valorAtribuido = Number(
+      entrada.valorAtribuido ?? entrada.valor_atribuido ?? entrada.valorAtribuidoEntrada ?? entrada.valor_atribuido_entrada ?? 0
+    ) || Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
-      <td data-label="Origem">${escaparHtml(entrada.origemDescricao || entrada.origemId || "-")}</td>
-      <td data-label="Data entrada">${formatarData(entrada.dataEntrada)}</td>
+      <td data-label="Data">${formatarData(entrada.dataEntrada)}</td>
       <td data-label="Quantidade total">${formatarNumero(entrada.quantidadeTotal)}</td>
-      <td data-label="Quantidade consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
-      <td data-label="Saldo disponível">${formatarNumero(saldo)}</td>
+      <td data-label="Consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
+      <td data-label="Saldo">${formatarNumero(saldo)}</td>
       <td data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
-      <td data-label="Status"><span class="status-badge ${obterClasseStatusEntrada(statusEntrada)}">${escaparHtml(formatarStatusProduto(statusEntrada))}</span></td>
+      <td data-label="Valor atribuído">${formatarMoeda(valorAtribuido)}</td>
     `;
 
     tabelaEntradasProduto.appendChild(linha);
@@ -1265,9 +1254,9 @@ function renderizarVendas() {
 
     linha.innerHTML = `
       <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
-      <td data-label="Quantidade">${formatarNumero(quantidadeVendida(venda))}</td>
-      <td data-label="Valor unitário">${formatarMoeda(obterValorUnitarioVenda(venda))}</td>
       <td data-label="Canal">${escaparHtml(venda.canalVenda || "-")}</td>
+      <td data-label="Quantidade">${formatarNumero(quantidadeVendida(venda))}</td>
+      <td data-label="Valor vendido">${formatarMoeda(valorVenda(venda))}</td>
       <td data-label="Ações">
         <div class="table-actions table-actions--single">
           <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes da venda</a>

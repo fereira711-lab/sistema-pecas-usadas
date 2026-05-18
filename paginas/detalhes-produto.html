@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Central da Peça</title>
+  <title>Detalhes do produto</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body data-auth="protected" class="auth-checking ui-soft-dark product-detail-page">
   <header class="page-header">
     <div>
-      <p class="hero__tag">Estoque</p>
-      <h1>Central da Peça</h1>
-      <p class="hero__description">Central operacional da peça, com dados, imagem, origem, estoque, custos e vendas vinculadas.</p>
+      <p class="hero__tag">Central da peça</p>
+      <h1>Detalhes do produto</h1>
+      <p class="hero__description">Central operacional da peça no estoque.</p>
     </div>
   </header>
 
@@ -27,8 +27,7 @@
           <button type="button" id="botaoLancamentoCustoProduto" class="button-secondary">Lançar custo</button>
           <button type="button" id="botaoEditarProduto" class="button-secondary">Editar dados</button>
           <button type="button" id="botaoImagemProduto" class="button-secondary">Adicionar imagem</button>
-          <a class="button-secondary" href="produtos.html">Voltar para o estoque</a>
-          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+          <a class="button-secondary" href="produtos.html">Voltar ao estoque</a>
         </div>
       </div>
 
@@ -67,9 +66,21 @@
       </form>
     </section>
 
-    <section class="stock-card section-spaced product-detail-section" id="origemVinculadaProduto"></section>
+    <section class="product-detail-content-grid">
+      <section class="stock-card section-spaced product-detail-section" id="origemVinculadaProduto"></section>
 
-    <section class="stock-card section-spaced product-detail-section">
+      <section class="stock-card section-spaced product-detail-section" aria-labelledby="tituloResumoFinanceiro">
+        <div class="stock-header product-detail-section__header">
+          <div>
+            <span class="product-detail-eyebrow">Resumo operacional</span>
+            <h2 id="tituloResumoFinanceiro">Situação atual</h2>
+          </div>
+        </div>
+
+        <div class="summary-grid" id="resumoFinanceiro" aria-label="Resumo operacional"></div>
+      </section>
+
+    <section class="stock-card section-spaced product-detail-section product-detail-section--wide">
       <div class="stock-header product-detail-section__header">
         <div>
           <h2>Entradas de estoque</h2>
@@ -83,13 +94,12 @@
         <table class="stock-table product-detail-table">
           <thead>
             <tr>
-              <th>Origem</th>
-              <th>Data entrada</th>
+              <th>Data</th>
               <th>Quantidade total</th>
-              <th>Quantidade consumida</th>
-              <th>Saldo disponível</th>
+              <th>Consumida</th>
+              <th>Saldo</th>
               <th>Custo unitário</th>
-              <th>Status</th>
+              <th>Valor atribuído</th>
             </tr>
           </thead>
           <tbody id="tabelaEntradasProduto"></tbody>
@@ -177,9 +187,9 @@
           <thead>
             <tr>
               <th>Data</th>
-              <th>Quantidade</th>
-              <th>Valor unitário</th>
               <th>Canal</th>
+              <th>Quantidade</th>
+              <th>Valor vendido</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -188,15 +198,35 @@
       </div>
     </section>
 
-    <section class="stock-card section-spaced product-detail-section" aria-labelledby="tituloResumoFinanceiro">
+      <section class="stock-card section-spaced product-detail-section product-detail-section--wide product-detail-marketplace" aria-labelledby="tituloMarketplaceProduto">
       <div class="stock-header product-detail-section__header">
         <div>
-          <h2 id="tituloResumoFinanceiro">Resumo da peça</h2>
-          <p>Visão básica do estoque e movimentação.</p>
+          <span class="product-detail-eyebrow">Futuro marketplace</span>
+          <h2 id="tituloMarketplaceProduto">Informações comerciais</h2>
+          <p>Área visual em desenvolvimento, sem integração com banco ou anúncios.</p>
         </div>
+        <span class="status-badge status-badge--info">Em desenvolvimento</span>
       </div>
 
-      <div class="summary-grid" id="resumoFinanceiro" aria-label="Resumo da peça"></div>
+      <div class="product-detail-marketplace-grid" aria-label="Marketplace futuro">
+        <article class="detail-card">
+          <span>Título do anúncio</span>
+          <strong>Aguardando definição</strong>
+        </article>
+        <article class="detail-card">
+          <span>Preço marketplace</span>
+          <strong>Não conectado</strong>
+        </article>
+        <article class="detail-card">
+          <span>Status do anúncio</span>
+          <strong>Em desenvolvimento</strong>
+        </article>
+        <article class="detail-card">
+          <span>Link do anúncio</span>
+          <strong>Aguardando integração</strong>
+        </article>
+      </div>
+      </section>
     </section>
   </main>
 

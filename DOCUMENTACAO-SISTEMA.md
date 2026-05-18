@@ -73,8 +73,8 @@ O teste confirmou que o sistema ja possui a estrutura central funcionando, mas t
 
 ## Pendencias encontradas no teste real
 
-- `detalhes-produto` ainda precisa evoluir a exibicao de custos, vendas relacionadas, resumo financeiro e mensagens quando nao houver dados.
-- `detalhes-venda` precisa funcionar como extrato completo da venda, mostrando dados da venda, custos, consumo FIFO, lucro e margem.
+- `detalhes-produto` passou a funcionar como central operacional/comercial da peca, reunindo dados principais, origem, estoque, custos, vendas relacionadas e resumo operacional.
+- `detalhes-venda` funciona como extrato completo da venda, mostrando dados da venda, custos, entrada consumida, custo da peca, lucro e margem.
 - Custo de peca foi ajustado para editar/excluir, mas deve continuar sendo validado em uso real.
 - O acesso as telas de detalhes deve continuar vindo do contexto correto, e nao de cards soltos no menu inicial.
 
@@ -88,11 +88,15 @@ Representado por `painel.html` e `js/painel-geral.js`. Mostra resumo do negocio,
 
 Representado por `paginas/cadastro-origem.html`, `paginas/listar-origens.html`, `paginas/detalhes-origem.html` e seus scripts. Controla procedencia, compra, lote ou contexto de aquisicao das pecas.
 
+`paginas/detalhes-origem.html` funciona como central operacional da origem/lote. A pagina mostra dados da origem, distribuicao, pecas vinculadas, entradas de estoque, vendas relacionadas e resumo da origem. Ela nao deve virar analise financeira pesada.
+
 ### Produtos
 
 Representado por `paginas/cadastro-peca.html`, `paginas/produtos.html`, `paginas/detalhes-produto.html` e scripts relacionados. Controla cadastro, consulta, detalhes e custos da peca.
 
 `paginas/produtos.html` usa como padrao principal uma lista operacional compacta, nao cards grandes. A tela existe para consulta rapida e operacao diaria do estoque, mostrando imagem pequena, SKU, nome da peca, preco de venda, quantidade disponivel, status operacional e acoes.
+
+`paginas/detalhes-produto.html` funciona como central operacional/comercial da peca. A pagina mostra dados principais da peca, origem vinculada, entradas de estoque, custos da peca, vendas relacionadas e resumo operacional. Ela pode exibir preco de venda, estoque atual, total vendido, receita relacionada e custo consumido/custo da peca com linguagem simples, mas nao deve virar uma tela de analise financeira pesada.
 
 ### Estoque
 
@@ -103,6 +107,8 @@ Representado por `paginas/produtos.html`, `paginas/lotes.html`, `paginas/giro-es
 Representado por `paginas/cadastro-venda.html`, `paginas/historico-vendas.html`, `paginas/detalhes-venda.html` e scripts de venda. Registra vendas e aciona o consumo FIFO via Supabase.
 
 `paginas/cadastro-venda.html` usa fluxo operacional organizado em blocos: Produto vendido, Dados da venda, Custos da venda e Resumo antes de salvar. A tela e focada em registrar venda, custos opcionais da venda e baixa de estoque via FIFO, sem virar analise financeira pesada.
+
+`paginas/detalhes-venda.html` funciona como extrato completo de uma venda especifica. Ela mostra produto vendido, dados da venda, custos da venda, entrada consumida, custo da peca, lucro e margem. Nao e uma tela de analise geral do sistema.
 
 ### Financeiro
 
@@ -121,16 +127,16 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 | Painel geral | `painel.html` | Entrada oficial, resumo operacional, alertas e atalhos | Operacional |
 | Cadastrar origem | `paginas/cadastro-origem.html` | Registrar procedencia/compra/lote | Operacional |
 | Origens cadastradas | `paginas/listar-origens.html` | Listar origens e abrir detalhes | Operacional |
-| Detalhes da origem | `paginas/detalhes-origem.html` | Ver contexto completo e resultado da origem | Detalhes |
+| Detalhes da origem | `paginas/detalhes-origem.html` | Ver dados, distribuicao, pecas vinculadas, entradas, vendas relacionadas e resumo da origem | Detalhes |
 | Cadastrar peca | `paginas/cadastro-peca.html` | Cadastrar peca vinculada a origem e entrada | Operacional |
 | Produtos / Estoque | `paginas/produtos.html` | Listar pecas em lista operacional compacta, com estoque, filtros e acoes rapidas | Operacional |
-| Central da peca | `paginas/detalhes-produto.html` | Ver dados completos, custos, vendas e lucro da peca | Detalhes |
+| Central da peca | `paginas/detalhes-produto.html` | Ver dados principais, origem, estoque, custos, vendas relacionadas e resumo operacional da peca | Detalhes |
 | Entradas de estoque | `paginas/lotes.html` | Consultar lotes FIFO, consumo e saldo | Operacional |
 | Giro de estoque | `paginas/giro-estoque.html` | Analisar velocidade e situacao das pecas | Analise |
 | Alertas | `paginas/alertas.html` | Acompanhar estoque baixo, sem estoque e pontos de atencao | Analise |
 | Cadastrar venda | `paginas/cadastro-venda.html` | Registrar venda de peca e custos da venda | Operacional |
 | Historico de vendas | `paginas/historico-vendas.html` | Consultar vendas e abrir detalhes | Operacional |
-| Extrato da venda | `paginas/detalhes-venda.html` | Ver consumo FIFO e composicao financeira da venda | Detalhes |
+| Extrato da venda | `paginas/detalhes-venda.html` | Ver entrada consumida, custo da peca e composicao financeira da venda | Detalhes |
 | Cadastrar custo da peca | `paginas/cadastro-custo.html` | Lancar custos extras da peca | Operacional |
 | Analise por produto | `paginas/analise-produto.html` | Comparar receita, custos e lucro por peca | Analise |
 | Analise por periodo | `paginas/analise-periodo.html` | Analisar vendas e lucro por data | Analise |
@@ -142,11 +148,15 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 ## Estrutura operacional
 
 - Origem nao e peca. Origem e procedencia, compra ou lote; peca e o item controlado no estoque e vendido.
+- Origem continua sendo agrupador operacional e financeiro; a peca nasce depois da origem.
 - Entrada de estoque e obrigatoria. O controle correto depende de `entradas_estoque`, com quantidade total, quantidade consumida, custo unitario e data.
 - FIFO e a fonte oficial de custo. A venda consome lotes em ordem e grava o resultado em `venda_consumos_estoque`.
 - `financeiro-utils.js` e a central financeira. As telas devem usar essa camada para calcular receita, custo consumido, custos, lucro e margem.
 - O fallback de custo antigo existe apenas para registros antigos sem consumo FIFO.
 - Cadastro de venda deve respeitar estoque disponivel e nao alterar FIFO manualmente. O custo real da venda vem de `venda_consumos_estoque`.
+- Nao usar custo medio e nao usar `origem.valor_total` como custo da venda.
+- Quando nao houver consumo registrado em `venda_consumos_estoque`, a interface deve mostrar "Custo nao calculado".
+- FIFO continua sendo a regra tecnica interna, mas a interface deve usar termos naturais: "custo da peca", "custo consumido", "entrada consumida", "custo calculado" e "custo nao calculado".
 
 ## Estrutura visual/UX
 
@@ -158,15 +168,30 @@ Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de c
 - O padrao visual atual usa tema escuro operacional, cards compactos, badges suaves, dourado como destaque discreto e blocos bem separados.
 - Filtros avancados seguem o padrao de painel lateral; a busca principal deve permanecer visivel no topo das listagens.
 - Formularios devem ser organizados por blocos logicos.
+- Detalhes da origem e a central da origem/lote. A estrutura UX aprovada e: cabecalho com acoes principais, bloco principal da origem, dados da origem, distribuicao da origem, pecas vinculadas, entradas de estoque, vendas relacionadas e resumo da origem.
+- As acoes principais em Detalhes da origem sao `Editar origem`, `Voltar para origens`, `Cadastrar peca vinculada`, `Ver produto` e `Ver detalhes da venda`.
+- A distribuicao da origem mostra valor total, valor distribuido, valor restante, quantidade prevista quando existir, quantidade distribuida e situacao da distribuicao.
+- Pecas vinculadas usam lista compacta sem barra horizontal, mostrando SKU, nome da peca, quantidade, disponivel e acao `Ver produto`.
+- Entradas de estoque da origem mostram peca, data, quantidade total, consumida, saldo, custo unitario e valor atribuido.
+- Vendas relacionadas da origem mostram data, SKU, peca, quantidade, canal, valor vendido e acao `Ver detalhes da venda`.
+- O resumo da origem usa linguagem simples: receita relacionada, custo das pecas vendidas, custos vinculados e resultado resumido. Se nao houver custo calculado, mostrar "Custo nao calculado". Nao destacar termos tecnicos internos.
+- Estados vazios em Detalhes da origem devem aparecer apenas quando nao houver dados: "Nenhuma peca vinculada", "Nenhuma entrada registrada" e "Nenhuma venda relacionada".
+- Analises financeiras pesadas continuam nas telas de analise.
 - A tela de Produtos usa lista operacional compacta com imagem pequena, SKU, nome, preco de venda, quantidade disponivel, status e acoes rapidas. Ela nao deve usar cards grandes como padrao principal.
 - Na lista de Produtos, as acoes principais visiveis sao `Detalhes` e `Vender`. O menu de tres pontos concentra acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir. A edicao dos dados da peca deve ficar dentro da central/detalhes do produto.
-- Produtos continua sendo tela operacional: pode mostrar preco de venda, mas nao deve mostrar lucro, custo FIFO, margem ou resultado financeiro. Analise financeira fica em detalhes, painel e telas de analise.
+- Produtos continua sendo tela operacional: pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro. Analise financeira fica em detalhes, painel e telas de analise.
+- Detalhes do produto e a central da peca. A estrutura UX aprovada e: cabecalho com acoes principais, bloco principal da peca, origem vinculada, resumo operacional, entradas de estoque, custos da peca, vendas relacionadas e area futura de marketplace.
+- As acoes principais da central da peca sao `Vender`, `Lancar custo`, `Editar dados`, `Trocar imagem` e `Voltar ao estoque`.
+- O resumo operacional da central da peca pode mostrar estoque atual, total vendido, preco de venda, receita relacionada e custo consumido/custo da peca. Lucro e margem nao devem receber destaque exagerado nessa tela; analise financeira pesada pertence as telas de Analises.
+- A area de marketplace em detalhes do produto pode reservar espaco visual para titulo do anuncio, preco marketplace, status do anuncio e link do anuncio, mas por enquanto nao deve conectar ao banco nem integrar Mercado Livre.
 - `paginas/cadastro-custo.html` usa fluxo operacional vertical: Buscar peca, Dados da peca selecionada, Novo custo e Historico de custos cadastrados. A tela e focada em localizar a peca, lancar custo, editar custo e excluir custo, sem virar analise financeira pesada.
 - O Historico de custos fica abaixo do formulario, mostra custos do mais recente para o mais antigo, usa lista compacta sem barra horizontal e exibe data, tipo, valor, observacao e acoes `Editar` e `Excluir`.
 - Custo de peca pode mostrar os valores de custo lancados, porque e uma tela operacional de custo. Isso nao muda a regra de Produtos: Produtos continua sem mostrar custo, lucro, margem ou resultado financeiro.
 - Cadastro de venda deve mostrar, apos selecionar uma peca, SKU, nome, preco de venda, estoque disponivel e alerta de estoque baixo/sem estoque quando aplicavel.
 - Custos da venda sao opcionais, podem ser adicionados/removidos antes de salvar, aparecem em lista compacta e nao devem impedir salvar venda sem custo adicional.
-- O resumo antes de salvar mostra quantidade vendida, receita prevista, custos da venda e o aviso de que o custo real da peca sera calculado pelo FIFO apos salvar. Ao limpar o formulario, esse resumo deve voltar para zero.
+- O resumo antes de salvar mostra quantidade vendida, receita prevista, custos da venda e o aviso de que o custo da peca sera calculado automaticamente ao salvar. Ao limpar o formulario, esse resumo deve voltar para zero.
+- Detalhes da venda segue a estrutura UX: resumo rapido no topo, produto vendido, dados da venda, custos da venda, entrada consumida, resultado da venda e ajustes permitidos.
+- Em Detalhes da venda, data, canal e observacao podem ser editados se essa for a regra atual; quantidade vendida e custo consumido ficam protegidos no extrato.
 - Telas operacionais nao devem receber analise financeira pesada.
 
 ## Previews visuais

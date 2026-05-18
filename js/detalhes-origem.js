@@ -17,6 +17,7 @@ const mensagemVendasOrigem = document.getElementById("mensagemVendasOrigem");
 const tabelaVendasOrigem = document.getElementById("tabelaVendasOrigem");
 const mensagemCustosOrigem = document.getElementById("mensagemCustosOrigem");
 const tabelaCustosOrigem = document.getElementById("tabelaCustosOrigem");
+const linkCadastrarPecaOrigem = document.getElementById("linkCadastrarPecaOrigem");
 
 let dadosDetalhesOrigem = {
   origem: null,
@@ -491,7 +492,7 @@ function renderizarVendas() {
   const linhas = montarLinhasVendasOrigem();
 
   if (linhas.length === 0) {
-    mensagemVendasOrigem.textContent = "Nenhuma venda relacionada ao consumo das entradas desta origem.";
+    mensagemVendasOrigem.textContent = "Nenhuma venda relacionada.";
     return;
   }
 
@@ -644,7 +645,9 @@ function limparTela(mensagem) {
   tabelaEntradasOrigem.innerHTML = "";
   tabelaProdutosOrigem.innerHTML = "";
   tabelaVendasOrigem.innerHTML = "";
-  tabelaCustosOrigem.innerHTML = "";
+  if (tabelaCustosOrigem) {
+    tabelaCustosOrigem.innerHTML = "";
+  }
 }
 
 function obterCodigoOrigem(origem) {
@@ -653,6 +656,43 @@ function obterCodigoOrigem(origem) {
 
 function obterValorTotalOrigem(origem) {
   return Number(origem?.valorPago || origem?.valor_total || origem?.custoTotal || 0);
+}
+
+function obterQuantidadePrevistaOrigem(origem) {
+  return Number(origem?.quantidadePrevista || origem?.quantidade_prevista || origem?.quantidadeTotal || origem?.quantidade_total || 0);
+}
+
+function obterQuantidadeDistribuidaOrigem() {
+  return dadosDetalhesOrigem.pecas.length || dadosDetalhesOrigem.entradas.length;
+}
+
+function obterPrecoVendaPeca(peca) {
+  return Number(peca?.precoVenda || peca?.preco_venda || peca?.valorVenda || peca?.valor_venda || 0);
+}
+
+function obterQuantidadeDisponivelPeca(peca, entradasDaPeca) {
+  const saldoEntradas = entradasDaPeca.reduce((total, entrada) => {
+    return total + Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
+  }, 0);
+
+  if (saldoEntradas > 0) {
+    return saldoEntradas;
+  }
+
+  const quantidade = Number(peca?.quantidade || peca?.quantidadeDisponivel || peca?.quantidade_disponivel || 0);
+  const vendida = Number(peca?.quantidadeVendida || peca?.quantidade_vendida || 0);
+  return Math.max(quantidade - vendida, 0);
+}
+
+function formatarCustoCalculado(valor, resumo) {
+  const temVendaRelacionada = dadosDetalhesOrigem.vendas.length > 0;
+  const temConsumo = dadosDetalhesOrigem.consumosOrigem.length > 0;
+
+  if (temVendaRelacionada && !temConsumo) {
+    return "Custo não calculado";
+  }
+
+  return formatarMoeda(valor);
 }
 
 function formatarStatusTexto(texto) {
@@ -688,6 +728,8 @@ function alternarTabelaOrigemVazia(tabela, vazia) {
 function calcularDistribuicaoOrigem() {
   const origem = dadosDetalhesOrigem.origem || {};
   const valorTotal = obterValorTotalOrigem(origem);
+  const quantidadePrevista = obterQuantidadePrevistaOrigem(origem);
+  const quantidadeDistribuida = obterQuantidadeDistribuidaOrigem();
   const valorDistribuido = dadosDetalhesOrigem.entradas.reduce((total, entrada) => {
     const valorAtribuido = Number(entrada.valorAtribuidoEntrada || entrada.valor_atribuido_entrada || 0);
 
@@ -710,6 +752,8 @@ function calcularDistribuicaoOrigem() {
     valorDistribuido,
     valorRestante,
     percentualDistribuido,
+    quantidadePrevista,
+    quantidadeDistribuida,
     status
   };
 }
@@ -751,6 +795,8 @@ function calcularResumoOrigem() {
     valorAtribuidoNasEntradas: distribuicao.valorDistribuido,
     saldoParaDistribuir: distribuicao.valorRestante,
     percentualDistribuido: distribuicao.percentualDistribuido,
+    quantidadePrevista: distribuicao.quantidadePrevista,
+    quantidadeDistribuida: distribuicao.quantidadeDistribuida,
     statusDistribuicao: distribuicao.status,
     custosVendaPorVenda
   };
@@ -758,31 +804,73 @@ function calcularResumoOrigem() {
 
 function renderizarDadosOrigem(origem) {
   const codigoOrigem = obterCodigoOrigem(origem);
+  const resumo = calcularResumoOrigem();
+  const descricao = origem.descricao || `Origem ${origem.id}`;
+  const tipoOrigem = origem.tipoOrigem || origem.tipo || "-";
+  const dataOrigem = origem.dataCompra || origem.data_origem;
 
-  tituloOrigem.textContent = "Dados da origem";
-  subtituloOrigem.textContent = `${codigoOrigem} - ${origem.descricao || `Origem ${origem.id}`} - ${formatarData(origem.dataCompra || origem.data_origem)}`;
+  tituloOrigem.textContent = "Detalhes da origem";
+  subtituloOrigem.textContent = `${codigoOrigem} - ${descricao} - ${formatarData(dataOrigem)}`;
+
+  if (linkCadastrarPecaOrigem) {
+    linkCadastrarPecaOrigem.href = `cadastro-peca.html?origemId=${encodeURIComponent(origem.id)}`;
+  }
 
   dadosOrigem.innerHTML = `
-    <article class="detail-card">
-      <span>Código da origem</span>
-      <strong>${escaparHtml(codigoOrigem)}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Tipo</span>
-      <strong>${escaparHtml(origem.tipoOrigem || origem.tipo || "-")}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Descrição</span>
-      <strong>${escaparHtml(origem.descricao || "-")}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Data</span>
-      <strong>${formatarData(origem.dataCompra || origem.data_origem)}</strong>
-    </article>
-    <article class="detail-card detail-card--wide">
-      <span>Observações</span>
-      <strong>${escaparHtml(origem.observacoes || "-")}</strong>
-    </article>
+    <section class="origin-detail-main-card" aria-label="Resumo principal da origem">
+      <div class="origin-detail-main-info">
+        <span class="origin-detail-eyebrow">${escaparHtml(codigoOrigem)}</span>
+        <h3>${escaparHtml(descricao)}</h3>
+        <p>${escaparHtml(origem.observacoes || "Sem observações registradas.")}</p>
+        <div class="origin-detail-badges">
+          <span class="status-badge ${obterClasseStatusDistribuicao(resumo.statusDistribuicao)}">${escaparHtml(formatarStatusTexto(resumo.statusDistribuicao))}</span>
+          <span class="status-badge status-badge--info">${escaparHtml(tipoOrigem)}</span>
+          <span class="status-badge status-badge--info">${formatarData(dataOrigem)}</span>
+        </div>
+      </div>
+
+      <aside class="origin-detail-main-metrics" aria-label="Indicadores da origem">
+        <article class="detail-card">
+          <span>Valor pago</span>
+          <strong>${formatarMoeda(resumo.valorInvestido)}</strong>
+        </article>
+        <article class="detail-card">
+          <span>Valor restante</span>
+          <strong>${formatarMoeda(resumo.saldoParaDistribuir)}</strong>
+        </article>
+        <article class="detail-card">
+          <span>Peças vinculadas</span>
+          <strong>${formatarNumero(dadosDetalhesOrigem.pecas.length)}</strong>
+        </article>
+      </aside>
+    </section>
+
+    <section class="origin-detail-data-grid" aria-label="Dados da origem">
+      <article class="detail-card">
+        <span>Código</span>
+        <strong>${escaparHtml(codigoOrigem)}</strong>
+      </article>
+      <article class="detail-card">
+        <span>Tipo</span>
+        <strong>${escaparHtml(tipoOrigem)}</strong>
+      </article>
+      <article class="detail-card">
+        <span>Data da compra</span>
+        <strong>${formatarData(dataOrigem)}</strong>
+      </article>
+      <article class="detail-card">
+        <span>Valor pago</span>
+        <strong>${formatarMoeda(resumo.valorInvestido)}</strong>
+      </article>
+      <article class="detail-card detail-card--wide">
+        <span>Descrição</span>
+        <strong>${escaparHtml(descricao || "-")}</strong>
+      </article>
+      <article class="detail-card detail-card--wide">
+        <span>Observações</span>
+        <strong>${escaparHtml(origem.observacoes || "-")}</strong>
+      </article>
+    </section>
   `;
 }
 
@@ -792,7 +880,7 @@ function renderizarDistribuicaoOrigem() {
   mensagemDistribuicaoOrigem.textContent = "";
   resumoDistribuicaoOrigem.innerHTML = `
     <article class="summary-card">
-      <span>Valor total da origem</span>
+      <span>Valor total</span>
       <strong>${formatarMoeda(resumo.valorInvestido)}</strong>
     </article>
     <article class="summary-card">
@@ -804,11 +892,15 @@ function renderizarDistribuicaoOrigem() {
       <strong>${formatarMoeda(resumo.saldoParaDistribuir)}</strong>
     </article>
     <article class="summary-card">
-      <span>Percentual distribuído</span>
-      <strong>${formatarPercentual(resumo.percentualDistribuido)}</strong>
+      <span>Quantidade prevista</span>
+      <strong>${resumo.quantidadePrevista > 0 ? formatarNumero(resumo.quantidadePrevista) : "-"}</strong>
     </article>
     <article class="summary-card">
-      <span>Status</span>
+      <span>Quantidade distribuída</span>
+      <strong>${formatarNumero(resumo.quantidadeDistribuida)}</strong>
+    </article>
+    <article class="summary-card summary-card--muted">
+      <span>Situação da distribuição</span>
       <strong><span class="status-badge ${obterClasseStatusDistribuicao(resumo.statusDistribuicao)}">${escaparHtml(formatarStatusTexto(resumo.statusDistribuicao))}</span></strong>
     </article>
   `;
@@ -832,15 +924,17 @@ function renderizarPecas() {
   pecasFiltradas.forEach(peca => {
     const entradasDaPeca = dadosDetalhesOrigem.entradas.filter(entrada => Number(entrada.pecaId) === Number(peca.id));
     const quantidadeTotal = somarCampo(entradasDaPeca, "quantidadeTotal") || Number(peca.quantidade || 0);
+    const quantidadeDisponivel = obterQuantidadeDisponivelPeca(peca, entradasDaPeca);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
       <td data-label="SKU">${escaparHtml(formatarSku(peca))}</td>
       <td data-label="Peça">${escaparHtml(formatarNomePeca(peca))}</td>
       <td data-label="Quantidade">${formatarNumero(quantidadeTotal)}</td>
+      <td data-label="Disponível">${formatarNumero(quantidadeDisponivel)}</td>
       <td data-label="Ações">
         <div class="table-actions table-actions--single">
-          <a class="table-link" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}">Ver detalhes da peça</a>
+          <a class="table-link" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}">Ver produto</a>
         </div>
       </td>
     `;
@@ -870,11 +964,12 @@ function renderizarEntradas() {
 
     linha.innerHTML = `
       <td data-label="Peça">${escaparHtml(formatarNomePeca(peca))}</td>
+      <td data-label="Data">${formatarData(entrada.dataEntrada)}</td>
       <td data-label="Quantidade total">${formatarNumero(entrada.quantidadeTotal)}</td>
+      <td data-label="Consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
       <td data-label="Saldo">${formatarNumero(saldo)}</td>
       <td data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
       <td data-label="Valor atribuído">${formatarMoeda(valorAtribuidoEntrada)}</td>
-      <td data-label="Data">${formatarData(entrada.dataEntrada)}</td>
     `;
 
     tabelaEntradasOrigem.appendChild(linha);
@@ -903,6 +998,7 @@ function renderizarVendas() {
       <td data-label="Peça">${escaparHtml(formatarNomePeca(item.peca || item.venda))}</td>
       <td data-label="Quantidade">${formatarNumero(item.quantidadeConsumida)}</td>
       <td data-label="Canal">${escaparHtml(item.venda?.canalVenda || "-")}</td>
+      <td data-label="Valor vendido">${formatarMoeda(item.valorAtribuido)}</td>
       <td data-label="Ações">
         <div class="table-actions table-actions--single">
           <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(item.venda?.id || "")}">Ver detalhes da venda</a>
@@ -925,19 +1021,15 @@ function renderizarResumoOrigem() {
       <strong>${formatarMoeda(resumo.receitaTotal)}</strong>
     </article>
     <article class="summary-card">
-      <span>Custo consumido FIFO</span>
-      <strong>${formatarMoeda(resumo.custoConsumidoDaOrigem)}</strong>
+      <span>Custo das peças vendidas</span>
+      <strong>${formatarCustoCalculado(resumo.custoConsumidoDaOrigem, resumo)}</strong>
     </article>
     <article class="summary-card">
-      <span>Custos da peça</span>
-      <strong>${formatarMoeda(resumo.custosDaPeca)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custos da venda</span>
-      <strong>${formatarMoeda(resumo.custosDaVenda)}</strong>
+      <span>Custos vinculados</span>
+      <strong>${formatarMoeda(resumo.custosDaPeca + resumo.custosDaVenda)}</strong>
     </article>
     <article class="${classeResultado}">
-      <span>Resultado da origem</span>
+      <span>Resultado resumido</span>
       <strong>${formatarMoeda(resumo.resultadoOrigem)}</strong>
     </article>
   `;
@@ -989,6 +1081,9 @@ function limparTela(mensagem) {
   tabelaEntradasOrigem.innerHTML = "";
   tabelaProdutosOrigem.innerHTML = "";
   tabelaVendasOrigem.innerHTML = "";
+  if (tabelaCustosOrigem) {
+    tabelaCustosOrigem.innerHTML = "";
+  }
   const historicoOrigem = document.getElementById("historicoOrigem");
 
   if (historicoOrigem) {

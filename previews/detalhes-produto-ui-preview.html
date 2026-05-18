@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Detalhes do produto</title>
+  <link rel="stylesheet" href="detalhes-produto-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Central da peca</span>
+        <h1>Detalhes do produto</h1>
+        <p>Central operacional e comercial da peca no estoque.</p>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn btn-primary" type="button">Vender</button>
+        <button class="btn" type="button">Lancar custo</button>
+        <button class="btn" type="button">Editar dados</button>
+        <button class="btn" type="button">Trocar imagem</button>
+        <button class="btn" type="button">Voltar ao estoque</button>
+      </div>
+    </header>
+
+    <section class="product-hero" aria-labelledby="tituloProduto">
+      <div class="product-photo" aria-hidden="true">
+        <span>IMG</span>
+      </div>
+
+      <div class="product-main">
+        <span class="sku">SKU FAR-2048</span>
+        <h2 id="tituloProduto">Farol dianteiro direito Corolla 2018 original</h2>
+        <p>Produto revisado, com pequenas marcas de uso na lente. Conferir fixacoes antes da venda.</p>
+
+        <div class="hero-badges">
+          <span class="badge badge-ok">Em estoque</span>
+          <span class="badge badge-soft">ID #1482</span>
+          <span class="badge badge-market">Marketplace futuro</span>
+        </div>
+      </div>
+
+      <aside class="product-metrics" aria-label="Resumo operacional">
+        <article>
+          <span>Preco de venda</span>
+          <strong>R$ 680,00</strong>
+        </article>
+        <article>
+          <span>Disponivel</span>
+          <strong>3 un.</strong>
+        </article>
+        <article>
+          <span>Total vendido</span>
+          <strong>2 un.</strong>
+        </article>
+      </aside>
+    </section>
+
+    <section class="content-grid">
+      <section class="info-card origin-card" aria-labelledby="tituloOrigem">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Origem vinculada</span>
+            <h2 id="tituloOrigem">Compra lote ORI-000142</h2>
+          </div>
+          <button class="btn btn-secondary" type="button">Ver origem</button>
+        </div>
+
+        <div class="info-list">
+          <div>
+            <span>Codigo</span>
+            <strong>ORI-000142</strong>
+          </div>
+          <div>
+            <span>Tipo</span>
+            <strong>Lote de compra</strong>
+          </div>
+          <div class="info-wide">
+            <span>Descricao</span>
+            <strong>Lote de pecas Corolla 2017/2019 adquirido em 12/04/2026.</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-card summary-card" aria-labelledby="tituloResumo">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Resumo operacional</span>
+            <h2 id="tituloResumo">Situacao atual</h2>
+          </div>
+          <span class="badge badge-ok">Operacional</span>
+        </div>
+
+        <div class="summary-grid">
+          <article>
+            <span>Estoque atual</span>
+            <strong>3 un.</strong>
+          </article>
+          <article>
+            <span>Total vendido</span>
+            <strong>2 un.</strong>
+          </article>
+          <article class="summary-muted">
+            <span>Receita relacionada</span>
+            <strong>R$ 1.360,00</strong>
+          </article>
+          <article class="summary-muted">
+            <span>Custo consumido</span>
+            <strong>R$ 540,00</strong>
+          </article>
+          <article class="summary-muted">
+            <span>Custo da peca</span>
+            <strong>Custo calculado</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="info-card table-card table-card-wide" aria-labelledby="tituloEntradas">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Estoque</span>
+            <h2 id="tituloEntradas">Entradas de estoque</h2>
+          </div>
+          <span class="card-total">Saldo 3 un.</span>
+        </div>
+
+        <div class="compact-table entries-table">
+          <div class="table-head">
+            <span>Data</span>
+            <span>Qtd. total</span>
+            <span>Consumida</span>
+            <span>Saldo</span>
+            <span>Custo unit.</span>
+            <span>Valor atribuido</span>
+          </div>
+          <article>
+            <time>12/04/2026</time>
+            <span>5</span>
+            <span>2</span>
+            <strong>3</strong>
+            <span>R$ 270,00</span>
+            <strong>R$ 1.350,00</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="info-card" aria-labelledby="tituloCustos">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Custos operacionais</span>
+            <h2 id="tituloCustos">Custos da peca</h2>
+          </div>
+          <span class="card-total">R$ 86,00</span>
+        </div>
+
+        <div class="cost-list">
+          <article>
+            <div>
+              <span>Limpeza</span>
+              <small>15/04/2026</small>
+            </div>
+            <strong>R$ 45,00</strong>
+            <p>Higienizacao e polimento leve.</p>
+            <div class="row-actions">
+              <button class="link-btn" type="button">Editar</button>
+              <button class="link-btn danger" type="button">Excluir</button>
+            </div>
+          </article>
+          <article>
+            <div>
+              <span>Embalagem</span>
+              <small>16/04/2026</small>
+            </div>
+            <strong>R$ 41,00</strong>
+            <p>Caixa reforcada para envio.</p>
+            <div class="row-actions">
+              <button class="link-btn" type="button">Editar</button>
+              <button class="link-btn danger" type="button">Excluir</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="info-card" aria-labelledby="tituloVendas">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Historico comercial</span>
+            <h2 id="tituloVendas">Vendas relacionadas</h2>
+          </div>
+          <span class="card-total">2 vendas</span>
+        </div>
+
+        <div class="sales-list">
+          <article>
+            <div>
+              <span>17/05/2026</span>
+              <strong>Mercado Livre</strong>
+            </div>
+            <div>
+              <span>Qtd.</span>
+              <strong>1</strong>
+            </div>
+            <div>
+              <span>Valor vendido</span>
+              <strong>R$ 680,00</strong>
+            </div>
+            <button class="btn btn-secondary" type="button">Ver detalhes</button>
+          </article>
+          <article>
+            <div>
+              <span>03/05/2026</span>
+              <strong>Balcao</strong>
+            </div>
+            <div>
+              <span>Qtd.</span>
+              <strong>1</strong>
+            </div>
+            <div>
+              <span>Valor vendido</span>
+              <strong>R$ 680,00</strong>
+            </div>
+            <button class="btn btn-secondary" type="button">Ver detalhes</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="info-card marketplace-card table-card-wide" aria-labelledby="tituloMarketplace">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Futuro marketplace</span>
+            <h2 id="tituloMarketplace">Informacoes comerciais</h2>
+          </div>
+          <span class="badge badge-dev">Em desenvolvimento</span>
+        </div>
+
+        <div class="marketplace-grid">
+          <div>
+            <span>Titulo do anuncio</span>
+            <strong>Farol Direito Corolla 2017 2018 2019 Original</strong>
+          </div>
+          <div>
+            <span>Preco marketplace</span>
+            <strong>R$ 749,90</strong>
+          </div>
+          <div>
+            <span>Status do anuncio</span>
+            <strong>Nao publicado</strong>
+          </div>
+          <div>
+            <span>Link do anuncio</span>
+            <strong>Aguardando integracao</strong>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

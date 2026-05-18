@@ -51,6 +51,40 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro.
 - Analise financeira deve ficar em detalhes, painel e telas de analise.
 
+## Padrao da tela Detalhes do produto
+
+- `paginas/detalhes-produto.html` funciona como central operacional/comercial da peca.
+- A tela deve mostrar dados principais da peca, origem vinculada, estoque, custos da peca, vendas relacionadas e resumo operacional.
+- Nao transformar Detalhes do produto em analise financeira pesada.
+- Estrutura UX: cabecalho com acoes principais, bloco principal da peca, origem vinculada, resumo operacional, entradas de estoque, custos da peca, vendas relacionadas e area futura de marketplace.
+- Acoes principais: `Vender`, `Lancar custo`, `Editar dados`, `Trocar imagem` e `Voltar ao estoque`.
+- O bloco principal deve mostrar imagem, SKU, nome da peca, preco de venda, quantidade disponivel, total vendido, status e observacao curta.
+- O resumo operacional pode mostrar estoque atual, total vendido, preco de venda, receita relacionada e custo consumido/custo da peca com linguagem simples.
+- Evitar destaque exagerado para lucro e margem nessa tela; analise financeira pesada fica nas telas de Analises.
+- A area de marketplace pode reservar espaco visual para titulo do anuncio, preco marketplace, status do anuncio e link do anuncio.
+- Marketplace futuro nao deve conectar ao banco nem integrar Mercado Livre ate ser planejado.
+- FIFO continua sendo regra tecnica interna; a interface deve usar linguagem simples para custo.
+
+## Padrao da tela Detalhes da origem
+
+- `paginas/detalhes-origem.html` funciona como central operacional da origem/lote.
+- A tela mostra dados da origem, distribuicao, pecas vinculadas, entradas de estoque, vendas relacionadas e resumo da origem.
+- Nao transformar Detalhes da origem em analise financeira pesada.
+- Estrutura UX: cabecalho com acoes principais, bloco principal da origem, dados da origem, distribuicao da origem, pecas vinculadas, entradas de estoque, vendas relacionadas e resumo da origem.
+- Acoes principais: `Editar origem`, `Voltar para origens`, `Cadastrar peca vinculada`, `Ver produto` e `Ver detalhes da venda`.
+- Distribuicao mostra valor total, valor distribuido, valor restante, quantidade prevista quando existir, quantidade distribuida e situacao da distribuicao.
+- Pecas vinculadas usam lista compacta sem barra horizontal, com SKU, nome da peca, quantidade, disponivel e acao `Ver produto`.
+- Entradas mostram peca, data, quantidade total, consumida, saldo, custo unitario e valor atribuido.
+- Vendas relacionadas mostram data, SKU, peca, quantidade, canal, valor vendido e acao `Ver detalhes da venda`.
+- Resumo da origem usa linguagem simples: receita relacionada, custo das pecas vendidas, custos vinculados e resultado resumido.
+- Se nao houver custo calculado, mostrar `Custo nao calculado`.
+- Nao destacar termos tecnicos internos na interface.
+- Estados vazios aparecem somente quando nao houver dados: `Nenhuma peca vinculada`, `Nenhuma entrada registrada` e `Nenhuma venda relacionada`.
+- Origem continua sendo agrupador operacional e financeiro.
+- Origem nao e peca; peca nasce depois da origem.
+- Entrada de estoque continua obrigatoria.
+- Analises financeiras pesadas continuam nas telas de analise.
+
 ## Padrao da tela Custo de peca
 
 - `paginas/cadastro-custo.html` usa fluxo operacional vertical.
@@ -77,6 +111,21 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Nao alterar FIFO manualmente; o custo real da venda vem de `venda_consumos_estoque`.
 - `financeiro-utils.js` continua sendo a fonte oficial de calculo financeiro.
 - FIFO continua sendo a regra tecnica interna de custo, mas a interface deve preferir termos simples para o usuario: `custo da peca`, `custo consumido` e `entrada consumida`.
+
+## Padrao da tela Detalhes da venda
+
+- `paginas/detalhes-venda.html` funciona como extrato completo de uma venda especifica.
+- A tela mostra produto vendido, dados da venda, custos da venda, entrada consumida, custo da peca, lucro e margem.
+- Nao transformar Detalhes da venda em analise geral do sistema.
+- Evitar destacar o termo FIFO para o usuario final.
+- Usar linguagem de interface simples: `Custo da peca`, `Custo consumido`, `Entrada consumida`, `Custo calculado` e `Custo nao calculado`.
+- FIFO continua sendo a regra tecnica interna oficial de custo.
+- O custo real da venda vem de `venda_consumos_estoque`.
+- Nao usar custo medio.
+- Nao usar `origem.valor_total` como custo da venda.
+- Se nao houver consumo registrado, mostrar `Custo nao calculado`.
+- Data, canal e observacao podem ser editados se essa for a regra atual da tela.
+- Quantidade vendida e custo consumido ficam protegidos no extrato.
 
 ## Tarefas grandes
 

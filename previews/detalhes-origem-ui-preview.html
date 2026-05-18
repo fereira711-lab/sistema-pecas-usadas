@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Detalhes da origem</title>
+  <link rel="stylesheet" href="detalhes-origem-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Central da origem</span>
+        <h1>Detalhes da origem</h1>
+        <p>Central da origem/lote para acompanhar distribuicao, pecas, entradas e vendas relacionadas.</p>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn btn-primary" type="button">Editar origem</button>
+        <button class="btn" type="button">Voltar para origens</button>
+        <button class="btn" type="button">Cadastrar peca vinculada</button>
+      </div>
+    </header>
+
+    <section class="origin-hero" aria-labelledby="tituloOrigem">
+      <div class="origin-main">
+        <span class="origin-code">ORI-000142</span>
+        <h2 id="tituloOrigem">Lote Corolla 2017/2019</h2>
+        <p>Lote comprado para desmontagem com farois, lanternas, acabamentos e pecas de acabamento interno.</p>
+
+        <div class="hero-badges">
+          <span class="badge badge-attention">Falta distribuir</span>
+          <span class="badge badge-soft">Lote de compra</span>
+          <span class="badge badge-soft">Compra em 12/04/2026</span>
+        </div>
+      </div>
+
+      <aside class="origin-metrics" aria-label="Resumo da origem">
+        <article>
+          <span>Valor pago</span>
+          <strong>R$ 8.400,00</strong>
+        </article>
+        <article>
+          <span>Valor restante</span>
+          <strong>R$ 1.280,00</strong>
+        </article>
+        <article>
+          <span>Pecas vinculadas</span>
+          <strong>12</strong>
+        </article>
+      </aside>
+    </section>
+
+    <section class="content-grid">
+      <section class="info-card" aria-labelledby="tituloDadosOrigem">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Dados da origem</span>
+            <h2 id="tituloDadosOrigem">Identificacao</h2>
+          </div>
+          <span class="badge badge-soft">Operacional</span>
+        </div>
+
+        <div class="info-list">
+          <div>
+            <span>Codigo da origem</span>
+            <strong>ORI-000142</strong>
+          </div>
+          <div>
+            <span>Tipo</span>
+            <strong>Lote de compra</strong>
+          </div>
+          <div>
+            <span>Data da compra</span>
+            <strong>12/04/2026</strong>
+          </div>
+          <div>
+            <span>Valor pago</span>
+            <strong>R$ 8.400,00</strong>
+          </div>
+          <div class="info-wide">
+            <span>Descricao</span>
+            <strong>Lote Corolla 2017/2019 adquirido com pecas externas e internas.</strong>
+          </div>
+          <div class="info-wide">
+            <span>Observacoes</span>
+            <strong>Conferir pecas com suporte quebrado antes de cadastrar anuncios.</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-card" aria-labelledby="tituloDistribuicao">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Distribuicao da origem</span>
+            <h2 id="tituloDistribuicao">Situacao atual</h2>
+          </div>
+          <span class="badge badge-attention">Falta distribuir</span>
+        </div>
+
+        <div class="summary-grid">
+          <article>
+            <span>Valor total</span>
+            <strong>R$ 8.400,00</strong>
+          </article>
+          <article>
+            <span>Valor distribuido</span>
+            <strong>R$ 7.120,00</strong>
+          </article>
+          <article>
+            <span>Valor restante</span>
+            <strong>R$ 1.280,00</strong>
+          </article>
+          <article>
+            <span>Quantidade prevista</span>
+            <strong>18 pecas</strong>
+          </article>
+          <article>
+            <span>Quantidade distribuida</span>
+            <strong>12 pecas</strong>
+          </article>
+          <article class="summary-muted">
+            <span>Situacao da distribuicao</span>
+            <strong>Totalmente distribuida / acima do previsto</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="info-card table-card-wide" aria-labelledby="tituloPecas">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Pecas vinculadas</span>
+            <h2 id="tituloPecas">Itens da origem</h2>
+          </div>
+          <span class="card-total">12 pecas</span>
+        </div>
+
+        <div class="compact-table parts-table">
+          <div class="table-head">
+            <span>SKU</span>
+            <span>Peca</span>
+            <span>Qtd.</span>
+            <span>Disponivel</span>
+            <span>Preco venda</span>
+            <span>Acao</span>
+          </div>
+          <article>
+            <strong>FAR-2048</strong>
+            <span>Farol dianteiro direito Corolla 2018</span>
+            <span>5</span>
+            <strong>3</strong>
+            <span>R$ 680,00</span>
+            <button class="btn btn-secondary" type="button">Ver produto</button>
+          </article>
+          <article>
+            <strong>LAN-1180</strong>
+            <span>Lanterna traseira esquerda Corolla</span>
+            <span>2</span>
+            <strong>1</strong>
+            <span>R$ 420,00</span>
+            <button class="btn btn-secondary" type="button">Ver produto</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="info-card table-card-wide" aria-labelledby="tituloEntradas">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Estoque</span>
+            <h2 id="tituloEntradas">Entradas de estoque</h2>
+          </div>
+          <span class="card-total">Saldo 4 un.</span>
+        </div>
+
+        <div class="compact-table entries-table">
+          <div class="table-head">
+            <span>Peca</span>
+            <span>Data</span>
+            <span>Qtd. total</span>
+            <span>Consumida</span>
+            <span>Saldo</span>
+            <span>Custo unit.</span>
+            <span>Valor atribuido</span>
+          </div>
+          <article>
+            <span>Farol direito</span>
+            <time>12/04/2026</time>
+            <span>5</span>
+            <span>2</span>
+            <strong>3</strong>
+            <span>R$ 270,00</span>
+            <strong>R$ 1.350,00</strong>
+          </article>
+          <article>
+            <span>Lanterna esquerda</span>
+            <time>13/04/2026</time>
+            <span>2</span>
+            <span>1</span>
+            <strong>1</strong>
+            <span>R$ 180,00</span>
+            <strong>R$ 360,00</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="info-card table-card-wide" aria-labelledby="tituloVendas">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Vendas relacionadas</span>
+            <h2 id="tituloVendas">Movimentacao comercial</h2>
+          </div>
+          <span class="card-total">3 vendas</span>
+        </div>
+
+        <div class="compact-table sales-table">
+          <div class="table-head">
+            <span>Data</span>
+            <span>SKU</span>
+            <span>Peca</span>
+            <span>Qtd.</span>
+            <span>Canal</span>
+            <span>Valor vendido</span>
+            <span>Acao</span>
+          </div>
+          <article>
+            <time>17/05/2026</time>
+            <strong>FAR-2048</strong>
+            <span>Farol direito</span>
+            <span>1</span>
+            <span>Mercado Livre</span>
+            <strong>R$ 680,00</strong>
+            <button class="btn btn-secondary" type="button">Ver detalhes</button>
+          </article>
+          <article>
+            <time>03/05/2026</time>
+            <strong>LAN-1180</strong>
+            <span>Lanterna esquerda</span>
+            <span>1</span>
+            <span>Balcao</span>
+            <strong>R$ 420,00</strong>
+            <button class="btn btn-secondary" type="button">Ver detalhes</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="info-card result-card" aria-labelledby="tituloResultado">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Resumo da origem</span>
+            <h2 id="tituloResultado">Resultado resumido</h2>
+          </div>
+          <span class="badge badge-ok">Custo calculado</span>
+        </div>
+
+        <div class="summary-grid">
+          <article>
+            <span>Receita relacionada</span>
+            <strong>R$ 2.180,00</strong>
+          </article>
+          <article>
+            <span>Custo das pecas vendidas</span>
+            <strong>R$ 720,00</strong>
+          </article>
+          <article>
+            <span>Custos vinculados</span>
+            <strong>R$ 164,00</strong>
+          </article>
+          <article>
+            <span>Resultado resumido</span>
+            <strong>R$ 1.296,00</strong>
+          </article>
+          <article class="summary-muted info-wide">
+            <span>Quando faltar custo</span>
+            <strong>Custo nao calculado</strong>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
