@@ -123,7 +123,7 @@ Cada linha da lista deve mostrar:
 
 O comando de editar dados deve ficar dentro da central/detalhes do produto, acessada pelo botao `Detalhes`.
 
-A lista de Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo FIFO, margem ou resultado financeiro. Essas informacoes pertencem a detalhes, painel ou analises.
+A lista de Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro. Essas informacoes pertencem a detalhes, painel ou analises.
 
 ### Custo de peca
 
@@ -168,7 +168,7 @@ No bloco Produto vendido, depois da selecao da peca, mostrar contexto suficiente
 
 Custos da venda sao opcionais. Eles podem ser adicionados/removidos antes de salvar, devem aparecer em lista compacta e nao podem bloquear uma venda sem custo adicional.
 
-O resumo antes de salvar mostra quantidade vendida, receita prevista e custos da venda. Tambem deve exibir o aviso de que o custo real da peca sera calculado pelo FIFO apos salvar. Ao limpar o formulario, o resumo deve zerar corretamente.
+O resumo antes de salvar mostra quantidade vendida, receita prevista e custos da venda. Tambem deve exibir o aviso de que o custo da peca sera calculado automaticamente ao salvar. Ao limpar o formulario, o resumo deve zerar corretamente.
 
 Regras:
 
@@ -176,6 +176,8 @@ Regras:
 - Nao alterar FIFO manualmente.
 - O custo real da venda vem de `venda_consumos_estoque`.
 - `financeiro-utils.js` continua sendo a fonte oficial de calculo financeiro.
+- FIFO continua sendo a regra tecnica interna de custo.
+- Na interface para o usuario final, preferir termos simples: "custo da peca", "custo consumido" e "entrada consumida".
 
 ### Telas de detalhes
 

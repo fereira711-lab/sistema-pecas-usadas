@@ -48,7 +48,7 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Acoes principais visiveis: `Detalhes` e `Vender`.
 - Menu de tres pontos apenas para acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir.
 - Edicao dos dados da peca deve ficar dentro de `detalhes-produto.html`.
-- Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo FIFO, margem ou resultado financeiro.
+- Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro.
 - Analise financeira deve ficar em detalhes, painel e telas de analise.
 
 ## Padrao da tela Custo de peca
@@ -71,11 +71,12 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Ao selecionar uma peca, mostrar SKU, nome, preco de venda, estoque disponivel e alerta de estoque baixo/sem estoque quando aplicavel.
 - Custos da venda sao opcionais, podem ser adicionados/removidos antes de salvar e devem aparecer em lista compacta.
 - A venda deve poder ser salva sem custo adicional.
-- O resumo antes de salvar deve mostrar quantidade vendida, receita prevista, custos da venda e aviso de que o custo real da peca sera calculado pelo FIFO apos salvar.
+- O resumo antes de salvar deve mostrar quantidade vendida, receita prevista, custos da venda e aviso de que o custo da peca sera calculado automaticamente ao salvar.
 - Ao limpar o formulario, peca, campos, custos e resumo devem voltar ao estado vazio/zero.
 - Venda deve respeitar estoque disponivel.
 - Nao alterar FIFO manualmente; o custo real da venda vem de `venda_consumos_estoque`.
 - `financeiro-utils.js` continua sendo a fonte oficial de calculo financeiro.
+- FIFO continua sendo a regra tecnica interna de custo, mas a interface deve preferir termos simples para o usuario: `custo da peca`, `custo consumido` e `entrada consumida`.
 
 ## Tarefas grandes
 

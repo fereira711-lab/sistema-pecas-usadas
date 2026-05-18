@@ -9,8 +9,10 @@ const dadosProdutoVenda = document.getElementById("dadosProdutoVenda");
 const acaoDetalhesProduto = document.getElementById("acaoDetalhesProduto");
 const mensagemCustosVenda = document.getElementById("mensagemCustosVenda");
 const tabelaCustosVenda = document.getElementById("tabelaCustosVenda");
+const totalCustosVendaDetalhe = document.getElementById("totalCustosVendaDetalhe");
 const mensagemCustoFifoVenda = document.getElementById("mensagemCustoFifoVenda");
 const tabelaCustoFifoVenda = document.getElementById("tabelaCustoFifoVenda");
+const statusFifoVenda = document.getElementById("statusFifoVenda");
 const botaoEditarVenda = document.getElementById("botaoEditarVenda");
 const formEditarVenda = document.getElementById("formEditarVenda");
 const dadosObservacoesVenda = document.getElementById("dadosObservacoesVenda");
@@ -471,7 +473,7 @@ function renderizarResumoFinanceiro(venda) {
       <strong>${formatarMoeda(valorTotal)}</strong>
     </article>
     <article class="summary-card">
-      <span>Custo unitário FIFO</span>
+      <span>Custo unitário da peça</span>
       <strong>${resultado.custoCalculado ? formatarMoeda(custoUnitario) : TEXTO_CUSTO_NAO_CALCULADO}</strong>
     </article>
     <article class="summary-card">
@@ -681,7 +683,7 @@ function renderizarDadosVendaCompleta(venda) {
       <strong>${formatarMoeda(resultado.custosVenda)}</strong>
     </article>
     <article class="detail-card">
-      <span>Consumo FIFO</span>
+      <span>Custo consumido</span>
       <strong>${resultado.custoCalculado ? `${contextoVenda.consumosFifo.length} registro(s)` : TEXTO_CUSTO_NAO_CALCULADO}</strong>
     </article>
     <article class="detail-card">
@@ -748,7 +750,7 @@ function renderizarCustoFifo() {
   const linhaTotal = document.createElement("tr");
   const custoConsumido = window.financeiroUtils.calcularCustoConsumidoVenda(vendaAtual?.id, contextoVenda.consumosFifo);
   linhaTotal.innerHTML = `
-    <td data-label="Lote" colspan="5"><strong>Custo total consumido no FIFO</strong></td>
+    <td data-label="Lote" colspan="5"><strong>Custo total consumido</strong></td>
     <td data-label="Custo total"><strong>${formatarMoeda(custoConsumido.valor)}</strong></td>
     <td data-label="Status">-</td>
   `;
@@ -820,7 +822,7 @@ function renderizarProduto(venda) {
 
   mensagemProdutoVenda.textContent = "";
   acaoDetalhesProduto.innerHTML = venda.pecaId
-    ? `<a class="button-secondary" href="detalhes-produto.html?pecaId=${encodeURIComponent(venda.pecaId)}">Ver detalhes da peca</a>`
+    ? `<a class="button-secondary" href="detalhes-produto.html?pecaId=${encodeURIComponent(venda.pecaId)}">Ver produto</a>`
     : "";
 
   dadosProdutoVenda.innerHTML = `
@@ -849,7 +851,10 @@ function renderizarProduto(venda) {
 
 function renderizarCustos(venda) {
   const custosVenda = obterCustosVendaParaCalculo(venda);
+  const totalCustosVenda = window.financeiroUtils.calcularCustosVenda(venda.id, custosVenda).valor;
+
   tabelaCustosVenda.innerHTML = "";
+  totalCustosVendaDetalhe.textContent = formatarMoeda(totalCustosVenda);
 
   if (custosVenda.length === 0) {
     mensagemCustosVenda.textContent = "Nenhum custo vinculado diretamente a esta venda.";
@@ -859,26 +864,21 @@ function renderizarCustos(venda) {
   mensagemCustosVenda.textContent = "";
 
   custosVenda.forEach(custo => {
-    const linha = document.createElement("tr");
+    const linha = document.createElement("article");
+    linha.className = "sale-detail-cost-line";
     const tipoCusto = custo.tipo || custo.tipoCusto;
 
     linha.innerHTML = `
-      <td data-label="Data">${formatarData(custo.data || custo.dataCusto || obterDataVenda(venda))}</td>
-      <td data-label="Tipo"><span class="status-badge status-badge--stock">${escaparHtml(tipoCusto || "-")}</span></td>
-      <td data-label="Descricao">${escaparHtml(custo.descricao || "-")}</td>
-      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
+      <div>
+        <span>${escaparHtml(tipoCusto || "Custo da venda")}</span>
+        <small>${formatarData(custo.data || custo.dataCusto || obterDataVenda(venda))}</small>
+      </div>
+      <strong>${formatarMoeda(custo.valor)}</strong>
+      <p>${escaparHtml(custo.descricao || "-")}</p>
     `;
 
     tabelaCustosVenda.appendChild(linha);
   });
-
-  const linhaTotal = document.createElement("tr");
-  const totalCustosVenda = window.financeiroUtils.calcularCustosVenda(venda.id, custosVenda).valor;
-  linhaTotal.innerHTML = `
-    <td data-label="Data" colspan="3"><strong>Total dos custos da venda</strong></td>
-    <td data-label="Valor"><strong>${formatarMoeda(totalCustosVenda)}</strong></td>
-  `;
-  tabelaCustosVenda.appendChild(linhaTotal);
 }
 
 function renderizarCustoFifo() {
@@ -886,34 +886,44 @@ function renderizarCustoFifo() {
 
   if (!contextoVenda.consumosFifo.length) {
     mensagemCustoFifoVenda.textContent = TEXTO_CUSTO_NAO_CALCULADO;
-    const linha = document.createElement("tr");
-    linha.innerHTML = `<td data-label="Entrada consumida" colspan="5"><strong>${TEXTO_CUSTO_NAO_CALCULADO}</strong></td>`;
+    statusFifoVenda.textContent = TEXTO_CUSTO_NAO_CALCULADO;
+    statusFifoVenda.className = "status-badge status-badge--warning";
+    const linha = document.createElement("article");
+    linha.className = "sale-detail-fifo-line sale-detail-fifo-line--empty";
+    linha.innerHTML = `<strong>${TEXTO_CUSTO_NAO_CALCULADO}</strong>`;
     tabelaCustoFifoVenda.appendChild(linha);
     return;
   }
 
   mensagemCustoFifoVenda.textContent = "";
+  statusFifoVenda.textContent = "Custo calculado";
+  statusFifoVenda.className = "status-badge status-badge--stock";
 
   contextoVenda.consumosFifo.forEach(consumo => {
     const entrada = obterEntradaConsumida(consumo.entradaEstoqueId);
-    const linha = document.createElement("tr");
+    const linha = document.createElement("article");
+    linha.className = "sale-detail-fifo-line";
 
     linha.innerHTML = `
-      <td data-label="Entrada consumida">Entrada ${escaparHtml(consumo.entradaEstoqueId || "-")}</td>
-      <td data-label="Data da entrada">${formatarData(entrada?.dataEntrada)}</td>
-      <td data-label="Quantidade">${escaparHtml(consumo.quantidadeConsumida || "-")}</td>
-      <td data-label="Custo unitario">${formatarMoeda(consumo.custoUnitario)}</td>
-      <td data-label="Custo total">${formatarMoeda(consumo.custoTotal)}</td>
+      <strong>Entrada ${escaparHtml(consumo.entradaEstoqueId || "-")}</strong>
+      <time>${formatarData(entrada?.dataEntrada)}</time>
+      <span>${escaparHtml(consumo.quantidadeConsumida || "-")}</span>
+      <span>${formatarMoeda(consumo.custoUnitario)}</span>
+      <strong>${formatarMoeda(consumo.custoTotal)}</strong>
     `;
 
     tabelaCustoFifoVenda.appendChild(linha);
   });
 
-  const linhaTotal = document.createElement("tr");
   const custoConsumido = window.financeiroUtils.calcularCustoConsumidoVenda(vendaAtual?.id, contextoVenda.consumosFifo);
+  const linhaTotal = document.createElement("article");
+  linhaTotal.className = "sale-detail-fifo-line sale-detail-fifo-line--total";
   linhaTotal.innerHTML = `
-    <td data-label="Entrada consumida" colspan="4"><strong>Custo total consumido</strong></td>
-    <td data-label="Custo total"><strong>${formatarMoeda(custoConsumido.valor)}</strong></td>
+    <strong>Custo total consumido</strong>
+    <span>-</span>
+    <span>-</span>
+    <span>-</span>
+    <strong>${formatarMoeda(custoConsumido.valor)}</strong>
   `;
   tabelaCustoFifoVenda.appendChild(linhaTotal);
 }
@@ -925,7 +935,7 @@ function renderizarResumoFinanceiro(venda) {
     resumoFinanceiroVenda.innerHTML = `
       <div class="sale-detail-result-note">
         <strong>${TEXTO_CUSTO_NAO_CALCULADO}</strong>
-        <p>Nao ha consumo FIFO registrado para esta venda. O lucro e a margem ficam bloqueados ate o custo real estar disponivel.</p>
+        <p>Nao ha custo consumido registrado para esta venda. O lucro e a margem ficam bloqueados ate o custo da peca estar disponivel.</p>
       </div>
     `;
     return;
@@ -933,7 +943,7 @@ function renderizarResumoFinanceiro(venda) {
 
   resumoFinanceiroVenda.innerHTML = `
     <div class="sale-detail-result-note">
-      <p>Receita de ${formatarMoeda(resultado.receita)} menos ${formatarMoeda(resultado.custoTotal)} de custo FIFO e ${formatarMoeda(resultado.custosVenda)} de custos da venda.</p>
+      <p>Receita de ${formatarMoeda(resultado.receita)} menos ${formatarMoeda(resultado.custoTotal)} de custo da peca e ${formatarMoeda(resultado.custosVenda)} de custos da venda.</p>
       <strong>Resultado final: ${formatarMoeda(resultado.lucroVenda)} de lucro, margem de ${formatarPorcentagem(resultado.margem)}.</strong>
     </div>
   `;
@@ -955,7 +965,7 @@ function renderizarResumoRapido(venda) {
       <strong>${formatarMoeda(resultado.receita)}</strong>
     </article>
     <article class="summary-card">
-      <span>Custo FIFO</span>
+      <span>Custo da peça</span>
       <strong>${resultado.custoCalculado ? formatarMoeda(resultado.custoTotal) : TEXTO_CUSTO_NAO_CALCULADO}</strong>
     </article>
     <article class="summary-card">
@@ -979,13 +989,17 @@ function renderizarObservacoesVenda(venda) {
   }
 
   dadosObservacoesVenda.innerHTML = `
-    <article class="detail-card">
+    <article class="detail-card detail-card--wide">
       <span>Observacoes</span>
       <strong>${escaparHtml(obterObservacoesVenda(venda))}</strong>
     </article>
     <article class="detail-card">
-      <span>Edicao</span>
-      <strong>Data e canal podem ser editados sem alterar quantidade vendida nem consumo FIFO.</strong>
+      <span>Permitido editar</span>
+      <strong>Data da venda e canal.</strong>
+    </article>
+    <article class="detail-card">
+      <span>Protegido</span>
+      <strong>Quantidade vendida e custo consumido.</strong>
     </article>
   `;
 }

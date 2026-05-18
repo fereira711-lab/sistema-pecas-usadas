@@ -305,7 +305,7 @@ Editar dados deve ficar dentro da tela de detalhes do produto, para evitar dupli
 Nao exibir na lista:
 
 - Lucro.
-- Custo FIFO.
+- Custo da peca.
 - Margem.
 - Resultado financeiro.
 
@@ -359,7 +359,7 @@ Padroes:
 - Custos da venda sao opcionais e nao devem impedir salvar uma venda sem custo adicional.
 - Custos adicionados/removidos antes de salvar aparecem em lista compacta.
 - Resumo antes de salvar mostra quantidade vendida, receita prevista e custos da venda.
-- O resumo deve exibir o aviso: o custo real da peca sera calculado pelo FIFO apos salvar.
+- O resumo deve exibir o aviso: o custo da peca sera calculado automaticamente ao salvar.
 - Ao limpar o formulario, peca, campos, custos e resumo devem voltar ao estado vazio/zero.
 - Dourado deve aparecer apenas como destaque discreto.
 - A tela nao deve exibir lucro, margem ou analise financeira pesada.
@@ -370,6 +370,8 @@ Regras de negocio preservadas:
 - FIFO nao deve ser alterado manualmente pela interface.
 - O custo real da venda vem de `venda_consumos_estoque`.
 - `financeiro-utils.js` continua sendo a fonte oficial de calculos financeiros.
+- FIFO continua sendo a regra tecnica interna de custo.
+- Na interface, usar linguagem simples para o usuario: "custo da peca", "custo consumido" e "entrada consumida".
 
 ## Tabelas
 
@@ -611,12 +613,12 @@ Regras:
 - Indicar a acao recomendada.
 - Evitar tabelas vazias sem mensagem.
 - Em detalhes da peca, usar mensagens claras como "Nenhum custo cadastrado" e "Nenhuma venda registrada".
-- Em detalhes da venda, quando nao houver consumo FIFO, indicar que o custo nao esta calculado.
+- Em detalhes da venda, quando nao houver custo consumido, indicar que o custo nao esta calculado.
 
 ## Pendencias de UX registradas
 
 - `detalhes-produto` deve exibir melhor custos, vendas relacionadas, resumo financeiro e estados sem dados.
-- `detalhes-venda` deve funcionar como extrato completo da venda, com dados da venda, custos, consumo FIFO, lucro e margem.
+- `detalhes-venda` deve funcionar como extrato completo da venda, com dados da venda, custos, entrada consumida, lucro e margem.
 - Custo de peca foi ajustado para editar/excluir, mas precisa continuar sendo validado.
 - Acesso a detalhes deve vir do contexto correto da entidade, nao de cards soltos no menu.
 
