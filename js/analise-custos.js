@@ -1,7 +1,6 @@
 const mensagemAnaliseCustos = document.getElementById("mensagemAnaliseCustos");
 const resumoAnaliseCustos = document.getElementById("resumoAnaliseCustos");
 const tabelaAnaliseCustos = document.getElementById("tabelaAnaliseCustos");
-const tabelaCustosDetalhados = document.getElementById("tabelaCustosDetalhados");
 const buscaAnaliseCustos = document.getElementById("buscaAnaliseCustos");
 const analiseCustosShell = document.getElementById("analiseCustosShell");
 const botaoAbrirFiltrosAnaliseCustos = document.getElementById("botaoAbrirFiltrosAnaliseCustos");
@@ -13,6 +12,8 @@ const dataInicialAnaliseCustos = document.getElementById("dataInicialAnaliseCust
 const dataFinalAnaliseCustos = document.getElementById("dataFinalAnaliseCustos");
 const filtroTipoAnaliseCustos = document.getElementById("filtroTipoAnaliseCustos");
 const filtroCategoriaAnaliseCustos = document.getElementById("filtroCategoriaAnaliseCustos");
+const filtroOrigemAnaliseCustos = document.getElementById("filtroOrigemAnaliseCustos");
+const quantidadeAnaliseCustos = document.getElementById("quantidadeAnaliseCustos");
 
 let dadosAnaliseCustos = {
   custosPeca: [],
@@ -20,6 +21,7 @@ let dadosAnaliseCustos = {
   pecas: [],
   vendas: []
 };
+let tipoExpandidoChave = null;
 
 function escaparHtml(valor) {
   return String(valor ?? "")
@@ -105,10 +107,6 @@ function formatarSku(peca) {
 
 function formatarNomePeca(peca) {
   return peca?.nome || peca?.nome_peca || peca?.nomeProduto || peca?.produtoNome || peca?.descricao || `Peça ${peca?.id || ""}`.trim();
-}
-
-function obterQuantidadeVendida(venda) {
-  return Number(venda?.quantidadeVendida || venda?.quantidadeVendidaNaVenda || venda?.quantidade_vendida || 0);
 }
 
 function somar(lista, campo = "valor") {
@@ -271,6 +269,7 @@ function custoDentroDosFiltros(custo) {
   const fim = dataFinalAnaliseCustos?.value || "";
   const tipo = filtroTipoAnaliseCustos?.value || "";
   const categoria = filtroCategoriaAnaliseCustos?.value || "";
+  const origem = filtroOrigemAnaliseCustos?.value || "";
 
   if (inicio && custo.data && custo.data < inicio) {
     return false;
@@ -288,6 +287,10 @@ function custoDentroDosFiltros(custo) {
     return false;
   }
 
+  if (origem && custo.categoria !== origem) {
+    return false;
+  }
+
   if (!termo) {
     return true;
   }
@@ -302,11 +305,14 @@ function agruparCustosPorTipo(custos) {
   custos.forEach(custo => {
     if (!mapa.has(custo.tipoChave)) {
       mapa.set(custo.tipoChave, {
+        tipoChave: custo.tipoChave,
         tipo: custo.tipo,
         totalCustosPeca: 0,
         totalCustosVenda: 0,
         totalGeral: 0,
-        percentual: 0
+        percentual: 0,
+        quantidade: 0,
+        custos: []
       });
     }
 
@@ -322,12 +328,16 @@ function agruparCustosPorTipo(custos) {
     }
 
     grupo.totalGeral += valor;
+    grupo.quantidade += 1;
+    grupo.custos.push(custo);
   });
 
   return Array.from(mapa.values())
     .map(grupo => ({
       ...grupo,
-      percentual: totalCustos > 0 ? (grupo.totalGeral / totalCustos) * 100 : 0
+      percentual: totalCustos > 0 ? (grupo.totalGeral / totalCustos) * 100 : 0,
+      categoriaPrincipal: grupo.totalCustosPeca >= grupo.totalCustosVenda ? "Peça" : "Venda",
+      origemPrincipal: grupo.totalCustosPeca >= grupo.totalCustosVenda ? "Custos da peça" : "Custos da venda"
     }))
     .sort((a, b) => {
       if (b.totalGeral !== a.totalGeral) {
@@ -371,67 +381,99 @@ function renderizarResumo(custos, grupos) {
   const totalCustosPeca = custos.filter(custo => custo.categoria === "peca").reduce((total, custo) => total + Number(custo.valor || 0), 0);
   const totalCustosVenda = custos.filter(custo => custo.categoria === "venda").reduce((total, custo) => total + Number(custo.valor || 0), 0);
   const totalGeral = totalCustosPeca + totalCustosVenda;
+  const maiorTipo = grupos[0]?.tipo || "-";
 
   resumoAnaliseCustos.innerHTML =
+    criarCard("Total de custos", formatarMoeda(totalGeral)) +
     criarCard("Custos da peça", formatarMoeda(totalCustosPeca)) +
     criarCard("Custos da venda", formatarMoeda(totalCustosVenda)) +
-    criarCard("Total do período", formatarMoeda(totalGeral)) +
-    criarCard("Tipos de custo", formatarNumero(grupos.length)) +
+    criarCard("Maior tipo", escaparHtml(maiorTipo)) +
     criarCard("Lançamentos", formatarNumero(custos.length));
+}
+
+function obterGruposVisiveis(grupos) {
+  const quantidade = quantidadeAnaliseCustos?.value || "12";
+
+  if (quantidade === "todos") {
+    return grupos;
+  }
+
+  return grupos.slice(0, Number(quantidade || 12));
+}
+
+function listarReferenciasUnicas(custos, categoria) {
+  const valores = custos
+    .filter(custo => !categoria || custo.categoria === categoria)
+    .map(custo => custo.referencia.texto)
+    .filter(Boolean);
+
+  return [...new Set(valores)].slice(0, 4);
+}
+
+function criarDetalhesGrupoHtml(grupo) {
+  const ultimosLancamentos = grupo.custos.slice(0, 4)
+    .map(custo => `${formatarData(custo.data)} - ${custo.referencia.texto} - ${formatarMoeda(custo.valor)}`)
+    .join("; ") || "Nenhum lançamento encontrado.";
+  const pecasRelacionadas = listarReferenciasUnicas(grupo.custos, "peca").join("; ") || "Nenhuma peça relacionada.";
+  const vendasRelacionadas = listarReferenciasUnicas(grupo.custos, "venda").join("; ") || "Nenhuma venda relacionada.";
+  const observacoes = grupo.custos
+    .map(custo => custo.observacao)
+    .filter(observacao => observacao && observacao !== "-")
+    .slice(0, 3)
+    .join("; ") || "Sem observações relevantes.";
+
+  return `
+    <section class="cost-analysis-detail-panel" aria-label="Detalhes do tipo ${escaparHtml(grupo.tipo)}">
+      <div>
+        <span class="piece-form-eyebrow">Últimos lançamentos</span>
+        <p>${escaparHtml(ultimosLancamentos)}</p>
+      </div>
+      <div>
+        <span class="piece-form-eyebrow">Peças relacionadas</span>
+        <p>${escaparHtml(pecasRelacionadas)}</p>
+      </div>
+      <div>
+        <span class="piece-form-eyebrow">Vendas relacionadas</span>
+        <p>${escaparHtml(vendasRelacionadas)}</p>
+      </div>
+      <div>
+        <span class="piece-form-eyebrow">Observações</span>
+        <p>${escaparHtml(observacoes)}</p>
+      </div>
+    </section>
+  `;
 }
 
 function renderizarTabelaGrupos(grupos) {
   tabelaAnaliseCustos.innerHTML = "";
 
   if (grupos.length === 0) {
-    tabelaAnaliseCustos.innerHTML = "";
-    return;
-  }
-
-  grupos.forEach(grupo => {
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td data-label="Tipo de custo"><strong class="product-name">${escaparHtml(grupo.tipo)}</strong></td>
-      <td data-label="Custos da peça">${formatarMoeda(grupo.totalCustosPeca)}</td>
-      <td data-label="Custos da venda">${formatarMoeda(grupo.totalCustosVenda)}</td>
-      <td data-label="Total"><strong>${formatarMoeda(grupo.totalGeral)}</strong></td>
-      <td data-label="% do total">${formatarPercentual(grupo.percentual)}</td>
-    `;
-
-    tabelaAnaliseCustos.appendChild(linha);
-  });
-}
-
-function renderizarTabelaDetalhada(custos) {
-  tabelaCustosDetalhados.innerHTML = "";
-
-  if (custos.length === 0) {
     mensagemAnaliseCustos.textContent = "Nenhum custo encontrado para os filtros selecionados.";
     return;
   }
 
   mensagemAnaliseCustos.textContent = "";
 
-  custos.forEach(custo => {
-    const linha = document.createElement("tr");
-    const link = custo.referencia.link
-      ? `<a class="table-link" href="${escaparHtml(custo.referencia.link)}">Abrir detalhe</a>`
-      : "-";
+  obterGruposVisiveis(grupos).forEach(grupo => {
+    const expandido = tipoExpandidoChave === grupo.tipoChave;
 
-    linha.innerHTML = `
-      <td data-label="Data">${formatarData(custo.data)}</td>
-      <td data-label="Tipo de custo">${escaparHtml(custo.tipo)}</td>
-      <td data-label="Categoria"><span class="status-badge status-badge--stock">${escaparHtml(custo.categoriaTexto)}</span></td>
-      <td data-label="Peça/Venda relacionada">${escaparHtml(custo.referencia.texto)}</td>
-      <td data-label="Valor"><strong>${formatarMoeda(custo.valor)}</strong></td>
-      <td data-label="Observação">${escaparHtml(custo.observacao)}</td>
-      <td data-label="Ações">
-        <div class="table-actions table-actions--single">${link}</div>
-      </td>
-    `;
+    tabelaAnaliseCustos.insertAdjacentHTML("beforeend", `
+      <article class="cost-analysis-row${expandido ? " cost-analysis-row--expanded" : ""}">
+        <strong class="product-name" data-label="Tipo de custo">${escaparHtml(grupo.tipo)}</strong>
+        <span data-label="Categoria"><span class="status-badge status-badge--stock">${escaparHtml(grupo.categoriaPrincipal)}</span></span>
+        <span data-label="Qtd.">${formatarNumero(grupo.quantidade)}</span>
+        <span data-label="Total"><strong>${formatarMoeda(grupo.totalGeral)}</strong></span>
+        <span data-label="% do total">${formatarPercentual(grupo.percentual)}</span>
+        <span data-label="Origem principal">${escaparHtml(grupo.origemPrincipal)}</span>
+        <button type="button" class="button-secondary button-compact" data-acao="alternar-detalhes" data-tipo-chave="${escaparHtml(grupo.tipoChave)}">
+          ${expandido ? "Ocultar" : "Detalhes"}
+        </button>
+      </article>
+    `);
 
-    tabelaCustosDetalhados.appendChild(linha);
+    if (expandido) {
+      tabelaAnaliseCustos.insertAdjacentHTML("beforeend", criarDetalhesGrupoHtml(grupo));
+    }
   });
 }
 
@@ -439,9 +481,12 @@ function renderizarAnaliseCustos() {
   const custos = montarCustosDetalhados(dadosAnaliseCustos).filter(custoDentroDosFiltros);
   const grupos = agruparCustosPorTipo(custos);
 
+  if (tipoExpandidoChave && !grupos.some(grupo => grupo.tipoChave === tipoExpandidoChave)) {
+    tipoExpandidoChave = null;
+  }
+
   renderizarResumo(custos, grupos);
   renderizarTabelaGrupos(grupos);
-  renderizarTabelaDetalhada(custos);
 }
 
 function definirPainelFiltrosAberto(aberto) {
@@ -456,7 +501,6 @@ async function iniciarAnaliseCustos() {
   if (!dados) {
     resumoAnaliseCustos.innerHTML = "";
     tabelaAnaliseCustos.innerHTML = "";
-    tabelaCustosDetalhados.innerHTML = "";
     return;
   }
 
@@ -492,6 +536,9 @@ botaoLimparFiltrosAnaliseCustos?.addEventListener("click", () => {
   if (filtroCategoriaAnaliseCustos) {
     filtroCategoriaAnaliseCustos.value = "";
   }
+  if (filtroOrigemAnaliseCustos) {
+    filtroOrigemAnaliseCustos.value = "";
+  }
   renderizarAnaliseCustos();
 });
 
@@ -509,8 +556,20 @@ periodoRapidoAnaliseCustos?.addEventListener("change", () => {
   });
 });
 
-[filtroTipoAnaliseCustos, filtroCategoriaAnaliseCustos].forEach(campo => {
+[filtroTipoAnaliseCustos, filtroCategoriaAnaliseCustos, filtroOrigemAnaliseCustos, quantidadeAnaliseCustos].forEach(campo => {
   campo?.addEventListener("change", renderizarAnaliseCustos);
+});
+
+tabelaAnaliseCustos?.addEventListener("click", evento => {
+  const botao = evento.target.closest("button[data-acao='alternar-detalhes']");
+
+  if (!botao) {
+    return;
+  }
+
+  const tipoChave = botao.dataset.tipoChave || "";
+  tipoExpandidoChave = tipoExpandidoChave === tipoChave ? null : tipoChave;
+  renderizarAnaliseCustos();
 });
 
 document.addEventListener("DOMContentLoaded", iniciarAnaliseCustos);

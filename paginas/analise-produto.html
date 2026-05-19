@@ -11,7 +11,7 @@
     <div>
       <p class="hero__tag">Análise</p>
       <h1>Análise por Produto</h1>
-      <p class="hero__description">Receita, custo FIFO, custos operacionais, lucro e margem por peça.</p>
+      <p class="hero__description">Resultado financeiro agrupado por peça.</p>
     </div>
   </header>
 
@@ -21,19 +21,26 @@
         <div>
           <span class="piece-form-eyebrow">Financeiro por peça</span>
           <h2>Desempenho dos produtos</h2>
-          <p>Cálculos centralizados pelo financeiro-utils e custo real pelo consumo FIFO.</p>
+          <p>Receita, custo da peça, custos da venda, lucro e margem.</p>
         </div>
         <div class="form-actions">
-          <a class="button-secondary" href="../index.html">Voltar para o início</a>
           <a class="button-secondary" href="produtos.html">Ver produtos</a>
         </div>
       </div>
 
       <p id="mensagemAnaliseProduto" class="empty-message"></p>
-      <section id="resumoAnaliseProduto" class="summary-grid summary-grid--compact" aria-label="Resumo da análise por produto"></section>
 
       <section class="products-toolbar product-analysis-toolbar" aria-label="Busca e filtros da análise por produto">
         <div class="products-main-controls operational-filter-main-controls">
+          <div class="form-group products-page-size-field">
+            <label for="quantidadeAnaliseProduto">Mostrar</label>
+            <select id="quantidadeAnaliseProduto">
+              <option value="12">12</option>
+              <option value="24">24</option>
+              <option value="48">48</option>
+            </select>
+          </div>
+
           <div class="form-group products-search-field">
             <label for="buscaAnaliseProduto">Buscar produto</label>
             <input id="buscaAnaliseProduto" type="search" placeholder="Buscar por SKU ou nome da peça">
@@ -45,57 +52,29 @@
         </div>
       </section>
 
-      <section class="product-analysis-section" aria-labelledby="tituloRankingProduto">
-        <div class="stock-header product-analysis-section__header">
-          <div>
-            <h2 id="tituloRankingProduto">Produtos mais vendidos</h2>
-            <p>Ranking por quantidade vendida.</p>
-          </div>
-        </div>
-
-        <p id="mensagemRankingProduto" class="empty-message"></p>
-
-        <div class="table-wrapper">
-          <table class="stock-table product-analysis-table">
-            <thead>
-              <tr>
-                <th>Posição</th>
-                <th>SKU</th>
-                <th>Nome</th>
-                <th>Qtd. vendida</th>
-                <th>Receita</th>
-                <th>Lucro</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaRankingProduto"></tbody>
-          </table>
-        </div>
-      </section>
+      <section id="resumoAnaliseProduto" class="summary-grid summary-grid--compact" aria-label="Resumo da análise por produto"></section>
 
       <section class="product-analysis-section" aria-labelledby="tituloListaAnaliseProduto">
         <div class="stock-header product-analysis-section__header">
           <div>
-            <h2 id="tituloListaAnaliseProduto">Lista completa</h2>
-            <p>Produtos analisados com receita, custos, lucro e margem.</p>
+            <span class="piece-form-eyebrow">Produtos analisados</span>
+            <h2 id="tituloListaAnaliseProduto">Resultado por peça</h2>
           </div>
         </div>
 
-        <div class="table-wrapper">
-          <table class="stock-table product-analysis-table">
-            <thead>
-              <tr>
-                <th>SKU</th>
-                <th>Nome</th>
-                <th>Receita</th>
-                <th>Custo FIFO</th>
-                <th>Lucro</th>
-                <th>Margem</th>
-                <th>Qtd. vendida</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaAnaliseProduto"></tbody>
-          </table>
+        <div class="product-analysis-list" aria-label="Lista de análise por produto">
+          <div class="product-analysis-list__head" aria-hidden="true">
+            <span>SKU</span>
+            <span>Peça</span>
+            <span>Qtd.</span>
+            <span>Receita</span>
+            <span>Custo da peça</span>
+            <span>Custos da venda</span>
+            <span>Lucro</span>
+            <span>Margem</span>
+            <span>Ações</span>
+          </div>
+          <div id="tabelaAnaliseProduto" class="product-analysis-list__body"></div>
         </div>
       </section>
 
@@ -107,10 +86,27 @@
 
         <div class="products-filters">
           <div class="form-group">
-            <label for="filtroCustoAnaliseProduto">Custo FIFO</label>
+            <label for="filtroDataInicialAnaliseProduto">Período inicial</label>
+            <input id="filtroDataInicialAnaliseProduto" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="filtroDataFinalAnaliseProduto">Período final</label>
+            <input id="filtroDataFinalAnaliseProduto" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="filtroCanalAnaliseProduto">Canal</label>
+            <select id="filtroCanalAnaliseProduto">
+              <option value="">Todos</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filtroCustoAnaliseProduto">Situação do custo</label>
             <select id="filtroCustoAnaliseProduto">
               <option value="">Todos</option>
-              <option value="calculado">Calculado</option>
+              <option value="calculado">Custo calculado</option>
               <option value="pendente">Custo não calculado</option>
             </select>
           </div>
@@ -150,7 +146,7 @@
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=28"></script>
   <script src="../js/financeiro-utils.js?v=1"></script>
-  <script src="../js/analise-produto.js?v=5"></script>
+  <script src="../js/analise-produto.js?v=6"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

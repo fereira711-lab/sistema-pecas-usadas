@@ -8,6 +8,8 @@ const resumoAnalisePeriodo = document.getElementById("resumoAnalisePeriodo");
 const tabelaAnalisePeriodo = document.getElementById("tabelaAnalisePeriodo");
 const buscaAnalisePeriodo = document.getElementById("buscaAnalisePeriodo");
 const filtroCanalAnalisePeriodo = document.getElementById("filtroCanalAnalisePeriodo");
+const filtroCustoAnalisePeriodo = document.getElementById("filtroCustoAnalisePeriodo");
+const quantidadeAnalisePeriodo = document.getElementById("quantidadeAnalisePeriodo");
 const analisePeriodoShell = document.getElementById("analisePeriodoShell");
 const botaoAbrirFiltrosAnalisePeriodo = document.getElementById("botaoAbrirFiltrosAnalisePeriodo");
 const botaoFecharFiltrosAnalisePeriodo = document.getElementById("botaoFecharFiltrosAnalisePeriodo");
@@ -17,6 +19,7 @@ let dadosAnalisePeriodo = {
   consumosEstoque: [],
   custosVenda: []
 };
+let vendaExpandidaId = null;
 
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
@@ -211,7 +214,8 @@ function filtrarVendasPorPeriodo(vendas) {
 
       const sku = formatarSkuVenda(venda).toLowerCase();
       const nome = formatarNomeVenda(venda).toLowerCase();
-      return sku.includes(termo) || nome.includes(termo);
+      const canalVenda = obterCanalVenda(venda).toLowerCase();
+      return sku.includes(termo) || nome.includes(termo) || canalVenda.includes(termo);
     });
 }
 
@@ -246,12 +250,36 @@ function calcularLinhas(vendasFiltradas) {
       totalVendido: resultadoVenda.receita,
       custoProdutos: custoConsumido.calculado ? custoConsumido.valor : null,
       custosVenda: custosDaVenda.valor,
-      lucro: resultadoVenda.lucro,
-      margem: resultadoVenda.margem,
+      lucro: resultadoVenda.calculado ? resultadoVenda.lucro : null,
+      margem: resultadoVenda.calculado ? resultadoVenda.margem : null,
       quantidade: Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0),
       custoCalculado: resultadoVenda.calculado
     };
   });
+}
+
+function filtrarLinhas(linhas, limitarQuantidade = true) {
+  const filtroCusto = filtroCustoAnalisePeriodo?.value || "";
+  const quantidade = quantidadeAnalisePeriodo?.value || "12";
+  const filtradas = linhas
+    .filter(linha => {
+      if (filtroCusto === "calculado") {
+        return linha.custoCalculado;
+      }
+
+      if (filtroCusto === "pendente") {
+        return !linha.custoCalculado;
+      }
+
+      return true;
+    })
+    .sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
+
+  if (!limitarQuantidade || quantidade === "todos") {
+    return filtradas;
+  }
+
+  return filtradas.slice(0, Number(quantidade || 12));
 }
 
 function calcularResumo(linhas) {
@@ -279,14 +307,12 @@ function renderizarResumo(resumo) {
   const classeLucro = resumo.lucro !== null && resumo.lucro >= 0 ? "summary-card--profit" : "summary-card--loss";
 
   resumoAnalisePeriodo.innerHTML =
-    criarCard("Total vendido", formatarMoeda(resumo.totalVendido)) +
-    criarCard("Custo consumido FIFO", formatarValorOuNaoCalculado(resumo.custoProdutosVendidos)) +
+    criarCard("Receita total", formatarMoeda(resumo.totalVendido)) +
+    criarCard("Custo das peças", formatarValorOuNaoCalculado(resumo.custoProdutosVendidos)) +
     criarCard("Custos da venda", formatarMoeda(resumo.custosVenda)) +
-    criarCard("Lucro do período", resumo.lucro === null ? "Custo não calculado" : `<span class="${obterClasseLucro(resumo.lucro)}">${formatarMoeda(resumo.lucro)}</span>`, classeLucro) +
-    criarCard("Margem", formatarMargem(resumo.margem)) +
-    criarCard("Quantidade vendida", formatarNumero(resumo.quantidadeVendida)) +
-    criarCard("Número de vendas", formatarNumero(resumo.numeroVendas)) +
-    criarCard("Vendas sem custo real", resumo.vendasSemCusto);
+    criarCard("Lucro total", resumo.lucro === null ? "Custo não calculado" : `<span class="${obterClasseLucro(resumo.lucro)}">${formatarMoeda(resumo.lucro)}</span>`, classeLucro) +
+    criarCard("Margem média", resumo.margem === null ? "Custo não calculado" : formatarMargem(resumo.margem)) +
+    criarCard("Quantidade vendida", formatarNumero(resumo.quantidadeVendida));
 }
 
 function formatarNomeVenda(venda) {
@@ -300,6 +326,54 @@ function obterNomePecaVenda(venda) {
   return venda.produtoNome || venda.nome || venda.nomePeca || venda.nome_peca || `Peça ${venda.pecaId || ""}`.trim();
 }
 
+function obterConsumosDaVenda(vendaId) {
+  return dadosAnalisePeriodo.consumosEstoque.filter(consumo => Number(consumo.vendaId) === Number(vendaId));
+}
+
+function obterCustosDaVenda(vendaId) {
+  return dadosAnalisePeriodo.custosVenda.filter(custo => Number(custo.vendaId) === Number(vendaId));
+}
+
+function criarDetalhesVendaHtml(linha) {
+  const vendaId = Number(linha.venda.id);
+  const consumos = obterConsumosDaVenda(vendaId);
+  const custos = obterCustosDaVenda(vendaId);
+  const entradaTexto = consumos.length === 0
+    ? "Custo não calculado"
+    : consumos.map(consumo => {
+      const entrada = consumo.entradaEstoqueId || consumo.entrada_estoque_id || "-";
+      const quantidade = consumo.quantidadeConsumida || consumo.quantidade_consumida || 0;
+      const custoUnitario = consumo.custoUnitario || consumo.custo_unitario || 0;
+      return `Entrada ${entrada}, ${formatarNumero(quantidade)} un., custo unitário ${formatarMoeda(custoUnitario)}`;
+    }).join("; ");
+  const custosTexto = custos.length === 0
+    ? "Nenhum custo da venda registrado."
+    : custos.map(custo => {
+      const tipo = custo.tipoCusto || custo.tipo || "Custo";
+      return `${tipo}: ${formatarMoeda(custo.valor)}`;
+    }).join("; ");
+  const resumoTexto = linha.custoCalculado
+    ? `Receita de ${formatarMoeda(linha.totalVendido)} menos ${formatarValorOuNaoCalculado(linha.custoProdutos)} de custo da peça e ${formatarMoeda(linha.custosVenda)} de custos da venda.`
+    : "Custo não calculado para esta venda.";
+
+  return `
+    <section class="period-analysis-detail-panel" aria-label="Detalhes da venda">
+      <div>
+        <span class="piece-form-eyebrow">Entrada consumida</span>
+        <p>${escaparHtml(entradaTexto)}</p>
+      </div>
+      <div>
+        <span class="piece-form-eyebrow">Custos da venda</span>
+        <p>${escaparHtml(custosTexto)}</p>
+      </div>
+      <div>
+        <span class="piece-form-eyebrow">Resumo simples</span>
+        <p>${escaparHtml(resumoTexto)}</p>
+      </div>
+    </section>
+  `;
+}
+
 function renderizarTabela(linhas) {
   tabelaAnalisePeriodo.innerHTML = "";
 
@@ -311,25 +385,35 @@ function renderizarTabela(linhas) {
   mensagemAnalisePeriodo.textContent = "";
 
   linhas.forEach(linha => {
-    const tr = document.createElement("tr");
+    const expandida = String(vendaExpandidaId || "") === String(linha.venda.id || "");
+    const lucroHtml = linha.lucro === null
+      ? `<strong class="profit-value profit-value--neutral">-</strong>`
+      : `<strong class="${obterClasseLucro(linha.lucro)}">${formatarMoeda(linha.lucro)}</strong>`;
+    const margemHtml = linha.margem === null
+      ? `<span class="badge badge-attention">Pendente</span>`
+      : `<span class="badge badge-ok">${formatarMargem(linha.margem)}</span>`;
 
-    tr.innerHTML = `
-      <td data-label="Data">${formatarData(linha.data)}</td>
-      <td data-label="SKU">${escaparHtml(formatarSkuVenda(linha.venda))}</td>
-      <td data-label="Peça"><strong class="product-name">${escaparHtml(obterNomePecaVenda(linha.venda))}</strong></td>
-      <td data-label="Quantidade">${formatarNumero(linha.quantidade)}</td>
-      <td data-label="Valor vendido">${formatarMoeda(linha.totalVendido)}</td>
-      <td data-label="Custo consumido">${formatarValorOuNaoCalculado(linha.custoProdutos)}</td>
-      <td data-label="Custos da venda">${formatarMoeda(linha.custosVenda)}</td>
-      <td data-label="Lucro">${linha.lucro === null ? "<strong>Custo não calculado</strong>" : `<strong class="${obterClasseLucro(linha.lucro)}">${formatarMoeda(linha.lucro)}</strong>`}</td>
-      <td data-label="Ações">
-        <div class="table-actions table-actions--single">
-          <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(linha.venda.id || "")}">Ver detalhes da venda</a>
-        </div>
-      </td>
-    `;
+    tabelaAnalisePeriodo.insertAdjacentHTML("beforeend", `
+      <article class="period-analysis-row${expandida ? " period-analysis-row--expanded" : ""}">
+        <span data-label="Data">${formatarData(linha.data)}</span>
+        <span class="sku" data-label="SKU">${escaparHtml(formatarSkuVenda(linha.venda))}</span>
+        <strong class="product-name" data-label="Peça">${escaparHtml(obterNomePecaVenda(linha.venda))}</strong>
+        <span data-label="Qtd.">${formatarNumero(linha.quantidade)}</span>
+        <span data-label="Canal">${escaparHtml(obterCanalVenda(linha.venda) || "-")}</span>
+        <span data-label="Receita">${formatarMoeda(linha.totalVendido)}</span>
+        <span data-label="Custo da peça">${formatarValorOuNaoCalculado(linha.custoProdutos)}</span>
+        <span data-label="Custos da venda">${formatarMoeda(linha.custosVenda)}</span>
+        <span data-label="Lucro">${lucroHtml}</span>
+        <span data-label="Margem">${margemHtml}</span>
+        <button type="button" class="button-secondary button-compact" data-acao="alternar-detalhes" data-venda-id="${escaparHtml(linha.venda.id || "")}">
+          ${expandida ? "Ocultar" : "Detalhes"}
+        </button>
+      </article>
+    `);
 
-    tabelaAnalisePeriodo.appendChild(tr);
+    if (expandida) {
+      tabelaAnalisePeriodo.insertAdjacentHTML("beforeend", criarDetalhesVendaHtml(linha));
+    }
   });
 }
 
@@ -342,8 +426,13 @@ function renderizarAnalise() {
   }
 
   const vendasFiltradas = filtrarVendasPorPeriodo(dadosAnalisePeriodo.vendas);
-  const linhas = calcularLinhas(vendasFiltradas);
-  const resumo = calcularResumo(linhas);
+  const todasLinhas = filtrarLinhas(calcularLinhas(vendasFiltradas), false);
+  const linhas = filtrarLinhas(todasLinhas);
+  const resumo = calcularResumo(todasLinhas);
+
+  if (vendaExpandidaId && !linhas.some(linha => String(linha.venda.id || "") === String(vendaExpandidaId))) {
+    vendaExpandidaId = null;
+  }
 
   renderizarResumo(resumo);
   renderizarTabela(linhas);
@@ -408,6 +497,9 @@ limparPeriodo?.addEventListener("click", function () {
   if (filtroCanalAnalisePeriodo) {
     filtroCanalAnalisePeriodo.value = "";
   }
+  if (filtroCustoAnalisePeriodo) {
+    filtroCustoAnalisePeriodo.value = "";
+  }
   if (buscaAnalisePeriodo) {
     buscaAnalisePeriodo.value = "";
   }
@@ -429,7 +521,21 @@ periodoRapido?.addEventListener("change", function () {
 });
 
 filtroCanalAnalisePeriodo?.addEventListener("change", renderizarAnalise);
+filtroCustoAnalisePeriodo?.addEventListener("change", renderizarAnalise);
+quantidadeAnalisePeriodo?.addEventListener("change", renderizarAnalise);
 buscaAnalisePeriodo?.addEventListener("input", renderizarAnalise);
+
+tabelaAnalisePeriodo?.addEventListener("click", function (evento) {
+  const botao = evento.target.closest("button[data-acao='alternar-detalhes']");
+
+  if (!botao) {
+    return;
+  }
+
+  const vendaId = String(botao.dataset.vendaId || "");
+  vendaExpandidaId = String(vendaExpandidaId || "") === vendaId ? null : vendaId;
+  renderizarAnalise();
+});
 
 botaoAbrirFiltrosAnalisePeriodo?.addEventListener("click", function () {
   definirPainelFiltrosAberto(!analisePeriodoShell?.classList.contains("period-analysis-shell--filters-open"));

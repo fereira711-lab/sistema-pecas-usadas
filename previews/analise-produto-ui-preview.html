@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Analise por produto</title>
+  <link rel="stylesheet" href="analise-produto-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Analises</span>
+        <h1>Analise por produto</h1>
+        <p>Resultado financeiro agrupado por peca.</p>
+      </div>
+    </header>
+
+    <input class="filter-toggle" type="checkbox" id="abrirFiltros">
+
+    <section class="operation-bar" aria-label="Busca e filtros">
+      <label class="per-page">
+        <span>Mostrar</span>
+        <select>
+          <option>12</option>
+          <option>24</option>
+          <option>48</option>
+        </select>
+      </label>
+
+      <label class="search-field">
+        <span>Buscar produto</span>
+        <input type="search" placeholder="Buscar por SKU ou nome da peca">
+      </label>
+
+      <label class="btn btn-primary filter-open" for="abrirFiltros">Filtros</label>
+    </section>
+
+    <aside class="filter-panel" aria-label="Filtros avancados">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">Filtros</span>
+          <h2>Filtros laterais</h2>
+        </div>
+        <label class="icon-btn" for="abrirFiltros" aria-label="Fechar filtros">X</label>
+      </div>
+
+      <div class="filter-grid">
+        <label>
+          <span>Periodo inicial</span>
+          <input type="date" value="2026-05-01">
+        </label>
+        <label>
+          <span>Periodo final</span>
+          <input type="date" value="2026-05-19">
+        </label>
+        <label>
+          <span>Canal</span>
+          <select>
+            <option>Todos</option>
+            <option>Mercado Livre</option>
+            <option>Balcao</option>
+          </select>
+        </label>
+        <label>
+          <span>Situacao do custo</span>
+          <select>
+            <option>Todos</option>
+            <option>Custo calculado</option>
+            <option>Custo nao calculado</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn" type="button">Limpar filtros</button>
+        <label class="btn btn-primary" for="abrirFiltros">Aplicar/Fechar</label>
+      </div>
+    </aside>
+
+    <label class="filter-backdrop" for="abrirFiltros" aria-label="Fechar filtros"></label>
+
+    <section class="analysis-content">
+        <section class="summary-grid" aria-label="Resumo financeiro">
+          <article>
+            <span>Receita total</span>
+            <strong>R$ 18.420,00</strong>
+          </article>
+          <article>
+            <span>Custo das pecas vendidas</span>
+            <strong>R$ 7.860,00</strong>
+          </article>
+          <article>
+            <span>Custos da venda</span>
+            <strong>R$ 1.145,00</strong>
+          </article>
+          <article class="summary-positive">
+            <span>Lucro total</span>
+            <strong>R$ 9.415,00</strong>
+          </article>
+          <article>
+            <span>Margem media</span>
+            <strong>51,1%</strong>
+          </article>
+        </section>
+
+        <section class="info-card" aria-labelledby="tituloListaProdutos">
+          <div class="card-header">
+            <div>
+              <span class="eyebrow">Produtos analisados</span>
+              <h2 id="tituloListaProdutos">Resultado por peca</h2>
+            </div>
+            <span class="badge badge-soft">12 produtos</span>
+          </div>
+
+          <div class="product-analysis-list">
+            <div class="table-head">
+              <span>SKU</span>
+              <span>Peca</span>
+              <span>Qtd.</span>
+              <span>Receita</span>
+              <span>Custo da peca</span>
+              <span>Custos venda</span>
+              <span>Lucro</span>
+              <span>Margem</span>
+              <span>Acoes</span>
+            </div>
+
+            <article class="product-row product-row--expanded">
+              <span class="sku">FAR-2048</span>
+              <strong>Farol dianteiro direito Corolla 2018</strong>
+              <span>3</span>
+              <span>R$ 2.040,00</span>
+              <span>R$ 810,00</span>
+              <span>R$ 126,00</span>
+              <strong class="profit-positive">R$ 1.104,00</strong>
+              <span class="badge badge-ok">54,1%</span>
+              <button class="btn btn-secondary" type="button">Detalhes</button>
+            </article>
+
+            <section class="expanded-panel" aria-label="Detalhes do produto expandido">
+              <div>
+                <span class="eyebrow">Vendas relacionadas</span>
+                <p>3 vendas no periodo, principal canal: Mercado Livre.</p>
+              </div>
+              <div>
+                <span class="eyebrow">Entradas consumidas</span>
+                <p>2 entradas usadas para calcular o custo da peca.</p>
+              </div>
+              <div>
+                <span class="eyebrow">Custos vinculados</span>
+                <p>Limpeza R$ 45,00 + embalagem R$ 81,00.</p>
+              </div>
+              <div>
+                <span class="eyebrow">Resumo simples</span>
+                <p>Receita de R$ 2.040,00 menos custo da peca e custos da venda.</p>
+              </div>
+            </section>
+
+            <article class="product-row">
+              <span class="sku">LAN-1180</span>
+              <strong>Lanterna traseira esquerda Corolla</strong>
+              <span>1</span>
+              <span>R$ 420,00</span>
+              <span>R$ 180,00</span>
+              <span>R$ 32,00</span>
+              <strong class="profit-positive">R$ 208,00</strong>
+              <span class="badge badge-ok">49,5%</span>
+              <button class="btn btn-secondary" type="button">Detalhes</button>
+            </article>
+
+            <article class="product-row">
+              <span class="sku">RET-4402</span>
+              <strong>Retrovisor direito Onix 2020</strong>
+              <span>1</span>
+              <span>R$ 360,00</span>
+              <span class="cost-pending">Custo nao calculado</span>
+              <span>R$ 0,00</span>
+              <strong class="profit-neutral">-</strong>
+              <span class="badge badge-attention">Pendente</span>
+              <button class="btn btn-secondary" type="button">Detalhes</button>
+            </article>
+          </div>
+        </section>
+      </section>
+  </main>
+</body>
+</html>

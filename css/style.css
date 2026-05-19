@@ -6899,6 +6899,10 @@ textarea:focus {
   max-width: 1180px;
 }
 
+.product-analysis-page {
+  overflow-x: hidden;
+}
+
 .product-analysis-shell,
 .product-analysis-section {
   padding: 0;
@@ -6964,17 +6968,19 @@ textarea:focus {
   margin: 0 16px 14px;
 }
 
+.product-analysis-page .operational-filter-main-controls {
+  grid-template-columns: 138px minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.product-analysis-page .products-page-size-field select,
+.product-analysis-page .products-search-field input {
+  height: 40px;
+  min-height: 40px;
+}
+
 .product-analysis-section {
   margin: 0 16px 16px;
-}
-
-.product-analysis-page .table-wrapper {
-  margin: 14px 16px 16px;
-}
-
-.product-analysis-table th,
-.product-analysis-table td {
-  padding: 10px;
 }
 
 .product-analysis-page .empty-message {
@@ -6997,6 +7003,7 @@ textarea:focus {
   text-transform: uppercase;
 }
 
+.product-analysis-page .products-filters input,
 .product-analysis-page .products-filters select {
   min-height: 34px;
   border-color: rgba(148, 163, 184, 0.34);
@@ -7014,6 +7021,10 @@ textarea:focus {
   background: rgba(251, 191, 36, 0.06);
 }
 
+.product-analysis-page .product-analysis-filter-panel {
+  right: max(16px, calc((100vw - 1180px) / 2 - 292px));
+}
+
 .product-analysis-page .table-actions {
   gap: 6px;
 }
@@ -7025,9 +7036,80 @@ textarea:focus {
   font-size: 0.72rem;
 }
 
-.product-analysis-page .analysis-detail-panel {
+.product-analysis-list {
+  display: grid;
+  gap: 8px;
   padding: 14px 16px 16px;
-  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  overflow-x: hidden;
+}
+
+.product-analysis-list__head,
+.product-analysis-row {
+  display: grid;
+  grid-template-columns:
+    minmax(70px, 0.72fr)
+    minmax(160px, 1.45fr)
+    minmax(42px, 0.42fr)
+    minmax(86px, 0.82fr)
+    minmax(98px, 0.96fr)
+    minmax(88px, 0.90fr)
+    minmax(78px, 0.80fr)
+    minmax(68px, 0.64fr)
+    minmax(76px, 0.66fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.product-analysis-list__head {
+  padding: 0 8px 2px;
+}
+
+.product-analysis-list__head span {
+  color: rgba(203, 213, 225, 0.68);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.product-analysis-row {
+  padding: 9px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.product-analysis-row--expanded {
+  border-color: rgba(251, 191, 36, 0.22);
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.product-analysis-row > span,
+.product-analysis-row > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.product-analysis-row .sku {
+  color: #facc15;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.product-analysis-row .product-name {
+  color: #f8fafc;
+  font-size: 0.86rem;
+}
+
+.product-analysis-row .badge {
+  justify-self: start;
+}
+
+.product-analysis-page .analysis-detail-panel {
+  padding: 14px;
+  border: 1px solid rgba(251, 191, 36, 0.14);
+  border-radius: 12px;
+  background: rgba(8, 17, 31, 0.44);
 }
 
 .product-analysis-page .analysis-filter {
@@ -7041,9 +7123,22 @@ textarea:focus {
   gap: 12px;
 }
 
+.product-analysis-page .analysis-detail-grid section {
+  min-width: 0;
+}
+
+.product-analysis-page .analysis-linked-costs {
+  display: grid;
+  gap: 10px;
+}
+
 /* Padrao financeiro aplicado a analise por periodo. */
 .period-analysis-page .period-analysis-layout {
   max-width: 1180px;
+}
+
+.period-analysis-page {
+  overflow-x: hidden;
 }
 
 .period-analysis-shell,
@@ -7111,17 +7206,19 @@ textarea:focus {
   margin: 0 16px 14px;
 }
 
+.period-analysis-page .operational-filter-main-controls {
+  grid-template-columns: 138px minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.period-analysis-page .products-page-size-field select,
+.period-analysis-page .products-search-field input {
+  height: 40px;
+  min-height: 40px;
+}
+
 .period-analysis-section {
   margin: 0 16px 16px;
-}
-
-.period-analysis-page .table-wrapper {
-  margin: 14px 16px 16px;
-}
-
-.period-analysis-table th,
-.period-analysis-table td {
-  padding: 10px;
 }
 
 .period-analysis-page .empty-message {
@@ -7162,19 +7259,116 @@ textarea:focus {
   background: rgba(251, 191, 36, 0.06);
 }
 
-.period-analysis-page .table-actions {
-  gap: 6px;
+.period-analysis-page .period-analysis-filter-panel {
+  right: max(16px, calc((100vw - 1180px) / 2 - 292px));
 }
 
+.period-analysis-page .button-compact,
 .period-analysis-page .table-link {
   min-height: 30px;
   border-radius: 8px;
   font-size: 0.72rem;
 }
 
+.period-analysis-list {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  overflow-x: hidden;
+}
+
+.period-analysis-list__head,
+.period-analysis-row {
+  display: grid;
+  grid-template-columns:
+    minmax(76px, 0.72fr)
+    minmax(70px, 0.62fr)
+    minmax(150px, 1.36fr)
+    minmax(38px, 0.36fr)
+    minmax(80px, 0.78fr)
+    minmax(82px, 0.78fr)
+    minmax(94px, 0.90fr)
+    minmax(86px, 0.82fr)
+    minmax(78px, 0.74fr)
+    minmax(68px, 0.62fr)
+    minmax(76px, 0.66fr);
+  gap: 7px;
+  align-items: center;
+}
+
+.period-analysis-list__head {
+  padding: 0 8px 2px;
+}
+
+.period-analysis-list__head span {
+  color: rgba(203, 213, 225, 0.68);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.period-analysis-row {
+  padding: 9px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.period-analysis-row--expanded {
+  border-color: rgba(251, 191, 36, 0.22);
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.period-analysis-row > span,
+.period-analysis-row > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.period-analysis-row .sku {
+  color: #facc15;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.period-analysis-row .product-name {
+  color: #f8fafc;
+  font-size: 0.86rem;
+}
+
+.period-analysis-row .badge {
+  justify-self: start;
+}
+
+.period-analysis-detail-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(251, 191, 36, 0.14);
+  border-radius: 12px;
+  background: rgba(8, 17, 31, 0.44);
+}
+
+.period-analysis-detail-panel div {
+  min-width: 0;
+}
+
+.period-analysis-detail-panel p {
+  margin: 6px 0 0;
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 /* Padrao financeiro aplicado a analise de custos. */
 .cost-analysis-page .cost-analysis-layout {
   max-width: 1180px;
+}
+
+.cost-analysis-page {
+  overflow-x: hidden;
 }
 
 .cost-analysis-shell,
@@ -7242,23 +7436,19 @@ textarea:focus {
   margin: 0 16px 14px;
 }
 
+.cost-analysis-page .operational-filter-main-controls {
+  grid-template-columns: 138px minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.cost-analysis-page .products-page-size-field select,
+.cost-analysis-page .products-search-field input {
+  height: 40px;
+  min-height: 40px;
+}
+
 .cost-analysis-section {
   margin: 0 16px 16px;
-}
-
-.cost-analysis-page .table-wrapper {
-  margin: 14px 16px 16px;
-}
-
-.cost-analysis-table th,
-.cost-analysis-table td {
-  padding: 10px;
-}
-
-.cost-analysis-table .status-badge {
-  min-width: auto;
-  padding: 4px 8px;
-  font-size: 0.68rem;
 }
 
 .cost-analysis-page .empty-message {
@@ -7299,14 +7489,93 @@ textarea:focus {
   background: rgba(251, 191, 36, 0.06);
 }
 
-.cost-analysis-page .table-actions {
-  gap: 6px;
+.cost-analysis-page .cost-analysis-filter-panel {
+  right: max(16px, calc((100vw - 1180px) / 2 - 292px));
 }
 
+.cost-analysis-page .button-compact,
 .cost-analysis-page .table-link {
   min-height: 30px;
   border-radius: 8px;
   font-size: 0.72rem;
+}
+
+.cost-analysis-list {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  overflow-x: hidden;
+}
+
+.cost-analysis-list__head,
+.cost-analysis-row {
+  display: grid;
+  grid-template-columns:
+    minmax(150px, 1.32fr)
+    minmax(92px, 0.70fr)
+    minmax(52px, 0.42fr)
+    minmax(94px, 0.82fr)
+    minmax(88px, 0.74fr)
+    minmax(130px, 1fr)
+    minmax(78px, 0.62fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.cost-analysis-list__head {
+  padding: 0 8px 2px;
+}
+
+.cost-analysis-list__head span {
+  color: rgba(203, 213, 225, 0.68);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.cost-analysis-row {
+  padding: 9px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.cost-analysis-row--expanded {
+  border-color: rgba(251, 191, 36, 0.22);
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.cost-analysis-row > span,
+.cost-analysis-row > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cost-analysis-row .product-name {
+  color: #f8fafc;
+  font-size: 0.86rem;
+}
+
+.cost-analysis-detail-panel {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(251, 191, 36, 0.14);
+  border-radius: 12px;
+  background: rgba(8, 17, 31, 0.44);
+}
+
+.cost-analysis-detail-panel div {
+  min-width: 0;
+}
+
+.cost-analysis-detail-panel p {
+  margin: 6px 0 0;
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 /* Padrao operacional aplicado ao giro de estoque. */
@@ -8415,16 +8684,81 @@ textarea:focus {
     flex-direction: column;
   }
 
+  .product-analysis-page .operational-filter-main-controls,
+  .product-analysis-list__head,
+  .product-analysis-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .product-analysis-list__head {
+    display: none;
+  }
+
+  .product-analysis-row .product-name {
+    grid-column: span 3;
+  }
+
+  .product-analysis-row .button-compact {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
   .period-analysis-header,
   .period-analysis-section__header {
     align-items: stretch;
     flex-direction: column;
   }
 
+  .period-analysis-page .operational-filter-main-controls,
+  .period-analysis-list__head,
+  .period-analysis-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .period-analysis-list__head {
+    display: none;
+  }
+
+  .period-analysis-row .product-name {
+    grid-column: span 2;
+  }
+
+  .period-analysis-row .button-compact {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .period-analysis-detail-panel {
+    grid-template-columns: 1fr;
+  }
+
   .cost-analysis-header,
   .cost-analysis-section__header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .cost-analysis-page .operational-filter-main-controls,
+  .cost-analysis-list__head,
+  .cost-analysis-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .cost-analysis-list__head {
+    display: none;
+  }
+
+  .cost-analysis-row .product-name {
+    grid-column: span 2;
+  }
+
+  .cost-analysis-row .button-compact {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .cost-analysis-detail-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .inventory-turnover-header,
@@ -8473,6 +8807,84 @@ textarea:focus {
 }
 
 @media (max-width: 680px) {
+  .product-analysis-page .operational-filter-main-controls,
+  .product-analysis-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .product-analysis-row > span,
+  .product-analysis-row > strong {
+    display: grid;
+    gap: 3px;
+  }
+
+  .product-analysis-row > span::before,
+  .product-analysis-row > strong::before {
+    content: attr(data-label);
+    color: rgba(203, 213, 225, 0.58);
+    font-size: 0.66rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .product-analysis-row .sku,
+  .product-analysis-row .product-name,
+  .product-analysis-row .button-compact {
+    grid-column: 1 / -1;
+  }
+
+  .period-analysis-page .operational-filter-main-controls,
+  .period-analysis-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .period-analysis-row > span,
+  .period-analysis-row > strong {
+    display: grid;
+    gap: 3px;
+  }
+
+  .period-analysis-row > span::before,
+  .period-analysis-row > strong::before {
+    content: attr(data-label);
+    color: rgba(203, 213, 225, 0.58);
+    font-size: 0.66rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .period-analysis-row .sku,
+  .period-analysis-row .product-name,
+  .period-analysis-row .button-compact {
+    grid-column: 1 / -1;
+  }
+
+  .cost-analysis-page .operational-filter-main-controls,
+  .cost-analysis-row,
+  .cost-analysis-detail-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cost-analysis-row > span,
+  .cost-analysis-row > strong {
+    display: grid;
+    gap: 3px;
+  }
+
+  .cost-analysis-row > span::before,
+  .cost-analysis-row > strong::before {
+    content: attr(data-label);
+    color: rgba(203, 213, 225, 0.58);
+    font-size: 0.66rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .cost-analysis-row .product-name,
+  .cost-analysis-row .button-compact {
+    grid-column: 1 / -1;
+  }
+
   .origin-parts-list tr {
     grid-template-columns: 1fr 1fr;
   }

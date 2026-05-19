@@ -11,7 +11,7 @@
     <div>
       <p class="hero__tag">Análise</p>
       <h1>Análise de Custos</h1>
-      <p class="hero__description">Custos de peça e venda agrupados por tipo, período e categoria.</p>
+      <p class="hero__description">Custos operacionais agrupados por tipo e período.</p>
     </div>
   </header>
 
@@ -21,22 +21,29 @@
         <div>
           <span class="piece-form-eyebrow">Financeiro de custos</span>
           <h2>Custos por tipo</h2>
-          <p>Leitura financeira dos custos cadastrados, sem alterar tipos nem lançamentos.</p>
+          <p>Custos da peça e custos da venda organizados por tipo.</p>
         </div>
         <div class="form-actions">
-          <a class="button-secondary" href="../index.html">Voltar para o início</a>
-          <a class="button-secondary" href="relatorios.html">Relatórios</a>
+          <a class="button-secondary" href="cadastro-custo.html">Lançar custo</a>
         </div>
       </div>
 
       <p id="mensagemAnaliseCustos" class="empty-message"></p>
-      <section id="resumoAnaliseCustos" class="summary-grid summary-grid--compact" aria-label="Resumo da análise de custos"></section>
 
       <section class="products-toolbar cost-analysis-toolbar" aria-label="Busca e filtros da análise de custos">
         <div class="products-main-controls operational-filter-main-controls">
+          <div class="form-group products-page-size-field">
+            <label for="quantidadeAnaliseCustos">Mostrar</label>
+            <select id="quantidadeAnaliseCustos">
+              <option value="12">12</option>
+              <option value="24">24</option>
+              <option value="48">48</option>
+            </select>
+          </div>
+
           <div class="form-group products-search-field">
             <label for="buscaAnaliseCustos">Buscar custo</label>
-            <input id="buscaAnaliseCustos" type="search" placeholder="Buscar por SKU, peça, venda ou observação">
+            <input id="buscaAnaliseCustos" type="search" placeholder="Buscar por tipo, peça, SKU ou observação">
           </div>
 
           <button id="botaoAbrirFiltrosAnaliseCustos" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosAnaliseCustos" aria-expanded="false">
@@ -45,53 +52,27 @@
         </div>
       </section>
 
+      <section id="resumoAnaliseCustos" class="summary-grid summary-grid--compact" aria-label="Resumo da análise de custos"></section>
+
       <section class="cost-analysis-section" aria-labelledby="tituloRankingCustos">
         <div class="stock-header cost-analysis-section__header">
           <div>
-            <h2 id="tituloRankingCustos">Total por tipo de custo</h2>
-            <p>Ranking dos maiores custos agrupados por nome padronizado.</p>
+            <span class="piece-form-eyebrow">Tipos de custo</span>
+            <h2 id="tituloRankingCustos">Totais por tipo</h2>
           </div>
         </div>
 
-        <div class="table-wrapper">
-          <table class="stock-table cost-analysis-table">
-            <thead>
-              <tr>
-                <th>Tipo de custo</th>
-                <th>Custos da peça</th>
-                <th>Custos da venda</th>
-                <th>Total</th>
-                <th>% do total</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaAnaliseCustos"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="cost-analysis-section" aria-labelledby="tituloListaCustos">
-        <div class="stock-header cost-analysis-section__header">
-          <div>
-            <h2 id="tituloListaCustos">Custos lançados</h2>
-            <p>Lista financeira de custos de peça e venda.</p>
+        <div class="cost-analysis-list" aria-label="Lista por tipo de custo">
+          <div class="cost-analysis-list__head" aria-hidden="true">
+            <span>Tipo de custo</span>
+            <span>Categoria</span>
+            <span>Qtd.</span>
+            <span>Total</span>
+            <span>% do total</span>
+            <span>Origem principal</span>
+            <span>Ações</span>
           </div>
-        </div>
-
-        <div class="table-wrapper">
-          <table class="stock-table cost-analysis-table">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Tipo de custo</th>
-                <th>Categoria</th>
-                <th>Peça/Venda relacionada</th>
-                <th>Valor</th>
-                <th>Observação</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaCustosDetalhados"></tbody>
-          </table>
+          <div id="tabelaAnaliseCustos" class="cost-analysis-list__body"></div>
         </div>
       </section>
 
@@ -134,9 +115,18 @@
           <div class="form-group">
             <label for="filtroCategoriaAnaliseCustos">Categoria</label>
             <select id="filtroCategoriaAnaliseCustos">
-              <option value="">Peça e venda</option>
+              <option value="">Ambos</option>
               <option value="peca">Peça</option>
               <option value="venda">Venda</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filtroOrigemAnaliseCustos">Origem do custo</label>
+            <select id="filtroOrigemAnaliseCustos">
+              <option value="">Todos</option>
+              <option value="peca">Custo da peça</option>
+              <option value="venda">Custo da venda</option>
             </select>
           </div>
         </div>
@@ -153,7 +143,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=29"></script>
-  <script src="../js/analise-custos.js?v=3"></script>
+  <script src="../js/analise-custos.js?v=4"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

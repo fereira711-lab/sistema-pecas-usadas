@@ -11,7 +11,7 @@
     <div>
       <p class="hero__tag">Análise</p>
       <h1>Análise por Período</h1>
-      <p class="hero__description">Resultado financeiro das vendas dentro de um período, com custo real pelo FIFO.</p>
+      <p class="hero__description">Resultado financeiro por intervalo de datas.</p>
     </div>
   </header>
 
@@ -21,22 +21,29 @@
         <div>
           <span class="piece-form-eyebrow">Financeiro por período</span>
           <h2>Resultado do período</h2>
-          <p>Cálculos centralizados pelo financeiro-utils e custo real por venda_consumos_estoque.</p>
+          <p>Receita, custo da peça, custos da venda, lucro e margem.</p>
         </div>
         <div class="form-actions">
-          <a class="button-secondary" href="../index.html">Voltar para o início</a>
           <a class="button-secondary" href="historico-vendas.html">Histórico de vendas</a>
         </div>
       </div>
 
       <p id="mensagemAnalisePeriodo" class="empty-message"></p>
-      <section id="resumoAnalisePeriodo" class="summary-grid summary-grid--compact" aria-label="Resumo da análise por período"></section>
 
       <section class="products-toolbar period-analysis-toolbar" aria-label="Busca e filtros da análise por período">
         <div class="products-main-controls operational-filter-main-controls">
+          <div class="form-group products-page-size-field">
+            <label for="quantidadeAnalisePeriodo">Mostrar</label>
+            <select id="quantidadeAnalisePeriodo">
+              <option value="12">12</option>
+              <option value="24">24</option>
+              <option value="48">48</option>
+            </select>
+          </div>
+
           <div class="form-group products-search-field">
             <label for="buscaAnalisePeriodo">Buscar venda</label>
-            <input id="buscaAnalisePeriodo" type="search" placeholder="Buscar por SKU ou nome da peça">
+            <input id="buscaAnalisePeriodo" type="search" placeholder="Buscar por SKU, nome da peça ou canal">
           </div>
 
           <button id="botaoAbrirFiltrosAnalisePeriodo" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosAnalisePeriodo" aria-expanded="false">
@@ -45,31 +52,31 @@
         </div>
       </section>
 
+      <section id="resumoAnalisePeriodo" class="summary-grid summary-grid--compact" aria-label="Resumo da análise por período"></section>
+
       <section class="period-analysis-section" aria-labelledby="tituloVendasPeriodo">
         <div class="stock-header period-analysis-section__header">
           <div>
-            <h2 id="tituloVendasPeriodo">Vendas consideradas</h2>
-            <p>Lista das vendas que entraram no cálculo do período.</p>
+            <span class="piece-form-eyebrow">Vendas do período</span>
+            <h2 id="tituloVendasPeriodo">Resultado por venda</h2>
           </div>
         </div>
 
-        <div class="table-wrapper">
-          <table class="stock-table period-analysis-table">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>SKU</th>
-                <th>Peça</th>
-                <th>Quantidade</th>
-                <th>Valor vendido</th>
-                <th>Custo consumido</th>
-                <th>Custos da venda</th>
-                <th>Lucro</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaAnalisePeriodo"></tbody>
-          </table>
+        <div class="period-analysis-list" aria-label="Lista de vendas do período">
+          <div class="period-analysis-list__head" aria-hidden="true">
+            <span>Data</span>
+            <span>SKU</span>
+            <span>Peça</span>
+            <span>Qtd.</span>
+            <span>Canal</span>
+            <span>Receita</span>
+            <span>Custo da peça</span>
+            <span>Custos da venda</span>
+            <span>Lucro</span>
+            <span>Margem</span>
+            <span>Ações</span>
+          </div>
+          <div id="tabelaAnalisePeriodo" class="period-analysis-list__body"></div>
         </div>
       </section>
 
@@ -108,6 +115,15 @@
             </select>
           </div>
 
+          <div class="form-group">
+            <label for="filtroCustoAnalisePeriodo">Situação do custo</label>
+            <select id="filtroCustoAnalisePeriodo" name="situacaoCusto">
+              <option value="">Todos</option>
+              <option value="calculado">Custo calculado</option>
+              <option value="pendente">Custo não calculado</option>
+            </select>
+          </div>
+
           <div class="products-filter-panel__actions">
             <button id="limparPeriodo" type="button" class="button-secondary">Limpar filtros</button>
             <button type="submit" class="button-primary">Aplicar/Fechar</button>
@@ -122,7 +138,7 @@
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=28"></script>
   <script src="../js/financeiro-utils.js?v=1"></script>
-  <script src="../js/analise-periodo.js?v=5"></script>
+  <script src="../js/analise-periodo.js?v=6"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Analise de custos</title>
+  <link rel="stylesheet" href="analise-custos-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Analises</span>
+        <h1>Analise de custos</h1>
+        <p>Custos operacionais agrupados por tipo e periodo.</p>
+      </div>
+    </header>
+
+    <input class="filter-toggle" type="checkbox" id="abrirFiltros">
+
+    <section class="operation-bar" aria-label="Busca e filtros">
+      <label class="per-page">
+        <span>Mostrar</span>
+        <select>
+          <option>12</option>
+          <option>24</option>
+          <option>48</option>
+        </select>
+      </label>
+
+      <label class="search-field">
+        <span>Buscar custo</span>
+        <input type="search" placeholder="Buscar por tipo, peca, SKU ou observacao">
+      </label>
+
+      <label class="btn btn-primary filter-open" for="abrirFiltros">Filtros</label>
+    </section>
+
+    <aside class="filter-panel" aria-label="Filtros avancados">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">Filtros</span>
+          <h2>Custos analisados</h2>
+        </div>
+        <label class="icon-btn" for="abrirFiltros" aria-label="Fechar filtros">X</label>
+      </div>
+
+      <div class="filter-grid">
+        <label>
+          <span>Data inicial</span>
+          <input type="date" value="2026-05-01">
+        </label>
+        <label>
+          <span>Data final</span>
+          <input type="date" value="2026-05-19">
+        </label>
+        <label>
+          <span>Categoria</span>
+          <select>
+            <option>Ambos</option>
+            <option>Peca</option>
+            <option>Venda</option>
+          </select>
+        </label>
+        <label>
+          <span>Tipo de custo</span>
+          <select>
+            <option>Todos</option>
+            <option>Limpeza</option>
+            <option>Embalagem</option>
+            <option>Frete</option>
+            <option>Manutencao</option>
+          </select>
+        </label>
+        <label>
+          <span>Origem do custo</span>
+          <select>
+            <option>Todos</option>
+            <option>Custo da peca</option>
+            <option>Custo da venda</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn" type="button">Limpar filtros</button>
+        <label class="btn btn-primary" for="abrirFiltros">Aplicar/Fechar</label>
+      </div>
+    </aside>
+
+    <label class="filter-backdrop" for="abrirFiltros" aria-label="Fechar filtros"></label>
+
+    <section class="analysis-content">
+      <section class="summary-grid" aria-label="Resumo de custos">
+        <article>
+          <span>Total de custos</span>
+          <strong>R$ 7.845,00</strong>
+        </article>
+        <article>
+          <span>Custos da peca</span>
+          <strong>R$ 4.920,00</strong>
+        </article>
+        <article>
+          <span>Custos da venda</span>
+          <strong>R$ 2.925,00</strong>
+        </article>
+        <article>
+          <span>Maior tipo</span>
+          <strong>Limpeza</strong>
+        </article>
+        <article>
+          <span>Lancamentos</span>
+          <strong>43</strong>
+        </article>
+      </section>
+
+      <section class="info-card" aria-labelledby="tituloListaCustos">
+        <div class="card-header">
+          <div>
+            <span class="eyebrow">Tipos de custo</span>
+            <h2 id="tituloListaCustos">Totais por tipo</h2>
+          </div>
+          <span class="badge badge-soft">8 tipos</span>
+        </div>
+
+        <div class="cost-analysis-list">
+          <div class="table-head">
+            <span>Tipo de custo</span>
+            <span>Categoria</span>
+            <span>Qtd.</span>
+            <span>Total</span>
+            <span>% do total</span>
+            <span>Origem principal</span>
+            <span>Acoes</span>
+          </div>
+
+          <article class="cost-row cost-row--expanded">
+            <strong>Limpeza</strong>
+            <span><span class="badge badge-soft">Peca</span></span>
+            <span>14</span>
+            <span>R$ 2.380,00</span>
+            <span class="badge badge-attention">30,3%</span>
+            <span>Custos da peca</span>
+            <button class="btn btn-secondary" type="button">Detalhes</button>
+          </article>
+
+          <section class="expanded-panel" aria-label="Detalhes do tipo de custo">
+            <div>
+              <span class="eyebrow">Ultimos lancamentos</span>
+              <p>19/05 - Farol Corolla - R$ 180,00; 18/05 - Retrovisor Onix - R$ 95,00.</p>
+            </div>
+            <div>
+              <span class="eyebrow">Pecas relacionadas</span>
+              <p>FAR-2048, RET-4402 e PAR-0911 concentraram os maiores valores.</p>
+            </div>
+            <div>
+              <span class="eyebrow">Vendas relacionadas</span>
+              <p>3 vendas tiveram limpeza vinculada antes do envio.</p>
+            </div>
+            <div>
+              <span class="eyebrow">Observacoes</span>
+              <p>Custo recorrente, ligado a preparacao das pecas para venda.</p>
+            </div>
+          </section>
+
+          <article class="cost-row">
+            <strong>Embalagem</strong>
+            <span><span class="badge badge-ok">Venda</span></span>
+            <span>11</span>
+            <span>R$ 1.145,00</span>
+            <span>14,6%</span>
+            <span>Custos da venda</span>
+            <button class="btn btn-secondary" type="button">Detalhes</button>
+          </article>
+
+          <article class="cost-row">
+            <strong>Frete complementar</strong>
+            <span><span class="badge badge-ok">Venda</span></span>
+            <span>7</span>
+            <span>R$ 980,00</span>
+            <span>12,5%</span>
+            <span>Custos da venda</span>
+            <button class="btn btn-secondary" type="button">Detalhes</button>
+          </article>
+
+          <article class="cost-row">
+            <strong>Manutencao</strong>
+            <span><span class="badge badge-soft">Peca</span></span>
+            <span>6</span>
+            <span>R$ 920,00</span>
+            <span>11,7%</span>
+            <span>Custos da peca</span>
+            <button class="btn btn-secondary" type="button">Detalhes</button>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
