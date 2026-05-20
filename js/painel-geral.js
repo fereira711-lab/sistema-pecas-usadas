@@ -329,7 +329,7 @@ function obterMovimentacoesRecentes(dados) {
       "Entrada registrada",
       `${formatarNumero(entrada.quantidadeTotal)} un. de ${entrada.nomePeca || obterNomePecaPorId(dados.pecas, entrada.pecaId)}`,
       entrada.dataEntrada || entrada.createdAt,
-      entrada.pecaId ? `paginas/detalhes-produto.html?pecaId=${encodeURIComponent(entrada.pecaId)}` : "paginas/lotes.html"
+      entrada.pecaId ? `paginas/detalhes-produto.html?pecaId=${encodeURIComponent(entrada.pecaId)}` : "paginas/entradas-estoque.html"
     ));
   });
 

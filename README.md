@@ -20,12 +20,39 @@ ERP web para gestao operacional de pecas usadas, origens, estoque, vendas, custo
 ## Navegacao
 
 - Login abre direto no `painel.html`.
-- A sidebar e a navegacao principal atual.
+- A sidebar e a navegacao principal atual e deve refletir a arquitetura do sistema.
 - O item "Painel Geral" aponta para `painel.html`.
+- `previews/` nao deve aparecer na navegacao real.
 - Paginas de detalhes nao ficam no menu principal:
   - produto abre detalhes a partir de Produtos;
   - venda abre detalhes a partir do Historico de vendas;
   - origem abre detalhes a partir de Origens cadastradas.
+
+Grupos oficiais da sidebar:
+
+- Painel Geral: Painel Geral.
+- Produtos: Produtos; Cadastro de peca.
+- Vendas: Cadastro de venda; Historico de vendas.
+- Estoque: Entradas de estoque; Giro de estoque, se existir; Alertas, se existir.
+- Origens: Cadastro de origem; Origens cadastradas.
+- Custos: Custo de peca; Tipos de custo.
+- Analises: Analise por produto; Analise por periodo; Analise de custos.
+- Sistema: Documentacao / mapa mental, se existir; configuracoes futuras, se existirem.
+
+Nao entram como item direto:
+
+- `detalhes-produto.html`;
+- `detalhes-venda.html`;
+- `detalhes-origem.html`.
+
+Padrao visual da sidebar:
+
+- tema escuro operacional;
+- fundo azul/cinza escuro;
+- dourado apenas como detalhe discreto;
+- item ativo visivel, sem excesso visual;
+- bordas e espacamentos compativeis com os cards;
+- usuario e botao `Sair` no rodape.
 
 ## Painel Geral
 
@@ -90,6 +117,25 @@ Regras:
 - Nao usar previews como fluxo real do sistema.
 - Nao apontar login, sidebar ou menus operacionais para previews.
 - Aplicar no sistema real apenas depois de validar o padrao visual.
+
+## Arquivos legados e compatibilidade
+
+- `index.html`: entrada tecnica protegida. Se houver sessao valida, redireciona para `painel.html`; sem sessao, segue o fluxo atual de login.
+- `dashboard.html`: legado/redirecionamento para `painel.html`. Nao deve aparecer na sidebar nem funcionar como segunda versao do Painel Geral.
+- `painel.html`: entrada oficial apos login. Nao deve ter cards/calculos duplicados por outra tela de dashboard.
+- `paginas/origens.html`: nao existe mais neste checkout. A tela oficial e `paginas/listar-origens.html`.
+- `paginas/estoque.html`: nao existe mais neste checkout. A tela oficial de estoque operacional e `paginas/produtos.html`, com apoio de `paginas/entradas-estoque.html`.
+- `paginas/lotes.html`: ainda existe como compatibilidade/legado de entradas/lotes. A navegacao principal deve apontar para `paginas/entradas-estoque.html`.
+
+Links antigos encontrados:
+
+- A sidebar nao aponta para `dashboard.html`, `previews/`, paginas de detalhes, `paginas/origens.html` ou `paginas/estoque.html`.
+- Movimentacoes do Painel Geral devem usar `paginas/entradas-estoque.html` como destino quando uma entrada nao tiver produto vinculado. `paginas/lotes.html` fica apenas como compatibilidade/legado.
+
+Podem ser avaliados futuramente, sem remover agora:
+
+- `dashboard.html`, mantendo redirecionamento enquanto houver compatibilidade externa.
+- `paginas/lotes.html`, depois de confirmar que `paginas/entradas-estoque.html` cobre todos os acessos.
 
 ## Padrao visual atual
 
