@@ -4,12 +4,20 @@
 
   const grupos = [
     {
+      titulo: "Painel Geral",
+      icone: "ri-dashboard-line",
+      aberto: ["index.html", "painel.html", "dashboard.html"].includes(paginaAtual),
+      itens: [
+        { texto: "Painel Geral", icone: "ri-dashboard-line", url: "painel.html" }
+      ]
+    },
+    {
       titulo: "Produtos",
       icone: "ri-box-3-line",
       aberto: ["produtos.html", "cadastro-peca.html"].includes(paginaAtual),
       itens: [
-        { texto: "Consultar estoque", icone: "ri-search-line", url: "paginas/produtos.html" },
-        { texto: "Cadastrar peca", icone: "ri-tools-line", url: "paginas/cadastro-peca.html" }
+        { texto: "Produtos", icone: "ri-search-line", url: "paginas/produtos.html" },
+        { texto: "Cadastro de peça", icone: "ri-tools-line", url: "paginas/cadastro-peca.html" }
       ]
     },
     {
@@ -17,16 +25,16 @@
       icone: "ri-shopping-cart-2-line",
       aberto: ["cadastro-venda.html", "historico-vendas.html"].includes(paginaAtual),
       itens: [
-        { texto: "Registrar venda", icone: "ri-add-circle-line", url: "paginas/cadastro-venda.html" },
-        { texto: "Historico de vendas", icone: "ri-history-line", url: "paginas/historico-vendas.html" }
+        { texto: "Cadastro de venda", icone: "ri-add-circle-line", url: "paginas/cadastro-venda.html" },
+        { texto: "Histórico de vendas", icone: "ri-history-line", url: "paginas/historico-vendas.html" }
       ]
     },
     {
       titulo: "Estoque",
       icone: "ri-archive-line",
-      aberto: ["lotes.html", "giro-estoque.html", "alertas.html"].includes(paginaAtual),
+      aberto: ["entradas-estoque.html", "giro-estoque.html", "alertas.html"].includes(paginaAtual),
       itens: [
-        { texto: "Entradas/Lotes", icone: "ri-stack-line", url: "paginas/lotes.html" },
+        { texto: "Entradas de estoque", icone: "ri-stack-line", url: "paginas/entradas-estoque.html" },
         { texto: "Giro de estoque", icone: "ri-loop-right-line", url: "paginas/giro-estoque.html" },
         { texto: "Alertas", icone: "ri-alert-line", url: "paginas/alertas.html" }
       ]
@@ -36,7 +44,7 @@
       icone: "ri-route-line",
       aberto: ["cadastro-origem.html", "listar-origens.html"].includes(paginaAtual),
       itens: [
-        { texto: "Cadastrar origem", icone: "ri-car-line", url: "paginas/cadastro-origem.html" },
+        { texto: "Cadastro de origem", icone: "ri-car-line", url: "paginas/cadastro-origem.html" },
         { texto: "Origens cadastradas", icone: "ri-list-check-2", url: "paginas/listar-origens.html" }
       ]
     },
@@ -45,18 +53,18 @@
       icone: "ri-price-tag-3-line",
       aberto: ["cadastro-custo.html", "tipos-custo.html"].includes(paginaAtual),
       itens: [
-        { texto: "Custo de peca", icone: "ri-money-dollar-circle-line", url: "paginas/cadastro-custo.html" },
+        { texto: "Custo de peça", icone: "ri-money-dollar-circle-line", url: "paginas/cadastro-custo.html" },
         { texto: "Tipos de custo", icone: "ri-price-tag-3-line", url: "paginas/tipos-custo.html" }
       ]
     },
     {
-      titulo: "Analises",
+      titulo: "Análises",
       icone: "ri-bar-chart-box-line",
       aberto: ["analise-produto.html", "analise-periodo.html", "analise-custos.html"].includes(paginaAtual),
       itens: [
-        { texto: "Analise por produto", icone: "ri-pie-chart-line", url: "paginas/analise-produto.html" },
-        { texto: "Analise por periodo", icone: "ri-calendar-event-line", url: "paginas/analise-periodo.html" },
-        { texto: "Analise de custos", icone: "ri-funds-line", url: "paginas/analise-custos.html" }
+        { texto: "Análise por produto", icone: "ri-pie-chart-line", url: "paginas/analise-produto.html" },
+        { texto: "Análise por período", icone: "ri-calendar-event-line", url: "paginas/analise-periodo.html" },
+        { texto: "Análise de custos", icone: "ri-funds-line", url: "paginas/analise-custos.html" }
       ]
     },
     {
@@ -65,7 +73,7 @@
       aberto: ["mapa-mental.html"].includes(paginaAtual),
       itens: [
         { texto: "Mapa mental", icone: "ri-mind-map", url: "docs/mapa-mental.html" },
-        { texto: "Documentacao", icone: "ri-file-text-line", url: "DOCUMENTACAO-SISTEMA.md" }
+        { texto: "Documentação", icone: "ri-file-text-line", url: "DOCUMENTACAO-SISTEMA.md" }
       ]
     }
   ];
@@ -103,13 +111,13 @@
   }
 
   function criarGrupo(grupo, index) {
-    const aberto = grupo.aberto || (paginaAtual === "index.html" && index < 2);
+    const aberto = grupo.aberto || (paginaAtual === "index.html" && index === 0);
     return `
       <section class="app-sidebar__group${aberto ? " is-open" : ""}">
         <button class="app-sidebar__group-button" type="button" aria-expanded="${aberto ? "true" : "false"}">
           <span class="app-sidebar__group-title">
             <span class="app-sidebar__group-icon" aria-hidden="true"><i class="${grupo.icone}"></i></span>
-            ${grupo.titulo}
+            <span class="app-sidebar__group-label">${grupo.titulo}</span>
           </span>
           <span class="app-sidebar__chevron" aria-hidden="true"><i class="ri-arrow-down-s-line"></i></span>
         </button>
@@ -128,7 +136,7 @@
     const sidebar = document.createElement("aside");
     sidebar.className = "app-sidebar";
     sidebar.innerHTML = `
-      <a class="app-sidebar__brand" href="${emPaginaInterna ? "../index.html" : "index.html"}">
+      <a class="app-sidebar__brand" href="${emPaginaInterna ? "../painel.html" : "painel.html"}">
         <span><i class="ri-recycle-line"></i></span>
         <strong>DWDW ERP</strong>
       </a>
@@ -136,10 +144,6 @@
         <i class="ri-side-bar-line" aria-hidden="true"></i>
         <span>Recolher</span>
       </button>
-      <a class="app-sidebar__dashboard${["index.html", "painel.html", "dashboard.html"].includes(paginaAtual) ? " is-active" : ""}" href="${emPaginaInterna ? "../painel.html" : "painel.html"}">
-        <span class="app-sidebar__item-icon" aria-hidden="true"><i class="ri-dashboard-line"></i></span>
-        <span>Painel Geral</span>
-      </a>
       <nav class="app-sidebar__nav" aria-label="Menu do sistema">
         ${grupos.map(criarGrupo).join("")}
       </nav>

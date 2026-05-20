@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entradas de estoque</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body data-auth="protected" class="auth-checking ui-soft-dark stock-entries-page">
+  <header class="page-header">
+    <div>
+      <p class="hero__tag">Estoque</p>
+      <h1>Entradas de estoque</h1>
+      <p class="hero__description">Consulte saldos disponíveis por entrada.</p>
+    </div>
+  </header>
+
+  <main class="container stock-layout stock-entries-layout">
+    <section id="entradasEstoqueShell" class="stock-card stock-entries-shell">
+      <div class="stock-header stock-entries-header">
+        <div>
+          <span class="piece-form-eyebrow">Estoque operacional</span>
+          <h2>Saldos por entrada</h2>
+          <p>Consulte de onde veio o saldo da peça, consumo da entrada e origem vinculada.</p>
+        </div>
+        <div class="form-actions">
+          <a class="button-secondary" href="produtos.html">Ver produtos</a>
+          <a class="button-primary" href="cadastro-peca.html">Cadastrar peça</a>
+        </div>
+      </div>
+
+      <p id="mensagemEntradasEstoque" class="empty-message"></p>
+
+      <section id="resumoEntradasEstoque" class="summary-grid summary-grid--compact" aria-label="Resumo das entradas de estoque"></section>
+
+      <section class="products-toolbar stock-entries-toolbar" aria-label="Busca e filtros de entradas de estoque">
+        <div class="products-main-controls operational-filter-main-controls">
+          <div class="form-group products-page-size-field">
+            <label for="quantidadePorPaginaEntradas">Mostrar</label>
+            <select id="quantidadePorPaginaEntradas">
+              <option value="12">12</option>
+              <option value="24">24</option>
+              <option value="48">48</option>
+              <option value="todos">Todos</option>
+            </select>
+          </div>
+
+          <div class="form-group products-search-field">
+            <label for="buscaEntradasEstoque">Buscar entrada</label>
+            <input id="buscaEntradasEstoque" type="search" placeholder="Buscar por SKU, peça, origem ou código da entrada">
+          </div>
+
+          <button id="botaoAbrirFiltrosEntradas" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosEntradas" aria-expanded="false">
+            Filtros
+          </button>
+        </div>
+      </section>
+
+      <section class="stock-entries-list-section" aria-labelledby="tituloListaEntradas">
+        <div class="stock-header stock-entries-section__header">
+          <div>
+            <h2 id="tituloListaEntradas">Lista de entradas</h2>
+            <p>Código, saldo disponível, entrada consumida e ações relacionadas.</p>
+          </div>
+        </div>
+
+        <div id="listaEntradasEstoque" class="stock-entries-list" aria-live="polite"></div>
+      </section>
+
+      <aside id="painelFiltrosEntradas" class="products-filter-panel stock-entries-filter-panel" aria-label="Filtros avançados de entradas">
+        <div class="products-filter-panel__header">
+          <h3>Filtros avançados</h3>
+          <button id="botaoFecharFiltrosEntradas" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
+        </div>
+
+        <div class="products-filters">
+          <div class="form-group">
+            <label for="filtroOrigemEntradas">Origem</label>
+            <select id="filtroOrigemEntradas">
+              <option value="">Todas</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filtroProdutoEntradas">Produto</label>
+            <select id="filtroProdutoEntradas">
+              <option value="">Todos</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filtroStatusEntradas">Status do saldo</label>
+            <select id="filtroStatusEntradas">
+              <option value="">Todos</option>
+              <option value="com-saldo">Com saldo</option>
+              <option value="parcial">Parcial</option>
+              <option value="consumida">Consumida</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="dataInicialEntradas">Período inicial</label>
+            <input id="dataInicialEntradas" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="dataFinalEntradas">Período final</label>
+            <input id="dataFinalEntradas" type="date">
+          </div>
+        </div>
+
+        <div class="products-filter-panel__actions">
+          <button id="botaoLimparFiltrosEntradas" class="button-secondary" type="button">Limpar filtros</button>
+          <button id="botaoAplicarFiltrosEntradas" class="button-primary" type="button">Aplicar/Fechar</button>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
+  <script src="../js/auth.js?v=4"></script>
+  <script src="../js/supabase-service.js?v=26"></script>
+  <script src="../js/entradas-estoque.js?v=1"></script>
+  <script src="../js/sidebar.js?v=5"></script>
+</body>
+</html>

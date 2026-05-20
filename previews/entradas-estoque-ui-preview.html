@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Entradas de estoque</title>
+  <link rel="stylesheet" href="entradas-estoque-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Estoque</span>
+        <h1>Entradas de estoque</h1>
+        <p>Consulte saldos disponíveis por entrada.</p>
+      </div>
+    </header>
+
+    <section class="panel shell">
+      <section class="toolbar" aria-label="Busca e filtros de entradas">
+        <label class="page-size">
+          <span>Mostrar</span>
+          <select>
+            <option>12</option>
+            <option>24</option>
+            <option>48</option>
+          </select>
+        </label>
+
+        <label class="search-field">
+          <span>Buscar entrada</span>
+          <input type="search" value="CIV14" aria-label="Buscar por SKU, peça, origem ou código da entrada">
+        </label>
+
+        <button class="btn btn-secondary" type="button">Filtros</button>
+      </section>
+
+      <aside class="filter-panel" aria-label="Filtros avançados">
+        <div class="filter-panel__header">
+          <h2>Filtros avançados</h2>
+          <button class="icon-btn" type="button" aria-label="Fechar filtros">X</button>
+        </div>
+
+        <div class="filter-grid">
+          <label>
+            <span>Origem</span>
+            <select>
+              <option>Lote Civic 2014 prata</option>
+              <option>Compra avulsa Corolla</option>
+              <option>Carro para desmonte Gol G5</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Produto</span>
+            <select>
+              <option>Todos</option>
+              <option>Retrovisor elétrico esquerdo</option>
+              <option>Farol direito</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Status do saldo</span>
+            <select>
+              <option>Todos</option>
+              <option>Com saldo</option>
+              <option>Consumida</option>
+              <option>Parcialmente consumida</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Período inicial</span>
+            <input type="date" value="2026-05-01">
+          </label>
+
+          <label>
+            <span>Período final</span>
+            <input type="date" value="2026-05-20">
+          </label>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn btn-secondary" type="button">Limpar filtros</button>
+          <button class="btn btn-primary" type="button">Aplicar/Fechar</button>
+        </div>
+      </aside>
+
+      <section class="summary-grid" aria-label="Resumo das entradas">
+        <article class="summary-card">
+          <span>Total de entradas</span>
+          <strong>38</strong>
+        </article>
+        <article class="summary-card">
+          <span>Entradas com saldo</span>
+          <strong>24</strong>
+        </article>
+        <article class="summary-card">
+          <span>Quantidade disponível</span>
+          <strong>71</strong>
+        </article>
+        <article class="summary-card">
+          <span>Quantidade consumida</span>
+          <strong>19</strong>
+        </article>
+      </section>
+
+      <section class="entries-section" aria-labelledby="tituloEntradas">
+        <div class="section-header">
+          <div>
+            <h2 id="tituloEntradas">Saldos por entrada</h2>
+            <p>Lista compacta para conferir origem, saldo disponível e consumo da entrada.</p>
+          </div>
+        </div>
+
+        <div class="entries-list">
+          <div class="entry-row entry-row--head">
+            <span>Código</span>
+            <span>Data</span>
+            <span>SKU / Peça</span>
+            <span>Origem</span>
+            <span>Qtd.</span>
+            <span>Entrada consumida</span>
+            <span>Saldo disponível</span>
+            <span>Custo unitário</span>
+            <span>Valor atribuído</span>
+            <span>Status</span>
+            <span>Ações</span>
+          </div>
+
+          <article class="entry-row">
+            <strong data-label="Código">ENT-000184</strong>
+            <span data-label="Data">20/05/2026</span>
+            <span data-label="SKU / Peça">
+              <b>CIV14-RET-EE</b>
+              <small>Retrovisor elétrico esquerdo</small>
+            </span>
+            <span data-label="Origem">Lote Civic 2014 prata</span>
+            <span data-label="Qtd.">1</span>
+            <span data-label="Entrada consumida">0</span>
+            <span data-label="Saldo disponível">1</span>
+            <span data-label="Custo unitário">R$ 145,00</span>
+            <span data-label="Valor atribuído">R$ 145,00</span>
+            <span data-label="Status"><mark class="badge badge-ok">Com saldo</mark></span>
+            <span data-label="Ações" class="row-actions">
+              <button type="button">Ver produto</button>
+              <button type="button">Ver origem</button>
+            </span>
+          </article>
+
+          <article class="entry-row">
+            <strong data-label="Código">ENT-000172</strong>
+            <span data-label="Data">18/05/2026</span>
+            <span data-label="SKU / Peça">
+              <b>CIV14-FAR-D</b>
+              <small>Farol direito completo</small>
+            </span>
+            <span data-label="Origem">Lote Civic 2014 prata</span>
+            <span data-label="Qtd.">3</span>
+            <span data-label="Entrada consumida">1</span>
+            <span data-label="Saldo disponível">2</span>
+            <span data-label="Custo unitário">R$ 210,00</span>
+            <span data-label="Valor atribuído">R$ 630,00</span>
+            <span data-label="Status"><mark class="badge badge-warning">Parcial</mark></span>
+            <span data-label="Ações" class="row-actions">
+              <button type="button">Ver produto</button>
+              <button type="button">Ver origem</button>
+            </span>
+          </article>
+
+          <article class="entry-row">
+            <strong data-label="Código">ENT-000155</strong>
+            <span data-label="Data">12/05/2026</span>
+            <span data-label="SKU / Peça">
+              <b>G5-MOD-ABS</b>
+              <small>Módulo ABS Gol G5</small>
+            </span>
+            <span data-label="Origem">Carro para desmonte Gol G5</span>
+            <span data-label="Qtd.">1</span>
+            <span data-label="Entrada consumida">1</span>
+            <span data-label="Saldo disponível">0</span>
+            <span data-label="Custo unitário">R$ 320,00</span>
+            <span data-label="Valor atribuído">R$ 320,00</span>
+            <span data-label="Status"><mark class="badge badge-empty">Consumida</mark></span>
+            <span data-label="Ações" class="row-actions">
+              <button type="button">Ver produto</button>
+              <button type="button">Ver origem</button>
+            </span>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
