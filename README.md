@@ -2,6 +2,34 @@
 
 ERP web para gestao operacional de pecas usadas, origens, estoque, vendas, custos e analises.
 
+## Arquitetura atual
+
+- Origem nao e peca; origem e o agrupador operacional/financeiro.
+- Peca nasce depois da origem.
+- Toda peca deve gerar entrada de estoque.
+- Venda consome estoque.
+- O custo real da venda vem do consumo de estoque registrado.
+- FIFO continua sendo regra tecnica interna.
+- Analises financeiras usam `financeiro-utils.js`.
+- Nao usar custo medio.
+- Nao usar `origem.valor_total` como custo direto da venda.
+- Se nao houver consumo/custo calculado, mostrar `Custo nao calculado` e nao inventar lucro/margem.
+
+Separacao de telas:
+
+- Produtos = operacional.
+- Cadastros = fluxo de trabalho.
+- Detalhes = central da entidade.
+- Analises = financeiro.
+- Painel Geral = visao inicial operacional.
+- Sidebar = navegacao principal.
+
+Linguagem da interface:
+
+- Usar `Custo da peca`, `Custo calculado`, `Custo nao calculado` e `Entrada consumida`.
+- Evitar destacar termos tecnicos internos.
+- Nao destacar `FIFO` na interface, mantendo FIFO como regra tecnica interna.
+
 ## Entrada do sistema
 
 - `index.html`: entrada tecnica/compatibilidade. Quando ha sessao valida, redireciona para `painel.html`.
@@ -126,16 +154,19 @@ Regras:
 - `paginas/origens.html`: nao existe mais neste checkout. A tela oficial e `paginas/listar-origens.html`.
 - `paginas/estoque.html`: nao existe mais neste checkout. A tela oficial de estoque operacional e `paginas/produtos.html`, com apoio de `paginas/entradas-estoque.html`.
 - `paginas/lotes.html`: ainda existe como compatibilidade/legado de entradas/lotes. A navegacao principal deve apontar para `paginas/entradas-estoque.html`.
+- `paginas/relatorios.html`: legado/redirecionamento para as analises oficiais. O atalho principal deve apontar para `paginas/analise-produto.html`.
 
 Links antigos encontrados:
 
 - A sidebar nao aponta para `dashboard.html`, `previews/`, paginas de detalhes, `paginas/origens.html` ou `paginas/estoque.html`.
 - Movimentacoes do Painel Geral devem usar `paginas/entradas-estoque.html` como destino quando uma entrada nao tiver produto vinculado. `paginas/lotes.html` fica apenas como compatibilidade/legado.
+- O atalho `Analises` do Painel Geral deve apontar para `paginas/analise-produto.html`, nao para `paginas/relatorios.html`.
 
 Podem ser avaliados futuramente, sem remover agora:
 
 - `dashboard.html`, mantendo redirecionamento enquanto houver compatibilidade externa.
 - `paginas/lotes.html`, depois de confirmar que `paginas/entradas-estoque.html` cobre todos os acessos.
+- `paginas/relatorios.html`, depois de confirmar que as analises oficiais cobrem todos os acessos.
 
 ## Padrao visual atual
 
@@ -217,7 +248,7 @@ Nao mostrar na lista de Produtos:
 - margem;
 - resultado financeiro.
 
-Analise financeira deve ficar em detalhes, painel e telas de analise.
+Analise financeira pesada deve ficar nas telas de analise. Detalhes mostram a central da entidade, e o Painel Geral mostra apenas resumo operacional.
 
 ## Cadastro de peca
 

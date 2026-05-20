@@ -97,6 +97,35 @@ Regra geral:
 - Detalhes concentram contexto completo.
 - Analises concentram financeiro pesado.
 
+## Arquitetura e linguagem oficial
+
+- Origem nao e peca; origem e o agrupador operacional/financeiro.
+- Peca nasce depois da origem.
+- Toda peca cadastrada deve gerar entrada de estoque.
+- Venda consome estoque.
+- O custo real da venda vem do consumo de estoque.
+- FIFO continua sendo regra tecnica interna de custo.
+- `financeiro-utils.js` continua sendo a fonte oficial dos calculos financeiros.
+- Nao usar custo medio.
+- Nao usar `origem.valor_total` como custo direto da venda.
+- Se nao houver consumo/custo calculado, mostrar `Custo nao calculado`.
+- Nao inventar lucro/margem quando faltar custo calculado.
+
+Separacao de telas:
+
+- Produtos = operacional.
+- Cadastros = fluxo de trabalho.
+- Detalhes = central da entidade.
+- Analises = financeiro.
+- Painel Geral = visao inicial operacional.
+- Sidebar = navegacao principal.
+
+Linguagem de interface:
+
+- Usar `Custo da peca`, `Custo calculado`, `Custo nao calculado` e `Entrada consumida`.
+- Evitar destacar termos tecnicos internos.
+- Nao destacar `FIFO` na interface; manter o termo para documentacao tecnica e regras internas.
+
 ## Organizacao funcional atual
 
 - Produtos e a tela operacional principal para estoque/produtos.
@@ -496,7 +525,7 @@ Nao exibir na lista:
 - Margem.
 - Resultado financeiro.
 
-Essas informacoes pertencem a detalhes, painel ou analises.
+Analise financeira pesada pertence as telas de analise. Detalhes mostram apenas o contexto da entidade, e o painel mostra resumo operacional.
 
 Regras visuais:
 
@@ -988,9 +1017,9 @@ Padroes:
 | Estoque baixo | Amarelo |
 | Alerta | Amarelo ou vermelho conforme gravidade |
 | Sucesso | Verde |
-| FIFO disponivel | Verde |
-| FIFO parcial | Amarelo |
-| FIFO esgotado | Cinza ou vermelho discreto |
+| Custo calculado | Verde |
+| Custo pendente | Amarelo |
+| Custo nao calculado | Cinza ou vermelho discreto |
 
 Regras:
 

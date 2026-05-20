@@ -92,6 +92,35 @@ Reforco:
 - Detalhes concentram contexto completo.
 - Analises concentram financeiro pesado.
 
+## Arquitetura e linguagem da interface
+
+- Origem nao e peca; origem e o agrupador operacional/financeiro.
+- A peca nasce depois da origem.
+- Toda peca deve gerar entrada de estoque.
+- Venda consome estoque.
+- O custo real da venda vem do consumo de estoque.
+- FIFO continua sendo regra tecnica interna, mas nao deve aparecer em destaque para o usuario final.
+- Analises financeiras devem reutilizar `financeiro-utils.js`.
+
+Separacao visual por tipo de tela:
+
+- Produtos = operacional.
+- Cadastros = fluxo de trabalho.
+- Detalhes = central da entidade.
+- Analises = financeiro.
+- Painel Geral = visao inicial operacional.
+- Sidebar = navegacao principal.
+
+Linguagem padrao:
+
+- Usar `Custo da peca`.
+- Usar `Custo calculado`.
+- Usar `Custo nao calculado`.
+- Usar `Entrada consumida`.
+- Nao usar custo medio.
+- Nao usar `origem.valor_total` como custo direto da venda.
+- Nao inventar lucro/margem quando faltar custo calculado.
+
 ## Navegacao atual
 
 - O login direciona para `painel.html`.
@@ -379,7 +408,7 @@ Cada linha da lista deve mostrar:
 
 O comando de editar dados deve ficar dentro da central/detalhes do produto, acessada pelo botao `Detalhes`.
 
-A lista de Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro. Essas informacoes pertencem a detalhes, painel ou analises.
+A lista de Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro. Analise financeira pesada pertence as telas de analise; detalhes mostram apenas o contexto da entidade.
 
 ### Cadastro de peca
 
@@ -780,7 +809,7 @@ Relacao com outras telas:
 
 - Listagens devem ser compactas, rapidas e feitas para escanear.
 - Detalhes concentram informacoes completas.
-- Financeiro pesado deve ficar em analises e detalhes.
+- Financeiro pesado deve ficar nas telas de analise.
 - Telas operacionais priorizam acao rapida e pouca friccao.
 - Evitar duplicidade de paginas com o mesmo objetivo.
 - Cada tela deve ter um objetivo principal claro.

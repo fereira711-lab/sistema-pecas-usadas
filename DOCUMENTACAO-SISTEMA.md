@@ -14,6 +14,34 @@ origem -> peca -> entrada -> venda -> FIFO -> analise
 
 A origem registra a procedencia ou compra. A peca representa o item comercial. A entrada formaliza o lote no estoque. A venda consome o estoque. O FIFO define o custo oficial vendido. As analises usam esses dados para mostrar resultado, lucro, margem, giro e custos.
 
+## Arquitetura operacional oficial
+
+- Origem nao e peca. A origem e o agrupador operacional e financeiro da procedencia, lote, compra avulsa, carro de desmonte, retorno ou outra entrada.
+- A peca nasce depois da origem.
+- Toda peca cadastrada deve gerar uma entrada de estoque para existir saldo e custo.
+- A venda consome estoque.
+- O custo real da venda vem do consumo de estoque registrado em `venda_consumos_estoque`.
+- FIFO continua sendo a regra tecnica interna de custo.
+- As analises financeiras reutilizam `financeiro-utils.js` como fonte oficial de calculo.
+- Nao usar custo medio.
+- Nao usar `origem.valor_total` como custo direto da venda.
+- Se nao houver consumo/custo calculado, a interface deve mostrar `Custo nao calculado` e nao inventar lucro/margem.
+
+Separacao de responsabilidades:
+
+- Produtos = tela operacional.
+- Cadastros = fluxo de trabalho.
+- Detalhes = central da entidade.
+- Analises = financeiro.
+- Painel Geral = visao inicial operacional.
+- Sidebar = navegacao principal.
+
+Linguagem da interface:
+
+- Evitar destacar termos tecnicos internos para o usuario final.
+- Usar `Custo da peca`, `Custo calculado`, `Custo nao calculado` e `Entrada consumida`.
+- Nao destacar `FIFO` na interface, mantendo FIFO como regra tecnica interna.
+
 ## Estado atual do sistema
 
 O sistema esta organizado em uma cadeia principal:
@@ -338,7 +366,7 @@ Regras:
 
 ### Estoque
 
-Representado por `paginas/produtos.html`, `paginas/lotes.html`, `paginas/giro-estoque.html`, `paginas/alertas.html` e scripts de estoque. Controla saldo, entradas por lote, consumo e disponibilidade.
+Representado por `paginas/produtos.html`, `paginas/entradas-estoque.html`, `paginas/giro-estoque.html`, `paginas/alertas.html` e scripts de estoque. Controla saldo, entradas por lote, consumo e disponibilidade. `paginas/lotes.html` fica apenas como legado/compatibilidade e deve redirecionar para `paginas/entradas-estoque.html`.
 
 ### Vendas
 
@@ -439,7 +467,7 @@ Relacao com outras telas:
 | Cadastrar peca | `paginas/cadastro-peca.html` | Cadastrar peca vinculada a origem e entrada | Operacional |
 | Produtos / Estoque | `paginas/produtos.html` | Listar pecas em lista operacional compacta, com estoque, filtros e acoes rapidas | Operacional |
 | Central da peca | `paginas/detalhes-produto.html` | Ver dados principais, origem, estoque, custos, vendas relacionadas e resumo operacional da peca | Detalhes |
-| Entradas de estoque | `paginas/lotes.html` | Consultar lotes FIFO, consumo e saldo | Operacional |
+| Entradas de estoque | `paginas/entradas-estoque.html` | Consultar entradas, consumo e saldo disponivel | Operacional |
 | Giro de estoque | `paginas/giro-estoque.html` | Analisar velocidade e situacao das pecas | Analise |
 | Alertas | `paginas/alertas.html` | Acompanhar estoque baixo, sem estoque e pontos de atencao | Analise |
 | Cadastrar venda | `paginas/cadastro-venda.html` | Registrar venda de peca e custos da venda | Operacional |
@@ -449,7 +477,7 @@ Relacao com outras telas:
 | Analise por produto | `paginas/analise-produto.html` | Comparar receita, custos e lucro por peca | Analise |
 | Analise por periodo | `paginas/analise-periodo.html` | Analisar vendas e lucro por data | Analise |
 | Analise de custos | `paginas/analise-custos.html` | Agrupar custos por tipo | Analise |
-| Relatorios | `paginas/relatorios.html` | Area de relatorios do sistema | Analise |
+| Relatorios legado | `paginas/relatorios.html` | Legado/redirecionamento para analises oficiais | Legado |
 | Tipos de custo | `paginas/tipos-custo.html` | Gerenciar categorias de custos | Administrativo |
 | Login | `paginas/login.html` | Entrada/autenticacao do sistema | Administrativo |
 
@@ -472,7 +500,7 @@ Relacao com outras telas:
 - Telas de detalhes concentram o contexto completo da entidade.
 - Analises ficam separadas do fluxo operacional para evitar excesso de informacao no dia a dia.
 - Telas operacionais devem priorizar cadastro, venda, entrada e consulta objetiva.
-- Informacoes financeiras detalhadas devem aparecer em detalhes, painel e analises, nao sobrecarregar listagens.
+- Informacoes financeiras pesadas devem ficar nas telas de analise. Detalhes mostram apenas o contexto completo da entidade, sem sobrecarregar listagens.
 - O padrao visual atual usa tema escuro operacional, cards compactos, badges suaves, dourado como destaque discreto e blocos bem separados.
 - Filtros avancados seguem o padrao de painel lateral; a busca principal deve permanecer visivel no topo das listagens.
 - Formularios devem ser organizados por blocos logicos.
@@ -487,7 +515,7 @@ Relacao com outras telas:
 - Analises financeiras pesadas continuam nas telas de analise.
 - A tela de Produtos usa lista operacional compacta com imagem pequena, SKU, nome, preco de venda, quantidade disponivel, status e acoes rapidas. Ela nao deve usar cards grandes como padrao principal.
 - Na lista de Produtos, as acoes principais visiveis sao `Detalhes` e `Vender`. O menu de tres pontos concentra acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir. A edicao dos dados da peca deve ficar dentro da central/detalhes do produto.
-- Produtos continua sendo tela operacional: pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro. Analise financeira fica em detalhes, painel e telas de analise.
+- Produtos continua sendo tela operacional: pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro. Analise financeira pesada fica nas telas de analise; detalhes mostram a central da entidade.
 - Detalhes do produto e a central da peca. A estrutura UX aprovada e: cabecalho com acoes principais, bloco principal da peca, origem vinculada, resumo operacional, entradas de estoque, custos da peca, vendas relacionadas e area futura de marketplace.
 - As acoes principais da central da peca sao `Vender`, `Lancar custo`, `Editar dados`, `Trocar imagem` e `Voltar ao estoque`.
 - O resumo operacional da central da peca pode mostrar estoque atual, total vendido, preco de venda, receita relacionada e custo consumido/custo da peca. Lucro e margem nao devem receber destaque exagerado nessa tela; analise financeira pesada pertence as telas de Analises.

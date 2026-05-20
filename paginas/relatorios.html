@@ -3,175 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Relatórios</title>
+  <meta http-equiv="refresh" content="0; url=analise-produto.html">
+  <title>Relatorios - Legado</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Relatórios</p>
-      <h1>Relatórios</h1>
-      <p class="hero__description">
-        Resumo geral de estoque, custos, vendas e resultados do sistema.
-      </p>
+<body data-auth="protected" class="auth-checking ui-soft-dark app-entry-page">
+  <main class="app-entry-shell">
+    <p class="hero__tag">Pagina legada</p>
+    <h1>Relatorios foi substituido por Analises</h1>
+    <p>Use as telas oficiais de analise financeira do sistema.</p>
+    <div class="form-actions">
+      <a class="button-primary" href="analise-produto.html">Analise por produto</a>
+      <a class="button-secondary" href="analise-periodo.html">Analise por periodo</a>
+      <a class="button-secondary" href="analise-custos.html">Analise de custos</a>
     </div>
-  </header>
-
-  <main class="container stock-layout">
-    <section class="stock-card">
-      <div class="stock-header">
-        <div>
-          <h2>Resumo geral</h2>
-          <p>Indicadores calculados com os dados do sistema.</p>
-        </div>
-        <div class="form-actions">
-          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
-          <a class="button-secondary" href="produtos.html">Ver estoque</a>
-          <a class="button-secondary" href="historico-vendas.html">Histórico de vendas</a>
-        </div>
-      </div>
-
-      <section id="cardsRelatorios" class="summary-grid" aria-label="Cards principais dos relatórios"></section>
-    </section>
-
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Resumo do Estoque</h2>
-          <p>Produtos cadastrados com dados operacionais de estoque.</p>
-        </div>
-      </div>
-
-      <p id="mensagemEstoqueRelatorio" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>ID</th>
-              <th>Categoria</th>
-              <th>Qtd. total</th>
-              <th>Qtd. vendida</th>
-              <th>Qtd. disponível</th>
-              <th>Status</th>
-              <th>Preço de venda</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaResumoEstoque"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Alertas de Estoque</h2>
-          <p>Produtos sem estoque ou com estoque baixo.</p>
-        </div>
-      </div>
-
-      <p id="mensagemAlertasEstoque" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>ID</th>
-              <th>Qtd. disponível</th>
-              <th>Situação</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaAlertasEstoque"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Resumo de Vendas</h2>
-          <p>Últimas 5 vendas registradas.</p>
-        </div>
-      </div>
-
-      <p id="mensagemResumoVendas" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Produto</th>
-              <th>ID da peça</th>
-              <th>Quantidade</th>
-              <th>Valor total</th>
-              <th>Lucro bruto</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaResumoVendas"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Produtos Mais Vendidos</h2>
-          <p>Ranking agrupado por ID da peça.</p>
-        </div>
-      </div>
-
-      <p id="mensagemProdutosMaisVendidos" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>ID da peça</th>
-              <th>Quantidade vendida</th>
-              <th>Faturamento</th>
-              <th>Lucro bruto</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaProdutosMaisVendidos"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="stock-card section-spaced">
-      <div class="stock-header">
-        <div>
-          <h2>Custos Diversos por Tipo</h2>
-          <p>Totais agrupados por tipo de custo.</p>
-        </div>
-      </div>
-
-      <p id="mensagemCustosPorTipo" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>Tipo de custo</th>
-              <th>Valor total</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaCustosPorTipo"></tbody>
-        </table>
-      </div>
-    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
-  <script src="../js/supabase-service.js?v=29"></script>
-  <script src="../js/financeiro-utils.js?v=1"></script>
-  <script src="../js/relatorios.js?v=9"></script>
-  <script src="../js/sidebar.js?v=5"></script>
+  <script>
+    document.addEventListener("auth:sessao-ok", () => {
+      window.location.replace("analise-produto.html");
+    });
+  </script>
 </body>
 </html>

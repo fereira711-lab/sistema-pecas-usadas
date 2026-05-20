@@ -25,6 +25,32 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Evitar misturar HTML, CSS e JavaScript no mesmo arquivo, exceto em testes simples.
 - Usar nomes de arquivos claros e codigo simples, legivel e organizado.
 
+## Arquitetura oficial do projeto
+
+- Origem nao e peca. Origem e o agrupador operacional/financeiro de procedencia, compra, lote ou retorno.
+- A peca nasce depois da origem e deve ficar vinculada a ela quando houver procedencia.
+- Toda peca cadastrada deve gerar entrada de estoque para existir saldo e custo operacional.
+- Venda consome estoque; o custo real da venda vem do consumo registrado em `venda_consumos_estoque`.
+- FIFO continua sendo a regra tecnica interna de custo, mas a interface deve usar linguagem simples.
+- `financeiro-utils.js` e a fonte oficial dos calculos financeiros.
+- Nao usar custo medio e nao usar `origem.valor_total` como custo direto da venda.
+- Se nao houver consumo/custo calculado, mostrar `Custo nao calculado` e nao inventar lucro/margem.
+
+Separacao de telas:
+
+- Produtos = operacional.
+- Cadastros = fluxo de trabalho.
+- Detalhes = central da entidade.
+- Analises = financeiro.
+- Painel Geral = visao inicial operacional.
+- Sidebar = navegacao principal.
+
+Linguagem de interface:
+
+- Evitar destacar termos tecnicos internos para o usuario final.
+- Usar `Custo da peca`, `Custo calculado`, `Custo nao calculado` e `Entrada consumida`.
+- Nao destacar `FIFO` na interface, mantendo FIFO apenas como regra tecnica/documental.
+
 ## Padrao da sidebar e navegacao
 
 - A sidebar e a navegacao principal do sistema.
@@ -118,7 +144,7 @@ Reforcos:
 - Menu de tres pontos apenas para acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir.
 - Edicao dos dados da peca deve ficar dentro de `detalhes-produto.html`.
 - Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro.
-- Analise financeira deve ficar em detalhes, painel e telas de analise.
+- Analise financeira pesada deve ficar nas telas de analise. Detalhes mostram apenas o contexto completo da entidade.
 
 ## Padrao da tela Cadastro de peca
 

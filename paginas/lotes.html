@@ -3,65 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Entradas de estoque</title>
+  <meta http-equiv="refresh" content="0; url=entradas-estoque.html">
+  <title>Lotes - Legado</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Estoque</p>
-      <h1>Entradas de estoque</h1>
-      <p class="hero__description">
-        Acompanhe cada entrada de estoque, o consumo e o saldo disponivel por lote.
-      </p>
+<body data-auth="protected" class="auth-checking ui-soft-dark app-entry-page">
+  <main class="app-entry-shell">
+    <p class="hero__tag">Pagina legada</p>
+    <h1>Lotes foi substituido por Entradas de estoque</h1>
+    <p>A consulta oficial de saldos por entrada fica em Entradas de estoque.</p>
+    <div class="form-actions">
+      <a class="button-primary" href="entradas-estoque.html">Abrir Entradas de estoque</a>
+      <a class="button-secondary" href="produtos.html">Voltar para Produtos</a>
     </div>
-  </header>
-
-  <main class="container stock-layout">
-    <section class="stock-card">
-      <div class="stock-header">
-        <div>
-          <h2>Entradas de estoque</h2>
-          <p>Consulta operacional dos lotes de compra e seus saldos disponiveis.</p>
-        </div>
-        <div class="form-actions">
-          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
-          <a class="button-primary" href="cadastro-peca.html">Cadastrar peca</a>
-        </div>
-      </div>
-
-      <p id="mensagemLotes" class="empty-message"></p>
-
-      <div class="form-group">
-        <input id="buscaLotes" type="search" placeholder="Pesquisar por SKU, peca ou origem">
-      </div>
-
-      <div class="table-wrapper">
-        <table class="stock-table">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Nome da peca</th>
-              <th>Origem</th>
-              <th>Data da entrada</th>
-              <th>Qtd. total</th>
-              <th>Qtd. consumida</th>
-              <th>Saldo disponivel</th>
-              <th>Status do lote</th>
-              <th>Alertas</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaLotes"></tbody>
-        </table>
-      </div>
-    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
-  <script src="../js/supabase-service.js?v=21"></script>
-  <script src="../js/lotes.js?v=3"></script>
-  <script src="../js/sidebar.js?v=5"></script>
+  <script>
+    document.addEventListener("auth:sessao-ok", () => {
+      window.location.replace("entradas-estoque.html");
+    });
+  </script>
 </body>
 </html>

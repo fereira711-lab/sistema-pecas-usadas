@@ -223,7 +223,7 @@ function renderizarAtalhos() {
     ["Custo de peça", "paginas/cadastro-custo.html"],
     ["Histórico de vendas", "paginas/historico-vendas.html"],
     ["Origens cadastradas", "paginas/listar-origens.html"],
-    ["Análises", "paginas/relatorios.html"]
+    ["Análises", "paginas/analise-produto.html"]
   ];
 
   atalhosPainelGeral.innerHTML = atalhos.map(([texto, href]) => (
