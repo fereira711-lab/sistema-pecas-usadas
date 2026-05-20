@@ -27,6 +27,58 @@ ERP web para gestao operacional de pecas usadas, origens, estoque, vendas, custo
   - venda abre detalhes a partir do Historico de vendas;
   - origem abre detalhes a partir de Origens cadastradas.
 
+## Painel Geral
+
+`painel.html` e a entrada oficial do sistema apos login. Funciona como visao inicial operacional, nao como menu principal em cards e nao como analise financeira pesada.
+
+Estrutura:
+
+- cabecalho `Painel Geral`;
+- cards de resumo operacional;
+- atalhos rapidos;
+- alertas importantes;
+- ultimas vendas;
+- movimentacoes recentes.
+
+Resumo operacional:
+
+- produtos cadastrados;
+- estoque baixo;
+- vendas recentes;
+- origens pendentes;
+- alertas importantes.
+
+Alertas importantes:
+
+- produtos sem estoque;
+- estoque baixo;
+- custo nao calculado;
+- distribuicao pendente;
+- distribuicao acima do previsto.
+
+Atalhos rapidos:
+
+- Produtos;
+- Cadastro de peca;
+- Cadastro de venda;
+- Custo de peca;
+- Historico de vendas;
+- Origens cadastradas;
+- Analises.
+
+Regras:
+
+- sidebar continua sendo a navegacao principal;
+- atalhos do painel sao apoio para rotina;
+- `index.html` continua como entrada tecnica/redirecionamento;
+- `dashboard.html` continua como legado/redirecionamento, se existir;
+- usar `Painel Geral` como nome padrao;
+- evitar voltar a usar `Dashboard` na interface principal;
+- lucro/margem pesada ficam nas telas de analise;
+- Produtos continua operacional;
+- Detalhes sao centrais das entidades;
+- Analises sao financeiras.
+
 ## Previews
 
 A pasta `previews/` contem testes visuais, como cadastro, design system, dashboard legado e mega menu.
@@ -72,6 +124,61 @@ Nao mostrar na lista de Produtos:
 - resultado financeiro.
 
 Analise financeira deve ficar em detalhes, painel e telas de analise.
+
+## Origens cadastradas
+
+`paginas/listar-origens.html` e a tela real de Origens cadastradas. Ela funciona como listagem operacional de origens/lotes para localizar rapidamente lotes, compras avulsas e outras origens. Nao deve virar analise financeira pesada.
+
+Estrutura:
+
+- cabecalho `Origens cadastradas`;
+- botao `Nova origem`;
+- busca por codigo, descricao ou tipo;
+- seletor `Mostrar`;
+- botao `Filtros`;
+- filtros laterais;
+- cards de resumo simples;
+- lista compacta de origens.
+
+Cards de resumo:
+
+- Total de origens;
+- Origens pendentes;
+- Valor total comprado;
+- Valor nao distribuido.
+
+Lista de origens:
+
+- codigo da origem;
+- tipo;
+- descricao curta;
+- data da compra;
+- valor pago;
+- valor distribuido;
+- valor nao distribuido;
+- pecas vinculadas;
+- situacao da distribuicao;
+- acao `Ver detalhes`.
+
+Situacao da distribuicao:
+
+- Falta distribuir;
+- Distribuida;
+- Acima do previsto;
+- Sem valor pago.
+
+Regras:
+
+- usar `Valor distribuido`;
+- usar `Valor nao distribuido`;
+- usar `Situacao da distribuicao`;
+- evitar termos tecnicos internos desnecessarios;
+- Detalhes da origem e a central completa da origem/lote;
+- analises financeiras mais profundas ficam nas telas de analise;
+- origem nao e peca;
+- origem e agrupador operacional e financeiro;
+- peca nasce depois da origem;
+- entrada de estoque continua obrigatoria.
 
 ## Detalhes da origem
 
@@ -195,6 +302,76 @@ Ajustes permitidos:
 
 - data, canal e observacao podem ser editados se essa for a regra atual;
 - quantidade vendida e custo consumido ficam protegidos no extrato.
+
+## Analises financeiras
+
+As telas de analise sao:
+
+- `paginas/analise-produto.html`;
+- `paginas/analise-periodo.html`;
+- `paginas/analise-custos.html`.
+
+Elas sao telas financeiras e podem mostrar receita, custo, lucro, margem e totais. Nao devem ser confundidas com telas operacionais como Produtos, Historico de vendas ou Cadastro.
+
+Padrao UX/UI:
+
+- busca principal no topo;
+- seletor `Mostrar`;
+- botao `Filtros`;
+- filtros laterais;
+- cards compactos de resumo;
+- listas sem rolagem horizontal;
+- expansoes para detalhes extras;
+- linguagem simples para o usuario.
+
+Analise por produto mostra resultado financeiro agrupado por peca, com busca por SKU/nome, cards de resumo financeiro e lista por produto. Deve exibir custo da peca, custos da venda, lucro e margem. Se nao houver custo calculado, mostrar `Custo nao calculado` e nao inventar lucro/margem.
+
+Analise por periodo mostra resultado financeiro por intervalo de datas, com filtros por data, canal e situacao do custo. A lista de vendas do periodo e o resumo devem mostrar receita, custo das pecas, custos da venda, lucro, margem e quantidade vendida. Os valores devem bater com Detalhes da venda e Analise por produto.
+
+Analise de custos foca custos operacionais. Deve separar custos da peca e custos da venda, mostrar total de custos, maior tipo, quantidade de lancamentos e lista por tipo de custo. Nao deve mostrar lucro/margem.
+
+## Tipos de custo
+
+`paginas/tipos-custo.html` e uma tela administrativa. Ela serve para cadastrar, editar, ativar e inativar tipos de custo. Nao e tela de analise financeira.
+
+Tipos de custo podem ser usados em custos da peca, custos da venda ou ambos.
+
+Categorias:
+
+- Peca;
+- Venda;
+- Ambos.
+
+Status:
+
+- Ativo;
+- Inativo.
+
+Regras:
+
+- impedir duplicidade por diferenca de maiusculas/minusculas;
+- impedir duplicidade por espacos extras;
+- tratar `Limpeza`, `limpeza` e `LIMPEZA` como o mesmo tipo;
+- normalizar o nome para comparacao;
+- evitar tipos parecidos que prejudiquem relatorios e analises;
+- preferir inativar tipos antigos em vez de apagar;
+- nao alterar calculos financeiros nessa tela.
+
+UX/UI:
+
+- busca no topo;
+- seletor `Mostrar`;
+- botao `Filtros`;
+- formulario Novo/editar tipo;
+- painel de uso recomendado;
+- lista compacta de tipos cadastrados;
+- acoes `Editar`, `Inativar` e `Ativar`.
+
+Relacao com outras telas:
+
+- Custo de peca usa tipos com categoria Peca ou Ambos.
+- Cadastro de venda usa tipos com categoria Venda ou Ambos.
+- Analise de custos depende dos tipos padronizados para agrupar corretamente.
 
 ## Regras financeiras
 

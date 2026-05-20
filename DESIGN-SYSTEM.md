@@ -61,6 +61,94 @@ Diretrizes extraidas dessa tela:
 - `dashboard.html` e legado/redirecionamento.
 - Paginas de detalhes nao entram como link direto no menu principal.
 
+## Padrao do Painel Geral
+
+`painel.html` e a entrada oficial apos login e deve usar o nome `Painel Geral` na interface principal. Evitar voltar a chamar a tela de `Dashboard`.
+
+Funcao:
+
+- Visao inicial operacional.
+- Rotina e pontos de atencao.
+- Atalhos de apoio.
+- Nao ser menu principal em cards.
+- Nao ser analise financeira pesada.
+
+Estrutura visual:
+
+- Cabecalho `Painel Geral`.
+- Cards compactos de resumo operacional.
+- Atalhos rapidos.
+- Alertas importantes.
+- Ultimas vendas.
+- Movimentacoes recentes.
+
+Resumo operacional:
+
+- Produtos cadastrados.
+- Estoque baixo.
+- Vendas recentes.
+- Origens pendentes.
+- Alertas importantes.
+
+Alertas importantes:
+
+- Produtos sem estoque.
+- Estoque baixo.
+- Custo nao calculado.
+- Distribuicao pendente.
+- Distribuicao acima do previsto.
+
+Atalhos rapidos:
+
+- Produtos.
+- Cadastro de peca.
+- Cadastro de venda.
+- Custo de peca.
+- Historico de vendas.
+- Origens cadastradas.
+- Analises.
+
+Regras:
+
+- Sidebar continua sendo a navegacao principal.
+- Atalhos do painel nao substituem a sidebar.
+- `index.html` continua como entrada tecnica/redirecionamento.
+- `dashboard.html` continua como legado/redirecionamento quando existir.
+- Lucro/margem pesada ficam nas telas de analise.
+- Produtos continua operacional.
+- Detalhes continuam como centrais das entidades.
+- Analises continuam financeiras.
+
+## Padrao das telas de analise financeira
+
+As telas `analise-produto.html`, `analise-periodo.html` e `analise-custos.html` pertencem ao grupo financeiro. Elas podem mostrar receita, custo, lucro, margem e totais quando fizer sentido, sem competir com telas operacionais como Produtos, Historico ou Cadastro.
+
+Padrao visual:
+
+- Busca principal no topo.
+- Seletor `Mostrar`.
+- Botao `Filtros`.
+- Filtros laterais.
+- Cards compactos de resumo.
+- Listas sem rolagem horizontal.
+- Expansoes para detalhes extras.
+- Linguagem simples para custo e resultado.
+
+Regras por tela:
+
+- `analise-produto.html`: resultado financeiro agrupado por peca, busca por SKU/nome, cards de resumo financeiro e lista por produto com custo da peca, custos da venda, lucro e margem. Se faltar custo calculado, mostrar `Custo nao calculado` e nao inventar lucro/margem.
+- `analise-periodo.html`: resultado financeiro por intervalo de datas, filtros por data, canal e situacao do custo, lista de vendas do periodo e resumo com receita, custo das pecas, custos da venda, lucro, margem e quantidade vendida. Os valores devem bater com Detalhes da venda e Analise por produto.
+- `analise-custos.html`: foco em custos operacionais, separando custos da peca e custos da venda. Deve mostrar total de custos, maior tipo, quantidade de lancamentos e lista por tipo de custo, sem lucro/margem.
+
+Regras financeiras:
+
+- FIFO continua sendo regra tecnica interna.
+- A interface deve usar `Custo da peca`, `Custo calculado` e `Custo nao calculado`.
+- O custo real da venda vem de `venda_consumos_estoque`.
+- `financeiro-utils.js` continua sendo a fonte oficial de calculos.
+- Nao usar custo medio.
+- Nao usar `origem.valor_total` como custo da venda.
+
 ## Estrutura de projeto considerada no design
 
 - `css/`: estilos globais, tokens visuais e CSS do mapa mental.
@@ -322,6 +410,64 @@ Regras visuais:
 - Badges suaves; `Estoque baixo` e `Sem estoque` devem chamar mais atencao que `Em estoque`.
 - Dourado apenas como detalhe discreto, principalmente em SKU e pequenos acentos.
 
+### Listagem operacional de origens
+
+`listar-origens.html` e a tela real de Origens cadastradas. Ela e uma listagem operacional de origens/lotes, nao uma analise financeira pesada.
+
+Estrutura visual:
+
+- Cabecalho `Origens cadastradas`.
+- Botao `Nova origem`.
+- Busca por codigo, descricao ou tipo.
+- Seletor `Mostrar`.
+- Botao `Filtros`.
+- Filtros laterais.
+- Cards de resumo simples.
+- Lista compacta sem rolagem horizontal.
+
+Cards de resumo:
+
+- Total de origens.
+- Origens pendentes.
+- Valor total comprado.
+- Valor nao distribuido.
+
+Linha da lista:
+
+- Codigo da origem.
+- Tipo.
+- Descricao curta.
+- Data da compra.
+- Valor pago.
+- Valor distribuido.
+- Valor nao distribuido.
+- Pecas vinculadas.
+- Situacao da distribuicao.
+- Acao `Ver detalhes`.
+
+Situacao da distribuicao:
+
+- Falta distribuir.
+- Distribuida.
+- Acima do previsto.
+- Sem valor pago.
+
+Linguagem:
+
+- Usar `Valor distribuido`.
+- Usar `Valor nao distribuido`.
+- Usar `Situacao da distribuicao`.
+- Evitar termos tecnicos internos desnecessarios.
+
+Regras:
+
+- Origens cadastradas e listagem operacional.
+- Detalhes da origem e a central completa da origem/lote.
+- Analises financeiras mais profundas ficam nas telas de analise.
+- Origem nao e peca; origem e agrupador operacional e financeiro.
+- Peca nasce depois da origem.
+- Entrada de estoque continua obrigatoria.
+
 ### Central operacional da origem/lote
 
 `detalhes-origem.html` funciona como central operacional da origem/lote. A tela mostra dados da origem, distribuicao, pecas vinculadas, entradas de estoque, vendas relacionadas e resumo da origem.
@@ -427,6 +573,42 @@ Padroes:
 - Evitar layout dividido em duas colunas quando apertar o conteudo.
 
 Custo de peca pode exibir valores de custo lancados. Isso e diferente de Produtos, que continua sem exibir custo, lucro, margem ou resultado financeiro.
+
+### Tela administrativa de tipos de custo
+
+`tipos-custo.html` e uma tela administrativa para cadastrar, editar, ativar e inativar tipos de custo. Ela nao e tela de analise financeira.
+
+Padrao visual:
+
+- Busca no topo.
+- Seletor `Mostrar`.
+- Botao `Filtros`.
+- Formulario Novo/editar tipo.
+- Painel de uso recomendado.
+- Lista compacta de tipos cadastrados.
+- Acoes `Editar`, `Inativar` e `Ativar`.
+
+Categorias:
+
+- Peca.
+- Venda.
+- Ambos.
+
+Status:
+
+- Ativo.
+- Inativo.
+
+Regras:
+
+- Custos de peca usam tipos Peca ou Ambos.
+- Custos da venda usam tipos Venda ou Ambos.
+- Analise de custos depende dos tipos padronizados para agrupar corretamente.
+- Impedir duplicidade por maiusculas/minusculas e espacos extras.
+- Tratar `Limpeza`, `limpeza` e `LIMPEZA` como o mesmo tipo.
+- Normalizar o nome para comparacao antes de salvar.
+- Preferir inativar tipos antigos em vez de apagar.
+- Nao alterar calculos financeiros nessa tela.
 
 ### Tela operacional de cadastro de venda
 

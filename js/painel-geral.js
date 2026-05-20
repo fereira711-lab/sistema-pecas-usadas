@@ -2,7 +2,8 @@ const mensagemPainelGeral = document.getElementById("mensagemPainelGeral");
 const cardsPainelGeral = document.getElementById("cardsPainelGeral");
 const alertasPainelGeral = document.getElementById("alertasPainelGeral");
 const atalhosPainelGeral = document.getElementById("atalhosPainelGeral");
-const tabelaUltimasVendas = document.getElementById("tabelaUltimasVendas");
+const listaUltimasVendas = document.getElementById("listaUltimasVendas");
+const movimentacoesPainelGeral = document.getElementById("movimentacoesPainelGeral");
 const mensagemUltimasVendas = document.getElementById("mensagemUltimasVendas");
 
 function escaparHtml(valor) {
@@ -60,28 +61,53 @@ function calcularQuantidadeDisponivelPeca(peca, entradasDaPeca = []) {
   return Math.max(total - vendida, 0);
 }
 
-function calcularSaldoEntrada(entrada) {
-  return Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
+function criarEntradasPorPeca(entradasEstoque) {
+  return entradasEstoque.reduce((mapa, entrada) => {
+    const pecaId = Number(entrada.pecaId || 0);
+
+    if (!mapa[pecaId]) {
+      mapa[pecaId] = [];
+    }
+
+    mapa[pecaId].push(entrada);
+    return mapa;
+  }, {});
 }
 
-function criarCard(titulo, valor, classe = "") {
+function criarCard(titulo, valor, descricao = "", classe = "") {
   const classeCard = classe ? `summary-card ${classe}` : "summary-card";
 
   return `
     <article class="${classeCard}">
-      <span>${titulo}</span>
-      <strong>${valor}</strong>
+      <span>${escaparHtml(titulo)}</span>
+      <strong>${escaparHtml(valor)}</strong>
+      <small>${escaparHtml(descricao)}</small>
     </article>
   `;
 }
 
-function criarAlerta(titulo, valor, descricao, tipo = "warning", href = "paginas/alertas.html") {
+function criarAlertaLinha(titulo, valor, descricao, tipo = "warning", href = "paginas/alertas.html") {
+  const classeTipo = {
+    danger: "status-badge--empty",
+    warning: "status-badge--warning",
+    info: "status-badge--info",
+    ok: "status-badge--stock"
+  }[tipo] || "status-badge--warning";
+  const textoTipo = {
+    danger: "Crítico",
+    warning: "Atenção",
+    info: "Origem",
+    ok: "OK"
+  }[tipo] || "Atenção";
+
   return `
-    <article class="alert-card alert-card--${tipo}">
-      <span>${escaparHtml(titulo)}</span>
-      <strong>${formatarNumero(valor)}</strong>
-      <small>${escaparHtml(descricao)}</small>
-      <a class="table-link" href="${escaparHtml(href)}">Abrir</a>
+    <article class="dashboard-alert-item dashboard-alert-item--${tipo}">
+      <span class="status-badge ${classeTipo}">${textoTipo}</span>
+      <div>
+        <strong>${escaparHtml(titulo)}</strong>
+        <small>${formatarNumero(valor)} - ${escaparHtml(descricao)}</small>
+      </div>
+      <a class="table-link" href="${escaparHtml(href)}">Ver</a>
     </article>
   `;
 }
@@ -93,12 +119,22 @@ async function carregarDadosPainel() {
   }
 
   try {
-    const [origens, pecas, vendas, consumosEstoque, entradasEstoque] = await Promise.all([
+    const [
+      origens,
+      pecas,
+      vendas,
+      consumosEstoque,
+      entradasEstoque,
+      custosPeca,
+      custosVenda
+    ] = await Promise.all([
       window.supabaseService.listarOrigens(),
       window.supabaseService.listarPecas(),
       window.supabaseService.listarVendas(),
       window.supabaseService.listarConsumosEstoque(),
-      window.supabaseService.listarEntradasEstoque()
+      window.supabaseService.listarEntradasEstoque(),
+      window.supabaseService.listarCustosPeca?.() || [],
+      window.supabaseService.listarCustosVenda?.() || []
     ]);
 
     mensagemPainelGeral.textContent = "";
@@ -108,7 +144,9 @@ async function carregarDadosPainel() {
       pecas: pecas || [],
       vendas: vendas || [],
       consumosEstoque: consumosEstoque || [],
-      entradasEstoque: entradasEstoque || []
+      entradasEstoque: entradasEstoque || [],
+      custosPeca: custosPeca || [],
+      custosVenda: custosVenda || []
     };
   } catch (erro) {
     console.error("Erro ao carregar painel geral:", erro);
@@ -134,16 +172,7 @@ function calcularDistribuicaoOrigem(origem, entradas) {
 }
 
 function calcularAlertasPainel(dados) {
-  const entradasPorPeca = dados.entradasEstoque.reduce((mapa, entrada) => {
-    const pecaId = Number(entrada.pecaId || 0);
-
-    if (!mapa[pecaId]) {
-      mapa[pecaId] = [];
-    }
-
-    mapa[pecaId].push(entrada);
-    return mapa;
-  }, {});
+  const entradasPorPeca = criarEntradasPorPeca(dados.entradasEstoque);
   const idsVendasComConsumo = new Set(dados.consumosEstoque.map(consumo => Number(consumo.vendaId || 0)));
   const produtosSemEstoque = dados.pecas.filter(peca => calcularQuantidadeDisponivelPeca(peca, entradasPorPeca[Number(peca.id)] || []) <= 0).length;
   const produtosComEstoqueBaixo = dados.pecas.filter(peca => {
@@ -164,16 +193,7 @@ function calcularAlertasPainel(dados) {
 }
 
 function renderizarCards(dados) {
-  const entradasPorPeca = dados.entradasEstoque.reduce((mapa, entrada) => {
-    const pecaId = Number(entrada.pecaId || 0);
-
-    if (!mapa[pecaId]) {
-      mapa[pecaId] = [];
-    }
-
-    mapa[pecaId].push(entrada);
-    return mapa;
-  }, {});
+  const entradasPorPeca = criarEntradasPorPeca(dados.entradasEstoque);
   const produtosCadastrados = dados.pecas.length;
   const estoqueBaixo = dados.pecas.filter(peca => {
     const disponivel = calcularQuantidadeDisponivelPeca(peca, entradasPorPeca[Number(peca.id)] || []);
@@ -184,11 +204,11 @@ function renderizarCards(dados) {
   const totalAlertas = alertas.produtosSemEstoque + alertas.produtosComEstoqueBaixo + alertas.vendasSemCusto + alertas.origensPendentes + alertas.origensAcima;
 
   cardsPainelGeral.innerHTML =
-    criarCard("Produtos cadastrados", formatarNumero(produtosCadastrados)) +
-    criarCard("Estoque baixo", formatarNumero(estoqueBaixo), estoqueBaixo > 0 ? "summary-card--loss" : "") +
-    criarCard("Vendas recentes", formatarNumero(vendasRecentes)) +
-    criarCard("Origens pendentes", formatarNumero(alertas.origensPendentes), alertas.origensPendentes > 0 ? "summary-card--loss" : "") +
-    criarCard("Alertas importantes", formatarNumero(totalAlertas), totalAlertas > 0 ? "summary-card--loss" : "summary-card--profit");
+    criarCard("Produtos cadastrados", formatarNumero(produtosCadastrados), "Total de peças no estoque") +
+    criarCard("Estoque baixo", formatarNumero(estoqueBaixo), `${formatarNumero(alertas.produtosSemEstoque)} sem estoque`, estoqueBaixo > 0 ? "summary-card--loss" : "") +
+    criarCard("Vendas recentes", formatarNumero(vendasRecentes), "Últimos registros") +
+    criarCard("Origens pendentes", formatarNumero(alertas.origensPendentes), "Distribuição para revisar", alertas.origensPendentes > 0 ? "summary-card--loss" : "") +
+    criarCard("Alertas importantes", formatarNumero(totalAlertas), "Requerem atenção operacional", totalAlertas > 0 ? "summary-card--loss" : "summary-card--profit");
 }
 
 function renderizarAtalhos() {
@@ -221,26 +241,20 @@ function renderizarAlertasPainel(dados) {
 
   if (totalAlertas === 0) {
     alertasPainelGeral.innerHTML = `
-      <div class="alert-panel dashboard-alert-panel">
-        <div class="alert-panel__header">
-          <h3>Status</h3>
-          <span class="alert-pill alert-pill--ok">OK</span>
-        </div>
-        <p>Nenhum alerta operacional importante no momento.</p>
+      <div class="dashboard-alert-list">
+        ${criarAlertaLinha("Operação sem alertas críticos", 0, "Nenhum ponto importante no momento.", "ok", "paginas/alertas.html")}
       </div>
     `;
     return;
   }
 
   alertasPainelGeral.innerHTML = `
-    <div class="alert-panel dashboard-alert-panel">
-      <div class="alert-grid">
-        ${criarAlerta("Sem estoque", alertas.produtosSemEstoque, "Produtos sem quantidade disponível.", "danger", "paginas/alertas.html")}
-        ${criarAlerta("Estoque baixo", alertas.produtosComEstoqueBaixo, "Produtos com saldo entre 1 e 2.", "warning", "paginas/alertas.html")}
-        ${criarAlerta("Custo não calculado", alertas.vendasSemCusto, "Vendas sem consumo FIFO registrado.", "warning", "paginas/alertas.html")}
-        ${criarAlerta("Distribuição pendente", alertas.origensPendentes, "Origens com valor ainda não distribuído.", "warning", "paginas/alertas.html")}
-        ${criarAlerta("Distribuição acima", alertas.origensAcima, "Origens distribuídas acima do valor.", "danger", "paginas/alertas.html")}
-      </div>
+    <div class="dashboard-alert-list">
+      ${criarAlertaLinha("Produtos sem estoque", alertas.produtosSemEstoque, "Peças sem saldo disponível.", "danger", "paginas/alertas.html")}
+      ${criarAlertaLinha("Estoque baixo", alertas.produtosComEstoqueBaixo, "Peças abaixo do limite operacional.", "warning", "paginas/alertas.html")}
+      ${criarAlertaLinha("Custo não calculado", alertas.vendasSemCusto, "Vendas aguardando conferência de custo.", "warning", "paginas/alertas.html")}
+      ${criarAlertaLinha("Distribuição pendente", alertas.origensPendentes, "Origens com valor para distribuir.", "info", "paginas/listar-origens.html")}
+      ${criarAlertaLinha("Distribuição acima do previsto", alertas.origensAcima, "Origens acima do valor planejado.", "danger", "paginas/listar-origens.html")}
     </div>
   `;
 }
@@ -261,12 +275,12 @@ function obterUltimasVendas(vendas, limite = 8) {
 }
 
 function renderizarUltimasVendas(vendas) {
-  if (!tabelaUltimasVendas) {
+  if (!listaUltimasVendas) {
     return;
   }
 
   const ultimasVendas = obterUltimasVendas(vendas);
-  tabelaUltimasVendas.innerHTML = "";
+  listaUltimasVendas.innerHTML = "";
 
   if (ultimasVendas.length === 0) {
     if (mensagemUltimasVendas) {
@@ -279,24 +293,104 @@ function renderizarUltimasVendas(vendas) {
     mensagemUltimasVendas.textContent = "";
   }
 
-  ultimasVendas.forEach(venda => {
-    const linha = document.createElement("tr");
+  listaUltimasVendas.innerHTML = ultimasVendas.map(venda => `
+    <div class="general-dashboard-row" role="row">
+      <span data-label="Data">${formatarData(obterDataVenda(venda))}</span>
+      <strong data-label="SKU">${escaparHtml(formatarSkuVenda(venda))}</strong>
+      <span data-label="Peça" class="product-name">${escaparHtml(formatarNomeVenda(venda))}</span>
+      <span data-label="Qtd.">${formatarNumero(obterQuantidadeVendida(venda))}</span>
+      <span data-label="Canal">${escaparHtml(venda.canalVenda || "-")}</span>
+      <a class="table-link" href="paginas/detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes</a>
+    </div>
+  `).join("");
+}
 
-    linha.innerHTML = `
-      <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
-      <td data-label="SKU">${escaparHtml(formatarSkuVenda(venda))}</td>
-      <td data-label="Peça"><strong class="product-name">${escaparHtml(formatarNomeVenda(venda))}</strong></td>
-      <td data-label="Quantidade">${formatarNumero(obterQuantidadeVendida(venda))}</td>
-      <td data-label="Canal">${escaparHtml(venda.canalVenda || "-")}</td>
-      <td data-label="Ação">
-        <div class="table-actions table-actions--single">
-          <a class="table-link" href="paginas/detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes</a>
-        </div>
-      </td>
-    `;
+function obterNomePecaPorId(pecas, pecaId) {
+  const peca = pecas.find(item => Number(item.id) === Number(pecaId));
+  return peca?.nome || peca?.nomePeca || peca?.nome_peca || peca?.sku || `Peça ${pecaId}`;
+}
 
-    tabelaUltimasVendas.appendChild(linha);
+function criarMovimento(tipo, titulo, descricao, data, href = "#") {
+  return {
+    tipo,
+    titulo,
+    descricao,
+    data: String(data || "").slice(0, 10),
+    href
+  };
+}
+
+function obterMovimentacoesRecentes(dados) {
+  const movimentos = [];
+
+  dados.entradasEstoque.slice(0, 6).forEach(entrada => {
+    movimentos.push(criarMovimento(
+      "entrada",
+      "Entrada registrada",
+      `${formatarNumero(entrada.quantidadeTotal)} un. de ${entrada.nomePeca || obterNomePecaPorId(dados.pecas, entrada.pecaId)}`,
+      entrada.dataEntrada || entrada.createdAt,
+      entrada.pecaId ? `paginas/detalhes-produto.html?pecaId=${encodeURIComponent(entrada.pecaId)}` : "paginas/lotes.html"
+    ));
   });
+
+  [...dados.custosPeca, ...dados.custosVenda].slice(0, 6).forEach(custo => {
+    movimentos.push(criarMovimento(
+      "custo",
+      "Custo lançado",
+      `${custo.tipoCusto || custo.tipo || "Custo"} registrado no sistema`,
+      custo.dataCusto || custo.data,
+      custo.pecaId ? `paginas/detalhes-produto.html?pecaId=${encodeURIComponent(custo.pecaId)}` : "paginas/analise-custos.html"
+    ));
+  });
+
+  dados.pecas.slice(0, 6).forEach(peca => {
+    movimentos.push(criarMovimento(
+      "peca",
+      "Peça cadastrada",
+      `${peca.sku || "Sem SKU"} - ${peca.nome || peca.nomePeca || peca.nome_peca || "Peça"}`,
+      peca.createdAt || peca.created_at,
+      `paginas/detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}`
+    ));
+  });
+
+  const alertas = calcularAlertasPainel(dados);
+  if (alertas.produtosComEstoqueBaixo > 0 || alertas.produtosSemEstoque > 0) {
+    movimentos.push(criarMovimento(
+      "alerta",
+      "Alerta gerado",
+      "Existem peças com estoque baixo ou sem estoque.",
+      new Date().toISOString(),
+      "paginas/alertas.html"
+    ));
+  }
+
+  return movimentos
+    .filter(movimento => movimento.data)
+    .sort((a, b) => b.data.localeCompare(a.data))
+    .slice(0, 6);
+}
+
+function renderizarMovimentacoes(dados) {
+  if (!movimentacoesPainelGeral) {
+    return;
+  }
+
+  const movimentos = obterMovimentacoesRecentes(dados);
+
+  if (movimentos.length === 0) {
+    movimentacoesPainelGeral.innerHTML = `<p class="empty-message">Nenhuma movimentação recente.</p>`;
+    return;
+  }
+
+  movimentacoesPainelGeral.innerHTML = movimentos.map(movimento => `
+    <a class="dashboard-movement-item" href="${escaparHtml(movimento.href)}">
+      <span class="dashboard-dot dashboard-dot--${escaparHtml(movimento.tipo)}"></span>
+      <div>
+        <strong>${escaparHtml(movimento.titulo)}</strong>
+        <small>${escaparHtml(movimento.descricao)}</small>
+      </div>
+    </a>
+  `).join("");
 }
 
 async function iniciarPainelGeral() {
@@ -307,8 +401,11 @@ async function iniciarPainelGeral() {
     if (alertasPainelGeral) {
       alertasPainelGeral.innerHTML = "";
     }
-    if (tabelaUltimasVendas) {
-      tabelaUltimasVendas.innerHTML = "";
+    if (listaUltimasVendas) {
+      listaUltimasVendas.innerHTML = "";
+    }
+    if (movimentacoesPainelGeral) {
+      movimentacoesPainelGeral.innerHTML = "";
     }
     return;
   }
@@ -317,6 +414,7 @@ async function iniciarPainelGeral() {
   renderizarAtalhos();
   renderizarAlertasPainel(dados);
   renderizarUltimasVendas(dados.vendas);
+  renderizarMovimentacoes(dados);
 }
 
 document.addEventListener("DOMContentLoaded", iniciarPainelGeral);

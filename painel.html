@@ -7,84 +7,77 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-auth="protected" class="auth-checking ui-soft-dark general-dashboard-page">
-  <header class="page-header">
+  <header class="page-header general-dashboard-topbar">
     <div>
-      <p class="hero__tag">Painel geral</p>
+      <p class="hero__tag">Painel Geral</p>
       <h1>Painel Geral</h1>
-      <p class="hero__description">Visão inicial operacional de produtos, vendas recentes, alertas e atalhos do sistema.</p>
+      <p class="hero__description">Visão inicial operacional do sistema.</p>
     </div>
+    <span class="status-badge status-badge--info">Operacional</span>
   </header>
 
   <main class="container stock-layout general-dashboard-layout">
-    <section class="stock-card general-dashboard-shell">
-      <div class="stock-header general-dashboard-header">
-        <div>
-          <span class="piece-form-eyebrow">Operação</span>
-          <h2>Resumo operacional</h2>
-          <p>Indicadores rápidos para acompanhar a rotina.</p>
-        </div>
-        <div class="form-actions">
-          <a class="button-secondary" href="paginas/produtos.html">Produtos</a>
-        </div>
-      </div>
+    <p id="mensagemPainelGeral" class="empty-message"></p>
 
-      <p id="mensagemPainelGeral" class="empty-message"></p>
-      <section id="cardsPainelGeral" class="summary-grid" aria-label="Cards do painel geral"></section>
-    </section>
+    <section id="cardsPainelGeral" class="summary-grid general-dashboard-summary" aria-label="Resumo operacional"></section>
 
-    <section class="stock-card section-spaced general-dashboard-section">
-      <div class="stock-header general-dashboard-section__header">
-        <div>
-          <h2>Atalhos rápidos</h2>
-          <p>Acesso direto às telas principais.</p>
+    <section class="general-dashboard-main-grid">
+      <article class="stock-card general-dashboard-section general-dashboard-shortcuts-card">
+        <div class="stock-header general-dashboard-section__header">
+          <div>
+            <p class="hero__tag">Atalhos</p>
+            <h2>Ações rápidas</h2>
+          </div>
         </div>
-      </div>
+        <nav id="atalhosPainelGeral" class="dashboard-shortcuts" aria-label="Atalhos principais"></nav>
+      </article>
 
-      <nav id="atalhosPainelGeral" class="dashboard-shortcuts" aria-label="Atalhos principais"></nav>
-    </section>
-
-    <section class="stock-card section-spaced general-dashboard-section">
-      <div class="stock-header general-dashboard-section__header">
-        <div>
-          <h2>Alertas importantes</h2>
-          <p>Itens que precisam de atenção operacional.</p>
-        </div>
-        <div class="form-actions">
+      <article class="stock-card general-dashboard-section general-dashboard-alerts-card">
+        <div class="stock-header general-dashboard-section__header">
+          <div>
+            <p class="hero__tag">Atenção</p>
+            <h2>Alertas importantes</h2>
+          </div>
           <a class="button-secondary" href="paginas/alertas.html">Ver alertas</a>
         </div>
-      </div>
-
-      <section id="alertasPainelGeral" aria-label="Alertas importantes do painel"></section>
+        <section id="alertasPainelGeral" aria-label="Alertas importantes do painel"></section>
+      </article>
     </section>
 
-    <section class="stock-card section-spaced general-dashboard-section">
-      <div class="stock-header general-dashboard-section__header">
-        <div>
-          <h2>Últimas vendas</h2>
-          <p>Vendas mais recentes pela data informada no cadastro.</p>
+    <section class="general-dashboard-content-grid">
+      <article class="stock-card general-dashboard-section general-dashboard-sales-card">
+        <div class="stock-header general-dashboard-section__header">
+          <div>
+            <p class="hero__tag">Vendas</p>
+            <h2>Últimas vendas</h2>
+          </div>
+          <a class="button-secondary" href="paginas/historico-vendas.html">Histórico</a>
         </div>
-        <div class="form-actions">
-          <a class="button-secondary" href="paginas/historico-vendas.html">Ver histórico</a>
+
+        <p id="mensagemUltimasVendas" class="empty-message"></p>
+
+        <div class="general-dashboard-list" role="table" aria-label="Últimas vendas">
+          <div class="general-dashboard-row general-dashboard-row--head" role="row">
+            <span>Data</span>
+            <span>SKU</span>
+            <span>Peça</span>
+            <span>Qtd.</span>
+            <span>Canal</span>
+            <span>Ação</span>
+          </div>
+          <div id="listaUltimasVendas"></div>
         </div>
-      </div>
+      </article>
 
-      <p id="mensagemUltimasVendas" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table general-dashboard-table">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>SKU</th>
-              <th>Peça</th>
-              <th>Quantidade</th>
-              <th>Canal</th>
-              <th>Ação</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaUltimasVendas"></tbody>
-        </table>
-      </div>
+      <article class="stock-card general-dashboard-section general-dashboard-movements-card">
+        <div class="stock-header general-dashboard-section__header">
+          <div>
+            <p class="hero__tag">Movimentações</p>
+            <h2>Recentes</h2>
+          </div>
+        </div>
+        <div id="movimentacoesPainelGeral" class="dashboard-movements" aria-label="Movimentações recentes"></div>
+      </article>
     </section>
   </main>
 
@@ -93,7 +86,7 @@
   <script src="js/auth.js?v=4"></script>
   <script src="js/supabase-service.js?v=28"></script>
   <script src="js/financeiro-utils.js?v=1"></script>
-  <script src="js/painel-geral.js?v=10"></script>
+  <script src="js/painel-geral.js?v=11"></script>
   <script src="js/sidebar.js?v=5"></script>
 </body>
 </html>

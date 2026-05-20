@@ -52,6 +52,56 @@ Regras consolidadas nesta fase:
 - `index.html` deve continuar funcionando como entrada tecnica/compatibilidade.
 - Detalhes de produto, venda e origem devem ser acessados a partir das listagens ou cards de contexto, nao pelo menu principal.
 
+## Painel Geral
+
+`painel.html` e a entrada oficial do sistema apos login. A tela funciona como visao inicial operacional, nao como menu principal em cards e nao como analise financeira pesada.
+
+Estrutura UX:
+
+- Cabecalho `Painel Geral`.
+- Cards de resumo operacional.
+- Atalhos rapidos.
+- Alertas importantes.
+- Ultimas vendas.
+- Movimentacoes recentes.
+
+Resumo operacional:
+
+- Produtos cadastrados.
+- Estoque baixo.
+- Vendas recentes.
+- Origens pendentes.
+- Alertas importantes.
+
+Alertas importantes:
+
+- Produtos sem estoque.
+- Estoque baixo.
+- Custo nao calculado.
+- Distribuicao pendente.
+- Distribuicao acima do previsto.
+
+Atalhos rapidos:
+
+- Produtos.
+- Cadastro de peca.
+- Cadastro de venda.
+- Custo de peca.
+- Historico de vendas.
+- Origens cadastradas.
+- Analises.
+
+Regras de navegacao e linguagem:
+
+- Sidebar continua sendo a navegacao principal.
+- Atalhos do painel sao apoio para rotina, nao menu completo duplicado.
+- `index.html` continua como entrada tecnica/redirecionamento.
+- `dashboard.html` continua como legado/redirecionamento, se existir.
+- Usar `Painel Geral` como nome padrao.
+- Evitar voltar a usar `Dashboard` na interface principal.
+- Painel deve mostrar rotina e atencao operacional.
+- Lucro/margem pesada ficam nas telas de analise.
+
 ## Pasta de previews
 
 A pasta `previews/` concentra testes visuais e nao deve ser tratada como fluxo real do sistema.
@@ -105,6 +155,66 @@ Regras:
 - Nao transformar listagens operacionais em analise financeira pesada.
 
 Exemplos: cadastro de origem, cadastro de peca, cadastro de venda, produtos, historico de vendas e entradas de estoque.
+
+### Origens cadastradas
+
+`listar-origens.html` e a tela real de Origens cadastradas. Ela funciona como listagem operacional de origens/lotes para localizar rapidamente lotes, compras avulsas e outras origens.
+
+Regras:
+
+- Nao virar analise financeira pesada.
+- Usar cabecalho `Origens cadastradas`.
+- Manter botao `Nova origem`.
+- Ter busca por codigo, descricao ou tipo.
+- Usar seletor `Mostrar`.
+- Usar botao `Filtros`.
+- Usar filtros laterais.
+- Usar cards de resumo simples.
+- Usar lista compacta de origens sem rolagem horizontal.
+
+Cards de resumo:
+
+- Total de origens.
+- Origens pendentes.
+- Valor total comprado.
+- Valor nao distribuido.
+
+Lista de origens:
+
+- Codigo da origem.
+- Tipo.
+- Descricao curta.
+- Data da compra.
+- Valor pago.
+- Valor distribuido.
+- Valor nao distribuido.
+- Pecas vinculadas.
+- Situacao da distribuicao.
+- Acao `Ver detalhes`.
+
+Situacao da distribuicao:
+
+- Falta distribuir.
+- Distribuida.
+- Acima do previsto.
+- Sem valor pago.
+
+Linguagem:
+
+- Usar `Valor distribuido`.
+- Usar `Valor nao distribuido`.
+- Usar `Situacao da distribuicao`.
+- Evitar termos tecnicos internos desnecessarios.
+
+Relacao com Detalhes da origem:
+
+- Origens cadastradas e listagem operacional.
+- Detalhes da origem e a central completa da origem/lote.
+- Analises financeiras mais profundas ficam nas telas de analise.
+- Origem nao e peca.
+- Origem e agrupador operacional e financeiro.
+- Peca nasce depois da origem.
+- Entrada de estoque continua obrigatoria.
 
 ### Produtos
 
@@ -365,6 +475,36 @@ Regras:
 
 Exemplos: painel geral, analise por produto, analise por periodo, analise de custos, giro de estoque e alertas.
 
+#### Analises financeiras
+
+As telas `analise-produto.html`, `analise-periodo.html` e `analise-custos.html` formam a area financeira do sistema. Elas podem mostrar receita, custo, lucro, margem e totais, mas nao devem ser confundidas com telas operacionais como Produtos, Historico de vendas ou Cadastro.
+
+Padrao UX/UI:
+
+- Busca principal sempre visivel no topo.
+- Seletor `Mostrar`.
+- Botao `Filtros`.
+- Filtros avancados em painel lateral.
+- Cards compactos de resumo.
+- Listas sem rolagem horizontal.
+- Expansoes para detalhes extras.
+- Linguagem simples para o usuario.
+
+`analise-produto.html` mostra resultado financeiro agrupado por peca. Deve ter busca por SKU/nome, cards de resumo financeiro, lista por produto, custo da peca, custos da venda, lucro e margem. Se nao houver custo calculado, mostrar `Custo nao calculado` e nao inventar lucro/margem.
+
+`analise-periodo.html` mostra resultado financeiro por intervalo de datas. Deve ter filtros por data, canal e situacao do custo, lista de vendas do periodo e resumo com receita, custo das pecas, custos da venda, lucro, margem e quantidade vendida. Os valores devem bater com Detalhes da venda e Analise por produto.
+
+`analise-custos.html` tem foco em custos operacionais. Deve separar custos da peca e custos da venda, mostrar total de custos, maior tipo, quantidade de lancamentos e lista por tipo de custo. Nao deve mostrar lucro/margem.
+
+Regras financeiras:
+
+- FIFO continua sendo regra tecnica interna.
+- A interface deve usar `Custo da peca`, `Custo calculado` e `Custo nao calculado`.
+- O custo real da venda vem de `venda_consumos_estoque`.
+- `financeiro-utils.js` continua sendo a fonte oficial de calculo.
+- Nao usar custo medio.
+- Nao usar `origem.valor_total` como custo da venda.
+
 ### Telas administrativas
 
 Telas para configuracoes, apoio e manutencao do sistema.
@@ -377,6 +517,53 @@ Regras:
 - Evitar duplicidade com telas de operacao.
 
 Exemplos: tipos de custo, login e menu inicial.
+
+#### Tipos de custo
+
+`tipos-custo.html` e uma tela administrativa do sistema. Ela serve para cadastrar, editar, ativar e inativar tipos de custo, sem se comportar como analise financeira.
+
+Uso dos tipos:
+
+- Custos da peca.
+- Custos da venda.
+- Ambos.
+
+Categorias:
+
+- Peca.
+- Venda.
+- Ambos.
+
+Status:
+
+- Ativo.
+- Inativo.
+
+Regras de duplicidade:
+
+- Impedir duplicidade por diferenca de maiusculas/minusculas.
+- Impedir duplicidade por espacos extras.
+- `Limpeza`, `limpeza` e `LIMPEZA` devem ser tratados como o mesmo tipo.
+- O sistema deve normalizar o nome para comparacao.
+- Nao criar tipos parecidos que prejudiquem relatorios e analises.
+
+Padrao UX/UI:
+
+- Busca no topo.
+- Seletor `Mostrar`.
+- Botao `Filtros`.
+- Formulario Novo/editar tipo.
+- Painel de uso recomendado.
+- Lista compacta de tipos cadastrados.
+- Acoes `Editar`, `Inativar` e `Ativar`.
+
+Relacao com outras telas:
+
+- Custo de peca usa categorias Peca ou Ambos.
+- Cadastro de venda usa categorias Venda ou Ambos.
+- Analise de custos depende de tipos padronizados para agrupar corretamente.
+- Preferir inativar tipos antigos em vez de apagar.
+- Nao alterar calculos financeiros nessa tela.
 
 ## Regras de UX
 

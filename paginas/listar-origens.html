@@ -3,60 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Origens Cadastradas</title>
+  <title>Origens cadastradas</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body data-auth="protected" class="auth-checking ui-soft-dark origins-list-page">
-  <header class="page-header">
+  <header class="page-header origins-list-topbar">
     <div>
       <p class="hero__tag">Origens</p>
-      <h1>Origens Cadastradas</h1>
-      <p class="hero__description">
-        Consulte origens cadastradas e abra os detalhes quando necessario.
-      </p>
+      <h1>Origens cadastradas</h1>
+      <p class="hero__description">Consulte lotes, compras avulsas e origens de peças.</p>
     </div>
+    <a class="button-primary" href="cadastro-origem.html">Nova origem</a>
   </header>
 
   <main class="container stock-layout">
-    <section class="summary-grid" aria-label="Resumo das origens">
-      <article class="summary-card">
-        <span>Total de origens</span>
-        <strong id="totalOrigens">0</strong>
-      </article>
-
-      <article class="summary-card">
-        <span>Carros para desmonte</span>
-        <strong id="totalCarros">0</strong>
-      </article>
-
-      <article class="summary-card">
-        <span>Lotes</span>
-        <strong id="totalLotes">0</strong>
-      </article>
-
-      <article class="summary-card">
-        <span>Compras avulsas</span>
-        <strong id="totalComprasAvulsas">0</strong>
-      </article>
-    </section>
-
     <section class="stock-card origins-shell">
-      <div class="stock-header origins-list-header">
-        <div>
-          <span class="piece-form-eyebrow">Origem operacional</span>
-          <h2>Lista de origens</h2>
-        </div>
-        <div class="form-actions">
-          <a class="button-secondary" href="../index.html">Voltar para o painel</a>
-          <a class="button-primary" href="cadastro-origem.html">Cadastrar nova origem</a>
-        </div>
-      </div>
+      <section class="products-toolbar operational-filter-toolbar origins-toolbar" aria-label="Busca e filtros de origens">
+        <div class="products-main-controls operational-filter-main-controls origins-main-controls">
+          <div class="form-group products-page-size-field">
+            <label for="quantidadeOrigens">Mostrar</label>
+            <select id="quantidadeOrigens">
+              <option value="12">12</option>
+              <option value="24">24</option>
+              <option value="48">48</option>
+              <option value="todos">Todos</option>
+            </select>
+          </div>
 
-      <section class="products-toolbar operational-filter-toolbar" aria-label="Busca e filtros de origens">
-        <div class="products-main-controls operational-filter-main-controls">
           <div class="form-group products-search-field">
             <label for="buscaOrigens">Buscar origem</label>
-            <input id="buscaOrigens" type="search" placeholder="Buscar por codigo, descricao ou tipo">
+            <input id="buscaOrigens" type="search" placeholder="Buscar por código, descrição ou tipo">
           </div>
 
           <button id="botaoAbrirFiltrosOrigens" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosOrigens" aria-expanded="false">
@@ -65,37 +41,42 @@
         </div>
       </section>
 
-      <p id="mensagemOrigens" class="empty-message"></p>
-
-      <aside id="painelFiltrosOrigens" class="products-filter-panel" aria-label="Filtros avancados de origens">
+      <aside id="painelFiltrosOrigens" class="products-filter-panel origins-filter-panel" aria-label="Filtros avançados de origens">
         <div class="products-filter-panel__header">
-          <h3>Filtros avancados</h3>
+          <div>
+            <p class="hero__tag">Filtros</p>
+            <h3>Origens</h3>
+          </div>
           <button id="botaoFecharFiltrosOrigens" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
         </div>
 
         <div class="products-filters">
           <div class="form-group">
-            <label for="filtroTipoOrigem">Tipo</label>
+            <label for="filtroTipoOrigem">Tipo da origem</label>
             <select id="filtroTipoOrigem">
               <option value="">Todos</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="filtroDistribuicaoOrigem">Distribuicao</label>
+            <label for="filtroDistribuicaoOrigem">Situação da distribuição</label>
             <select id="filtroDistribuicaoOrigem">
               <option value="">Todas</option>
-              <option value="total">Totalmente distribuida</option>
-              <option value="parcial">Parcialmente distribuida</option>
+              <option value="pendente">Falta distribuir</option>
+              <option value="distribuida">Distribuída</option>
+              <option value="acima">Acima do previsto</option>
+              <option value="sem-valor">Sem valor pago</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="ordenacaoOrigens">Ordenar por data</label>
-            <select id="ordenacaoOrigens">
-              <option value="data-desc">Mais recentes</option>
-              <option value="data-asc">Mais antigas</option>
-            </select>
+            <label for="filtroDataInicialOrigem">Período inicial</label>
+            <input id="filtroDataInicialOrigem" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="filtroDataFinalOrigem">Período final</label>
+            <input id="filtroDataFinalOrigem" type="date">
           </div>
         </div>
 
@@ -105,21 +86,59 @@
         </div>
       </aside>
 
-      <div class="table-wrapper">
-        <table class="stock-table origins-table">
-          <thead>
-            <tr>
-              <th>Codigo</th>
-              <th>Tipo</th>
-              <th>Descricao</th>
-              <th>Data</th>
-              <th>Observacoes</th>
-              <th>Acoes</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaOrigensLista"></tbody>
-        </table>
-      </div>
+      <section class="summary-grid origins-summary-grid" aria-label="Resumo das origens">
+        <article class="summary-card">
+          <span>Total de origens</span>
+          <strong id="totalOrigens">0</strong>
+          <small>Lotes e compras cadastradas</small>
+        </article>
+
+        <article class="summary-card">
+          <span>Origens pendentes</span>
+          <strong id="totalOrigensPendentes">0</strong>
+          <small>Com valor não distribuído</small>
+        </article>
+
+        <article class="summary-card">
+          <span>Valor total comprado</span>
+          <strong id="valorTotalComprado">R$ 0,00</strong>
+          <small>Total registrado</small>
+        </article>
+
+        <article class="summary-card">
+          <span>Valor não distribuído</span>
+          <strong id="valorNaoDistribuido">R$ 0,00</strong>
+          <small>Ainda não distribuído</small>
+        </article>
+      </section>
+
+      <section class="origins-list-section" aria-label="Origens cadastradas">
+        <div class="origins-list-section__header">
+          <div>
+            <span class="piece-form-eyebrow">Lista</span>
+            <h2>Origens operacionais</h2>
+          </div>
+          <span id="contadorOrigensExibidas" class="status-badge status-badge--info">0 exibidas</span>
+        </div>
+
+        <p id="mensagemOrigens" class="empty-message"></p>
+
+        <div class="origins-compact-list" role="table" aria-label="Origens cadastradas">
+          <div class="origins-compact-row origins-compact-row--head" role="row">
+            <span>Código</span>
+            <span>Tipo</span>
+            <span>Descrição</span>
+            <span>Data</span>
+            <span>Valor pago</span>
+            <span>Distribuído</span>
+            <span>Não distribuído</span>
+            <span>Peças</span>
+            <span>Situação</span>
+            <span>Ação</span>
+          </div>
+          <div id="listaOrigensCompacta"></div>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -127,7 +146,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=25"></script>
-  <script src="../js/listar-origens.js?v=11"></script>
+  <script src="../js/listar-origens.js?v=12"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

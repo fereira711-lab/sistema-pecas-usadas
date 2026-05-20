@@ -2,11 +2,21 @@ const formTipoCusto = document.getElementById("formTipoCusto");
 const tipoCustoId = document.getElementById("tipoCustoId");
 const nomeTipoCusto = document.getElementById("nomeTipoCusto");
 const categoriaTipoCusto = document.getElementById("categoriaTipoCusto");
-const ativoTipoCusto = document.getElementById("ativoTipoCusto");
+const statusTipoCusto = document.getElementById("statusTipoCusto");
 const cancelarEdicaoTipoCusto = document.getElementById("cancelarEdicaoTipoCusto");
 const mensagemTipoCusto = document.getElementById("mensagemTipoCusto");
 const mensagemListaTiposCusto = document.getElementById("mensagemListaTiposCusto");
-const tabelaTiposCusto = document.getElementById("tabelaTiposCusto");
+const listaTiposCusto = document.getElementById("listaTiposCusto");
+const contadorTiposCusto = document.getElementById("contadorTiposCusto");
+const buscaTipoCusto = document.getElementById("buscaTipoCusto");
+const quantidadeTiposCusto = document.getElementById("quantidadeTiposCusto");
+const filtroCategoriaTiposCusto = document.getElementById("filtroCategoriaTiposCusto");
+const filtroStatusTiposCusto = document.getElementById("filtroStatusTiposCusto");
+const costTypesShell = document.getElementById("costTypesShell");
+const abrirFiltrosTiposCusto = document.getElementById("abrirFiltrosTiposCusto");
+const fecharFiltrosTiposCusto = document.getElementById("fecharFiltrosTiposCusto");
+const limparFiltrosTiposCusto = document.getElementById("limparFiltrosTiposCusto");
+const aplicarFiltrosTiposCusto = document.getElementById("aplicarFiltrosTiposCusto");
 
 let tiposCusto = [];
 let usosTiposCusto = {};
@@ -25,9 +35,18 @@ function escaparHtml(texto) {
     .replace(/'/g, "&#039;");
 }
 
+function normalizarTexto(texto) {
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
 function categoriaLegivel(categoria) {
   const nomes = {
-    peca: "Peca",
+    peca: "Peça",
     venda: "Venda",
     ambos: "Ambos"
   };
@@ -35,12 +54,41 @@ function categoriaLegivel(categoria) {
   return nomes[categoria] || categoria || "-";
 }
 
+function classeCategoria(categoria) {
+  const classes = {
+    peca: "status-badge--info",
+    venda: "status-badge--warning",
+    ambos: "status-badge--fast"
+  };
+
+  return classes[categoria] || "status-badge--info";
+}
+
+function atualizarContador(total, visiveis) {
+  if (!contadorTiposCusto) {
+    return;
+  }
+
+  contadorTiposCusto.textContent = total === visiveis
+    ? `${total} tipo${total === 1 ? "" : "s"}`
+    : `${visiveis} de ${total}`;
+}
+
 function limparFormularioTipo() {
   tipoCustoId.value = "";
   nomeTipoCusto.value = "";
   categoriaTipoCusto.value = "peca";
-  ativoTipoCusto.checked = true;
+  statusTipoCusto.value = "ativo";
   cancelarEdicaoTipoCusto.hidden = true;
+}
+
+function existeTipoDuplicado(nome, idAtual = 0) {
+  const nomeNormalizado = normalizarTexto(nome);
+
+  return tiposCusto.some(tipo => (
+    Number(tipo.id) !== Number(idAtual) &&
+    normalizarTexto(tipo.nome) === nomeNormalizado
+  ));
 }
 
 async function carregarUsosTipos() {
@@ -66,40 +114,77 @@ async function carregarTiposCusto() {
     renderizarTiposCusto();
   } catch (erro) {
     console.error("Erro ao carregar tipos de custo:", erro);
-    mensagemListaTiposCusto.textContent = "Nao foi possivel carregar os tipos de custo.";
+    mensagemListaTiposCusto.textContent = "Não foi possível carregar os tipos de custo.";
   }
 }
 
+function filtrarTiposCusto() {
+  const termo = normalizarTexto(buscaTipoCusto.value);
+  const categoria = filtroCategoriaTiposCusto.value;
+  const status = filtroStatusTiposCusto.value;
+
+  return tiposCusto.filter(tipo => {
+    const uso = usosTiposCusto[tipo.id] || { total: 0, peca: 0, venda: 0 };
+    const busca = normalizarTexto(`${tipo.nome} ${categoriaLegivel(tipo.categoria)} ${uso.total}`);
+    const bateBusca = !termo || busca.includes(termo);
+    const bateCategoria = !categoria || tipo.categoria === categoria;
+    const bateStatus = !status || (status === "ativo" ? tipo.ativo : !tipo.ativo);
+
+    return bateBusca && bateCategoria && bateStatus;
+  });
+}
+
+function limitarTiposCusto(tipos) {
+  const limite = quantidadeTiposCusto.value;
+
+  if (limite === "todos") {
+    return tipos;
+  }
+
+  return tipos.slice(0, Number(limite || 12));
+}
+
 function renderizarTiposCusto() {
-  tabelaTiposCusto.innerHTML = "";
+  listaTiposCusto.innerHTML = "";
 
   if (tiposCusto.length === 0) {
     mensagemListaTiposCusto.textContent = "Nenhum tipo de custo cadastrado.";
+    atualizarContador(0, 0);
+    return;
+  }
+
+  const filtrados = filtrarTiposCusto();
+  const visiveis = limitarTiposCusto(filtrados);
+  atualizarContador(filtrados.length, visiveis.length);
+
+  if (filtrados.length === 0) {
+    mensagemListaTiposCusto.textContent = "Nenhum tipo encontrado com os filtros atuais.";
     return;
   }
 
   mensagemListaTiposCusto.textContent = "";
 
-  tiposCusto.forEach(tipo => {
+  visiveis.forEach(tipo => {
     const uso = usosTiposCusto[tipo.id] || { total: 0, peca: 0, venda: 0 };
-    const linha = document.createElement("tr");
-    const podeExcluir = uso.total === 0;
+    const linha = document.createElement("div");
+    linha.className = "cost-types-row";
+    linha.setAttribute("role", "row");
 
     linha.innerHTML = `
-      <td data-label="Nome"><strong class="product-name">${escaparHtml(tipo.nome)}</strong></td>
-      <td data-label="Categoria">${categoriaLegivel(tipo.categoria)}</td>
-      <td data-label="Status">${tipo.ativo ? "Ativo" : "Inativo"}</td>
-      <td data-label="Uso">${uso.total} uso(s) (${uso.peca} peca, ${uso.venda} venda)</td>
-      <td data-label="Acoes">
-        <div class="table-actions">
-          <button type="button" data-acao="editar" data-id="${tipo.id}">Editar</button>
-          <button type="button" data-acao="alternar" data-id="${tipo.id}">${tipo.ativo ? "Desativar" : "Ativar"}</button>
-          <button type="button" data-acao="excluir" data-id="${tipo.id}"${podeExcluir ? "" : " disabled"}>Excluir</button>
-        </div>
-      </td>
+      <div class="cost-types-name">
+        <strong class="product-name">${escaparHtml(tipo.nome)}</strong>
+        <small>Padrão canônico: ${escaparHtml(normalizarTexto(tipo.nome))}</small>
+      </div>
+      <span data-label="Categoria" class="status-badge ${classeCategoria(tipo.categoria)}">${categoriaLegivel(tipo.categoria)}</span>
+      <span data-label="Status" class="status-badge ${tipo.ativo ? "status-badge--stock" : "status-badge--empty"}">${tipo.ativo ? "Ativo" : "Inativo"}</span>
+      <strong data-label="Usos">${uso.total} uso${uso.total === 1 ? "" : "s"}</strong>
+      <div class="table-actions cost-types-actions">
+        <button type="button" class="button-compact" data-acao="editar" data-id="${tipo.id}">Editar</button>
+        <button type="button" class="button-compact" data-acao="alternar" data-id="${tipo.id}">${tipo.ativo ? "Inativar" : "Ativar"}</button>
+      </div>
     `;
 
-    tabelaTiposCusto.appendChild(linha);
+    listaTiposCusto.appendChild(linha);
   });
 }
 
@@ -113,7 +198,7 @@ function editarTipoCusto(id) {
   tipoCustoId.value = tipo.id;
   nomeTipoCusto.value = tipo.nome;
   categoriaTipoCusto.value = tipo.categoria;
-  ativoTipoCusto.checked = tipo.ativo;
+  statusTipoCusto.value = tipo.ativo ? "ativo" : "inativo";
   cancelarEdicaoTipoCusto.hidden = false;
   nomeTipoCusto.focus();
 }
@@ -124,10 +209,15 @@ async function salvarTipoCusto(evento) {
   const id = Number(tipoCustoId.value || 0);
   const nome = nomeTipoCusto.value.trim();
   const categoria = categoriaTipoCusto.value;
-  const ativo = ativoTipoCusto.checked;
+  const ativo = statusTipoCusto.value === "ativo";
 
   if (!nome) {
     mostrarMensagemTipo("Informe o nome do tipo de custo.", "warning");
+    return;
+  }
+
+  if (existeTipoDuplicado(nome, id)) {
+    mostrarMensagemTipo("Esse tipo já existe ou é muito parecido.", "warning");
     return;
   }
 
@@ -136,7 +226,12 @@ async function salvarTipoCusto(evento) {
       await window.supabaseService.atualizarTipoCusto({ id, nome, categoria, ativo });
       mostrarMensagemTipo("Tipo de custo atualizado.", "success");
     } else {
-      await window.supabaseService.criarTipoCusto(nome, categoria);
+      const novoTipo = await window.supabaseService.criarTipoCusto(nome, categoria);
+
+      if (novoTipo && ativo === false) {
+        await window.supabaseService.atualizarTipoCusto({ ...novoTipo, ativo: false });
+      }
+
       mostrarMensagemTipo("Tipo de custo cadastrado.", "success");
     }
 
@@ -144,7 +239,11 @@ async function salvarTipoCusto(evento) {
     await carregarTiposCusto();
   } catch (erro) {
     console.error("Erro ao salvar tipo de custo:", erro);
-    mostrarMensagemTipo(erro.message || "Nao foi possivel salvar o tipo de custo.", "warning");
+    const mensagem = normalizarTexto(erro.message).includes("existe")
+      ? "Esse tipo já existe ou é muito parecido."
+      : erro.message || "Não foi possível salvar o tipo de custo.";
+
+    mostrarMensagemTipo(mensagem, "warning");
   }
 }
 
@@ -163,34 +262,22 @@ async function alternarTipoCusto(id) {
     await carregarTiposCusto();
   } catch (erro) {
     console.error("Erro ao alterar status do tipo:", erro);
-    mostrarMensagemTipo("Nao foi possivel alterar o status.", "warning");
+    mostrarMensagemTipo("Não foi possível alterar o status.", "warning");
   }
 }
 
-async function excluirTipoCusto(id) {
-  const confirmou = confirm("Excluir este tipo de custo? Isso so funciona se ele nunca foi usado.");
-
-  if (!confirmou) {
-    return;
-  }
-
-  try {
-    await window.supabaseService.excluirTipoCusto(id);
-    mostrarMensagemTipo("Tipo de custo excluido.", "success");
-    await carregarTiposCusto();
-  } catch (erro) {
-    console.error("Erro ao excluir tipo:", erro);
-    mostrarMensagemTipo(erro.message || "Nao foi possivel excluir. Desative o tipo se ele ja foi usado.", "warning");
-  }
+function alternarPainelFiltros(aberto) {
+  costTypesShell.classList.toggle("cost-types-shell--filters-open", aberto);
 }
 
 formTipoCusto.addEventListener("submit", salvarTipoCusto);
+
 cancelarEdicaoTipoCusto.addEventListener("click", () => {
   limparFormularioTipo();
   mostrarMensagemTipo("", "success");
 });
 
-tabelaTiposCusto.addEventListener("click", evento => {
+listaTiposCusto.addEventListener("click", evento => {
   const botao = evento.target.closest("button");
 
   if (!botao) {
@@ -206,10 +293,21 @@ tabelaTiposCusto.addEventListener("click", evento => {
   if (botao.dataset.acao === "alternar") {
     alternarTipoCusto(id);
   }
+});
 
-  if (botao.dataset.acao === "excluir") {
-    excluirTipoCusto(id);
-  }
+buscaTipoCusto.addEventListener("input", renderizarTiposCusto);
+quantidadeTiposCusto.addEventListener("change", renderizarTiposCusto);
+filtroCategoriaTiposCusto.addEventListener("change", renderizarTiposCusto);
+filtroStatusTiposCusto.addEventListener("change", renderizarTiposCusto);
+
+abrirFiltrosTiposCusto.addEventListener("click", () => alternarPainelFiltros(true));
+fecharFiltrosTiposCusto.addEventListener("click", () => alternarPainelFiltros(false));
+aplicarFiltrosTiposCusto.addEventListener("click", () => alternarPainelFiltros(false));
+
+limparFiltrosTiposCusto.addEventListener("click", () => {
+  filtroCategoriaTiposCusto.value = "";
+  filtroStatusTiposCusto.value = "";
+  renderizarTiposCusto();
 });
 
 carregarTiposCusto();

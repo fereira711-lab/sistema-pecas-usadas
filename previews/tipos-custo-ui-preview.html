@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Tipos de custo</title>
+  <link rel="stylesheet" href="tipos-custo-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Administracao</span>
+        <h1>Tipos de custo</h1>
+        <p>Administre categorias usadas em custos da peca e custos da venda.</p>
+      </div>
+      <a class="btn btn-primary" href="#formTipo">Novo tipo</a>
+    </header>
+
+    <input class="filter-toggle" type="checkbox" id="abrirFiltros">
+
+    <section class="operation-bar" aria-label="Busca e filtros">
+      <label class="per-page">
+        <span>Mostrar</span>
+        <select>
+          <option>12</option>
+          <option>24</option>
+          <option>48</option>
+        </select>
+      </label>
+
+      <label class="search-field">
+        <span>Buscar tipo</span>
+        <input type="search" placeholder="Buscar por nome do tipo">
+      </label>
+
+      <label class="btn btn-primary filter-open" for="abrirFiltros">Filtros</label>
+    </section>
+
+    <aside class="filter-panel" aria-label="Filtros avancados">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">Filtros</span>
+          <h2>Tipos cadastrados</h2>
+        </div>
+        <label class="icon-btn" for="abrirFiltros" aria-label="Fechar filtros">X</label>
+      </div>
+
+      <div class="filter-grid">
+        <label>
+          <span>Categoria</span>
+          <select>
+            <option>Todas</option>
+            <option>Peca</option>
+            <option>Venda</option>
+            <option>Ambos</option>
+          </select>
+        </label>
+        <label>
+          <span>Status</span>
+          <select>
+            <option>Todos</option>
+            <option>Ativo</option>
+            <option>Inativo</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn btn-secondary">Limpar filtros</button>
+        <label class="btn btn-primary" for="abrirFiltros">Aplicar/Fechar</label>
+      </div>
+    </aside>
+
+    <section class="content-grid">
+      <article class="panel form-panel" id="formTipo">
+        <div class="panel-title">
+          <div>
+            <span class="eyebrow">Cadastro</span>
+            <h2>Novo / editar tipo</h2>
+          </div>
+          <span class="soft-badge">Admin</span>
+        </div>
+
+        <div class="form-grid">
+          <label class="field-wide">
+            <span>Nome do tipo</span>
+            <input type="text" value="Limpeza">
+          </label>
+          <label>
+            <span>Categoria</span>
+            <select>
+              <option>Peca</option>
+              <option>Venda</option>
+              <option>Ambos</option>
+            </select>
+          </label>
+          <label>
+            <span>Status</span>
+            <select>
+              <option>Ativo</option>
+              <option>Inativo</option>
+            </select>
+          </label>
+          <label class="field-wide">
+            <span>Observacao curta</span>
+            <input type="text" placeholder="Ex.: custo aplicado na preparacao da peca">
+          </label>
+        </div>
+
+        <div class="validation-note">
+          <strong>Esse tipo ja existe ou e muito parecido.</strong>
+          <span>Limpeza, limpeza e LIMPEZA devem ser tratados como o mesmo tipo.</span>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary">Salvar</button>
+          <button class="btn btn-secondary">Cancelar edicao</button>
+        </div>
+      </article>
+
+      <article class="panel help-panel">
+        <div class="panel-title">
+          <div>
+            <span class="eyebrow">Organizacao</span>
+            <h2>Uso recomendado</h2>
+          </div>
+        </div>
+        <ul class="compact-list">
+          <li>Use nomes curtos e padronizados.</li>
+          <li>Escolha se o custo vale para peca, venda ou ambos.</li>
+          <li>Inative tipos antigos em vez de duplicar cadastro.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="panel list-panel">
+      <div class="panel-title">
+        <div>
+          <span class="eyebrow">Lista</span>
+          <h2>Tipos de custo cadastrados</h2>
+        </div>
+        <span class="soft-badge">8 tipos</span>
+      </div>
+
+      <div class="type-list" role="table" aria-label="Tipos de custo">
+        <div class="type-row type-head" role="row">
+          <span>Nome do tipo</span>
+          <span>Categoria</span>
+          <span>Status</span>
+          <span>Usos</span>
+          <span>Acoes</span>
+        </div>
+
+        <div class="type-row" role="row">
+          <div>
+            <strong>Limpeza</strong>
+            <small>Padrao canonico: limpeza</small>
+          </div>
+          <span class="badge badge-piece">Peca</span>
+          <span class="badge badge-active">Ativo</span>
+          <strong>18</strong>
+          <div class="actions">
+            <button class="btn btn-secondary">Editar</button>
+            <button class="btn btn-ghost">Inativar</button>
+          </div>
+        </div>
+
+        <div class="type-row" role="row">
+          <div>
+            <strong>Embalagem</strong>
+            <small>Custos no fechamento da venda</small>
+          </div>
+          <span class="badge badge-sale">Venda</span>
+          <span class="badge badge-active">Ativo</span>
+          <strong>32</strong>
+          <div class="actions">
+            <button class="btn btn-secondary">Editar</button>
+            <button class="btn btn-ghost">Inativar</button>
+          </div>
+        </div>
+
+        <div class="type-row" role="row">
+          <div>
+            <strong>Frete adicional</strong>
+            <small>Quando houver custo extra de envio</small>
+          </div>
+          <span class="badge badge-both">Ambos</span>
+          <span class="badge badge-active">Ativo</span>
+          <strong>9</strong>
+          <div class="actions">
+            <button class="btn btn-secondary">Editar</button>
+            <button class="btn btn-ghost">Inativar</button>
+          </div>
+        </div>
+
+        <div class="type-row" role="row">
+          <div>
+            <strong>Polimento</strong>
+            <small>Tipo antigo mantido para historico</small>
+          </div>
+          <span class="badge badge-piece">Peca</span>
+          <span class="badge badge-muted">Inativo</span>
+          <strong>4</strong>
+          <div class="actions">
+            <button class="btn btn-secondary">Editar</button>
+            <button class="btn btn-ghost">Ativar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

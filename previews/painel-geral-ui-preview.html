@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Painel Geral</title>
+  <link rel="stylesheet" href="painel-geral-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Dashboard</span>
+        <h1>Painel Geral</h1>
+        <p>Visão inicial operacional do sistema.</p>
+      </div>
+      <span class="status-badge status-info">Operacional</span>
+    </header>
+
+    <section class="summary-grid" aria-label="Resumo operacional">
+      <article class="summary-card">
+        <span>Produtos cadastrados</span>
+        <strong>428</strong>
+        <small>18 cadastrados nos últimos 7 dias</small>
+      </article>
+      <article class="summary-card summary-warning">
+        <span>Estoque baixo</span>
+        <strong>12</strong>
+        <small>3 peças sem estoque</small>
+      </article>
+      <article class="summary-card">
+        <span>Vendas recentes</span>
+        <strong>26</strong>
+        <small>Últimos 7 dias</small>
+      </article>
+      <article class="summary-card">
+        <span>Origens pendentes</span>
+        <strong>5</strong>
+        <small>Distribuição para revisar</small>
+      </article>
+      <article class="summary-card summary-danger">
+        <span>Alertas importantes</span>
+        <strong>9</strong>
+        <small>Requerem atenção operacional</small>
+      </article>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="panel shortcuts-panel">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">Atalhos</span>
+            <h2>Ações rápidas</h2>
+          </div>
+        </div>
+
+        <div class="shortcut-grid">
+          <a href="#">Produtos</a>
+          <a href="#">Cadastro de peça</a>
+          <a href="#">Cadastro de venda</a>
+          <a href="#">Custo de peça</a>
+          <a href="#">Histórico de vendas</a>
+          <a href="#">Origens cadastradas</a>
+          <a href="#">Análises</a>
+        </div>
+      </article>
+
+      <article class="panel alerts-panel">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">Atenção</span>
+            <h2>Alertas importantes</h2>
+          </div>
+          <span class="soft-badge">5 tipos</span>
+        </div>
+
+        <div class="alert-list">
+          <div class="alert-item alert-critical">
+            <span class="status-badge status-critical">Crítico</span>
+            <div>
+              <strong>Produtos sem estoque</strong>
+              <small>3 peças vendidas ou sem saldo disponível.</small>
+            </div>
+            <a class="btn btn-secondary" href="#">Ver</a>
+          </div>
+          <div class="alert-item alert-warning">
+            <span class="status-badge status-warning">Atenção</span>
+            <div>
+              <strong>Estoque baixo</strong>
+              <small>12 peças abaixo do limite operacional.</small>
+            </div>
+            <a class="btn btn-secondary" href="#">Ver</a>
+          </div>
+          <div class="alert-item alert-warning">
+            <span class="status-badge status-warning">Atenção</span>
+            <div>
+              <strong>Custo não calculado</strong>
+              <small>2 vendas aguardam conferência de custo.</small>
+            </div>
+            <a class="btn btn-secondary" href="#">Ver</a>
+          </div>
+          <div class="alert-item">
+            <span class="status-badge status-info">Origem</span>
+            <div>
+              <strong>Distribuição pendente</strong>
+              <small>5 origens ainda têm valor para distribuir.</small>
+            </div>
+            <a class="btn btn-secondary" href="#">Ver</a>
+          </div>
+          <div class="alert-item alert-critical">
+            <span class="status-badge status-critical">Revisar</span>
+            <div>
+              <strong>Distribuição acima do previsto</strong>
+              <small>1 origem passou do valor planejado.</small>
+            </div>
+            <a class="btn btn-secondary" href="#">Ver</a>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <article class="panel sales-panel">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">Vendas</span>
+            <h2>Últimas vendas</h2>
+          </div>
+          <a class="btn btn-secondary" href="#">Histórico</a>
+        </div>
+
+        <div class="table-list" role="table" aria-label="Últimas vendas">
+          <div class="table-row table-head" role="row">
+            <span>Data</span>
+            <span>SKU</span>
+            <span>Peça</span>
+            <span>Qtd.</span>
+            <span>Canal</span>
+            <span>Ação</span>
+          </div>
+          <div class="table-row" role="row">
+            <span>20/05</span>
+            <strong>ABC-1021</strong>
+            <span>Farol direito Onix</span>
+            <span>1</span>
+            <span>Mercado Livre</span>
+            <a class="btn btn-secondary" href="#">Ver detalhes</a>
+          </div>
+          <div class="table-row" role="row">
+            <span>19/05</span>
+            <strong>CAM-7710</strong>
+            <span>Câmbio automático Fit</span>
+            <span>1</span>
+            <span>Balcão</span>
+            <a class="btn btn-secondary" href="#">Ver detalhes</a>
+          </div>
+          <div class="table-row" role="row">
+            <span>19/05</span>
+            <strong>RET-4429</strong>
+            <span>Retrovisor Corolla</span>
+            <span>2</span>
+            <span>WhatsApp</span>
+            <a class="btn btn-secondary" href="#">Ver detalhes</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel movements-panel">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">Movimentações</span>
+            <h2>Recentes</h2>
+          </div>
+        </div>
+
+        <div class="movement-list">
+          <div class="movement-item">
+            <span class="dot dot-blue"></span>
+            <div>
+              <strong>Entrada registrada</strong>
+              <small>Origem ORG-118 recebeu 6 peças.</small>
+            </div>
+          </div>
+          <div class="movement-item">
+            <span class="dot dot-gold"></span>
+            <div>
+              <strong>Custo lançado</strong>
+              <small>Limpeza aplicada em SKU PAR-2201.</small>
+            </div>
+          </div>
+          <div class="movement-item">
+            <span class="dot dot-green"></span>
+            <div>
+              <strong>Peça cadastrada</strong>
+              <small>Motor parcial Civic vinculado à origem ORG-121.</small>
+            </div>
+          </div>
+          <div class="movement-item">
+            <span class="dot dot-red"></span>
+            <div>
+              <strong>Alerta gerado</strong>
+              <small>Estoque baixo em módulo ABS Hilux.</small>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

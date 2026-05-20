@@ -1,13 +1,16 @@
-const tabelaOrigensLista = document.getElementById("tabelaOrigensLista");
+const listaOrigensCompacta = document.getElementById("listaOrigensCompacta");
 const mensagemOrigens = document.getElementById("mensagemOrigens");
 const totalOrigens = document.getElementById("totalOrigens");
-const totalCarros = document.getElementById("totalCarros");
-const totalLotes = document.getElementById("totalLotes");
-const totalComprasAvulsas = document.getElementById("totalComprasAvulsas");
+const totalOrigensPendentes = document.getElementById("totalOrigensPendentes");
+const valorTotalComprado = document.getElementById("valorTotalComprado");
+const valorNaoDistribuido = document.getElementById("valorNaoDistribuido");
+const contadorOrigensExibidas = document.getElementById("contadorOrigensExibidas");
 const buscaOrigens = document.getElementById("buscaOrigens");
+const quantidadeOrigens = document.getElementById("quantidadeOrigens");
 const filtroTipoOrigem = document.getElementById("filtroTipoOrigem");
 const filtroDistribuicaoOrigem = document.getElementById("filtroDistribuicaoOrigem");
-const ordenacaoOrigens = document.getElementById("ordenacaoOrigens");
+const filtroDataInicialOrigem = document.getElementById("filtroDataInicialOrigem");
+const filtroDataFinalOrigem = document.getElementById("filtroDataFinalOrigem");
 const shellOrigens = document.querySelector(".origins-shell");
 const botaoAbrirFiltrosOrigens = document.getElementById("botaoAbrirFiltrosOrigens");
 const botaoFecharFiltrosOrigens = document.getElementById("botaoFecharFiltrosOrigens");
@@ -17,6 +20,7 @@ const botaoAplicarFiltrosOrigens = document.getElementById("botaoAplicarFiltrosO
 let origensCarregadasDoSupabase = false;
 let origensCarregadas = [];
 let entradasOrigensCarregadas = [];
+let pecasOrigensCarregadas = [];
 
 function buscarOrigens() {
   const origens = JSON.parse(localStorage.getItem("origens")) || [];
@@ -49,30 +53,44 @@ function formatarData(data) {
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
+function formatarMoeda(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
+
 async function carregarOrigens() {
   if (window.supabaseService && window.supabaseService.estaConfigurado()) {
     try {
-      const [origens, entradas] = await Promise.all([
+      const [origens, entradas, pecas] = await Promise.all([
         window.supabaseService.listarOrigens(),
-        window.supabaseService.listarEntradasEstoque()
+        window.supabaseService.listarEntradasEstoque(),
+        window.supabaseService.listarPecas()
       ]);
       salvarOrigens(origens);
       entradasOrigensCarregadas = entradas || [];
+      pecasOrigensCarregadas = pecas || [];
       origensCarregadasDoSupabase = true;
-      return origens;
+      return origens || [];
     } catch (erro) {
       console.error("Erro ao carregar origens do Supabase:", erro);
-      mensagemOrigens.textContent = "Nao foi possivel carregar do Supabase. Exibindo dados temporarios do navegador.";
+      mensagemOrigens.textContent = "Não foi possível carregar do Supabase. Exibindo dados temporários do navegador.";
     }
   }
 
   origensCarregadasDoSupabase = false;
   entradasOrigensCarregadas = [];
+  pecasOrigensCarregadas = [];
   return buscarOrigens();
 }
 
 function normalizarTexto(texto) {
-  return String(texto || "").trim().toLowerCase();
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
 }
 
 function escaparHtml(texto) {
@@ -92,21 +110,90 @@ function obterTipoOrigem(origem) {
   return origem.tipoOrigem || origem.tipo || "-";
 }
 
+function obterValorPagoOrigem(origem) {
+  return Number(origem.valorPago ?? origem.valor_pago ?? origem.custoTotal ?? origem.custo_total ?? 0);
+}
+
 function obterEntradasDaOrigem(origemId) {
   return entradasOrigensCarregadas.filter(entrada => Number(entrada.origemId || 0) === Number(origemId));
 }
 
-function obterStatusDistribuicao(origem) {
-  const quantidadeOrigem = Number(origem.quantidadeTotal || origem.quantidade_total || 0);
-  const quantidadeDistribuida = obterEntradasDaOrigem(origem.id).reduce((total, entrada) => {
-    return total + Number(entrada.quantidadeTotal || 0);
-  }, 0);
+function obterPecasDaOrigem(origemId) {
+  return pecasOrigensCarregadas.filter(peca => Number(peca.origemId || peca.origem_id || 0) === Number(origemId));
+}
 
-  if (quantidadeOrigem > 0 && quantidadeDistribuida >= quantidadeOrigem) {
-    return "total";
+function calcularValorDistribuido(origem) {
+  return obterEntradasDaOrigem(origem.id).reduce((total, entrada) => {
+    const valorAtribuido = Number(
+      entrada.valorAtribuidoEntrada ?? entrada.valor_atribuido_entrada ?? entrada.valorAtribuido ?? entrada.valor_atribuido ?? 0
+    );
+
+    if (valorAtribuido > 0) {
+      return total + valorAtribuido;
+    }
+
+    return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
+  }, 0);
+}
+
+function calcularQuantidadePecasVinculadas(origem) {
+  const ids = new Set();
+
+  obterPecasDaOrigem(origem.id).forEach(peca => {
+    if (peca.id) {
+      ids.add(Number(peca.id));
+    }
+  });
+
+  obterEntradasDaOrigem(origem.id).forEach(entrada => {
+    if (entrada.pecaId) {
+      ids.add(Number(entrada.pecaId));
+    }
+  });
+
+  return ids.size;
+}
+
+function obterStatusDistribuicao(origem) {
+  const valorPago = obterValorPagoOrigem(origem);
+  const valorDistribuido = calcularValorDistribuido(origem);
+  const restante = valorPago - valorDistribuido;
+
+  if (valorPago <= 0) {
+    return "sem-valor";
   }
 
-  return "parcial";
+  if (restante < -0.009) {
+    return "acima";
+  }
+
+  if (Math.abs(restante) <= 0.009) {
+    return "distribuida";
+  }
+
+  return "pendente";
+}
+
+function obterTextoStatus(status) {
+  const textos = {
+    pendente: "Falta distribuir",
+    distribuida: "Distribuída",
+    acima: "Acima do previsto",
+    "sem-valor": "Sem valor pago"
+  };
+
+  return textos[status] || "Falta distribuir";
+}
+
+function obterClasseStatus(status) {
+  const classes = {
+    pendente: "status-badge--warning",
+    distribuida: "status-badge--stock",
+    acima: "status-badge--empty",
+    "sem-valor": "status-badge--info"
+  };
+
+  return classes[status] || "status-badge--warning";
 }
 
 function renderizarFiltroTipo(origens) {
@@ -134,6 +221,8 @@ function filtrarOrigens(origens) {
   const termo = normalizarTexto(buscaOrigens?.value);
   const tipo = filtroTipoOrigem?.value || "";
   const distribuicao = filtroDistribuicaoOrigem?.value || "";
+  const dataInicial = filtroDataInicialOrigem?.value || "";
+  const dataFinal = filtroDataFinalOrigem?.value || "";
 
   return origens.filter(origem => {
     const codigo = normalizarTexto(obterCodigoOrigem(origem));
@@ -141,6 +230,7 @@ function filtrarOrigens(origens) {
     const tipoOrigem = obterTipoOrigem(origem);
     const tipoBusca = normalizarTexto(tipoOrigem);
     const statusDistribuicao = obterStatusDistribuicao(origem);
+    const dataCompra = String(origem.dataCompra || origem.data_compra || "").slice(0, 10);
 
     if (termo && !`${codigo} ${descricao} ${tipoBusca}`.includes(termo)) {
       return false;
@@ -154,27 +244,47 @@ function filtrarOrigens(origens) {
       return false;
     }
 
+    if (dataInicial && dataCompra && dataCompra < dataInicial) {
+      return false;
+    }
+
+    if (dataFinal && dataCompra && dataCompra > dataFinal) {
+      return false;
+    }
+
     return true;
   });
 }
 
 function ordenarOrigens(origens) {
-  const sentido = ordenacaoOrigens?.value || "data-desc";
-
   return [...origens].sort((a, b) => {
-    const dataA = String(a.dataCompra || "").slice(0, 10);
-    const dataB = String(b.dataCompra || "").slice(0, 10);
+    const dataA = String(a.dataCompra || a.data_compra || "").slice(0, 10);
+    const dataB = String(b.dataCompra || b.data_compra || "").slice(0, 10);
 
-    if (sentido === "data-asc") {
-      return dataA.localeCompare(dataB);
+    if (dataA !== dataB) {
+      return dataB.localeCompare(dataA);
     }
 
-    return dataB.localeCompare(dataA);
+    return Number(b.id || 0) - Number(a.id || 0);
   });
 }
 
-function obterOrigensVisiveis() {
+function limitarOrigens(origens) {
+  const limite = quantidadeOrigens?.value || "12";
+
+  if (limite === "todos") {
+    return origens;
+  }
+
+  return origens.slice(0, Number(limite || 12));
+}
+
+function obterOrigensFiltradas() {
   return ordenarOrigens(filtrarOrigens(origensCarregadas));
+}
+
+function obterOrigensVisiveis() {
+  return limitarOrigens(obterOrigensFiltradas());
 }
 
 function alternarPainelFiltrosOrigens(aberto) {
@@ -185,51 +295,79 @@ function alternarPainelFiltrosOrigens(aberto) {
 function limparFiltrosOrigens() {
   if (filtroTipoOrigem) filtroTipoOrigem.value = "";
   if (filtroDistribuicaoOrigem) filtroDistribuicaoOrigem.value = "";
-  if (ordenacaoOrigens) ordenacaoOrigens.value = "data-desc";
+  if (filtroDataInicialOrigem) filtroDataInicialOrigem.value = "";
+  if (filtroDataFinalOrigem) filtroDataFinalOrigem.value = "";
 
   renderizarOrigens();
 }
 
 function atualizarResumo(origens) {
-  if (totalOrigens) totalOrigens.textContent = origens.length;
-  if (totalCarros) totalCarros.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Carro para desmonte").length;
-  if (totalLotes) totalLotes.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Lote").length;
-  if (totalComprasAvulsas) totalComprasAvulsas.textContent = origens.filter(origem => (origem.tipoOrigem || origem.tipo) === "Compra avulsa").length;
+  const total = origens.length;
+  const pendentes = origens.filter(origem => obterStatusDistribuicao(origem) === "pendente").length;
+  const valorTotal = origens.reduce((soma, origem) => soma + obterValorPagoOrigem(origem), 0);
+  const valorPendente = origens.reduce((soma, origem) => {
+    const restante = obterValorPagoOrigem(origem) - calcularValorDistribuido(origem);
+    return soma + Math.max(restante, 0);
+  }, 0);
+
+  if (totalOrigens) totalOrigens.textContent = total;
+  if (totalOrigensPendentes) totalOrigensPendentes.textContent = pendentes;
+  if (valorTotalComprado) valorTotalComprado.textContent = formatarMoeda(valorTotal);
+  if (valorNaoDistribuido) valorNaoDistribuido.textContent = formatarMoeda(valorPendente);
+}
+
+function atualizarContador(total, visiveis) {
+  if (!contadorOrigensExibidas) {
+    return;
+  }
+
+  contadorOrigensExibidas.textContent = total === visiveis
+    ? `${visiveis} exibidas`
+    : `${visiveis} de ${total}`;
 }
 
 function renderizarAcoesOrigem(origem) {
-  return `<button class="button-secondary" type="button" data-acao="detalhes" data-origem-id="${escaparHtml(origem.id)}">Ver detalhes</button>`;
+  return `<button class="button-secondary table-link" type="button" data-acao="detalhes" data-origem-id="${escaparHtml(origem.id)}">Ver detalhes</button>`;
 }
 
 function renderizarOrigens() {
+  const origensFiltradas = obterOrigensFiltradas();
   const origens = obterOrigensVisiveis();
-  tabelaOrigensLista.innerHTML = "";
-  atualizarResumo(origens);
+  listaOrigensCompacta.innerHTML = "";
+  atualizarResumo(origensCarregadas);
+  atualizarContador(origensFiltradas.length, origens.length);
 
-  if (origens.length === 0) {
-    mensagemOrigens.textContent = "Nenhuma origem cadastrada.";
+  if (origensFiltradas.length === 0) {
+    mensagemOrigens.textContent = "Nenhuma origem encontrada.";
     return;
   }
 
   mensagemOrigens.textContent = "";
 
-  origens.forEach(origem => {
-    const linha = document.createElement("tr");
-    linha.innerHTML = `
-      <td data-label="Codigo">${escaparHtml(obterCodigoOrigem(origem))}</td>
-      <td data-label="Tipo"><span class="status-badge status-badge--stock">${escaparHtml(obterTipoOrigem(origem))}</span></td>
-      <td data-label="Descricao"><strong class="product-name">${escaparHtml(origem.descricao || "-")}</strong></td>
-      <td data-label="Data">${formatarData(origem.dataCompra)}</td>
-      <td data-label="Observacoes">${escaparHtml(origem.observacoes || "-")}</td>
-      <td data-label="Acoes">
+  listaOrigensCompacta.innerHTML = origens.map(origem => {
+    const valorPago = obterValorPagoOrigem(origem);
+    const valorDistribuido = calcularValorDistribuido(origem);
+    const valorRestante = valorPago - valorDistribuido;
+    const status = obterStatusDistribuicao(origem);
+    const dataCompra = origem.dataCompra || origem.data_compra;
+
+    return `
+      <div class="origins-compact-row" role="row">
+        <strong data-label="Código" class="origin-code">${escaparHtml(obterCodigoOrigem(origem))}</strong>
+        <span data-label="Tipo">${escaparHtml(obterTipoOrigem(origem))}</span>
+        <span data-label="Descrição" class="product-name">${escaparHtml(origem.descricao || "-")}</span>
+        <span data-label="Data">${formatarData(dataCompra)}</span>
+        <span data-label="Valor pago">${formatarMoeda(valorPago)}</span>
+        <span data-label="Distribuído">${formatarMoeda(valorDistribuido)}</span>
+        <span data-label="Não distribuído">${formatarMoeda(valorRestante)}</span>
+        <span data-label="Peças">${calcularQuantidadePecasVinculadas(origem)}</span>
+        <span data-label="Situação" class="status-badge ${obterClasseStatus(status)}">${obterTextoStatus(status)}</span>
         <div class="table-actions">
           ${renderizarAcoesOrigem(origem)}
         </div>
-      </td>
+      </div>
     `;
-
-    tabelaOrigensLista.appendChild(linha);
-  });
+  }).join("");
 }
 
 async function carregarERenderizarOrigens() {
@@ -247,7 +385,7 @@ function removerOrigemLocal(origemId) {
   const origem = origens.find(item => Number(item.id) === Number(origemId));
 
   if (!origem) {
-    mensagemOrigens.textContent = "Origem nao encontrada para remocao.";
+    mensagemOrigens.textContent = "Origem não encontrada para remoção.";
     return;
   }
 
@@ -261,7 +399,7 @@ function removerOrigemLocal(origemId) {
   carregarERenderizarOrigens();
 }
 
-tabelaOrigensLista.addEventListener("click", evento => {
+listaOrigensCompacta.addEventListener("click", evento => {
   const botao = evento.target.closest("button");
 
   if (!botao) {
@@ -277,7 +415,7 @@ tabelaOrigensLista.addEventListener("click", evento => {
   }
 });
 
-[buscaOrigens, filtroTipoOrigem, filtroDistribuicaoOrigem, ordenacaoOrigens].forEach(campo => {
+[buscaOrigens, quantidadeOrigens, filtroTipoOrigem, filtroDistribuicaoOrigem, filtroDataInicialOrigem, filtroDataFinalOrigem].forEach(campo => {
   campo?.addEventListener("input", renderizarOrigens);
   campo?.addEventListener("change", renderizarOrigens);
 });

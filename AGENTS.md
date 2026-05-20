@@ -65,6 +65,26 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Marketplace futuro nao deve conectar ao banco nem integrar Mercado Livre ate ser planejado.
 - FIFO continua sendo regra tecnica interna; a interface deve usar linguagem simples para custo.
 
+## Padrao da tela Origens cadastradas
+
+- `paginas/listar-origens.html` e a tela real de Origens cadastradas.
+- Funciona como listagem operacional de origens/lotes.
+- Serve para localizar rapidamente lotes, compras avulsas e outras origens.
+- Nao transformar em analise financeira pesada.
+- Estrutura UX: cabecalho `Origens cadastradas`, botao `Nova origem`, busca por codigo/descricao/tipo, seletor `Mostrar`, botao `Filtros`, filtros laterais, cards de resumo simples e lista compacta.
+- Cards de resumo: Total de origens, Origens pendentes, Valor total comprado e Valor nao distribuido.
+- Lista: codigo da origem, tipo, descricao curta, data da compra, valor pago, valor distribuido, valor nao distribuido, pecas vinculadas, situacao da distribuicao e acao `Ver detalhes`.
+- Situacoes: `Falta distribuir`, `Distribuida`, `Acima do previsto` e `Sem valor pago`.
+- Linguagem: usar `Valor distribuido`, `Valor nao distribuido` e `Situacao da distribuicao`.
+- Evitar termos tecnicos internos desnecessarios.
+- Origens cadastradas e listagem operacional.
+- Detalhes da origem e a central completa da origem/lote.
+- Analises financeiras mais profundas ficam nas telas de analise.
+- Origem nao e peca.
+- Origem e agrupador operacional e financeiro.
+- Peca nasce depois da origem.
+- Entrada de estoque continua obrigatoria.
+
 ## Padrao da tela Detalhes da origem
 
 - `paginas/detalhes-origem.html` funciona como central operacional da origem/lote.
@@ -126,6 +146,64 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Se nao houver consumo registrado, mostrar `Custo nao calculado`.
 - Data, canal e observacao podem ser editados se essa for a regra atual da tela.
 - Quantidade vendida e custo consumido ficam protegidos no extrato.
+
+## Padrao das telas de analise financeira
+
+- `paginas/analise-produto.html`, `paginas/analise-periodo.html` e `paginas/analise-custos.html` sao telas financeiras.
+- Elas podem mostrar receita, custo, lucro, margem e totais quando fizer sentido.
+- Nao confundir com telas operacionais como Produtos, Historico de vendas ou Cadastro.
+- UX padrao: busca principal no topo, seletor `Mostrar`, botao `Filtros`, filtros laterais, cards compactos de resumo, listas sem rolagem horizontal e expansoes para detalhes extras.
+- `analise-produto.html` mostra resultado financeiro agrupado por peca, com busca por SKU/nome, cards de resumo e lista por produto.
+- Em Analise por produto, mostrar custo da peca, custos da venda, lucro e margem; se faltar custo calculado, mostrar `Custo nao calculado` e nao inventar lucro/margem.
+- `analise-periodo.html` mostra resultado financeiro por intervalo de datas, com filtros por data, canal e situacao do custo.
+- Em Analise por periodo, a lista de vendas e o resumo devem bater com Detalhes da venda e Analise por produto.
+- `analise-custos.html` tem foco em custos operacionais, separando custos da peca e custos da venda.
+- Analise de custos mostra total de custos, maior tipo, quantidade de lancamentos e lista por tipo de custo; nao mostrar lucro/margem nessa tela.
+- FIFO continua sendo regra tecnica interna.
+- A interface deve usar `Custo da peca`, `Custo calculado` e `Custo nao calculado`.
+- O custo real da venda vem de `venda_consumos_estoque`.
+- `financeiro-utils.js` continua sendo a fonte oficial de calculo.
+- Nao usar custo medio.
+- Nao usar `origem.valor_total` como custo da venda.
+
+## Padrao da tela Tipos de custo
+
+- `paginas/tipos-custo.html` e tela administrativa, nao analise financeira.
+- Serve para cadastrar, editar, ativar e inativar tipos de custo.
+- Tipos podem valer para custos da peca, custos da venda ou ambos.
+- Categorias oficiais: `Peca`, `Venda` e `Ambos`.
+- Status oficiais: `Ativo` e `Inativo`.
+- Impedir duplicidade por diferenca de maiusculas/minusculas e espacos extras.
+- `Limpeza`, `limpeza` e `LIMPEZA` devem ser tratados como o mesmo tipo.
+- Normalizar o nome para comparacao antes de salvar.
+- Evitar tipos parecidos que baguncam relatorios e analises.
+- UX padrao: busca no topo, seletor `Mostrar`, botao `Filtros`, formulario Novo/editar tipo, painel de uso recomendado e lista compacta.
+- Acoes da lista: `Editar`, `Inativar` e `Ativar`.
+- Custo de peca usa tipos com categoria Peca ou Ambos.
+- Cadastro de venda usa tipos com categoria Venda ou Ambos.
+- Analise de custos depende dos tipos padronizados para agrupar corretamente.
+- Preferir inativar tipos antigos em vez de apagar.
+- Nao alterar calculos financeiros nessa tela.
+
+## Padrao do Painel Geral
+
+- `painel.html` e a entrada oficial do sistema apos login.
+- Usar `Painel Geral` como nome padrao da interface principal.
+- Evitar voltar a usar `Dashboard` na interface principal.
+- Painel Geral e visao inicial operacional, nao menu principal em cards e nao analise financeira pesada.
+- Estrutura UX: cabecalho, cards de resumo operacional, atalhos rapidos, alertas importantes, ultimas vendas e movimentacoes recentes.
+- Resumo operacional: produtos cadastrados, estoque baixo, vendas recentes, origens pendentes e alertas importantes.
+- Alertas: produtos sem estoque, estoque baixo, custo nao calculado, distribuicao pendente e distribuicao acima do previsto.
+- Atalhos rapidos: Produtos, Cadastro de peca, Cadastro de venda, Custo de peca, Historico de vendas, Origens cadastradas e Analises.
+- Sidebar continua sendo a navegacao principal.
+- Atalhos do painel sao apoio para rotina, nao menu completo duplicado.
+- `index.html` continua como entrada tecnica/redirecionamento.
+- `dashboard.html` continua como legado/redirecionamento, se existir.
+- Painel deve mostrar rotina e atencao operacional.
+- Lucro/margem pesada ficam nas telas de analise.
+- Produtos continua operacional.
+- Detalhes sao centrais das entidades.
+- Analises sao financeiras.
 
 ## Tarefas grandes
 

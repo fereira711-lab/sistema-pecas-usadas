@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Origens cadastradas</title>
+  <link rel="stylesheet" href="origens-cadastradas-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Origens</span>
+        <h1>Origens cadastradas</h1>
+        <p>Consulte lotes, compras avulsas e origens de peças.</p>
+      </div>
+      <a class="btn btn-primary" href="#">Nova origem</a>
+    </header>
+
+    <input class="filter-toggle" type="checkbox" id="abrirFiltros">
+
+    <section class="operation-bar" aria-label="Busca e filtros">
+      <label class="per-page">
+        <span>Mostrar</span>
+        <select>
+          <option>12</option>
+          <option>24</option>
+          <option>48</option>
+        </select>
+      </label>
+
+      <label class="search-field">
+        <span>Buscar origem</span>
+        <input type="search" placeholder="Buscar por código, descrição ou tipo">
+      </label>
+
+      <label class="btn btn-primary filter-open" for="abrirFiltros">Filtros</label>
+    </section>
+
+    <aside class="filter-panel" aria-label="Filtros avançados">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">Filtros</span>
+          <h2>Origens</h2>
+        </div>
+        <label class="icon-btn" for="abrirFiltros" aria-label="Fechar filtros">X</label>
+      </div>
+
+      <div class="filter-grid">
+        <label>
+          <span>Tipo da origem</span>
+          <select>
+            <option>Todos</option>
+            <option>Lote</option>
+            <option>Compra avulsa</option>
+            <option>Retorno</option>
+          </select>
+        </label>
+        <label>
+          <span>Situação da distribuição</span>
+          <select>
+            <option>Todas</option>
+            <option>Falta distribuir</option>
+            <option>Distribuída</option>
+            <option>Acima do previsto</option>
+          </select>
+        </label>
+        <label>
+          <span>Período inicial</span>
+          <input type="date" value="2026-05-01">
+        </label>
+        <label>
+          <span>Período final</span>
+          <input type="date" value="2026-05-20">
+        </label>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn btn-secondary">Limpar filtros</button>
+        <label class="btn btn-primary" for="abrirFiltros">Aplicar/Fechar</label>
+      </div>
+    </aside>
+
+    <section class="summary-grid" aria-label="Resumo de origens">
+      <article class="summary-card">
+        <span>Total de origens</span>
+        <strong>38</strong>
+        <small>Lotes e compras cadastradas</small>
+      </article>
+      <article class="summary-card summary-warning">
+        <span>Origens pendentes</span>
+        <strong>7</strong>
+        <small>Com valor ainda não distribuído</small>
+      </article>
+      <article class="summary-card">
+        <span>Valor total comprado</span>
+        <strong>R$ 48.300,00</strong>
+        <small>Total registrado nas origens</small>
+      </article>
+      <article class="summary-card summary-warning">
+        <span>Valor restante</span>
+        <strong>R$ 4.820,00</strong>
+        <small>Ainda não distribuído</small>
+      </article>
+    </section>
+
+    <section class="panel origins-panel">
+      <div class="panel-title">
+        <div>
+          <span class="eyebrow">Lista</span>
+          <h2>Origens operacionais</h2>
+        </div>
+        <span class="soft-badge">12 exibidas</span>
+      </div>
+
+      <div class="origins-list" role="table" aria-label="Origens cadastradas">
+        <div class="origin-row origin-head" role="row">
+          <span>Código</span>
+          <span>Tipo</span>
+          <span>Descrição</span>
+          <span>Data</span>
+          <span>Valor pago</span>
+          <span>Distribuído</span>
+          <span>Restante</span>
+          <span>Peças</span>
+          <span>Situação</span>
+          <span>Ação</span>
+        </div>
+
+        <div class="origin-row" role="row">
+          <strong class="code">ORG-118</strong>
+          <span>Lote</span>
+          <span class="description">Sucata Civic 2014 prata</span>
+          <span>18/05/2026</span>
+          <span>R$ 12.000,00</span>
+          <span>R$ 8.450,00</span>
+          <span>R$ 3.550,00</span>
+          <span>14</span>
+          <span class="badge badge-warning">Falta distribuir</span>
+          <a class="btn btn-secondary" href="#">Ver detalhes</a>
+        </div>
+
+        <div class="origin-row" role="row">
+          <strong class="code">ORG-121</strong>
+          <span>Compra avulsa</span>
+          <span class="description">Painel e acabamento Corolla</span>
+          <span>17/05/2026</span>
+          <span>R$ 3.200,00</span>
+          <span>R$ 3.200,00</span>
+          <span>R$ 0,00</span>
+          <span>6</span>
+          <span class="badge badge-ok">Distribuída</span>
+          <a class="btn btn-secondary" href="#">Ver detalhes</a>
+        </div>
+
+        <div class="origin-row" role="row">
+          <strong class="code">ORG-116</strong>
+          <span>Lote</span>
+          <span class="description">Fit 2009 batido traseira</span>
+          <span>12/05/2026</span>
+          <span>R$ 9.700,00</span>
+          <span>R$ 10.180,00</span>
+          <span>-R$ 480,00</span>
+          <span>18</span>
+          <span class="badge badge-danger">Acima do previsto</span>
+          <a class="btn btn-secondary" href="#">Ver detalhes</a>
+        </div>
+
+        <div class="origin-row" role="row">
+          <strong class="code">ORG-109</strong>
+          <span>Retorno</span>
+          <span class="description">Peças devolvidas para estoque</span>
+          <span>02/05/2026</span>
+          <span>R$ 0,00</span>
+          <span>R$ 0,00</span>
+          <span>R$ 0,00</span>
+          <span>3</span>
+          <span class="badge badge-info">Sem valor pago</span>
+          <a class="btn btn-secondary" href="#">Ver detalhes</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

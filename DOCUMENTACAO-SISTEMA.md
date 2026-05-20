@@ -80,15 +80,111 @@ O teste confirmou que o sistema ja possui a estrutura central funcionando, mas t
 
 ## Modulos do sistema
 
-### Dashboard
+### Painel Geral
 
-Representado por `painel.html` e `js/painel-geral.js`. Mostra resumo do negocio, alertas, ultimas vendas e links para analises financeiras.
+Representado por `painel.html` e `js/painel-geral.js`. E a entrada oficial do sistema apos login e funciona como visao inicial operacional.
+
+O Painel Geral nao deve voltar a ser menu principal em cards e nao deve virar tela de analise financeira pesada. A sidebar continua sendo a navegacao principal; os atalhos do painel sao apenas apoio para a rotina.
+
+Estrutura UX:
+
+- Cabecalho `Painel Geral`.
+- Cards de resumo operacional.
+- Atalhos rapidos.
+- Alertas importantes.
+- Ultimas vendas.
+- Movimentacoes recentes.
+
+Resumo operacional:
+
+- Produtos cadastrados.
+- Estoque baixo.
+- Vendas recentes.
+- Origens pendentes.
+- Alertas importantes.
+
+Alertas importantes:
+
+- Produtos sem estoque.
+- Estoque baixo.
+- Custo nao calculado.
+- Distribuicao pendente.
+- Distribuicao acima do previsto.
+
+Atalhos rapidos:
+
+- Produtos.
+- Cadastro de peca.
+- Cadastro de venda.
+- Custo de peca.
+- Historico de vendas.
+- Origens cadastradas.
+- Analises.
+
+Regras:
+
+- Usar `Painel Geral` como nome padrao da interface principal.
+- Evitar voltar a usar `Dashboard` na interface principal.
+- Painel mostra rotina e atencao operacional.
+- Lucro/margem pesada ficam nas telas de analise.
+- Produtos continua operacional.
+- Detalhes continuam como centrais das entidades.
+- Analises continuam financeiras.
 
 ### Origens
 
 Representado por `paginas/cadastro-origem.html`, `paginas/listar-origens.html`, `paginas/detalhes-origem.html` e seus scripts. Controla procedencia, compra, lote ou contexto de aquisicao das pecas.
 
+`paginas/listar-origens.html` e a tela real de Origens cadastradas. Ela funciona como listagem operacional de origens/lotes para localizar rapidamente lotes, compras avulsas e outras origens. Nao deve virar analise financeira pesada.
+
+Padrao UX da listagem:
+
+- Cabecalho `Origens cadastradas`.
+- Botao `Nova origem`.
+- Busca por codigo, descricao ou tipo.
+- Seletor `Mostrar`.
+- Botao `Filtros`.
+- Filtros laterais.
+- Cards de resumo simples.
+- Lista compacta de origens.
+
+Cards de resumo:
+
+- Total de origens.
+- Origens pendentes.
+- Valor total comprado.
+- Valor nao distribuido.
+
+Lista de origens:
+
+- Codigo da origem.
+- Tipo.
+- Descricao curta.
+- Data da compra.
+- Valor pago.
+- Valor distribuido.
+- Valor nao distribuido.
+- Pecas vinculadas.
+- Situacao da distribuicao.
+- Acao `Ver detalhes`.
+
+Situacao da distribuicao:
+
+- Falta distribuir.
+- Distribuida.
+- Acima do previsto.
+- Sem valor pago.
+
+Linguagem:
+
+- Usar `Valor distribuido`.
+- Usar `Valor nao distribuido`.
+- Usar `Situacao da distribuicao`.
+- Evitar termos tecnicos internos desnecessarios.
+
 `paginas/detalhes-origem.html` funciona como central operacional da origem/lote. A pagina mostra dados da origem, distribuicao, pecas vinculadas, entradas de estoque, vendas relacionadas e resumo da origem. Ela nao deve virar analise financeira pesada.
+
+Origens cadastradas e a listagem operacional; Detalhes da origem e a central completa da origem/lote. Analises financeiras mais profundas devem ficar nas telas de analise.
 
 ### Produtos
 
@@ -114,9 +210,79 @@ Representado por `paginas/cadastro-venda.html`, `paginas/historico-vendas.html`,
 
 Representado por `js/financeiro-utils.js`, telas de analise e custos. Centraliza calculos de receita, custo consumido, custos de peca, custos de venda, lucro e margem.
 
+As telas financeiras principais sao:
+
+- `paginas/analise-produto.html`: resultado financeiro agrupado por peca.
+- `paginas/analise-periodo.html`: resultado financeiro por intervalo de datas.
+- `paginas/analise-custos.html`: leitura dos custos operacionais por tipo e categoria.
+
+Essas telas podem mostrar receita, custo, lucro, margem e totais quando fizer sentido. Elas nao devem ser confundidas com telas operacionais como Produtos, Historico de vendas ou Cadastro.
+
+Padrao aprovado para analises:
+
+- Busca principal no topo.
+- Seletor `Mostrar`.
+- Botao `Filtros`.
+- Filtros laterais.
+- Cards compactos de resumo.
+- Listas sem rolagem horizontal.
+- Expansoes para detalhes extras.
+- Linguagem simples para o usuario.
+
+`analise-produto.html` mostra resultado financeiro agrupado por peca, com busca por SKU/nome, cards de resumo financeiro e lista por produto. Deve exibir custo da peca, custos da venda, lucro e margem. Se nao houver custo calculado, deve mostrar "Custo nao calculado" e nao inventar lucro/margem.
+
+`analise-periodo.html` mostra resultado financeiro por intervalo de datas, com filtros por data, canal e situacao do custo. A lista de vendas do periodo deve mostrar receita, custo das pecas, custos da venda, lucro, margem e quantidade vendida. Os valores devem bater com Detalhes da venda e Analise por produto.
+
+`analise-custos.html` tem foco em custos operacionais. Ela separa custos da peca e custos da venda, mostra total de custos, maior tipo, quantidade de lancamentos e lista por tipo de custo, mas nao deve mostrar lucro/margem.
+
 ### Configuracoes
 
 Representado por `paginas/tipos-custo.html`, `js/tipos-custo.js` e arquivos de configuracao Supabase. Controla cadastros auxiliares, principalmente tipos de custo.
+
+`tipos-custo.html` e uma tela administrativa. Ela serve para cadastrar, editar, ativar e inativar tipos de custo, sem virar analise financeira.
+
+Os tipos de custo podem ser usados em:
+
+- custos da peca;
+- custos da venda;
+- ambos.
+
+Categorias oficiais:
+
+- Peca;
+- Venda;
+- Ambos.
+
+Status oficiais:
+
+- Ativo;
+- Inativo.
+
+Regras de duplicidade:
+
+- Impedir duplicidade por diferenca de maiusculas/minusculas.
+- Impedir duplicidade por espacos extras.
+- Tratar `Limpeza`, `limpeza` e `LIMPEZA` como o mesmo tipo.
+- Normalizar o nome para comparacao antes de salvar.
+- Evitar tipos parecidos que baguncam relatorios e analises.
+
+Padrao UX/UI:
+
+- Busca no topo.
+- Seletor `Mostrar`.
+- Botao `Filtros`.
+- Formulario Novo/editar tipo.
+- Painel de uso recomendado.
+- Lista compacta de tipos cadastrados.
+- Acoes `Editar`, `Inativar` e `Ativar`.
+
+Relacao com outras telas:
+
+- Custo de peca usa tipos com categoria Peca ou Ambos.
+- Cadastro de venda usa tipos com categoria Venda ou Ambos.
+- Analise de custos depende dos tipos padronizados para agrupar corretamente.
+- Preferir inativar tipos antigos em vez de apagar.
+- Esta tela nao altera calculos financeiros.
 
 ## Estrutura de telas
 
