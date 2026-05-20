@@ -326,6 +326,187 @@ h1 {
   margin-top: 2px;
 }
 
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  overflow-x: hidden;
+}
+
+.login-page .login-shell {
+  position: relative;
+  width: min(980px, calc(100% - 32px));
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(340px, 420px);
+  gap: 28px;
+  align-items: center;
+  padding: 44px 0;
+}
+
+.login-page .login-identity {
+  display: grid;
+  gap: 12px;
+  align-content: center;
+}
+
+.login-page .login-badge,
+.login-page .login-eyebrow {
+  width: fit-content;
+  color: #f8d591;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.login-page .login-badge {
+  padding: 7px 10px;
+  border: 1px solid rgba(248, 213, 145, 0.24);
+  border-radius: 999px;
+  background: rgba(248, 213, 145, 0.11);
+}
+
+.login-page .login-identity h1 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(2.35rem, 6vw, 4rem);
+  line-height: 0.95;
+}
+
+.login-page .login-identity p {
+  max-width: 520px;
+  margin: 0;
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.login-page .login-card {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.94)),
+    #172033;
+  box-shadow:
+    0 18px 52px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.login-page .login-card__header {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.login-page .login-card__header h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 1.22rem;
+}
+
+.login-page .login-card__header p,
+.login-page .login-note,
+.login-page .login-footer {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.login-page .login-form {
+  display: grid;
+  gap: 9px;
+}
+
+.login-page .login-form .form-group {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.login-page .login-form label {
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.login-page .login-form input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.62);
+  color: #f8fafc;
+  font: inherit;
+  outline: none;
+}
+
+.login-page .login-form input:focus {
+  border-color: rgba(248, 213, 145, 0.42);
+  box-shadow: 0 0 0 3px rgba(248, 213, 145, 0.08);
+}
+
+.login-page .login-form .form-message {
+  min-height: 18px;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.login-page .login-form .form-message--warning {
+  color: #fca5a5;
+}
+
+.login-page .login-form .form-message--success {
+  color: #86efac;
+}
+
+.login-page .login-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 2px;
+  border: 1px solid rgba(248, 213, 145, 0.30);
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(248, 213, 145, 0.18), rgba(245, 158, 11, 0.12));
+  color: #f8fafc;
+  font-weight: 900;
+}
+
+.login-page .login-button:hover {
+  border-color: rgba(248, 213, 145, 0.46);
+  background: linear-gradient(180deg, rgba(248, 213, 145, 0.22), rgba(245, 158, 11, 0.16));
+  box-shadow: none;
+}
+
+.login-page .login-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.login-page .login-note {
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.46);
+}
+
+.login-page .login-note strong {
+  color: #f8d591;
+}
+
+.login-page .login-footer {
+  position: relative;
+  padding: 0 16px 22px;
+  text-align: center;
+}
+
 .container {
   position: relative;
   width: min(1120px, calc(100% - 32px));
@@ -892,6 +1073,12 @@ textarea:focus {
   margin: 3px 0 0;
   font-size: 1.12rem;
   letter-spacing: 0;
+}
+
+.piece-form-top h2:last-child,
+.form-section__header h3:last-child,
+.stock-header h2:last-child {
+  margin-bottom: 0;
 }
 
 .piece-form-top p {
@@ -3249,6 +3436,17 @@ textarea:focus {
     width: 100%;
   }
 
+  .login-page .login-shell {
+    width: min(100% - 24px, 460px);
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 28px 0;
+  }
+
+  .login-page .login-identity h1 {
+    font-size: 2.4rem;
+  }
+
   .form-row--four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -3617,6 +3815,10 @@ textarea:focus {
 
   .auth-card {
     padding: 20px;
+  }
+
+  .login-page .login-card {
+    padding: 18px;
   }
 
   .auth-highlights {
