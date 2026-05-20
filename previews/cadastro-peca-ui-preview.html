@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Cadastro de peça</title>
+  <link rel="stylesheet" href="cadastro-peca-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Produtos</span>
+        <h1>Cadastro de peça</h1>
+        <p>Cadastre a peça vinculada a uma origem e gere a entrada de estoque.</p>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge badge-warning">Origem obrigatória</span>
+        <a class="btn btn-secondary" href="#">Voltar para produtos</a>
+      </div>
+    </header>
+
+    <section class="flow-note">
+      <strong>Fluxo preservado:</strong>
+      <span>origem selecionada → dados da peça → entrada de estoque → imagem/observações → salvar e continuar cadastrando.</span>
+    </section>
+
+    <section class="form-layout">
+      <form class="piece-form">
+        <article class="panel form-block">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">Etapa 1</span>
+              <h2>Origem vinculada</h2>
+              <p>A peça nasce depois da origem. Mantenha a mesma origem para cadastrar várias peças em sequência.</p>
+            </div>
+            <button class="btn btn-secondary" type="button">+ Nova origem</button>
+          </div>
+
+          <div class="form-grid">
+            <label class="field-wide">
+              <span>Origem</span>
+              <select>
+                <option>Lote Civic 2014 prata — ORI-000124</option>
+                <option>Compra avulsa — Faróis Corolla</option>
+                <option>Carro para desmonte — Gol G5</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="origin-summary">
+            <div>
+              <span>Valor pago</span>
+              <strong>R$ 12.000,00</strong>
+            </div>
+            <div>
+              <span>Valor distribuído</span>
+              <strong>R$ 8.450,00</strong>
+            </div>
+            <div>
+              <span>Valor não distribuído</span>
+              <strong>R$ 3.550,00</strong>
+            </div>
+            <div>
+              <span>Peças vinculadas</span>
+              <strong>14</strong>
+            </div>
+            <div>
+              <span>Situação</span>
+              <strong>Falta distribuir</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel form-block">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">Etapa 2</span>
+              <h2>Dados da peça</h2>
+              <p>Nome e SKU continuam como identificadores principais no estoque.</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label class="field-wide">
+              <span>Nome da peça</span>
+              <input type="text" value="Retrovisor elétrico esquerdo">
+            </label>
+
+            <label>
+              <span>SKU / código da peça</span>
+              <input type="text" value="CIV14-RET-EE">
+            </label>
+
+            <label>
+              <span>Preço de venda</span>
+              <input type="text" value="R$ 389,90">
+            </label>
+
+            <label>
+              <span>Status inicial</span>
+              <select>
+                <option>Em estoque</option>
+                <option>Separada</option>
+                <option>Em preparação</option>
+              </select>
+            </label>
+
+            <label class="field-wide">
+              <span>Observação curta</span>
+              <input type="text" value="Peça original, com conector revisado.">
+            </label>
+          </div>
+        </article>
+
+        <article class="panel form-block">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">Etapa 3</span>
+              <h2>Entrada de estoque</h2>
+              <p>Toda peça deve gerar entrada de estoque para saldo e custo ficarem corretos.</p>
+            </div>
+            <span class="soft-badge">Obrigatória</span>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span>Quantidade</span>
+              <input type="number" value="1">
+            </label>
+
+            <label>
+              <span>Custo unitário</span>
+              <input type="text" value="R$ 145,00">
+            </label>
+
+            <label>
+              <span>Valor atribuído</span>
+              <input class="calculated-field" type="text" value="R$ 145,00" readonly>
+            </label>
+
+            <label>
+              <span>Data da entrada</span>
+              <input type="date" value="2026-05-20">
+            </label>
+
+            <label class="field-wide">
+              <span>Observação da entrada</span>
+              <input type="text" value="Entrada inicial do lote selecionado.">
+            </label>
+          </div>
+
+          <div class="info-note">
+            <strong>Entrada obrigatória</strong>
+            <span>A entrada de estoque é obrigatória para saldo e custo.</span>
+          </div>
+        </article>
+
+        <article class="panel form-block">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">Etapa 4</span>
+              <h2>Imagem</h2>
+              <p>A imagem ajuda na conferência operacional e na apresentação comercial da peça.</p>
+            </div>
+          </div>
+
+          <div class="image-layout">
+            <div class="image-preview">
+              <span>Prévia</span>
+              <strong>Imagem da peça</strong>
+            </div>
+            <div class="image-fields">
+              <label>
+                <span>Imagem da peça</span>
+                <input type="file">
+              </label>
+              <p>Use foto nítida da peça. A imagem é operacional/comercial.</p>
+            </div>
+          </div>
+        </article>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="button">Salvar peça</button>
+          <button class="btn btn-secondary" type="button">Salvar e cadastrar outra da mesma origem</button>
+          <button class="btn btn-ghost" type="button">Limpar campos da peça</button>
+          <a class="btn btn-secondary" href="#">Voltar para produtos</a>
+        </div>
+      </form>
+
+      <aside class="panel summary-panel">
+        <div class="panel-title">
+          <div>
+            <span class="eyebrow">Conferência</span>
+            <h2>Resumo antes de salvar</h2>
+          </div>
+        </div>
+
+        <div class="summary-list">
+          <div>
+            <span>Origem selecionada</span>
+            <strong>Lote Civic 2014 prata</strong>
+          </div>
+          <div>
+            <span>Nome da peça</span>
+            <strong>Retrovisor elétrico esquerdo</strong>
+          </div>
+          <div>
+            <span>SKU</span>
+            <strong>CIV14-RET-EE</strong>
+          </div>
+          <div>
+            <span>Quantidade</span>
+            <strong>1</strong>
+          </div>
+          <div>
+            <span>Custo unitário</span>
+            <strong>R$ 145,00</strong>
+          </div>
+          <div>
+            <span>Valor atribuído</span>
+            <strong>R$ 145,00</strong>
+          </div>
+          <div>
+            <span>Preço de venda</span>
+            <strong>R$ 389,90</strong>
+          </div>
+        </div>
+
+        <div class="status-stack">
+          <span class="badge badge-info">Mantém origem após salvar</span>
+          <span class="badge badge-muted">Limpa somente dados da peça</span>
+          <span class="badge badge-warning">Sem redirecionamento</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

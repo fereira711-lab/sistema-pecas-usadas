@@ -135,6 +135,59 @@ Regras:
 
 Representado por `paginas/cadastro-origem.html`, `paginas/listar-origens.html`, `paginas/detalhes-origem.html` e seus scripts. Controla procedencia, compra, lote ou contexto de aquisicao das pecas.
 
+`paginas/cadastro-origem.html` e a tela para cadastrar lote, compra avulsa, carro de desmonte, retorno ou outra origem. A origem e cadastrada antes da peca, funciona como agrupador operacional e financeiro e nao deve ser tratada como peca.
+
+Padrao UX do Cadastro de origem:
+
+- Cabecalho `Cadastro de origem`.
+- Etapa 1: Identificacao da origem.
+- Etapa 2: Valores e distribuicao.
+- Etapa 3: Observacoes.
+- Resumo antes de salvar.
+- Acoes finais.
+
+Identificacao da origem:
+
+- Tipo da origem.
+- Codigo da origem.
+- Descricao/nome da origem.
+- Data da compra/entrada.
+
+Valores e distribuicao:
+
+- Valor pago.
+- Quantidade prevista de pecas, quando existir.
+- Aviso de que o valor sera distribuido depois nas pecas/entradas vinculadas.
+
+Observacoes:
+
+- Fornecedor, se existir.
+- Documento/referencia, se existir.
+- Observacoes internas.
+
+Resumo antes de salvar:
+
+- Tipo.
+- Descricao.
+- Valor pago.
+- Data.
+- Status inicial: `Aguardando distribuicao`, `Pronta para vincular pecas` ou `Sem valor pago` somente quando o valor for R$ 0,00.
+
+Acoes:
+
+- `Salvar origem`.
+- `Limpar`.
+- `Salvar e cadastrar peca vinculada`.
+- `Voltar para origens`.
+
+Regras:
+
+- Nao criar peca dentro da origem.
+- A peca nasce depois da origem.
+- Entrada de estoque continua obrigatoria apos cadastro da peca.
+- A distribuicao da origem acontece nas pecas/entradas vinculadas.
+- Analises financeiras pesadas ficam nas telas de analise.
+
 `paginas/listar-origens.html` e a tela real de Origens cadastradas. Ela funciona como listagem operacional de origens/lotes para localizar rapidamente lotes, compras avulsas e outras origens. Nao deve virar analise financeira pesada.
 
 Padrao UX da listagem:
@@ -189,6 +242,69 @@ Origens cadastradas e a listagem operacional; Detalhes da origem e a central com
 ### Produtos
 
 Representado por `paginas/cadastro-peca.html`, `paginas/produtos.html`, `paginas/detalhes-produto.html` e scripts relacionados. Controla cadastro, consulta, detalhes e custos da peca.
+
+`paginas/cadastro-peca.html` e a tela para cadastrar uma peca vinculada a uma origem. Toda peca cadastrada deve gerar uma entrada de estoque. A tela segue o fluxo: origem selecionada -> dados da peca -> entrada de estoque -> imagem/observacoes -> salvar e continuar cadastrando.
+
+Padrao UX do Cadastro de peca:
+
+- Cabecalho `Cadastro de peca`.
+- Etapa 1: Origem vinculada.
+- Etapa 2: Dados da peca.
+- Etapa 3: Entrada de estoque.
+- Etapa 4: Imagem.
+- Resumo antes de salvar.
+- Acoes finais.
+
+Origem vinculada:
+
+- Origem e obrigatoria.
+- Origem deve permanecer selecionada apos salvar.
+- Mostrar resumo da origem: valor pago, valor distribuido, valor nao distribuido, pecas vinculadas e situacao da distribuicao.
+
+Dados da peca:
+
+- Nome da peca.
+- SKU / codigo da peca.
+- Preco de venda, quando existir no fluxo.
+- Status inicial, quando existir.
+- Observacao curta.
+
+Entrada de estoque:
+
+- Obrigatoria para saldo e custo.
+- Quantidade.
+- Custo unitario.
+- Valor atribuido calculado automaticamente: quantidade x custo_unitario.
+- Data da entrada usando data local.
+- Observacao da entrada.
+
+Imagem:
+
+- A imagem e operacional/comercial.
+- Deve ajudar na conferencia interna e futura apresentacao comercial.
+
+Comportamento apos salvar:
+
+- Nao redirecionar automaticamente.
+- Manter origem selecionada.
+- Limpar somente campos da peca, entrada e imagem.
+- Permitir cadastrar varias pecas da mesma origem em sequencia.
+
+Acoes:
+
+- `Salvar peca`.
+- `Salvar e cadastrar outra da mesma origem`.
+- `Limpar campos da peca`.
+- `Voltar para produtos`.
+
+Regras:
+
+- Origem nao e peca.
+- Peca nasce depois da origem.
+- Entrada de estoque e obrigatoria.
+- Custo da venda continua vindo do consumo de estoque.
+- Nao criar calculo financeiro paralelo nessa tela.
+- Analises financeiras pesadas ficam nas telas de analise.
 
 `paginas/produtos.html` usa como padrao principal uma lista operacional compacta, nao cards grandes. A tela existe para consulta rapida e operacao diaria do estoque, mostrando imagem pequena, SKU, nome da peca, preco de venda, quantidade disponivel, status operacional e acoes.
 

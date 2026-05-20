@@ -3,52 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastrar Peca</title>
+  <title>Cadastro de peça</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body data-auth="protected" class="auth-checking ui-soft-dark piece-cadastro-page">
   <header class="page-header">
     <div>
-      <p class="hero__tag">Cadastro</p>
-      <h1>Cadastrar Peca</h1>
+      <p class="hero__tag">Produtos</p>
+      <h1>Cadastro de peça</h1>
       <p class="hero__description">
-        Cadastre a peca vinculada a uma origem e gere a entrada de estoque no mesmo fluxo.
+        Cadastre a peça vinculada a uma origem e gere a entrada de estoque.
       </p>
+    </div>
+    <div class="piece-page-actions">
+      <span class="piece-status-chip">Origem obrigatória</span>
+      <a class="button-secondary button-compact" href="produtos.html">Voltar para produtos</a>
     </div>
   </header>
 
-  <main class="container form-layout">
-    <section class="form-card">
+  <main class="container form-layout piece-form-layout">
+    <section class="form-card piece-form-shell">
       <div class="piece-form-top">
         <div>
           <span class="piece-form-eyebrow">Cadastro operacional</span>
-          <h2>Nova peca com entrada</h2>
+          <h2>Nova peça com entrada</h2>
+          <p>Origem selecionada, dados da peça e entrada obrigatória no mesmo fluxo.</p>
         </div>
         <span class="piece-status-chip">Operacional ativo</span>
-      </div>
-
-      <div class="piece-tabs" aria-label="Areas do cadastro">
-        <span class="piece-tab piece-tab--active">Operacional</span>
-        <span class="piece-tab piece-tab--disabled">Marketplace <small>em desenvolvimento</small></span>
-        <span class="piece-tab piece-tab--disabled">Fiscal / Tecnica <small>em desenvolvimento</small></span>
-        <span class="piece-tab piece-tab--disabled">Compatibilidade <small>em desenvolvimento</small></span>
       </div>
 
       <div class="piece-form-sections">
         <section class="form-section">
           <div class="form-section__header">
             <div>
-              <h3>Origem/Lote</h3>
+              <span class="piece-form-eyebrow">Etapa 1</span>
+              <h3>Origem vinculada</h3>
+              <p>A peça nasce depois da origem. Mantenha a mesma origem para cadastrar várias peças em sequência.</p>
             </div>
             <div class="section-actions">
-              <span class="required-marker">Obrigat&oacute;rio</span>
+              <span class="required-marker">Obrigatório</span>
               <a class="button-secondary button-compact" href="cadastro-origem.html">+ Nova origem</a>
             </div>
           </div>
 
           <div class="form-fields">
-            <div class="form-group field-span-8">
-              <label for="origemId">Origem/Lote vinculado</label>
+            <div class="form-group field-span-12">
+              <label for="origemId">Origem</label>
               <select id="origemId">
                 <option value="">Selecione a origem</option>
               </select>
@@ -57,20 +57,24 @@
 
           <div id="resumoOrigemCadastro" class="summary-grid summary-grid--compact origin-summary" hidden>
             <div class="summary-card">
-              <span>Valor total</span>
+              <span>Valor pago</span>
               <strong id="resumoOrigemValorTotal">R$ 0,00</strong>
             </div>
             <div class="summary-card">
-              <span>Valor distribuido</span>
+              <span>Valor distribuído</span>
               <strong id="resumoOrigemValorDistribuido">R$ 0,00</strong>
             </div>
             <div class="summary-card">
-              <span>Valor restante</span>
+              <span>Valor não distribuído</span>
               <strong id="resumoOrigemValorRestante">R$ 0,00</strong>
             </div>
             <div class="summary-card">
-              <span>Quantidade restante</span>
-              <strong id="resumoOrigemQuantidadeRestante">0</strong>
+              <span>Peças vinculadas</span>
+              <strong id="resumoOrigemPecasVinculadas">0</strong>
+            </div>
+            <div class="summary-card">
+              <span>Situação da distribuição</span>
+              <strong id="resumoOrigemSituacao">Selecione a origem</strong>
             </div>
           </div>
         </section>
@@ -78,20 +82,27 @@
         <section class="form-section">
           <div class="form-section__header">
             <div>
-              <h3>Peca</h3>
+              <span class="piece-form-eyebrow">Etapa 2</span>
+              <h3>Dados da peça</h3>
+              <p>Nome e SKU continuam como identificadores principais no estoque.</p>
             </div>
-            <span class="required-marker">Obrigat&oacute;rio</span>
+            <span class="required-marker">Obrigatório</span>
           </div>
 
           <div class="form-fields">
             <div class="form-group field-span-8">
-              <label for="nome">Nome da peca</label>
-              <input id="nome" placeholder="Nome da peca">
+              <label for="nome">Nome da peça</label>
+              <input id="nome" placeholder="Nome da peça">
             </div>
 
             <div class="form-group field-span-4">
-              <label for="sku">SKU</label>
-              <input id="sku" placeholder="SKU / Codigo da peca">
+              <label for="sku">SKU / código da peça</label>
+              <input id="sku" placeholder="SKU / Código da peça">
+            </div>
+
+            <div class="form-group field-span-12">
+              <label for="observacoesPeca">Observação curta</label>
+              <input id="observacoesPeca" placeholder="Observações da peça">
             </div>
           </div>
         </section>
@@ -99,9 +110,11 @@
         <section class="form-section">
           <div class="form-section__header">
             <div>
+              <span class="piece-form-eyebrow">Etapa 3</span>
               <h3>Entrada de estoque</h3>
+              <p>Toda peça deve gerar entrada de estoque para saldo e custo ficarem corretos.</p>
             </div>
-            <span class="required-marker">Obrigat&oacute;rio</span>
+            <span class="required-marker">Obrigatória</span>
           </div>
 
           <div class="form-fields">
@@ -111,48 +124,50 @@
             </div>
 
             <div class="form-group field-span-4">
-              <label for="custoUnitarioEntrada">Custo unitario</label>
+              <label for="custoUnitarioEntrada">Custo unitário</label>
               <input id="custoUnitarioEntrada" type="number" min="0" step="0.01" placeholder="0,00">
             </div>
 
             <div class="form-group field-span-4">
-              <label for="custoTotalEntrada">Custo total calculado</label>
+              <label for="custoTotalEntrada">Valor atribuído</label>
               <input id="custoTotalEntrada" class="calculated-input" type="number" min="0" step="0.01" placeholder="0,00" readonly>
-              <p class="field-hint field-hint--calculated">Calculado automaticamente.</p>
+              <p class="field-hint field-hint--calculated">Quantidade × custo unitário.</p>
+            </div>
+
+            <div class="form-group field-span-4">
+              <label for="dataEntrada">Data da entrada</label>
+              <input id="dataEntrada" type="date" readonly>
+            </div>
+
+            <div class="form-group field-span-8">
+              <label for="observacoesEntrada">Observação da entrada</label>
+              <input id="observacoesEntrada" placeholder="Entrada inicial da origem selecionada">
             </div>
           </div>
+
+          <p class="piece-info-note">A entrada de estoque é obrigatória para saldo e custo.</p>
         </section>
 
         <section class="form-section">
           <div class="form-section__header">
             <div>
-              <h3>Fotos</h3>
+              <span class="piece-form-eyebrow">Etapa 4</span>
+              <h3>Imagem</h3>
+              <p>A imagem ajuda na conferência operacional e na apresentação comercial da peça.</p>
             </div>
             <span class="piece-status-chip piece-status-chip--muted">Visual</span>
           </div>
 
           <div class="photo-upload-block">
-            <div class="photo-preview-box">
-              <strong>Imagem da peca</strong>
+            <div id="previewImagemPeca" class="photo-preview-box">
+              <span>Prévia</span>
+              <strong>Imagem da peça</strong>
             </div>
             <div class="form-group">
-              <label for="imagemPeca">Arquivo da imagem</label>
+              <label for="imagemPeca">Imagem da peça</label>
               <input id="imagemPeca" type="file" accept="image/*">
+              <p class="field-hint">Use foto nítida da peça. A imagem é operacional/comercial.</p>
             </div>
-          </div>
-        </section>
-
-        <section class="form-section">
-          <div class="form-section__header">
-            <div>
-              <h3>Observacoes</h3>
-            </div>
-            <span class="piece-status-chip piece-status-chip--muted">Interno</span>
-          </div>
-
-          <div class="form-group compact-textarea">
-            <label for="observacoesPeca">Observacoes internas</label>
-            <textarea id="observacoesPeca" rows="4" placeholder="Observacoes da peca"></textarea>
           </div>
         </section>
       </div>
@@ -160,19 +175,62 @@
       <p id="mensagemPeca" class="form-message" aria-live="polite"></p>
 
       <div class="form-actions">
-        <button type="button" class="button-primary" onclick="salvarPeca()">Salvar peca e entrada</button>
-        <a class="button-secondary" href="produtos.html">Ver produtos</a>
+        <button id="btnSalvarPeca" type="button" class="button-primary" onclick="salvarPeca()">Salvar peça</button>
+        <button id="btnSalvarOutraPeca" type="button" class="button-secondary" onclick="salvarPeca()">Salvar e cadastrar outra da mesma origem</button>
+        <button type="button" class="button-secondary" onclick="limparCamposDaPeca()">Limpar campos da peça</button>
+        <a class="button-secondary" href="produtos.html">Voltar para produtos</a>
         <a id="linkDetalhesOrigem" class="button-secondary" href="cadastro-origem.html">Detalhes da origem</a>
-        <a class="button-secondary" href="../index.html">Voltar para o painel</a>
       </div>
     </section>
+
+    <aside class="form-card piece-save-summary">
+      <div class="form-section__header">
+        <div>
+          <span class="piece-form-eyebrow">Conferência</span>
+          <h3>Resumo antes de salvar</h3>
+        </div>
+      </div>
+
+      <div class="piece-summary-list">
+        <div>
+          <span>Origem selecionada</span>
+          <strong id="resumoSalvarOrigem">Não selecionada</strong>
+        </div>
+        <div>
+          <span>Nome da peça</span>
+          <strong id="resumoSalvarNome">Não informado</strong>
+        </div>
+        <div>
+          <span>SKU</span>
+          <strong id="resumoSalvarSku">Não informado</strong>
+        </div>
+        <div>
+          <span>Quantidade</span>
+          <strong id="resumoSalvarQuantidade">0</strong>
+        </div>
+        <div>
+          <span>Custo unitário</span>
+          <strong id="resumoSalvarCustoUnitario">R$ 0,00</strong>
+        </div>
+        <div>
+          <span>Valor atribuído</span>
+          <strong id="resumoSalvarValorAtribuido">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <div class="piece-save-badges">
+        <span class="piece-status-chip piece-status-chip--muted">Mantém origem após salvar</span>
+        <span class="piece-status-chip piece-status-chip--muted">Limpa somente dados da peça</span>
+        <span class="piece-status-chip piece-status-chip--muted">Sem redirecionamento</span>
+      </div>
+    </aside>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=4"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=26"></script>
-  <script src="../js/peca.js?v=13"></script>
+  <script src="../js/peca.js?v=14"></script>
   <script src="../js/sidebar.js?v=5"></script>
 </body>
 </html>

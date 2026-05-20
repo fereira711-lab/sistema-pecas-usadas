@@ -4,10 +4,20 @@ const resumoOrigemCadastro = document.getElementById("resumoOrigemCadastro");
 const resumoOrigemValorTotal = document.getElementById("resumoOrigemValorTotal");
 const resumoOrigemValorDistribuido = document.getElementById("resumoOrigemValorDistribuido");
 const resumoOrigemValorRestante = document.getElementById("resumoOrigemValorRestante");
-const resumoOrigemQuantidadeRestante = document.getElementById("resumoOrigemQuantidadeRestante");
+const resumoOrigemPecasVinculadas = document.getElementById("resumoOrigemPecasVinculadas");
+const resumoOrigemSituacao = document.getElementById("resumoOrigemSituacao");
 const linkDetalhesOrigem = document.getElementById("linkDetalhesOrigem");
+const campoDataEntrada = document.getElementById("dataEntrada");
+const previewImagemPeca = document.getElementById("previewImagemPeca");
+const resumoSalvarOrigem = document.getElementById("resumoSalvarOrigem");
+const resumoSalvarNome = document.getElementById("resumoSalvarNome");
+const resumoSalvarSku = document.getElementById("resumoSalvarSku");
+const resumoSalvarQuantidade = document.getElementById("resumoSalvarQuantidade");
+const resumoSalvarCustoUnitario = document.getElementById("resumoSalvarCustoUnitario");
+const resumoSalvarValorAtribuido = document.getElementById("resumoSalvarValorAtribuido");
 
 let origensCadastro = [];
+let pecasCadastro = [];
 
 function buscarOrigensLocais() {
   return JSON.parse(localStorage.getItem("origens")) || [];
@@ -103,8 +113,31 @@ async function carregarEntradasEstoque() {
   return buscarEntradasLocais();
 }
 
+async function carregarPecas() {
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      const pecas = await window.supabaseService.listarPecas();
+      salvarPecasLocais(pecas);
+      return pecas;
+    } catch (erro) {
+      console.error("Erro ao carregar pecas:", erro);
+      return buscarPecasLocais();
+    }
+  }
+
+  return buscarPecasLocais();
+}
+
 function formatarCodigoOrigem(origem) {
   return origem?.codigoOrigem || `ORI-${String(origem?.id || "").padStart(6, "0")}`;
+}
+
+function obterTextoOrigem(origem) {
+  if (!origem) {
+    return "Não selecionada";
+  }
+
+  return `${formatarCodigoOrigem(origem)} - ${origem.descricao || `Origem ${origem.id}`}`;
 }
 
 async function preencherSelectOrigens() {
@@ -144,6 +177,7 @@ function calcularCustoTotalEntrada() {
 
   const custoTotal = quantidade * custoUnitario;
   campoCustoTotal.value = custoTotal.toFixed(2);
+  atualizarResumoSalvarPeca();
   return custoTotal;
 }
 
@@ -169,19 +203,35 @@ function formatarQuantidadeRestante(quantidadeRestante, temQuantidadeTotal) {
 }
 
 function atualizarVisualQuantidadeRestante(quantidadeRestante, temQuantidadeTotal) {
-  resumoOrigemQuantidadeRestante.classList.remove(
+  resumoOrigemSituacao.classList.remove(
     "summary-value--neutral",
     "summary-value--attention"
   );
 
   if (!temQuantidadeTotal) {
-    resumoOrigemQuantidadeRestante.classList.add("summary-value--neutral");
+    resumoOrigemSituacao.classList.add("summary-value--neutral");
     return;
   }
 
   if (quantidadeRestante < 0) {
-    resumoOrigemQuantidadeRestante.classList.add("summary-value--attention");
+    resumoOrigemSituacao.classList.add("summary-value--attention");
   }
+}
+
+function obterSituacaoDistribuicao(valorTotal, valorDistribuido) {
+  if (valorTotal <= 0) {
+    return "Sem valor pago";
+  }
+
+  if (valorDistribuido > valorTotal) {
+    return "Distribuição acima do previsto";
+  }
+
+  if (valorDistribuido >= valorTotal) {
+    return "Distribuída";
+  }
+
+  return "Falta distribuir";
 }
 
 async function atualizarResumoOrigemSelecionada() {
@@ -191,12 +241,18 @@ async function atualizarResumoOrigemSelecionada() {
   if (!origem) {
     resumoOrigemCadastro.hidden = true;
     linkDetalhesOrigem.href = "cadastro-origem.html";
+    atualizarResumoSalvarPeca();
     return null;
   }
 
-  const entradas = await carregarEntradasEstoque();
+  const [entradas, pecas] = await Promise.all([
+    carregarEntradasEstoque(),
+    carregarPecas()
+  ]);
   const entradasValidas = Array.isArray(entradas) ? entradas : [];
+  const pecasValidas = Array.isArray(pecas) ? pecas : [];
   const entradasDaOrigem = entradasValidas.filter(entrada => Number(entrada.origemId || 0) === origemId);
+  const pecasDaOrigem = pecasValidas.filter(peca => Number(peca.origemId || 0) === origemId);
   const valorTotal = Number(origem.custoTotal || origem.valorPago || 0);
   const temQuantidadeTotal = origemTemQuantidadeTotalDefinida(origem);
   const quantidadeTotal = Number(origem.quantidadeTotal || 0);
@@ -204,14 +260,17 @@ async function atualizarResumoOrigemSelecionada() {
   const quantidadeDistribuida = entradasDaOrigem.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
   const valorRestante = valorTotal - valorDistribuido;
   const quantidadeRestante = quantidadeTotal - quantidadeDistribuida;
+  const situacaoDistribuicao = obterSituacaoDistribuicao(valorTotal, valorDistribuido);
 
   resumoOrigemValorTotal.textContent = formatarMoeda(valorTotal);
   resumoOrigemValorDistribuido.textContent = formatarMoeda(valorDistribuido);
   resumoOrigemValorRestante.textContent = formatarMoeda(valorRestante);
-  resumoOrigemQuantidadeRestante.textContent = formatarQuantidadeRestante(quantidadeRestante, temQuantidadeTotal);
+  resumoOrigemPecasVinculadas.textContent = String(pecasDaOrigem.length);
+  resumoOrigemSituacao.textContent = situacaoDistribuicao;
   atualizarVisualQuantidadeRestante(quantidadeRestante, temQuantidadeTotal);
   resumoOrigemCadastro.hidden = false;
   linkDetalhesOrigem.href = `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}`;
+  atualizarResumoSalvarPeca();
 
   return {
     valorTotal,
@@ -221,7 +280,8 @@ async function atualizarResumoOrigemSelecionada() {
     quantidadeDistribuida,
     quantidadeRestante,
     quantidadeRestanteTexto: formatarQuantidadeRestante(quantidadeRestante, temQuantidadeTotal),
-    temQuantidadeTotal
+    temQuantidadeTotal,
+    situacaoDistribuicao
   };
 }
 
@@ -309,10 +369,11 @@ function montarEntradaEstoque(peca, origem, quantidade, custoUnitario) {
     quantidadeTotal: quantidade,
     quantidadeConsumida: 0,
     custoUnitario,
-    dataEntrada: origem.dataCompra || obterDataLocalHoje(),
+    dataEntrada: campoDataEntrada?.value || obterDataLocalHoje(),
     sku: peca.sku,
     nomePeca: peca.nome,
-    origemDescricao: origem.descricao || ""
+    origemDescricao: origem.descricao || "",
+    observacoes: document.getElementById("observacoesEntrada")?.value.trim() || ""
   };
 }
 
@@ -324,13 +385,66 @@ function limparCamposDaPeca() {
   document.getElementById("custoUnitarioEntrada").value = "";
   document.getElementById("custoTotalEntrada").value = "";
   document.getElementById("observacoesPeca").value = "";
+  document.getElementById("observacoesEntrada").value = "";
+  preencherDataEntradaPadrao();
+  atualizarPreviewImagemPeca();
+  atualizarResumoSalvarPeca();
   document.getElementById("sku").focus();
+}
+
+function preencherDataEntradaPadrao() {
+  if (campoDataEntrada) {
+    campoDataEntrada.value = obterDataLocalHoje();
+  }
+}
+
+function atualizarPreviewImagemPeca() {
+  const arquivo = obterArquivoImagemPeca();
+
+  if (!previewImagemPeca) {
+    return;
+  }
+
+  if (!arquivo) {
+    previewImagemPeca.innerHTML = "<span>Prévia</span><strong>Imagem da peça</strong>";
+    return;
+  }
+
+  const urlImagem = URL.createObjectURL(arquivo);
+  previewImagemPeca.innerHTML = `<img src="${urlImagem}" alt="Prévia da imagem selecionada">`;
+}
+
+function atualizarResumoSalvarPeca() {
+  const origemId = Number(selectOrigem.value || 0);
+  const origem = origensCadastro.find(item => Number(item.id) === origemId);
+  const nome = document.getElementById("nome").value.trim();
+  const sku = document.getElementById("sku").value.trim().toUpperCase();
+  const quantidade = lerNumeroDoCampo("quantidade") || 0;
+  const custoUnitario = lerNumeroDoCampo("custoUnitarioEntrada") || 0;
+  const valorAtribuido = Number(quantidade || 0) * Number(custoUnitario || 0);
+
+  resumoSalvarOrigem.textContent = obterTextoOrigem(origem);
+  resumoSalvarNome.textContent = nome || "Não informado";
+  resumoSalvarSku.textContent = sku || "Não informado";
+  resumoSalvarQuantidade.textContent = String(quantidade || 0);
+  resumoSalvarCustoUnitario.textContent = formatarMoeda(custoUnitario);
+  resumoSalvarValorAtribuido.textContent = formatarMoeda(valorAtribuido);
+}
+
+function definirBotoesSalvando(salvando) {
+  [
+    document.getElementById("btnSalvarPeca"),
+    document.getElementById("btnSalvarOutraPeca")
+  ].forEach(botao => {
+    if (botao) {
+      botao.disabled = salvando;
+    }
+  });
 }
 
 async function salvarPeca() {
   const peca = lerPecaDoFormulario();
   const erroValidacao = validarPeca(peca);
-  const botaoSalvar = document.querySelector("button[onclick='salvarPeca()']");
   const arquivoImagem = obterArquivoImagemPeca();
 
   if (erroValidacao) {
@@ -356,7 +470,7 @@ async function salvarPeca() {
     return;
   }
 
-  botaoSalvar.disabled = true;
+  definirBotoesSalvando(true);
   mostrarMensagem("Salvando peca...", "success");
 
   try {
@@ -399,6 +513,7 @@ async function salvarPeca() {
       salvarEntradaNoCache(entradaLocal);
     }
 
+    pecasCadastro = await carregarPecas();
     limparCamposDaPeca();
     const resumoAtualizado = await atualizarResumoOrigemSelecionada();
     const complementoQuantidade = resumoAtualizado
@@ -410,11 +525,16 @@ async function salvarPeca() {
     console.error("Erro ao cadastrar peca:", erro);
     mostrarMensagem(`Nao foi possivel salvar a peca: ${obterMensagemErroSupabase(erro)}`, "warning");
   } finally {
-    botaoSalvar.disabled = false;
+    definirBotoesSalvando(false);
   }
 }
 
+preencherDataEntradaPadrao();
 preencherSelectOrigens();
 selectOrigem.addEventListener("change", atualizarResumoOrigemSelecionada);
 document.getElementById("quantidade").addEventListener("input", calcularCustoTotalEntrada);
 document.getElementById("custoUnitarioEntrada").addEventListener("input", calcularCustoTotalEntrada);
+["nome", "sku", "observacoesPeca", "observacoesEntrada"].forEach(id => {
+  document.getElementById(id)?.addEventListener("input", atualizarResumoSalvarPeca);
+});
+document.getElementById("imagemPeca")?.addEventListener("change", atualizarPreviewImagemPeca);

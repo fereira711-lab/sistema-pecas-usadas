@@ -125,6 +125,79 @@ Nao mostrar na lista de Produtos:
 
 Analise financeira deve ficar em detalhes, painel e telas de analise.
 
+## Cadastro de peca
+
+`paginas/cadastro-peca.html` e a tela para cadastrar uma peca vinculada a uma origem. Toda peca cadastrada deve gerar uma entrada de estoque.
+
+Fluxo:
+
+- origem selecionada;
+- dados da peca;
+- entrada de estoque;
+- imagem/observacoes;
+- salvar e continuar cadastrando.
+
+Estrutura:
+
+- cabecalho `Cadastro de peca`;
+- Etapa 1: Origem vinculada;
+- Etapa 2: Dados da peca;
+- Etapa 3: Entrada de estoque;
+- Etapa 4: Imagem;
+- Resumo antes de salvar;
+- Acoes finais.
+
+Origem vinculada:
+
+- origem e obrigatoria;
+- origem deve permanecer selecionada apos salvar;
+- mostrar valor pago, valor distribuido, valor nao distribuido, pecas vinculadas e situacao da distribuicao.
+
+Dados da peca:
+
+- nome da peca;
+- SKU / codigo da peca;
+- preco de venda, quando existir no fluxo;
+- status inicial, quando existir;
+- observacao curta.
+
+Entrada de estoque:
+
+- obrigatoria para saldo e custo;
+- quantidade;
+- custo unitario;
+- valor atribuido calculado automaticamente: quantidade x custo_unitario;
+- data da entrada usando data local;
+- observacao da entrada.
+
+Imagem:
+
+- imagem e operacional/comercial;
+- ajuda na conferencia interna e futura apresentacao comercial.
+
+Comportamento apos salvar:
+
+- nao redirecionar automaticamente;
+- manter origem selecionada;
+- limpar somente campos da peca, entrada e imagem;
+- permitir cadastrar varias pecas da mesma origem em sequencia.
+
+Acoes:
+
+- `Salvar peca`;
+- `Salvar e cadastrar outra da mesma origem`;
+- `Limpar campos da peca`;
+- `Voltar para produtos`.
+
+Regras:
+
+- origem nao e peca;
+- peca nasce depois da origem;
+- entrada de estoque e obrigatoria;
+- custo da venda continua vindo do consumo de estoque;
+- nao criar calculo financeiro paralelo nessa tela;
+- analises financeiras pesadas ficam nas telas de analise.
+
 ## Origens cadastradas
 
 `paginas/listar-origens.html` e a tela real de Origens cadastradas. Ela funciona como listagem operacional de origens/lotes para localizar rapidamente lotes, compras avulsas e outras origens. Nao deve virar analise financeira pesada.
@@ -179,6 +252,61 @@ Regras:
 - origem e agrupador operacional e financeiro;
 - peca nasce depois da origem;
 - entrada de estoque continua obrigatoria.
+
+## Cadastro de origem
+
+`paginas/cadastro-origem.html` e a tela para cadastrar lote, compra avulsa, carro de desmonte, retorno ou outra origem. A origem e cadastrada antes da peca, funciona como agrupador operacional e financeiro e nao e peca.
+
+Estrutura:
+
+- cabecalho `Cadastro de origem`;
+- Etapa 1: Identificacao da origem;
+- Etapa 2: Valores e distribuicao;
+- Etapa 3: Observacoes;
+- Resumo antes de salvar;
+- Acoes finais.
+
+Identificacao:
+
+- tipo da origem;
+- codigo da origem;
+- descricao/nome da origem;
+- data da compra/entrada.
+
+Valores e distribuicao:
+
+- valor pago;
+- quantidade prevista de pecas, quando existir;
+- aviso de que o valor sera distribuido depois nas pecas/entradas vinculadas.
+
+Observacoes:
+
+- fornecedor, se existir;
+- documento/referencia, se existir;
+- observacoes internas.
+
+Resumo antes de salvar:
+
+- tipo;
+- descricao;
+- valor pago;
+- data;
+- status inicial: `Aguardando distribuicao`, `Pronta para vincular pecas` ou `Sem valor pago` somente quando valor for R$ 0,00.
+
+Acoes:
+
+- `Salvar origem`;
+- `Limpar`;
+- `Salvar e cadastrar peca vinculada`;
+- `Voltar para origens`.
+
+Regras:
+
+- nao criar peca dentro da origem;
+- a peca nasce depois da origem;
+- entrada de estoque continua obrigatoria apos cadastro da peca;
+- distribuicao da origem acontece nas pecas/entradas vinculadas;
+- analises financeiras pesadas ficam nas telas de analise.
 
 ## Detalhes da origem
 

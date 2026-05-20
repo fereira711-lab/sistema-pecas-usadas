@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Cadastro de origem</title>
+  <link rel="stylesheet" href="cadastro-origem-ui-preview.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <span class="section-label">Origens</span>
+        <h1>Cadastro de origem</h1>
+        <p>Cadastre lote, compra ou origem antes de vincular peças.</p>
+      </div>
+      <a class="btn btn-secondary" href="#">Voltar para origens</a>
+    </header>
+
+    <section class="form-layout">
+      <form class="origin-form">
+        <article class="panel form-block">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">Etapa 1</span>
+              <h2>Identificação da origem</h2>
+            </div>
+            <span class="soft-badge">Origem antes da peça</span>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span>Tipo da origem</span>
+              <select>
+                <option>Lote</option>
+                <option>Compra avulsa</option>
+                <option>Carro para desmonte</option>
+                <option>Retorno</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Código da origem</span>
+              <input type="text" value="ORG-124">
+            </label>
+
+            <label class="field-wide">
+              <span>Descrição / nome da origem</span>
+              <input type="text" value="Lote Civic 2014 prata">
+            </label>
+
+            <label>
+              <span>Data da compra/entrada</span>
+              <input type="date" value="2026-05-20">
+            </label>
+          </div>
+        </article>
+
+        <article class="panel form-block">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">Etapa 2</span>
+              <h2>Valores e distribuição</h2>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span>Valor pago</span>
+              <input type="text" value="R$ 12.000,00">
+            </label>
+
+            <label>
+              <span>Quantidade prevista de peças</span>
+              <input type="number" value="18">
+            </label>
+          </div>
+
+          <div class="info-note">
+            <strong>Distribuição posterior</strong>
+            <span>O valor será distribuído depois nas peças/entradas vinculadas.</span>
+          </div>
+        </article>
+
+        <article class="panel form-block">
+          <div class="panel-title">
+            <div>
+              <span class="eyebrow">Etapa 3</span>
+              <h2>Observações</h2>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              <span>Fornecedor</span>
+              <input type="text" value="Auto Peças Central">
+            </label>
+
+            <label>
+              <span>Documento / referência</span>
+              <input type="text" value="NF 4521">
+            </label>
+
+            <label class="field-wide">
+              <span>Observações internas</span>
+              <textarea rows="4">Lote comprado para desmontagem. Conferir faróis, módulos e acabamento interno.</textarea>
+            </label>
+          </div>
+        </article>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="button">Salvar origem</button>
+          <button class="btn btn-secondary" type="button">Limpar</button>
+          <button class="btn btn-ghost" type="button">Salvar e cadastrar peça vinculada</button>
+        </div>
+      </form>
+
+      <aside class="panel summary-panel">
+        <div class="panel-title">
+          <div>
+            <span class="eyebrow">Conferência</span>
+            <h2>Resumo antes de salvar</h2>
+          </div>
+        </div>
+
+        <div class="summary-list">
+          <div>
+            <span>Tipo</span>
+            <strong>Lote</strong>
+          </div>
+          <div>
+            <span>Descrição</span>
+            <strong>Lote Civic 2014 prata</strong>
+          </div>
+          <div>
+            <span>Valor pago</span>
+            <strong>R$ 12.000,00</strong>
+          </div>
+          <div>
+            <span>Data</span>
+            <strong>20/05/2026</strong>
+          </div>
+          <div>
+            <span>Status inicial</span>
+            <strong>Aguardando distribuição</strong>
+          </div>
+        </div>
+
+        <div class="status-stack">
+          <span class="badge badge-warning">Aguardando distribuição</span>
+          <span class="badge badge-info">Pronta para vincular peças</span>
+          <span class="badge badge-muted">Sem valor pago, se valor for R$ 0,00</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

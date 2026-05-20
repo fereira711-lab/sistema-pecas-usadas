@@ -51,6 +51,26 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro.
 - Analise financeira deve ficar em detalhes, painel e telas de analise.
 
+## Padrao da tela Cadastro de peca
+
+- `paginas/cadastro-peca.html` e a tela para cadastrar uma peca vinculada a uma origem.
+- Toda peca cadastrada deve gerar uma entrada de estoque.
+- Fluxo correto: origem selecionada -> dados da peca -> entrada de estoque -> imagem/observacoes -> salvar e continuar cadastrando.
+- Estrutura UX: cabecalho `Cadastro de peca`, Etapa 1 Origem vinculada, Etapa 2 Dados da peca, Etapa 3 Entrada de estoque, Etapa 4 Imagem, Resumo antes de salvar e Acoes finais.
+- Origem e obrigatoria e deve permanecer selecionada apos salvar.
+- Resumo da origem: valor pago, valor distribuido, valor nao distribuido, pecas vinculadas e situacao da distribuicao.
+- Dados da peca: nome, SKU/codigo, preco de venda quando existir, status inicial quando existir e observacao curta.
+- Entrada de estoque: quantidade, custo unitario, valor atribuido calculado por quantidade x custo_unitario, data local da entrada e observacao da entrada.
+- Imagem e operacional/comercial e ajuda na conferencia interna e futura apresentacao comercial.
+- Apos salvar: nao redirecionar automaticamente, manter origem selecionada, limpar somente campos da peca, entrada e imagem.
+- Permitir cadastrar varias pecas da mesma origem em sequencia.
+- Acoes: `Salvar peca`, `Salvar e cadastrar outra da mesma origem`, `Limpar campos da peca` e `Voltar para produtos`.
+- Origem nao e peca; peca nasce depois da origem.
+- Entrada de estoque e obrigatoria.
+- Custo da venda continua vindo do consumo de estoque.
+- Nao criar calculo financeiro paralelo nessa tela.
+- Analises financeiras pesadas ficam nas telas de analise.
+
 ## Padrao da tela Detalhes do produto
 
 - `paginas/detalhes-produto.html` funciona como central operacional/comercial da peca.
@@ -84,6 +104,25 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Origem e agrupador operacional e financeiro.
 - Peca nasce depois da origem.
 - Entrada de estoque continua obrigatoria.
+
+## Padrao da tela Cadastro de origem
+
+- `paginas/cadastro-origem.html` e a tela para cadastrar lote, compra avulsa, carro de desmonte, retorno ou outra origem.
+- Origem e cadastrada antes da peca.
+- Origem funciona como agrupador operacional e financeiro.
+- Origem nao e peca.
+- Estrutura UX: cabecalho `Cadastro de origem`, Etapa 1 Identificacao da origem, Etapa 2 Valores e distribuicao, Etapa 3 Observacoes, Resumo antes de salvar e Acoes finais.
+- Identificacao: tipo da origem, codigo da origem, descricao/nome da origem e data da compra/entrada.
+- Valores e distribuicao: valor pago, quantidade prevista de pecas quando existir e aviso de que o valor sera distribuido depois nas pecas/entradas vinculadas.
+- Observacoes: fornecedor se existir, documento/referencia se existir e observacoes internas.
+- Resumo antes de salvar: tipo, descricao, valor pago, data e status inicial.
+- Status inicial: `Aguardando distribuicao`, `Pronta para vincular pecas` ou `Sem valor pago` somente quando valor for R$ 0,00.
+- Acoes: `Salvar origem`, `Limpar`, `Salvar e cadastrar peca vinculada` e `Voltar para origens`.
+- Nao criar peca dentro da origem.
+- A peca nasce depois da origem.
+- Entrada de estoque continua obrigatoria apos cadastro da peca.
+- Distribuicao da origem acontece nas pecas/entradas vinculadas.
+- Analises financeiras pesadas ficam nas telas de analise.
 
 ## Padrao da tela Detalhes da origem
 

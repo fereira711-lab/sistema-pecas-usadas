@@ -3,65 +3,154 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastrar Origem</title>
+  <title>Cadastro de origem</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark">
+<body data-auth="protected" class="auth-checking ui-soft-dark origin-cadastro-page">
   <header class="page-header">
     <div>
-      <p class="hero__tag">Cadastro</p>
-      <h1>Cadastrar Origem</h1>
+      <p class="hero__tag">Origens</p>
+      <h1>Cadastro de origem</h1>
       <p class="hero__description">
-        Registre a origem primeiro. As pecas e as entradas de estoque ficam no cadastro de peca.
+        Cadastre lote, compra ou origem antes de vincular peças.
       </p>
     </div>
+    <a class="button-secondary button-compact" href="listar-origens.html">Voltar para origens</a>
   </header>
 
-  <main class="container form-layout">
-    <section class="form-card">
-      <h2>Cadastrar Origem</h2>
-
-      <div class="form-group">
-        <label for="codigoOrigem">Codigo da origem</label>
-        <input id="codigoOrigem" readonly placeholder="Gerado automaticamente">
-      </div>
-
-      <div class="form-group">
-        <select id="tipoOrigem">
-          <option value="">Tipo da origem</option>
-          <option value="Carro para desmonte">Carro para desmonte</option>
-          <option value="Lote">Lote</option>
-          <option value="Compra avulsa">Compra avulsa</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <input id="descricao" placeholder="Descricao (ex: Gol 1.0 2005)">
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <input id="custoTotal" type="number" min="0" step="0.01" placeholder="Valor da origem">
+  <main class="container origin-form-layout">
+    <section class="form-card origin-form-shell">
+      <div class="piece-form-top">
+        <div>
+          <span class="piece-form-eyebrow">Cadastro operacional</span>
+          <h2>Nova origem</h2>
+          <p>Origem é o agrupador inicial. Depois dela, cadastre as peças e entradas vinculadas.</p>
         </div>
+        <span class="piece-status-chip piece-status-chip--muted">Origem antes da peça</span>
       </div>
 
-      <div class="form-group">
-        <label for="dataCompra">Data</label>
-        <input id="dataCompra" type="date">
-      </div>
+      <div class="piece-form-sections">
+        <section class="form-section origin-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Etapa 1 — Identificação da origem</h3>
+              <p>Informe o tipo, código e nome usado para localizar esta origem depois.</p>
+            </div>
+            <span class="required-marker">Obrigatório</span>
+          </div>
 
-      <div class="form-group">
-        <textarea id="observacoes" rows="4" placeholder="Observacoes"></textarea>
+          <div class="form-fields">
+            <div class="form-group field-span-4">
+              <label for="tipoOrigem">Tipo da origem</label>
+              <select id="tipoOrigem">
+                <option value="">Selecione o tipo</option>
+                <option value="Carro para desmonte">Carro para desmonte</option>
+                <option value="Lote">Lote</option>
+                <option value="Compra avulsa">Compra avulsa</option>
+              </select>
+            </div>
+
+            <div class="form-group field-span-4">
+              <label for="codigoOrigem">Código da origem</label>
+              <input id="codigoOrigem" readonly placeholder="Gerado automaticamente">
+            </div>
+
+            <div class="form-group field-span-4">
+              <label for="dataCompra">Data da compra/entrada</label>
+              <input id="dataCompra" type="date">
+            </div>
+
+            <div class="form-group field-span-12">
+              <label for="descricao">Descrição / nome da origem</label>
+              <input id="descricao" placeholder="Ex: Lote Civic 2014 prata">
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section origin-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Etapa 2 — Valores e distribuição</h3>
+              <p>Registre o valor pago e a quantidade prevista para orientar a distribuição futura.</p>
+            </div>
+          </div>
+
+          <div class="form-fields">
+            <div class="form-group field-span-6">
+              <label for="custoTotal">Valor pago</label>
+              <input id="custoTotal" type="number" min="0" step="0.01" placeholder="0,00">
+            </div>
+
+            <div class="form-group field-span-6">
+              <label for="quantidadeTotal">Quantidade prevista de peças</label>
+              <input id="quantidadeTotal" type="number" min="0" step="1" placeholder="0">
+            </div>
+          </div>
+
+          <p class="origin-info-note">O valor será distribuído depois nas peças/entradas vinculadas.</p>
+        </section>
+
+        <section class="form-section origin-section">
+          <div class="form-section__header">
+            <div>
+              <h3>Etapa 3 — Observações</h3>
+              <p>Use este campo para fornecedor, documento, referência ou observações internas.</p>
+            </div>
+          </div>
+
+          <div class="form-fields">
+            <div class="form-group field-span-12 compact-textarea">
+              <label for="observacoes">Observações internas</label>
+              <textarea id="observacoes" rows="4" placeholder="Fornecedor, documento/referência e observações da compra"></textarea>
+            </div>
+          </div>
+        </section>
       </div>
 
       <p id="mensagemFormulario" class="form-message" aria-live="polite"></p>
 
       <div class="form-actions">
-        <button type="button" class="button-primary" onclick="salvarOrigem()">Salvar</button>
-        <a class="button-secondary" href="cadastro-peca.html">Ir para pecas</a>
-        <a class="button-secondary" href="../index.html">Voltar para o painel</a>
+        <button id="btnSalvarOrigem" type="button" class="button-primary" onclick="salvarOrigem(false)">Salvar origem</button>
+        <button type="button" class="button-secondary" onclick="limparFormularioOrigem()">Limpar</button>
+        <button id="btnSalvarPecaVinculada" type="button" class="button-secondary" onclick="salvarOrigem(true)">Salvar e cadastrar peça vinculada</button>
       </div>
     </section>
+
+    <aside class="form-card origin-summary-panel">
+      <div class="form-section__header">
+        <div>
+          <h3>Resumo antes de salvar</h3>
+          <p>Conferência rápida dos principais dados da origem.</p>
+        </div>
+      </div>
+
+      <div class="origin-summary-list">
+        <div>
+          <span>Tipo</span>
+          <strong id="resumoTipoOrigem">Não informado</strong>
+        </div>
+        <div>
+          <span>Descrição</span>
+          <strong id="resumoDescricaoOrigem">Não informada</strong>
+        </div>
+        <div>
+          <span>Valor pago</span>
+          <strong id="resumoValorOrigem">R$ 0,00</strong>
+        </div>
+        <div>
+          <span>Data</span>
+          <strong id="resumoDataOrigem">Hoje</strong>
+        </div>
+        <div>
+          <span>Status inicial</span>
+          <strong id="resumoStatusOrigem">Sem valor pago</strong>
+        </div>
+      </div>
+
+      <div class="origin-status-stack">
+        <span id="badgeStatusDistribuicao" class="status-badge status-badge--warning">Aguardando distribuição</span>
+      </div>
+    </aside>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
