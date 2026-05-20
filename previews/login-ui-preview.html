@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI - Login</title>
+  <link rel="stylesheet" href="login-ui-preview.css">
+</head>
+<body>
+  <main class="login-preview">
+    <section class="login-identity" aria-label="Identidade do sistema">
+      <span class="system-badge">Sistema operacional</span>
+      <h1>DWDW ERP</h1>
+      <p>Gestão de peças usadas, estoque, vendas e origens.</p>
+    </section>
+
+    <section class="login-card" aria-label="Acesso ao sistema">
+      <div class="login-card__header">
+        <span class="eyebrow">Acesso interno</span>
+        <h2>Entrar no sistema</h2>
+        <p>Acesse o painel operacional do sistema.</p>
+      </div>
+
+      <form class="login-form">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" value="operacao@dwdw.com.br" autocomplete="email">
+
+        <label for="senha">Senha</label>
+        <input id="senha" type="password" value="12345678" autocomplete="current-password">
+
+        <p class="login-error">E-mail ou senha inválidos.</p>
+
+        <button type="button">Entrar</button>
+        <p class="login-loading">Validando acesso...</p>
+      </form>
+
+      <div class="login-note">
+        Login aprovado deve abrir <strong>painel.html</strong>.
+      </div>
+    </section>
+  </main>
+
+  <footer class="login-footer">
+    Ambiente de gestão interna
+  </footer>
+</body>
+</html>

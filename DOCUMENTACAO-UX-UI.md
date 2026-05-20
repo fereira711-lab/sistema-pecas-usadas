@@ -44,6 +44,54 @@ Regras consolidadas nesta fase:
 - Campos calculados ou `readonly` devem ter estilo proprio, com fundo levemente diferente, borda discreta e texto destacado.
 - Sidebar e a navegacao principal atual; topbar/mega menu pode ser estudado em preview antes de substituir qualquer fluxo real.
 
+## Regra de textos operacionais compactos
+
+Telas operacionais nao devem parecer tutorial. A interface deve ser rapida, compacta e direta, usando texto apenas quando ele orientar uma acao real ou registrar uma regra importante do sistema.
+
+Manter:
+
+- Titulos principais das secoes.
+- Labels dos campos.
+- Badges de obrigatorio.
+- Mensagens de erro e validacao.
+- Avisos importantes de regra do sistema.
+
+Remover ou reduzir:
+
+- Frases que repetem o titulo da secao.
+- Explicacoes obvias.
+- Textos longos em formularios.
+- Subtitulos que ocupam espaco sem orientar uma acao real.
+- Descricoes que repetem o proprio campo.
+
+Exemplos de textos que podem ser removidos:
+
+- "Informe o tipo, codigo e nome usado para localizar..."
+- "Use este campo para..."
+- "Selecione o produto, informe os dados..."
+- Descricoes que repetem o titulo ou o label.
+
+Exemplos de avisos que devem ser mantidos:
+
+- "A entrada de estoque e obrigatoria."
+- "O valor sera distribuido depois nas pecas/entradas vinculadas."
+- "Custo nao calculado."
+- Mensagens de validacao e erro.
+
+Aplicacao:
+
+- Cadastro de origem.
+- Cadastro de peca.
+- Cadastro de venda.
+- Custo de peca.
+- Futuras telas operacionais.
+
+Reforco:
+
+- Operacional deve ser rapido, compacto e claro.
+- Detalhes concentram contexto completo.
+- Analises concentram financeiro pesado.
+
 ## Navegacao atual
 
 - O login direciona para `painel.html`.
@@ -51,6 +99,49 @@ Regras consolidadas nesta fase:
 - `dashboard.html` nao deve ser mantido como segunda versao do painel; ele e legado/redirecionamento.
 - `index.html` deve continuar funcionando como entrada tecnica/compatibilidade.
 - Detalhes de produto, venda e origem devem ser acessados a partir das listagens ou cards de contexto, nao pelo menu principal.
+
+### Sidebar / navegacao geral
+
+A sidebar e a navegacao principal do ERP. Os atalhos do Painel Geral ajudam na rotina, mas nao substituem a sidebar.
+
+Grupos oficiais:
+
+- Painel Geral.
+- Produtos.
+- Vendas.
+- Estoque.
+- Origens.
+- Custos.
+- Analises.
+- Sistema.
+
+Links oficiais:
+
+- Painel Geral: Painel Geral.
+- Produtos: Produtos; Cadastro de peca.
+- Vendas: Cadastro de venda; Historico de vendas.
+- Estoque: Entradas de estoque; Giro de estoque, se existir; Alertas, se existir.
+- Origens: Cadastro de origem; Origens cadastradas.
+- Custos: Custo de peca; Tipos de custo.
+- Analises: Analise por produto; Analise por periodo; Analise de custos.
+- Sistema: Documentacao / mapa mental, se existir; configuracoes futuras, se existirem.
+
+Regras:
+
+- `previews/` nao aparece na sidebar.
+- `detalhes-produto.html`, `detalhes-venda.html` e `detalhes-origem.html` nao aparecem como links diretos.
+- Detalhes abrem pelo contexto correto: Produtos, Historico de vendas e Origens cadastradas.
+- Produtos continua operacional, Detalhes sao centrais das entidades e Analises sao financeiras.
+- Sistema/Admin deve conter apenas documentacao, configuracoes ou recursos administrativos.
+
+Visual:
+
+- Seguir o tema escuro operacional.
+- Usar fundo azul/cinza escuro.
+- Usar dourado apenas como detalhe discreto em icones, setas e estado ativo.
+- Manter item ativo claro, mas sem excesso visual.
+- Usar bordas e espacamentos compativeis com os cards.
+- Manter usuario e botao `Sair` no rodape.
 
 ## Painel Geral
 
@@ -912,3 +1003,78 @@ Exemplos:
 - Regras claras.
 - Avisar quando nao deve fazer commit.
 - Pedir resposta curta quando a tarefa for objetiva.
+
+## Checklist de validação pós-refatoração UX/UI
+
+### Autenticacao e entrada
+
+- [ ] Abrir `index.html`.
+- [ ] Confirmar que login valido redireciona para `painel.html`.
+- [ ] Confirmar que login invalido mostra erro discreto.
+- [ ] Confirmar que `dashboard.html` redireciona para `painel.html`.
+
+### Navegacao
+
+- [ ] Confirmar que a sidebar abre corretamente.
+- [ ] Confirmar que os grupos aparecem organizados: Painel Geral, Produtos, Vendas, Estoque, Origens, Custos, Analises e Sistema.
+- [ ] Confirmar que os links principais funcionam.
+- [ ] Confirmar que `previews/` nao aparece no menu.
+- [ ] Confirmar que paginas de detalhes nao aparecem como link direto.
+
+### Fluxo principal
+
+- [ ] Cadastrar origem.
+- [ ] Cadastrar peca vinculada a origem.
+- [ ] Gerar entrada de estoque.
+- [ ] Visualizar produto em Produtos.
+- [ ] Vender produto.
+- [ ] Gerar consumo/custo da peca.
+- [ ] Visualizar venda no Historico de vendas.
+- [ ] Abrir Detalhes da venda.
+- [ ] Conferir Analise por produto.
+- [ ] Conferir Analise por periodo.
+
+### Telas operacionais
+
+- [ ] Produtos.
+- [ ] Cadastro de peca.
+- [ ] Cadastro de venda.
+- [ ] Custo de peca.
+- [ ] Historico de vendas.
+- [ ] Origens cadastradas.
+- [ ] Entradas de estoque.
+
+### Telas de detalhes
+
+- [ ] Detalhes do produto.
+- [ ] Detalhes da venda.
+- [ ] Detalhes da origem.
+
+### Analises
+
+- [ ] Analise por produto.
+- [ ] Analise por periodo.
+- [ ] Analise de custos.
+
+### Regras financeiras
+
+- [ ] Confirmar que o custo da venda vem do consumo de estoque.
+- [ ] Confirmar que venda sem custo calculado mostra "Custo nao calculado".
+- [ ] Confirmar que o sistema nao inventa custo medio.
+- [ ] Confirmar que `origem.valor_total` nao e usado como custo direto da venda.
+- [ ] Conferir se os numeros batem entre Detalhes da venda, Analise por produto e Analise por periodo.
+
+### UX/UI
+
+- [ ] Filtros laterais funcionam.
+- [ ] Listas nao tem rolagem horizontal.
+- [ ] Botoes principais funcionam.
+- [ ] Menu de tres pontos funciona.
+- [ ] Textos evitam termos tecnicos internos em excesso.
+- [ ] Tema visual esta consistente.
+
+### Arquivos legados
+
+- [ ] `dashboard.html` continua como legado/redirecionamento.
+- [ ] `paginas/lotes.html` continua como legado/compatibilidade.
+- [ ] `previews/` continua apenas como laboratorio visual.

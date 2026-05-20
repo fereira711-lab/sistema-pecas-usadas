@@ -147,6 +147,54 @@ Podem ser avaliados futuramente, sem remover agora:
 - Filtros avancados em painel lateral.
 - Formularios organizados por blocos.
 
+## Textos operacionais compactos
+
+Telas operacionais nao devem parecer tutorial. O texto deve ser curto e existir apenas quando ajudar a acao do usuario ou registrar regra importante do sistema.
+
+Manter:
+
+- titulos das secoes;
+- labels dos campos;
+- badges de obrigatorio;
+- mensagens de erro/validacao;
+- avisos importantes de regra do sistema.
+
+Remover ou reduzir:
+
+- frases que repetem o titulo da secao;
+- explicacoes obvias;
+- textos longos em formularios;
+- subtitulos que ocupam espaco sem orientar acao real;
+- descricoes que repetem o proprio campo.
+
+Exemplos removiveis:
+
+- "Informe o tipo, codigo e nome usado para localizar...";
+- "Use este campo para...";
+- "Selecione o produto, informe os dados...";
+- descricoes que repetem o titulo ou label.
+
+Avisos que devem permanecer:
+
+- "A entrada de estoque e obrigatoria.";
+- "O valor sera distribuido depois nas pecas/entradas vinculadas.";
+- "Custo nao calculado";
+- mensagens de validacao e erro.
+
+Aplicacao:
+
+- cadastro de origem;
+- cadastro de peca;
+- cadastro de venda;
+- custo de peca;
+- futuras telas operacionais.
+
+Reforco:
+
+- operacional deve ser rapido, compacto e claro;
+- detalhes concentram contexto completo;
+- analises concentram financeiro pesado.
+
 ## Produtos
 
 A pagina Produtos e operacional. O padrao principal agora e uma lista operacional compacta, feita para consulta rapida e uso diario do estoque.
@@ -557,3 +605,78 @@ Relacao com outras telas:
 - Nao usar `origem.valor_total` como custo da venda.
 - Se nao houver consumo registrado, mostrar "Custo nao calculado".
 - FIFO continua como regra tecnica interna, mas a interface deve usar termos simples para o usuario final.
+
+## Checklist de validação pós-refatoração UX/UI
+
+### Autenticacao e entrada
+
+- [ ] Abrir `index.html`.
+- [ ] Confirmar que login valido redireciona para `painel.html`.
+- [ ] Confirmar que login invalido mostra erro discreto.
+- [ ] Confirmar que `dashboard.html` redireciona para `painel.html`.
+
+### Navegacao
+
+- [ ] Confirmar que a sidebar abre corretamente.
+- [ ] Confirmar que os grupos aparecem organizados: Painel Geral, Produtos, Vendas, Estoque, Origens, Custos, Analises e Sistema.
+- [ ] Confirmar que os links principais funcionam.
+- [ ] Confirmar que `previews/` nao aparece no menu.
+- [ ] Confirmar que paginas de detalhes nao aparecem como link direto.
+
+### Fluxo principal
+
+- [ ] Cadastrar origem.
+- [ ] Cadastrar peca vinculada a origem.
+- [ ] Gerar entrada de estoque.
+- [ ] Visualizar produto em Produtos.
+- [ ] Vender produto.
+- [ ] Gerar consumo/custo da peca.
+- [ ] Visualizar venda no Historico de vendas.
+- [ ] Abrir Detalhes da venda.
+- [ ] Conferir Analise por produto.
+- [ ] Conferir Analise por periodo.
+
+### Telas operacionais
+
+- [ ] Produtos.
+- [ ] Cadastro de peca.
+- [ ] Cadastro de venda.
+- [ ] Custo de peca.
+- [ ] Historico de vendas.
+- [ ] Origens cadastradas.
+- [ ] Entradas de estoque.
+
+### Telas de detalhes
+
+- [ ] Detalhes do produto.
+- [ ] Detalhes da venda.
+- [ ] Detalhes da origem.
+
+### Analises
+
+- [ ] Analise por produto.
+- [ ] Analise por periodo.
+- [ ] Analise de custos.
+
+### Regras financeiras
+
+- [ ] Confirmar que o custo da venda vem do consumo de estoque.
+- [ ] Confirmar que venda sem custo calculado mostra "Custo nao calculado".
+- [ ] Confirmar que o sistema nao inventa custo medio.
+- [ ] Confirmar que `origem.valor_total` nao e usado como custo direto da venda.
+- [ ] Conferir se os numeros batem entre Detalhes da venda, Analise por produto e Analise por periodo.
+
+### UX/UI
+
+- [ ] Filtros laterais funcionam.
+- [ ] Listas nao tem rolagem horizontal.
+- [ ] Botoes principais funcionam.
+- [ ] Menu de tres pontos funciona.
+- [ ] Textos evitam termos tecnicos internos em excesso.
+- [ ] Tema visual esta consistente.
+
+### Arquivos legados
+
+- [ ] `dashboard.html` continua como legado/redirecionamento.
+- [ ] `paginas/lotes.html` continua como legado/compatibilidade.
+- [ ] `previews/` continua apenas como laboratorio visual.

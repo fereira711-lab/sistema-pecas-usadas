@@ -49,6 +49,54 @@ Diretrizes extraidas dessa tela:
 - Sidebar e a estrutura global atual, mantendo a area central focada na tarefa.
 - Topbar com mega menu pode ser estudada em `previews/preview-mega-menu.html`, sem substituir a sidebar ate ser aprovada.
 
+## Textos em telas operacionais
+
+Telas operacionais devem ser compactas e profissionais. Elas nao devem parecer tutorial nem explicar o obvio quando o titulo da secao, o label do campo ou o contexto da tela ja resolvem a compreensao.
+
+Manter:
+
+- Titulos das secoes.
+- Labels dos campos.
+- Badges de obrigatorio.
+- Mensagens de erro e validacao.
+- Avisos de regra do sistema.
+
+Remover ou reduzir:
+
+- Frases que repetem o titulo da secao.
+- Explicacoes obvias como "Use este campo para...".
+- Textos longos dentro de formularios.
+- Subtitulos que ocupam espaco sem orientar uma acao real.
+- Descricoes que repetem o proprio campo.
+
+Exemplos de textos removiveis:
+
+- "Informe o tipo, codigo e nome usado para localizar..."
+- "Use este campo para..."
+- "Selecione o produto, informe os dados..."
+- Qualquer descricao que apenas repita o titulo ou o label.
+
+Avisos que devem permanecer:
+
+- "A entrada de estoque e obrigatoria."
+- "O valor sera distribuido depois nas pecas/entradas vinculadas."
+- "Custo nao calculado."
+- Mensagens de validacao e erro.
+
+Aplicar em:
+
+- Cadastro de origem.
+- Cadastro de peca.
+- Cadastro de venda.
+- Custo de peca.
+- Futuras telas operacionais.
+
+Regra geral:
+
+- Operacional deve ser rapido, compacto e claro.
+- Detalhes concentram contexto completo.
+- Analises concentram financeiro pesado.
+
 ## Organizacao funcional atual
 
 - Produtos e a tela operacional principal para estoque/produtos.
@@ -60,6 +108,56 @@ Diretrizes extraidas dessa tela:
 - `index.html` e entrada tecnica/compatibilidade.
 - `dashboard.html` e legado/redirecionamento.
 - Paginas de detalhes nao entram como link direto no menu principal.
+
+## Padrao da sidebar
+
+A sidebar e a navegacao principal do sistema e deve refletir a arquitetura atual do ERP. `painel.html` e a entrada oficial apos login. `index.html` continua como entrada tecnica/redirecionamento e `dashboard.html` pode continuar como legado/redirecionamento.
+
+Grupos oficiais:
+
+- Painel Geral.
+- Produtos.
+- Vendas.
+- Estoque.
+- Origens.
+- Custos.
+- Analises.
+- Sistema.
+
+Links por grupo:
+
+- Painel Geral: Painel Geral.
+- Produtos: Produtos; Cadastro de peca.
+- Vendas: Cadastro de venda; Historico de vendas.
+- Estoque: Entradas de estoque; Giro de estoque, se existir; Alertas, se existir.
+- Origens: Cadastro de origem; Origens cadastradas.
+- Custos: Custo de peca; Tipos de custo.
+- Analises: Analise por produto; Analise por periodo; Analise de custos.
+- Sistema: Documentacao / mapa mental, se existir; configuracoes futuras, se existirem.
+
+Nao devem aparecer na sidebar:
+
+- `previews/`.
+- `detalhes-produto.html`.
+- `detalhes-venda.html`.
+- `detalhes-origem.html`.
+
+Padrao visual:
+
+- Tema escuro operacional.
+- Fundo azul/cinza escuro.
+- Dourado apenas como detalhe discreto em icones, setas e estado ativo.
+- Item ativo visivel, sem competir com o conteudo da tela.
+- Bordas e espacamentos alinhados aos cards do sistema.
+- Usuario e botao `Sair` no rodape.
+
+Regras de arquitetura:
+
+- Atalhos do Painel Geral sao apoio, nao substituem a sidebar.
+- Produtos e operacional.
+- Detalhes sao centrais das entidades.
+- Analises sao financeiras.
+- Sistema/Admin deve conter documentacao, configuracoes ou recursos administrativos.
 
 ## Padrao do Painel Geral
 

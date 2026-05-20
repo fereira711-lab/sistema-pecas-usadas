@@ -6,32 +6,24 @@
   <title>Login - Sistema de Gestao de Pecas Usadas</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="login" class="ui-soft-dark">
-  <main class="auth-layout">
-    <section class="auth-intro" aria-label="Resumo do sistema">
-      <p class="hero__tag">Sistema ERP</p>
-      <h1>Gestao de pecas usadas</h1>
-      <p>
-        Controle estoque, origens, vendas e custos em uma rotina simples para operacao diaria.
-      </p>
-
-      <div class="auth-highlights" aria-label="Principais areas do sistema">
-        <span>Estoque</span>
-        <span>Vendas FIFO</span>
-        <span>Custos</span>
-      </div>
+<body data-auth="login" class="ui-soft-dark login-page">
+  <main class="login-shell">
+    <section class="login-identity" aria-label="Identidade do sistema">
+      <span class="login-badge">Sistema operacional</span>
+      <h1>DWDW ERP</h1>
+      <p>Gestão de peças usadas, estoque, vendas e origens.</p>
     </section>
 
-    <section class="auth-card">
-      <p class="hero__tag">Acesso</p>
-      <h1>Entrar no sistema</h1>
-      <p class="hero__description">
-        Use seu email e senha cadastrados no Supabase Auth.
-      </p>
+    <section class="login-card" aria-label="Acesso ao sistema">
+      <div class="login-card__header">
+        <p class="login-eyebrow">Acesso interno</p>
+        <h2>Entrar no sistema</h2>
+        <p>Acesse o painel operacional do sistema.</p>
+      </div>
 
-      <form id="formLogin" class="auth-form">
+      <form id="formLogin" class="login-form">
         <div class="form-group">
-          <label for="emailLogin">Email</label>
+          <label for="emailLogin">E-mail</label>
           <input id="emailLogin" type="email" autocomplete="email" required>
         </div>
 
@@ -42,10 +34,16 @@
 
         <p id="mensagemLogin" class="form-message" aria-live="polite"></p>
 
-        <button id="botaoLogin" type="submit" class="button-primary auth-button">Entrar</button>
+        <button id="botaoLogin" type="submit" class="button-primary login-button">Entrar</button>
       </form>
+
+      <div class="login-note">
+        Login aprovado abre o <strong>Painel Geral</strong>.
+      </div>
     </section>
   </main>
+
+  <footer class="login-footer">Ambiente de gestão interna</footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>

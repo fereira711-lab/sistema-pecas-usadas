@@ -52,11 +52,37 @@ Decisoes atuais:
 - `painel.html` e o Painel Geral oficial e concentra resumo operacional, alertas, ultimas vendas e atalhos.
 - `index.html` nao deve voltar a ser menu de cards; ele existe para compatibilidade e redirecionamento.
 - `dashboard.html` permanece apenas como legado/redirecionamento para `painel.html`.
-- A sidebar organiza os modulos principais: Painel Geral, Produtos, Vendas, Estoque, Origens, Custos, Analises e Sistema.
+- A sidebar e a navegacao principal do sistema e deve refletir a arquitetura atual.
+- A sidebar organiza os modulos oficiais: Painel Geral, Produtos, Vendas, Estoque, Origens, Custos, Analises e Sistema.
+- `previews/` nao deve aparecer na navegacao real.
 - Paginas de detalhes nao devem aparecer como link direto no menu. Elas devem abrir pelo contexto correto:
   - Produto -> Ver detalhes;
   - Historico de vendas -> Ver detalhes da venda;
   - Origens cadastradas -> Ver detalhes da origem.
+
+Links oficiais por grupo:
+
+| Grupo | Links |
+| --- | --- |
+| Painel Geral | Painel Geral |
+| Produtos | Produtos; Cadastro de peca |
+| Vendas | Cadastro de venda; Historico de vendas |
+| Estoque | Entradas de estoque; Giro de estoque, se existir; Alertas, se existir |
+| Origens | Cadastro de origem; Origens cadastradas |
+| Custos | Custo de peca; Tipos de custo |
+| Analises | Analise por produto; Analise por periodo; Analise de custos |
+| Sistema | Documentacao / mapa mental, se existir; configuracoes futuras, se existirem |
+
+Nao entram como item direto: `detalhes-produto.html`, `detalhes-venda.html` e `detalhes-origem.html`.
+
+Visual da sidebar:
+
+- Tema escuro operacional com fundo azul/cinza escuro.
+- Dourado apenas como detalhe discreto em icones, setas e estado ativo.
+- Item ativo visivel, mas sem excesso visual.
+- Bordas e espacamentos compativeis com os cards do sistema.
+- Usuario e botao `Sair` ficam no rodape.
+- Atalhos do Painel Geral sao apoio para rotina e nao substituem a sidebar.
 
 ## Teste real recente
 
@@ -577,3 +603,78 @@ Para manter o trabalho organizado, os pedidos para o Codex devem seguir este pad
 - regras claras;
 - informar quando nao deve fazer commit;
 - pedir resposta curta quando o foco for execucao.
+
+## Checklist de validação pós-refatoração UX/UI
+
+### Autenticacao e entrada
+
+- [ ] Abrir `index.html`.
+- [ ] Confirmar que login valido redireciona para `painel.html`.
+- [ ] Confirmar que login invalido mostra erro discreto.
+- [ ] Confirmar que `dashboard.html` redireciona para `painel.html`.
+
+### Navegacao
+
+- [ ] Confirmar que a sidebar abre corretamente.
+- [ ] Confirmar que os grupos aparecem organizados: Painel Geral, Produtos, Vendas, Estoque, Origens, Custos, Analises e Sistema.
+- [ ] Confirmar que os links principais funcionam.
+- [ ] Confirmar que `previews/` nao aparece no menu.
+- [ ] Confirmar que paginas de detalhes nao aparecem como link direto.
+
+### Fluxo principal
+
+- [ ] Cadastrar origem.
+- [ ] Cadastrar peca vinculada a origem.
+- [ ] Gerar entrada de estoque.
+- [ ] Visualizar produto em Produtos.
+- [ ] Vender produto.
+- [ ] Gerar consumo/custo da peca.
+- [ ] Visualizar venda no Historico de vendas.
+- [ ] Abrir Detalhes da venda.
+- [ ] Conferir Analise por produto.
+- [ ] Conferir Analise por periodo.
+
+### Telas operacionais
+
+- [ ] Produtos.
+- [ ] Cadastro de peca.
+- [ ] Cadastro de venda.
+- [ ] Custo de peca.
+- [ ] Historico de vendas.
+- [ ] Origens cadastradas.
+- [ ] Entradas de estoque.
+
+### Telas de detalhes
+
+- [ ] Detalhes do produto.
+- [ ] Detalhes da venda.
+- [ ] Detalhes da origem.
+
+### Analises
+
+- [ ] Analise por produto.
+- [ ] Analise por periodo.
+- [ ] Analise de custos.
+
+### Regras financeiras
+
+- [ ] Confirmar que o custo da venda vem do consumo de estoque.
+- [ ] Confirmar que venda sem custo calculado mostra "Custo nao calculado".
+- [ ] Confirmar que o sistema nao inventa custo medio.
+- [ ] Confirmar que `origem.valor_total` nao e usado como custo direto da venda.
+- [ ] Conferir se os numeros batem entre Detalhes da venda, Analise por produto e Analise por periodo.
+
+### UX/UI
+
+- [ ] Filtros laterais funcionam.
+- [ ] Listas nao tem rolagem horizontal.
+- [ ] Botoes principais funcionam.
+- [ ] Menu de tres pontos funciona.
+- [ ] Textos evitam termos tecnicos internos em excesso.
+- [ ] Tema visual esta consistente.
+
+### Arquivos legados
+
+- [ ] `dashboard.html` continua como legado/redirecionamento.
+- [ ] `paginas/lotes.html` continua como legado/compatibilidade.
+- [ ] `previews/` continua apenas como laboratorio visual.

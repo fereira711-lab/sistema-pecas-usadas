@@ -25,6 +25,61 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Evitar misturar HTML, CSS e JavaScript no mesmo arquivo, exceto em testes simples.
 - Usar nomes de arquivos claros e codigo simples, legivel e organizado.
 
+## Padrao da sidebar e navegacao
+
+- A sidebar e a navegacao principal do sistema.
+- `painel.html` e a entrada oficial apos login.
+- `index.html` pode continuar como entrada tecnica/redirecionamento.
+- `dashboard.html` pode continuar como legado/redirecionamento, se existir.
+- `previews/` nao deve aparecer na navegacao real.
+- Atalhos do Painel Geral sao apoio para rotina e nao substituem a sidebar.
+
+Grupos oficiais da sidebar:
+
+- Painel Geral.
+- Produtos.
+- Vendas.
+- Estoque.
+- Origens.
+- Custos.
+- Analises.
+- Sistema.
+
+Links oficiais:
+
+- Painel Geral: Painel Geral.
+- Produtos: Produtos; Cadastro de peca.
+- Vendas: Cadastro de venda; Historico de vendas.
+- Estoque: Entradas de estoque; Giro de estoque, se existir; Alertas, se existir.
+- Origens: Cadastro de origem; Origens cadastradas.
+- Custos: Custo de peca; Tipos de custo.
+- Analises: Analise por produto; Analise por periodo; Analise de custos.
+- Sistema: Documentacao / mapa mental, se existir; configuracoes futuras, se existirem.
+
+Nao colocar como item direto:
+
+- `detalhes-produto.html`.
+- `detalhes-venda.html`.
+- `detalhes-origem.html`.
+
+Essas paginas abrem pelo contexto correto: Produtos, Historico de vendas e Origens cadastradas.
+
+Visual da sidebar:
+
+- Tema escuro operacional.
+- Fundo azul/cinza escuro.
+- Dourado apenas como detalhe discreto.
+- Item ativo visivel, sem excesso visual.
+- Bordas e espacamentos compativeis com os cards.
+- Usuario e botao `Sair` no rodape.
+
+Reforcos:
+
+- Produtos e operacional.
+- Detalhes sao centrais das entidades.
+- Analises sao financeiras.
+- Sistema/Admin deve conter apenas configuracoes, documentacao ou recursos administrativos.
+
 ## Banco de dados e Supabase
 
 - Antes de sugerir ou fazer mudancas no banco, explicar a logica.
@@ -39,6 +94,20 @@ Objetivo: evoluir o sistema de forma didatica, pratica e organizada, ajudando Ra
 - Usar CSS limpo e evitar excesso de bibliotecas externas.
 - Separar responsabilidades no JavaScript e evitar funcoes muito grandes.
 - Tratar erros de forma clara para o usuario.
+
+## Textos operacionais compactos
+
+- Telas operacionais nao devem parecer tutorial.
+- Evitar excesso de legendas, subtitulos explicativos e textos longos.
+- Manter a interface compacta, direta e profissional.
+- Manter titulos das secoes, labels dos campos, badges de obrigatorio, mensagens de erro/validacao e avisos importantes de regra do sistema.
+- Remover ou reduzir frases que repetem o titulo da secao, explicacoes obvias e descricoes que repetem o proprio campo.
+- Exemplos removiveis: `Informe o tipo, codigo e nome usado para localizar...`, `Use este campo para...`, `Selecione o produto, informe os dados...`.
+- Exemplos que devem permanecer: `A entrada de estoque e obrigatoria.`, `O valor sera distribuido depois nas pecas/entradas vinculadas.`, `Custo nao calculado` e mensagens de validacao/erro.
+- Aplicar em Cadastro de origem, Cadastro de peca, Cadastro de venda, Custo de peca e futuras telas operacionais.
+- Operacional deve ser rapido, compacto e claro.
+- Detalhes concentram contexto completo.
+- Analises concentram financeiro pesado.
 
 ## Padrao da tela Produtos
 
