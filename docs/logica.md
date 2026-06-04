@@ -125,6 +125,9 @@ Isso evita erro ao salvar origem quando o front envia os tipos usados nas telas:
 - `Compra avulsa`
 - `Carro para desmonte`
 - `Lote`
+- `Estoque Inicial`
+
+`Estoque Inicial` e apenas mais um tipo de origem. Ele serve para registrar saldo inicial existente antes da organizacao completa do sistema, mas continua seguindo o mesmo fluxo: origem -> peca -> entrada de estoque -> venda. Ele nao altera FIFO, nao cria fluxo paralelo e nao dispensa a origem nem a entrada obrigatoria da peca.
 
 No final, ele executa:
 

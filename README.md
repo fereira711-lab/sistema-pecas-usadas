@@ -5,6 +5,7 @@ ERP web para gestao operacional de pecas usadas, origens, estoque, vendas, custo
 ## Arquitetura atual
 
 - Origem nao e peca; origem e o agrupador operacional/financeiro.
+- `Estoque Inicial` e apenas mais um tipo de origem; nao altera FIFO nem cria fluxo paralelo.
 - Peca nasce depois da origem.
 - Toda peca deve gerar entrada de estoque.
 - Venda consome estoque.
@@ -325,7 +326,7 @@ Regras:
 
 ## Origens cadastradas
 
-`paginas/listar-origens.html` e a tela real de Origens cadastradas. Ela funciona como listagem operacional de origens/lotes para localizar rapidamente lotes, compras avulsas e outras origens. Nao deve virar analise financeira pesada.
+`paginas/listar-origens.html` e a tela real de Origens cadastradas. Ela funciona como listagem operacional de origens para localizar rapidamente lotes, compras avulsas, estoque inicial e outras origens. Nao deve virar analise financeira pesada.
 
 Estrutura:
 
@@ -380,7 +381,7 @@ Regras:
 
 ## Cadastro de origem
 
-`paginas/cadastro-origem.html` e a tela para cadastrar lote, compra avulsa, carro de desmonte, retorno ou outra origem. A origem e cadastrada antes da peca, funciona como agrupador operacional e financeiro e nao e peca.
+`paginas/cadastro-origem.html` e a tela para cadastrar lote, compra avulsa, carro de desmonte, estoque inicial, retorno ou outra origem. A origem e cadastrada antes da peca, funciona como agrupador operacional e financeiro e nao e peca.
 
 Estrutura:
 

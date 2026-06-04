@@ -40,10 +40,12 @@ check (
     'Compra avulsa',
     'Carro para desmonte',
     'Lote',
+    'Estoque Inicial',
     'compra_avulsa',
     'carro_para_desmonte',
     'carro_desmonte',
-    'lote'
+    'lote',
+    'estoque_inicial'
   )
 );
 
@@ -55,10 +57,12 @@ check (
     'Compra avulsa',
     'Carro para desmonte',
     'Lote',
+    'Estoque Inicial',
     'compra_avulsa',
     'carro_para_desmonte',
     'carro_desmonte',
-    'lote'
+    'lote',
+    'estoque_inicial'
   )
 );
 

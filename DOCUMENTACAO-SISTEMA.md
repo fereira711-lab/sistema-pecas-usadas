@@ -16,7 +16,7 @@ A origem registra a procedencia ou compra. A peca representa o item comercial. A
 
 ## Arquitetura operacional oficial
 
-- Origem nao e peca. A origem e o agrupador operacional e financeiro da procedencia, lote, compra avulsa, carro de desmonte, retorno ou outra entrada.
+- Origem nao e peca. A origem e o agrupador operacional e financeiro da procedencia, lote, compra avulsa, carro de desmonte, estoque inicial, retorno ou outra entrada.
 - A peca nasce depois da origem.
 - Toda peca cadastrada deve gerar uma entrada de estoque para existir saldo e custo.
 - A venda consome estoque.
@@ -187,9 +187,9 @@ Regras:
 
 ### Origens
 
-Representado por `paginas/cadastro-origem.html`, `paginas/listar-origens.html`, `paginas/detalhes-origem.html` e seus scripts. Controla procedencia, compra, lote ou contexto de aquisicao das pecas.
+Representado por `paginas/cadastro-origem.html`, `paginas/listar-origens.html`, `paginas/detalhes-origem.html` e seus scripts. Controla procedencia, compra, lote, estoque inicial ou contexto de aquisicao das pecas.
 
-`paginas/cadastro-origem.html` e a tela para cadastrar lote, compra avulsa, carro de desmonte, retorno ou outra origem. A origem e cadastrada antes da peca, funciona como agrupador operacional e financeiro e nao deve ser tratada como peca.
+`paginas/cadastro-origem.html` e a tela para cadastrar lote, compra avulsa, carro de desmonte, estoque inicial, retorno ou outra origem. A origem e cadastrada antes da peca, funciona como agrupador operacional e financeiro e nao deve ser tratada como peca.
 
 Padrao UX do Cadastro de origem:
 
@@ -242,7 +242,7 @@ Regras:
 - A distribuicao da origem acontece nas pecas/entradas vinculadas.
 - Analises financeiras pesadas ficam nas telas de analise.
 
-`paginas/listar-origens.html` e a tela real de Origens cadastradas. Ela funciona como listagem operacional de origens/lotes para localizar rapidamente lotes, compras avulsas e outras origens. Nao deve virar analise financeira pesada.
+`paginas/listar-origens.html` e a tela real de Origens cadastradas. Ela funciona como listagem operacional de origens para localizar rapidamente lotes, compras avulsas, estoque inicial e outras origens. Nao deve virar analise financeira pesada.
 
 Padrao UX da listagem:
 
