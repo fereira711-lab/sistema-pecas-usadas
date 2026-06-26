@@ -511,37 +511,6 @@ function renderizarDadosProduto(produto) {
   `;
 }
 
-function renderizarOrigemVinculada(produto) {
-  if (!origemVinculadaProduto) {
-    return;
-  }
-
-  const origemId = obterOrigemIdPrincipal(produto);
-  const descricaoOrigem = obterOrigemPrincipal(produto);
-
-  origemVinculadaProduto.innerHTML = `
-    <div class="stock-header">
-        <div>
-          <h2>Origem vinculada</h2>
-          <p>Entrada principal usada para rastrear a peça no estoque.</p>
-        </div>
-        <div class="form-actions">
-          <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver detalhes da origem</a>
-        </div>
-    </div>
-    <div class="detail-grid">
-        <article class="detail-card">
-          <span>Origem</span>
-          <strong>${escaparHtml(descricaoOrigem)}</strong>
-        </article>
-        <article class="detail-card">
-          <span>ID da origem</span>
-          <strong>${origemId || "-"}</strong>
-        </article>
-    </div>
-  `;
-}
-
 function abrirFormularioEdicaoProduto() {
   if (!contextoProduto.produto || !formEditarProduto) {
     return;
@@ -750,161 +719,12 @@ async function salvarImagemProdutoDetalhe(arquivo) {
   }
 }
 
-function renderizarResumo() {
-  const resultado = calcularResultado();
-
-  resumoFinanceiro.innerHTML = `
-    <article class="summary-card">
-      <span>Receita total</span>
-      <strong>${formatarMoeda(resultado.receitaTotal)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custo das entradas consumidas</span>
-      <strong>${formatarValorOuNaoCalculado(resultado.custoEntradasConsumidas)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custos da peça</span>
-      <strong>${formatarMoeda(resultado.custosDaPeca)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custos da venda</span>
-      <strong>${formatarMoeda(resultado.custosDaVenda)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Lucro da peça</span>
-      <strong>${formatarValorOuNaoCalculado(resultado.lucroPeca)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Margem</span>
-      <strong>${resultado.margem === null || resultado.margem === undefined ? "-" : `${formatarNumero(resultado.margem)}%`}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Última venda</span>
-      <strong>${formatarData(resultado.ultimaVenda)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Dias sem venda</span>
-      <strong>${escaparHtml(resultado.diasSemVenda)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Quantidade vendida</span>
-      <strong>${formatarNumero(resultado.quantidadeTotalVendida)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Vendas sem custo real</span>
-      <strong>${formatarNumero(resultado.vendasSemCusto)}</strong>
-    </article>
-  `;
-}
-
-function renderizarEntradas() {
-  tabelaEntradasProduto.innerHTML = "";
-
-  if (contextoProduto.entradas.length === 0) {
-    mensagemEntradasProduto.textContent = "Nenhuma entrada de estoque encontrada para esta peça.";
-    alternarTabelaVazia(tabelaEntradasProduto, true);
-    return;
-  }
-
-  mensagemEntradasProduto.textContent = "";
-  alternarTabelaVazia(tabelaEntradasProduto, false);
-
-  contextoProduto.entradas.forEach(entrada => {
-    const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td data-label="Origem">${escaparHtml(entrada.origemDescricao || entrada.origemId || "-")}</td>
-      <td data-label="Data entrada">${formatarData(entrada.dataEntrada)}</td>
-      <td data-label="Quantidade total">${formatarNumero(entrada.quantidadeTotal)}</td>
-      <td data-label="Quantidade consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
-      <td data-label="Saldo disponível">${formatarNumero(saldo)}</td>
-      <td data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
-      <td data-label="Status">${escaparHtml(obterStatusEntrada(entrada))}</td>
-    `;
-
-    tabelaEntradasProduto.appendChild(linha);
-  });
-}
-
-function renderizarCustos() {
-  tabelaCustosProduto.innerHTML = "";
-
-  if (contextoProduto.custosPeca.length === 0) {
-    mensagemCustosProduto.textContent = "Nenhum custo cadastrado";
-    alternarTabelaVazia(tabelaCustosProduto, true);
-    return;
-  }
-
-  mensagemCustosProduto.textContent = "";
-  alternarTabelaVazia(tabelaCustosProduto, false);
-
-  contextoProduto.custosPeca.forEach(custo => {
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td data-label="Data">${formatarData(custo.dataCusto || custo.data)}</td>
-      <td data-label="Tipo">${escaparHtml(custo.tipoCusto || custo.tipo || "-")}</td>
-      <td data-label="Descrição">${escaparHtml(custo.descricao || "-")}</td>
-      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
-      <td data-label="Observações">${escaparHtml(custo.observacoes || custo.observacao || "-")}</td>
-      <td data-label="Ações">
-        <div class="table-actions table-actions--single">
-          <button type="button" data-acao="editar-custo" data-custo-id="${escaparHtml(custo.id)}">Editar</button>
-        </div>
-      </td>
-    `;
-
-    tabelaCustosProduto.appendChild(linha);
-  });
-}
-
 function obterCustosVendaDaVenda(vendaId) {
   return contextoProduto.custosVenda.filter(custo => Number(custo.vendaId) === Number(vendaId));
 }
 
 function obterConsumosDaVenda(vendaId) {
   return contextoProduto.consumosEstoque.filter(consumo => Number(consumo.vendaId) === Number(vendaId));
-}
-
-function renderizarVendas() {
-  tabelaVendasProduto.innerHTML = "";
-
-  if (contextoProduto.vendas.length === 0) {
-    mensagemVendasProduto.textContent = "Nenhuma venda registrada";
-    alternarTabelaVazia(tabelaVendasProduto, true);
-    return;
-  }
-
-  mensagemVendasProduto.textContent = "";
-  alternarTabelaVazia(tabelaVendasProduto, false);
-
-  ordenarVendasPorData(contextoProduto.vendas).forEach(venda => {
-    const resultadoVenda = window.financeiroUtils.calcularLucroVenda(
-      venda,
-      contextoProduto.consumosEstoque,
-      contextoProduto.custosVenda
-    );
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
-      <td data-label="Quantidade">${formatarNumero(quantidadeVendida(venda))}</td>
-      <td data-label="Valor unitário">${formatarMoeda(obterValorUnitarioVenda(venda))}</td>
-      <td data-label="Valor total">${formatarMoeda(resultadoVenda.receita)}</td>
-      <td data-label="Canal">${escaparHtml(venda.canalVenda || "-")}</td>
-      <td data-label="Custo entradas">${formatarValorOuNaoCalculado(resultadoVenda.custoConsumido)}</td>
-      <td data-label="Custos venda">${formatarMoeda(resultadoVenda.custosVenda)}</td>
-      <td data-label="Lucro venda">${formatarValorOuNaoCalculado(resultadoVenda.lucro)}</td>
-      <td data-label="Ações">
-        <div class="table-actions">
-          <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes da venda</a>
-        </div>
-      </td>
-    `;
-
-    tabelaVendasProduto.appendChild(linha);
-  });
 }
 
 async function carregarContextoSupabase(pecaId) {

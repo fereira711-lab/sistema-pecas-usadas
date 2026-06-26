@@ -235,6 +235,14 @@ Implementacao atual confirmada:
 - Marketplace futuro nao deve conectar ao banco nem integrar Mercado Livre ate ser planejado.
 - FIFO continua sendo regra tecnica interna; a interface deve usar linguagem simples para custo.
 
+Implementacao atual confirmada:
+
+- `js/detalhes-produto.js` carrega produto, origem, entradas, custos da peca, vendas relacionadas e consumos de estoque para compor a central da peca.
+- As acoes principais atuais levam para venda, lancamento de custo, edicao inline da peca e upload de imagem.
+- O resumo operacional final ficou enxuto: estoque atual, total vendido, receita relacionada, custo consumido e estado `Custo calculado` ou `Custo nao calculado`.
+- Vendas relacionadas permanecem operacionais e levam ao extrato `detalhes-venda.html?vendaId=...`.
+- A area de marketplace continua visual apenas, sem integracao real.
+
 ## Padrao da tela Origens cadastradas
 
 - `paginas/listar-origens.html` e a tela real de Origens cadastradas.
@@ -376,6 +384,16 @@ Implementacao atual confirmada:
 - UX padrao: busca principal no topo, seletor `Mostrar`, botao `Filtros`, filtros laterais, cards compactos de resumo, listas sem rolagem horizontal e expansoes para detalhes extras.
 - `analise-produto.html` mostra resultado financeiro agrupado por peca, com busca por SKU/nome, cards de resumo e lista por produto.
 - Em Analise por produto, mostrar custo da peca, custos da venda, lucro e margem; se faltar custo calculado, mostrar `Custo nao calculado` e nao inventar lucro/margem.
+
+Implementacao atual confirmada:
+
+- `js/analise-produto.js` exige Supabase configurado para carregar a analise consolidada.
+- A tela consolida pecas, vendas, consumos de estoque, custos da peca, custos da venda e entradas, usando `financeiro-utils.js` como fonte oficial do calculo.
+- O topo atual mostra receita total, custo das pecas vendidas, custos da venda, lucro total e margem media.
+- A lista atual suporta busca, `Mostrar`, filtros por periodo/canal/situacao do custo/resultado, ordenacao e expansao `Detalhes` por produto.
+- Na expansao, a tela mostra vendas relacionadas, entradas consumidas, custos vinculados e resumo simples do calculo.
+- Se houver venda sem custo real, lucro e margem ficam como `Custo nao calculado` ou `Pendente`.
+
 - `analise-periodo.html` mostra resultado financeiro por intervalo de datas, com filtros por data, canal e situacao do custo.
 - Em Analise por periodo, a lista de vendas e o resumo devem bater com Detalhes da venda e Analise por produto.
 - `analise-custos.html` tem foco em custos operacionais, separando custos da peca e custos da venda.
