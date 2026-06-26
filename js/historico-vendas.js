@@ -5,7 +5,6 @@ const buscaRapidaHistorico = document.getElementById("buscaRapidaHistorico");
 const quantidadePaginaHistorico = document.getElementById("quantidadePaginaHistorico");
 const dataInicialHistorico = document.getElementById("dataInicialHistorico");
 const dataFinalHistorico = document.getElementById("dataFinalHistorico");
-const filtroNomeHistorico = document.getElementById("filtroNomeHistorico");
 const filtroCanalHistorico = document.getElementById("filtroCanalHistorico");
 const limparFiltrosHistorico = document.getElementById("limparFiltrosHistorico");
 const shellHistoricoVendas = document.querySelector(".sales-history-shell");
@@ -108,7 +107,6 @@ function formatarNomePecaVenda(venda) {
 function filtrarVendas(vendas) {
   const dataInicial = dataInicialHistorico?.value || "";
   const dataFinal = dataFinalHistorico?.value || "";
-  const nomeBusca = normalizarTexto(filtroNomeHistorico?.value);
   const canalBusca = normalizarTexto(filtroCanalHistorico?.value);
   const buscaRapida = normalizarTexto(buscaRapidaHistorico?.value);
 
@@ -124,10 +122,6 @@ function filtrarVendas(vendas) {
     }
 
     if (dataFinal && (!dataVenda || dataVenda > dataFinal)) {
-      return false;
-    }
-
-    if (nomeBusca && !nome.includes(nomeBusca)) {
       return false;
     }
 
@@ -164,7 +158,6 @@ function alternarPainelFiltrosHistorico(aberto) {
 function limparFiltrosAvancadosHistorico() {
   if (dataInicialHistorico) dataInicialHistorico.value = "";
   if (dataFinalHistorico) dataFinalHistorico.value = "";
-  if (filtroNomeHistorico) filtroNomeHistorico.value = "";
   if (filtroCanalHistorico) filtroCanalHistorico.value = "";
 
   renderizarHistorico();
@@ -174,13 +167,8 @@ function renderizarAcoesVenda(venda, indice) {
   const vendaId = venda.id || venda.vendaId || venda.id_venda || "";
   const botaoDetalhes = `<button class="button-secondary sales-history-detail-button" type="button" data-acao="detalhes" data-id="${escaparHtml(vendaId)}" data-indice="${indice}" ${vendaId ? "" : "disabled"}>Ver detalhes</button>`;
 
-  return botaoDetalhes;
-
   if (historicoCarregadoDoSupabase) {
-    return `
-      ${botaoDetalhes}
-      <button type="button" disabled>Remoção não disponível</button>
-    `;
+    return botaoDetalhes;
   }
 
   return `
@@ -283,7 +271,6 @@ formFiltrosHistorico?.addEventListener("submit", function (evento) {
   quantidadePaginaHistorico,
   dataInicialHistorico,
   dataFinalHistorico,
-  filtroNomeHistorico,
   filtroCanalHistorico
 ].forEach(campo => {
   campo?.addEventListener("input", renderizarHistorico);

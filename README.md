@@ -183,6 +183,13 @@ Regras:
 - Detalhes sao centrais das entidades;
 - Analises sao financeiras.
 
+Implementacao atual confirmada:
+
+- `js/painel-geral.js` carrega origens, pecas, vendas, consumos, entradas e custos via `supabase-service.js`;
+- os atalhos atuais batem com a proposta operacional: Produtos, Cadastro de peca, Cadastro de venda, Custo de peca, Historico de vendas, Origens cadastradas e Analises;
+- os alertas atuais batem com a regra documental: produtos sem estoque, estoque baixo, custo nao calculado, distribuicao pendente e distribuicao acima do previsto;
+- o painel usa custos para alertas e movimentacoes recentes, mas nao vira tela de analise financeira pesada.
+
 ## Previews
 
 A pasta `previews/` contem testes visuais, como cadastro, design system, dashboard legado e mega menu.
@@ -298,6 +305,13 @@ Nao mostrar na lista de Produtos:
 - resultado financeiro.
 
 Analise financeira pesada deve ficar nas telas de analise. Detalhes mostram a central da entidade, e o Painel Geral mostra apenas resumo operacional.
+
+Implementacao atual confirmada:
+
+- `js/produtos.js` mantem foco em busca, filtros, estoque, status e acoes operacionais;
+- as acoes principais continuam `Detalhes` e `Vender`;
+- `Lancar custo` permanece como acao secundaria;
+- a listagem continua sem expor lucro, margem ou analise financeira pesada.
 
 ## Cadastro de peca
 
@@ -555,6 +569,26 @@ Ela serve para localizar uma peca, lancar custo, editar custo e excluir custo. O
 
 Custo de peca pode mostrar valores de custo lancados. Produtos continua sem mostrar custo, lucro, margem ou resultado financeiro.
 
+## Historico de vendas
+
+`paginas/historico-vendas.html` funciona como listagem operacional das vendas registradas.
+
+A tela mostra:
+
+- busca rapida por SKU ou nome da peca;
+- filtros por data inicial, data final e canal;
+- seletor `Mostrar`;
+- lista compacta com data, SKU, peca, quantidade, canal e acao `Ver detalhes`.
+
+Nao e tela de analise financeira pesada. O papel dela e localizar a venda correta e abrir o extrato completo em `paginas/detalhes-venda.html`.
+
+Implementacao atual confirmada:
+
+- `js/historico-vendas.js` tenta carregar vendas e pecas pelo Supabase e, se falhar, exibe fallback temporario do navegador;
+- a ordenacao atual prioriza data da venda mais recente e depois ID mais alto;
+- a busca rapida trabalha em cima de SKU e nome da peca, enquanto os filtros avancados cobrem data e canal;
+- a acao principal atual e `Ver detalhes`, levando para `detalhes-venda.html?vendaId=...`.
+
 ## Cadastro de venda
 
 A pagina `paginas/cadastro-venda.html` usa fluxo operacional organizado em blocos:
@@ -571,6 +605,14 @@ Produto vendido deve mostrar, apos selecao da peca, SKU, nome, preco de venda, e
 Custos da venda sao opcionais, podem ser adicionados/removidos antes de salvar e aparecem em lista compacta. A venda deve poder ser salva sem custo adicional.
 
 O resumo antes de salvar mostra quantidade vendida, receita prevista, custos da venda e o aviso de que o custo da peca sera calculado automaticamente ao salvar. Ao limpar o formulario, o resumo deve voltar para zero.
+
+Implementacao atual confirmada:
+
+- `js/venda.js` monta a venda com `pecaId`, quantidade, valor unitario, canal, observacoes, data e custos opcionais da venda;
+- a tela valida estoque disponivel antes de salvar e impede quantidade maior que o saldo atual;
+- quando `window.supabaseService` esta configurado, a venda e salva no banco e a peca em cache e atualizada com o retorno real;
+- quando o Supabase nao esta configurado, ainda existe fallback para armazenamento temporario em `localStorage`, com aviso explicito na interface;
+- o resumo operacional mostra quantidade, valor unitario, total e custos da venda, mas nao transforma a tela em analise financeira.
 
 ## Detalhes da venda
 
@@ -604,6 +646,14 @@ Ajustes permitidos:
 
 - data, canal e observacao podem ser editados se essa for a regra atual;
 - quantidade vendida e custo consumido ficam protegidos no extrato.
+
+Implementacao atual confirmada:
+
+- `js/detalhes-venda.js` busca a venda, carrega produto, origens, custos da venda, consumos de estoque e entradas para montar o extrato completo;
+- o custo real e recalculado com `window.financeiroUtils.calcularLucroVenda(...)`, usando `contextoVenda.consumosFifo` e os custos vinculados a venda;
+- se nao houver consumo registrado, a tela bloqueia lucro e margem com a mensagem `Custo nao calculado`;
+- o extrato mostra receita, custo da peca, custos da venda, lucro e margem, mas preserva quantidade vendida e custo consumido como campos protegidos;
+- a edicao atual fica restrita a data, canal e custos da venda quando o Supabase esta configurado.
 
 ## Analises financeiras
 

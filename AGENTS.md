@@ -194,6 +194,13 @@ Scripts criticos:
 - Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro.
 - Analise financeira pesada deve ficar nas telas de analise. Detalhes mostram apenas o contexto completo da entidade.
 
+Implementacao atual confirmada:
+
+- `js/produtos.js` mantem foco em busca, filtros, estoque, status e acoes operacionais;
+- as acoes principais continuam `Detalhes` e `Vender`;
+- `Lancar custo` permanece como acao secundaria;
+- a listagem continua sem expor lucro, margem ou analise financeira pesada.
+
 ## Padrao da tela Cadastro de peca
 
 - `paginas/cadastro-peca.html` e a tela para cadastrar uma peca vinculada a uma origem.
@@ -298,6 +305,22 @@ Scripts criticos:
 - Custo de peca pode mostrar valores de custo lancados, mas nao deve virar analise financeira pesada.
 - Evitar layout dividido em duas colunas quando apertar o conteudo.
 
+## Padrao da tela Historico de vendas
+
+- `paginas/historico-vendas.html` funciona como listagem operacional das vendas registradas.
+- A tela deve priorizar localizacao rapida da venda e acesso ao extrato, sem virar analise financeira pesada.
+- Estrutura UX: busca rapida por SKU/nome, seletor `Mostrar`, botao `Filtros`, filtros por data inicial, data final e canal, e lista compacta.
+- Lista atual: data, SKU, peca, quantidade, canal e acao `Ver detalhes`.
+- A acao principal deve abrir `paginas/detalhes-venda.html` com o `vendaId` correto.
+- Historico de vendas e operacional; lucro, margem e leitura financeira detalhada pertencem ao extrato e as telas de analise.
+
+Implementacao atual confirmada:
+
+- `js/historico-vendas.js` tenta carregar vendas e pecas via Supabase e usa fallback temporario no navegador quando necessario.
+- A ordenacao atual prioriza venda mais recente por data e depois por ID.
+- A busca rapida atual usa SKU e nome da peca; os filtros avancados atuais cobrem data e canal.
+- A acao principal atual e `Ver detalhes`.
+
 ## Padrao da tela Cadastro de venda
 
 - `paginas/cadastro-venda.html` usa fluxo operacional organizado em blocos.
@@ -314,6 +337,14 @@ Scripts criticos:
 - `financeiro-utils.js` continua sendo a fonte oficial de calculo financeiro.
 - FIFO continua sendo a regra tecnica interna de custo, mas a interface deve preferir termos simples para o usuario: `custo da peca`, `custo consumido` e `entrada consumida`.
 
+Implementacao atual confirmada:
+
+- `js/venda.js` registra `pecaId`, quantidade, valor unitario, canal, observacoes, data e custos opcionais da venda.
+- A validacao atual bloqueia quantidade maior que o estoque disponivel.
+- Com Supabase configurado, a persistencia usa `window.supabaseService.salvarVenda(...)`.
+- Sem Supabase configurado, ainda existe fallback temporario em `localStorage`, com mensagem de aviso ao usuario.
+- O resumo continua operacional: quantidade, valor unitario, total e custos da venda.
+
 ## Padrao da tela Detalhes da venda
 
 - `paginas/detalhes-venda.html` funciona como extrato completo de uma venda especifica.
@@ -328,6 +359,14 @@ Scripts criticos:
 - Se nao houver consumo registrado, mostrar `Custo nao calculado`.
 - Data, canal e observacao podem ser editados se essa for a regra atual da tela.
 - Quantidade vendida e custo consumido ficam protegidos no extrato.
+
+Implementacao atual confirmada:
+
+- `js/detalhes-venda.js` monta o contexto da venda com produto, origens, entradas, custos da venda e consumos reais de estoque.
+- O resultado financeiro atual e recalculado com `window.financeiroUtils.calcularLucroVenda(...)`.
+- Lucro e margem so aparecem quando existe custo consumido calculado; caso contrario a tela mostra `Custo nao calculado`.
+- A tela mostra receita, custo da peca, custos da venda, lucro e margem no extrato, sem virar analise geral.
+- A edicao atual fica restrita a data, canal e custos da venda quando o Supabase esta configurado.
 
 ## Padrao das telas de analise financeira
 
@@ -386,6 +425,13 @@ Scripts criticos:
 - Produtos continua operacional.
 - Detalhes sao centrais das entidades.
 - Analises sao financeiras.
+
+Implementacao atual confirmada:
+
+- `js/painel-geral.js` carrega origens, pecas, vendas, consumos, entradas e custos via `supabase-service.js`;
+- os atalhos atuais batem com a proposta operacional: Produtos, Cadastro de peca, Cadastro de venda, Custo de peca, Historico de vendas, Origens cadastradas e Analises;
+- os alertas atuais batem com a regra documental: produtos sem estoque, estoque baixo, custo nao calculado, distribuicao pendente e distribuicao acima do previsto;
+- o painel usa custos para alertas e movimentacoes recentes, mas nao vira tela de analise financeira pesada.
 
 ## Tarefas grandes
 
