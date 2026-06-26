@@ -268,6 +268,7 @@
       valorVenda: valorTotal,
       canalVenda: venda.canal_venda || "",
       dataVenda: venda.data_venda,
+      observacoes: venda.observacoes || "",
       createdAt: venda.created_at
     };
   }
@@ -1140,6 +1141,20 @@
       throw error;
     }
 
+    const observacoesVenda = String(venda.observacoes || "").trim();
+
+    if (observacoesVenda) {
+      const { error: errorObservacoes } = await cliente
+        .from("vendas")
+        .update({ observacoes: observacoesVenda })
+        .eq("id", vendaId);
+
+      if (errorObservacoes) {
+        console.error(errorObservacoes);
+        throw errorObservacoes;
+      }
+    }
+
     const pecaAtualizada = await buscarPecaPorId(venda.pecaId);
     const custosDaVenda = await salvarCustosVenda(vendaId, venda.custosVenda || []);
 
@@ -1158,6 +1173,7 @@
         valorVenda: vendaParaBanco.quantidade_vendida * vendaParaBanco.valor_unitario,
         canalVenda: vendaParaBanco.canal_venda || "",
         dataVenda: vendaParaBanco.data_venda,
+        observacoes: observacoesVenda,
         custosVenda: custosDaVenda,
         totalCustosVenda: custosDaVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0)
       },

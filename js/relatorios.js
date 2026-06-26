@@ -63,8 +63,23 @@ function criarCard(titulo, valor) {
   `;
 }
 
+function normalizarCustosVendaParaResultado(venda) {
+  return (venda.custosVenda || []).map(custo => ({
+    ...custo,
+    vendaId: custo.vendaId || venda.id
+  }));
+}
+
 function obterResultadoVenda(venda) {
-  return venda.resultadoFinanceiro || window.financeiroUtils.calcularLucroVenda(venda, [], venda.custosVenda || []);
+  if (venda.resultadoFinanceiro) {
+    return venda.resultadoFinanceiro;
+  }
+
+  return window.financeiroUtils.calcularLucroVenda(
+    venda,
+    [],
+    normalizarCustosVendaParaResultado(venda)
+  );
 }
 
 function renderizarCardsPrincipais(dados) {

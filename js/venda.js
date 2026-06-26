@@ -10,14 +10,6 @@ function buscarVendas() {
   return JSON.parse(localStorage.getItem("vendas")) || [];
 }
 
-function buscarOrigens() {
-  return JSON.parse(localStorage.getItem("origens")) || [];
-}
-
-function salvarOrigens(origens) {
-  localStorage.setItem("origens", JSON.stringify(origens));
-}
-
 function buscarEntradasLocais() {
   return JSON.parse(localStorage.getItem("entradasEstoque")) || [];
 }
@@ -35,7 +27,6 @@ const resumoVendaTotal = document.getElementById("resumoVendaTotal");
 const resumoVendaCustos = document.getElementById("resumoVendaCustos");
 const resumoPecaVenda = document.getElementById("resumoPecaVenda");
 let pecasVendaCarregadas = [];
-let origensVendaCarregadas = [];
 let entradasVendaCarregadas = [];
 let tiposCustoVendaCarregados = [];
 let sugestoesVendaAtuais = [];
@@ -545,56 +536,27 @@ function existeCustoVendaIncompleto() {
     });
 }
 
-function normalizarSku(sku) {
-  return String(sku || "").trim().toUpperCase();
-}
-
-function obterOrigensDoProduto(peca) {
-  const sku = normalizarSku(peca.sku);
-  const origensPorSku = origensVendaCarregadas.filter(origem => normalizarSku(origem.produtoSku || origem.produto_sku) === sku);
-
-  return origensPorSku.length > 0
-    ? origensPorSku
-    : origensVendaCarregadas.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
-}
-
-function calcularCustoBasePeca(peca) {
-  const entradasDaPeca = entradasVendaCarregadas.filter(entrada => Number(entrada.pecaId || 0) === Number(peca.id || 0));
-
-  if (entradasDaPeca.length > 0) {
-    const totalUnidadesEntrada = entradasDaPeca.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
-    const totalInvestidoEntrada = entradasDaPeca.reduce((total, entrada) => {
-      return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
-    }, 0);
-
-    if (totalUnidadesEntrada > 0 && totalInvestidoEntrada > 0) {
-      return totalInvestidoEntrada / totalUnidadesEntrada;
-    }
+function calcularResultadoFinanceiroVenda(venda, consumosEstoque, custosVenda = venda?.custosVenda || []) {
+  if (window.financeiroUtils?.calcularLucroVenda) {
+    return window.financeiroUtils.calcularLucroVenda(
+      {
+        ...venda,
+        custosVenda
+      },
+      consumosEstoque || [],
+      custosVenda || []
+    );
   }
 
-  const origensDoProduto = obterOrigensDoProduto(peca);
-
-  const totalUnidades = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
-  }, 0);
-  const totalInvestido = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
-  }, 0);
-
-  if (totalUnidades <= 0 || totalInvestido <= 0) {
-    return Number(peca.custoTotal || peca.custo || 0);
-  }
-
-  return totalInvestido / totalUnidades;
-}
-
-function calcularLucroVenda(venda, peca) {
-  const valorTotal = Number(venda.valorTotal || venda.valorVenda || 0);
-  const custoUnitario = calcularCustoBasePeca(peca);
-  const custoPeca = custoUnitario * Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || 0);
-  const totalCustosVenda = somarCustosVenda(venda.custosVenda || []);
-
-  return valorTotal - custoPeca - totalCustosVenda;
+  return {
+    calculado: false,
+    motivo: "financeiro indisponivel",
+    receita: Number(venda?.valorTotal || venda?.valorVenda || 0),
+    custoConsumido: null,
+    custosVenda: somarCustosVenda(custosVenda || []),
+    lucro: null,
+    margem: null
+  };
 }
 
 async function buscarPecaParaVenda(pecaId) {
@@ -621,16 +583,6 @@ async function carregarPecasParaVenda() {
   }
 
   return buscarPecas().map(normalizarPeca);
-}
-
-async function carregarOrigensParaVenda() {
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    const origens = await window.supabaseService.listarOrigens();
-    salvarOrigens(origens);
-    return origens;
-  }
-
-  return buscarOrigens();
 }
 
 function selecionarPeca(peca) {
@@ -821,23 +773,20 @@ async function inicializarFormularioVenda() {
   }
 
   try {
-    const [pecas, origens, entradas] = await Promise.all([
+    const [pecas, entradas] = await Promise.all([
       carregarPecasParaVenda(),
-      carregarOrigensParaVenda(),
       window.supabaseService && window.supabaseService.estaConfigurado()
         ? window.supabaseService.listarEntradasEstoque()
         : Promise.resolve(buscarEntradasLocais())
     ]);
 
     pecasVendaCarregadas = pecas;
-    origensVendaCarregadas = origens;
     entradasVendaCarregadas = entradas || [];
     selecionarPecaDaUrl();
     atualizarLimiteQuantidadeSelecionada();
   } catch (erro) {
     console.error("Erro ao carregar peças para venda:", erro);
     pecasVendaCarregadas = buscarPecas().map(normalizarPeca);
-    origensVendaCarregadas = buscarOrigens();
     entradasVendaCarregadas = buscarEntradasLocais();
     selecionarPecaDaUrl();
     atualizarLimiteQuantidadeSelecionada();
@@ -1022,9 +971,16 @@ async function salvarVenda() {
 
     if (window.supabaseService && window.supabaseService.estaConfigurado()) {
       const resultado = await window.supabaseService.salvarVenda(venda);
+      const consumosEstoque = await window.supabaseService.listarConsumosEstoque();
+      const resultadoFinanceiro = calcularResultadoFinanceiroVenda(
+        resultado.venda,
+        consumosEstoque,
+        resultado.venda.custosVenda || []
+      );
       const vendaComLucro = {
         ...resultado.venda,
-        lucroVenda: calcularLucroVenda(resultado.venda, resultado.peca)
+        resultadoFinanceiro,
+        lucroVenda: resultadoFinanceiro.calculado ? resultadoFinanceiro.lucro : null
       };
 
       salvarVendaNoCache(vendaComLucro);
@@ -1033,11 +989,13 @@ async function salvarVenda() {
       mostrarMensagemVenda("Venda e custos da venda cadastrados com sucesso.", "success");
     } else {
       const pecaAtualizada = atualizarPecaVendidaLocalmente(peca, venda.quantidadeVendida);
+      const resultadoFinanceiro = calcularResultadoFinanceiroVenda(venda, [], venda.custosVenda || []);
       salvarVendaNoCache({
         ...venda,
         produtoNome: pecaAtualizada.nome,
         sku: pecaAtualizada.sku || "",
-        lucroVenda: calcularLucroVenda(venda, pecaAtualizada)
+        resultadoFinanceiro,
+        lucroVenda: resultadoFinanceiro.calculado ? resultadoFinanceiro.lucro : null
       });
       atualizarPecaNaListaVenda(pecaAtualizada);
       mostrarMensagemVenda("Venda cadastrada no armazenamento temporario. Configure o Supabase para salvar no banco.", "warning");

@@ -655,6 +655,8 @@ Implementacao atual confirmada:
 - `js/venda.js` monta a venda com `pecaId`, quantidade, valor unitario, canal, observacoes, data e custos opcionais da venda;
 - a tela valida estoque disponivel antes de salvar e impede quantidade maior que o saldo atual;
 - quando `window.supabaseService` esta configurado, a venda e salva no banco e a peca em cache e atualizada com o retorno real;
+- a persistencia no Supabase agora inclui `observacoes` da venda, e a leitura de `vendas` devolve esse campo para o extrato;
+- o resultado financeiro salvo para consulta usa `window.financeiroUtils.calcularLucroVenda(...)` com consumos reais; sem consumo registrado, permanece `Custo nao calculado`;
 - quando o Supabase nao esta configurado, ainda existe fallback para armazenamento temporario em `localStorage`, com aviso explicito na interface;
 - o resumo operacional mostra quantidade, valor unitario, total e custos da venda, mas nao transforma a tela em analise financeira.
 

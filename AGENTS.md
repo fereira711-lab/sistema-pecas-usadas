@@ -385,6 +385,8 @@ Implementacao atual confirmada:
 - `js/venda.js` registra `pecaId`, quantidade, valor unitario, canal, observacoes, data e custos opcionais da venda.
 - A validacao atual bloqueia quantidade maior que o estoque disponivel.
 - Com Supabase configurado, a persistencia usa `window.supabaseService.salvarVenda(...)`.
+- A persistencia no Supabase agora inclui `observacoes` da venda, e a leitura de `vendas` devolve esse campo para o extrato.
+- O resultado financeiro salvo usa `window.financeiroUtils.calcularLucroVenda(...)` com consumos reais; sem consumo registrado, permanece `Custo nao calculado`.
 - Sem Supabase configurado, ainda existe fallback temporario em `localStorage`, com mensagem de aviso ao usuario.
 - O resumo continua operacional: quantidade, valor unitario, total e custos da venda.
 
