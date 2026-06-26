@@ -464,7 +464,11 @@ function calcularResumoDetalhado(dados) {
 }
 
 function criarResumoDetalhadoHtml(resumo) {
-  const classeLucro = resumo.lucro !== null && resumo.lucro >= 0 ? "summary-card--profit" : "summary-card--loss";
+  const classeLucro = resumo.lucro === null
+    ? ""
+    : resumo.lucro >= 0
+      ? "summary-card--profit"
+      : "summary-card--loss";
 
   return `
     <section class="summary-grid summary-grid--compact">

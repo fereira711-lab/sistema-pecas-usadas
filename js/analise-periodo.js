@@ -304,7 +304,11 @@ function calcularResumo(linhas) {
 }
 
 function renderizarResumo(resumo) {
-  const classeLucro = resumo.lucro !== null && resumo.lucro >= 0 ? "summary-card--profit" : "summary-card--loss";
+  const classeLucro = resumo.lucro === null
+    ? ""
+    : resumo.lucro >= 0
+      ? "summary-card--profit"
+      : "summary-card--loss";
 
   resumoAnalisePeriodo.innerHTML =
     criarCard("Receita total", formatarMoeda(resumo.totalVendido)) +

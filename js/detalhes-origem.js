@@ -253,7 +253,15 @@ function obterQuantidadePrevistaOrigem(origem) {
 }
 
 function obterQuantidadeDistribuidaOrigem() {
-  return dadosDetalhesOrigem.pecas.length || dadosDetalhesOrigem.entradas.length;
+  const quantidadeDistribuida = dadosDetalhesOrigem.entradas.reduce((total, entrada) => {
+    return total + Number(entrada.quantidadeTotal || 0);
+  }, 0);
+
+  if (quantidadeDistribuida > 0) {
+    return quantidadeDistribuida;
+  }
+
+  return dadosDetalhesOrigem.pecas.length || 0;
 }
 
 function obterPrecoVendaPeca(peca) {
