@@ -46,6 +46,47 @@ Linguagem da interface:
 - `previews/`: prototipos visuais. Nao fazem parte do fluxo real.
 - `sql/`: scripts de banco, FIFO, RPCs e tabelas auxiliares.
 
+## Superficie real identificada
+
+Paginas principais:
+
+- `painel.html`
+- `paginas/produtos.html`
+- `paginas/cadastro-peca.html`
+- `paginas/cadastro-venda.html`
+- `paginas/cadastro-origem.html`
+- `paginas/entradas-estoque.html`
+- `paginas/historico-vendas.html`
+- `paginas/listar-origens.html`
+- `paginas/analise-produto.html`
+- `paginas/analise-periodo.html`
+- `paginas/analise-custos.html`
+- `paginas/alertas.html`
+- `paginas/giro-estoque.html`
+
+Scripts criticos:
+
+- `js/supabase-config.js`
+- `js/supabase-service.js`
+- `js/financeiro-utils.js`
+- `js/sidebar.js`
+- `js/painel-geral.js`
+- `js/produtos.js`
+- `js/peca.js`
+- `js/venda.js`
+- `js/origem.js`
+- `js/entradas-estoque.js`
+- `js/analise-produto.js`
+- `js/analise-periodo.js`
+- `js/analise-custos.js`
+
+Leitura tecnica atual:
+
+- `js/supabase-config.js` expõe URL e chave anônima pública do Supabase para o front;
+- `js/supabase-service.js` é a camada principal de leitura/escrita e mapeamento entre banco e interface;
+- `js/financeiro-utils.js` é a fonte oficial dos cálculos de receita, custo consumido, lucro e margem;
+- a chave sensível não deve existir no front; apenas a chave anônima pública pode aparecer nessa camada.
+
 ## Navegacao
 
 - Login abre direto no `painel.html`.

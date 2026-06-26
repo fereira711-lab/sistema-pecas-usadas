@@ -113,6 +113,47 @@ Reforcos:
 - Preservar a integridade dos dados.
 - Sempre verificar `error` nas respostas do Supabase.
 
+## Superficie real identificada
+
+Paginas operacionais e analiticas principais:
+
+- `painel.html`
+- `paginas/produtos.html`
+- `paginas/cadastro-peca.html`
+- `paginas/cadastro-venda.html`
+- `paginas/cadastro-origem.html`
+- `paginas/entradas-estoque.html`
+- `paginas/historico-vendas.html`
+- `paginas/listar-origens.html`
+- `paginas/analise-produto.html`
+- `paginas/analise-periodo.html`
+- `paginas/analise-custos.html`
+- `paginas/alertas.html`
+- `paginas/giro-estoque.html`
+
+Scripts criticos:
+
+- `js/supabase-config.js`
+- `js/supabase-service.js`
+- `js/financeiro-utils.js`
+- `js/sidebar.js`
+- `js/painel-geral.js`
+- `js/produtos.js`
+- `js/peca.js`
+- `js/venda.js`
+- `js/origem.js`
+- `js/entradas-estoque.js`
+- `js/analise-produto.js`
+- `js/analise-periodo.js`
+- `js/analise-custos.js`
+
+## Leitura de risco atual
+
+- `js/supabase-config.js`: camada pública do front com URL e chave anônima do Supabase;
+- `js/supabase-service.js`: ponto crítico de contrato com o banco e de mapeamento entre tabelas e interface;
+- `js/financeiro-utils.js`: fonte oficial dos cálculos financeiros; alterar sem critério quebra análises e telas de detalhe;
+- qualquer segredo de banco ou chave com privilégio elevado deve ficar fora do front.
+
 ## Front-end e JavaScript
 
 - Criar telas simples, funcionais e faceis de entender.
