@@ -115,6 +115,13 @@ Nao entram como item direto:
 - `detalhes-venda.html`;
 - `detalhes-origem.html`.
 
+Implementacao atual confirmada:
+
+- `index.html` valida sessao e redireciona para `painel.html`;
+- `dashboard.html` e apenas redirecionamento/compatibilidade para `painel.html`;
+- `js/sidebar.js` implementa hoje os grupos oficiais `Painel Geral`, `Produtos`, `Vendas`, `Estoque`, `Origens`, `Custos`, `Analises` e `Sistema`;
+- o grupo `Sistema` aponta atualmente para `docs/mapa-mental.html` e `DOCUMENTACAO-SISTEMA.md`.
+
 Padrao visual da sidebar:
 
 - tema escuro operacional;

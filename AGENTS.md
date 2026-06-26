@@ -88,6 +88,13 @@ Nao colocar como item direto:
 - `detalhes-venda.html`.
 - `detalhes-origem.html`.
 
+Implementacao atual confirmada:
+
+- `index.html` valida sessao e redireciona para `painel.html`;
+- `dashboard.html` e apenas redirecionamento/compatibilidade para `painel.html`;
+- `js/sidebar.js` implementa os grupos oficiais e mantem a sidebar como navegacao principal;
+- o grupo `Sistema` aponta hoje para `docs/mapa-mental.html` e `DOCUMENTACAO-SISTEMA.md`.
+
 Essas paginas abrem pelo contexto correto: Produtos, Historico de vendas e Origens cadastradas.
 
 Visual da sidebar:
