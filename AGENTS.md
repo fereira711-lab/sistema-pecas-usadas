@@ -291,6 +291,14 @@ Implementacao atual confirmada:
 - Distribuicao da origem acontece nas pecas/entradas vinculadas.
 - Analises financeiras pesadas ficam nas telas de analise.
 
+Implementacao atual confirmada:
+
+- `js/origem.js` atualiza o resumo em tempo real antes do salvamento.
+- O status inicial atual segue `Sem valor pago`, `Pronta para vincular pecas` ou `Aguardando distribuicao`, conforme valor pago e quantidade prevista.
+- O salvamento prioriza Supabase e sincroniza o cache local da origem.
+- A acao `Salvar e cadastrar peca vinculada` redireciona para `cadastro-peca.html?origemId=...` usando a origem salva.
+- O codigo da origem permanece como gerado automaticamente ate a persistencia.
+
 ## Padrao da tela Detalhes da origem
 
 - `paginas/detalhes-origem.html` funciona como central operacional da origem/lote.
@@ -459,6 +467,15 @@ Implementacao atual confirmada:
 - Categorias oficiais: `Peca`, `Venda` e `Ambos`.
 - Status oficiais: `Ativo` e `Inativo`.
 - Impedir duplicidade por diferenca de maiusculas/minusculas e espacos extras.
+
+Implementacao atual confirmada:
+
+- `js/tipos-custo.js` exige Supabase configurado para administrar os tipos de custo.
+- A tela atual lista nome, categoria, status e quantidade de usos por tipo.
+- A busca e os filtros atuais cobrem nome, categoria e status, com seletor `Mostrar`.
+- A duplicidade atual e barrada por normalizacao de acento, espacos e caixa.
+- O fluxo atual permite `Editar` e `Ativar/Inativar`, sem exclusao fisica pela interface.
+- O uso do tipo e consultado antes da renderizacao, reforcando a regra de inativar em vez de duplicar.
 - `Limpeza`, `limpeza` e `LIMPEZA` devem ser tratados como o mesmo tipo.
 - Normalizar o nome para comparacao antes de salvar.
 - Evitar tipos parecidos que baguncam relatorios e analises.

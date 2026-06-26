@@ -505,6 +505,14 @@ Regras:
 - distribuicao da origem acontece nas pecas/entradas vinculadas;
 - analises financeiras pesadas ficam nas telas de analise.
 
+Implementacao atual confirmada:
+
+- `js/origem.js` gera resumo em tempo real antes do salvamento, incluindo tipo, descricao, valor, data e status inicial;
+- o status inicial atual segue `Sem valor pago`, `Pronta para vincular pecas` ou `Aguardando distribuicao`, conforme valor pago e quantidade prevista;
+- o salvamento prioriza Supabase e mantem cache local sincronizado quando a origem e criada;
+- a acao `Salvar e cadastrar peca vinculada` redireciona para `cadastro-peca.html?origemId=...` usando a origem salva;
+- o codigo da origem continua sendo exibido como gerado automaticamente ate o registro ser persistido.
+
 ## Detalhes da origem
 
 `paginas/detalhes-origem.html` funciona como central operacional da origem/lote.
@@ -762,6 +770,15 @@ Categorias:
 Status:
 
 - Ativo;
+
+Implementacao atual confirmada:
+
+- `js/tipos-custo.js` depende de Supabase configurado para carregar e administrar os tipos de custo;
+- a tela atual lista nome, categoria, status e quantidade de usos por tipo;
+- a busca e os filtros atuais cobrem nome, categoria e status, com seletor `Mostrar`;
+- a validacao de duplicidade usa normalizacao por acento, espacos e caixa, tratando nomes equivalentes como o mesmo tipo;
+- o fluxo atual permite `Editar` e `Ativar/Inativar`, sem exclusao fisica pela interface;
+- a tela consulta uso do tipo antes de renderizar, reforcando a regra de inativar em vez de duplicar.
 - Inativo.
 
 Regras:
