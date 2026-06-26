@@ -263,6 +263,15 @@ Implementacao atual confirmada:
 - Peca nasce depois da origem.
 - Entrada de estoque continua obrigatoria.
 
+Implementacao atual confirmada:
+
+- `js/listar-origens.js` tenta carregar origens, entradas e pecas via Supabase e usa fallback local com aviso quando necessario.
+- A listagem atual suporta busca por codigo/descricao/tipo, seletor `Mostrar` e filtros por tipo, situacao da distribuicao e periodo.
+- Os cards atuais mostram total de origens, origens pendentes, valor total comprado e valor nao distribuido.
+- A lista atual exibe codigo, tipo, descricao, data, valor pago, valor distribuido, valor nao distribuido, pecas vinculadas, situacao e `Ver detalhes`.
+- A situacao atual segue `Falta distribuir`, `Distribuida`, `Acima do previsto` e `Sem valor pago`.
+- Origens somente locais ainda podem ser removidas do armazenamento local.
+
 ## Padrao da tela Cadastro de origem
 
 - `paginas/cadastro-origem.html` e a tela para cadastrar lote, compra avulsa, carro de desmonte, retorno ou outra origem.
@@ -302,6 +311,15 @@ Implementacao atual confirmada:
 - Entrada de estoque continua obrigatoria.
 - Analises financeiras pesadas continuam nas telas de analise.
 
+Implementacao atual confirmada:
+
+- `js/detalhes-origem.js` carrega origem, entradas, pecas, vendas, consumos de estoque, custos da peca e custos da venda ligados ao contexto da origem.
+- O bloco principal atual destaca codigo da origem, descricao, status da distribuicao, tipo, data, valor pago, valor restante e pecas vinculadas.
+- A distribuicao atual mostra valor total, valor distribuido, valor restante, quantidade prevista, quantidade distribuida e situacao da distribuicao.
+- Pecas vinculadas continuam operacionais, com busca por SKU/nome e acao `Ver produto`.
+- Vendas relacionadas continuam operacionais e levam a `detalhes-venda.html?vendaId=...`.
+- O resumo da origem atual ficou enxuto: receita relacionada, custo das pecas vendidas, custos vinculados e resultado resumido.
+
 ## Padrao da tela Custo de peca
 
 - `paginas/cadastro-custo.html` usa fluxo operacional vertical.
@@ -312,6 +330,15 @@ Implementacao atual confirmada:
 - Exclusao exige confirmacao antes de remover do Supabase.
 - Custo de peca pode mostrar valores de custo lancados, mas nao deve virar analise financeira pesada.
 - Evitar layout dividido em duas colunas quando apertar o conteudo.
+
+Implementacao atual confirmada:
+
+- `js/custos.js` carrega pecas, origens, custos da peca e tipos de custo, priorizando Supabase e mantendo fallback local quando necessario.
+- A tela atual aceita `?pecaId=...` para abrir uma peca ja selecionada no formulario.
+- Tipos de custo de categoria `peca` e `ambos` aparecem para selecao nesta tela.
+- O historico atual suporta busca textual, filtro por periodo e filtro por tipo.
+- Cada linha do historico permite `Editar`, `Excluir` com confirmacao em duas etapas e `Ver detalhes` da peca vinculada.
+- Exclusao persistente de custo depende de Supabase configurado.
 
 ## Padrao da tela Historico de vendas
 
@@ -396,8 +423,27 @@ Implementacao atual confirmada:
 
 - `analise-periodo.html` mostra resultado financeiro por intervalo de datas, com filtros por data, canal e situacao do custo.
 - Em Analise por periodo, a lista de vendas e o resumo devem bater com Detalhes da venda e Analise por produto.
+
+Implementacao atual confirmada:
+
+- `js/analise-periodo.js` exige Supabase configurado para carregar a analise.
+- O periodo padrao atual abre no mes corrente, com atalhos para Hoje, Ultimos 7 dias, Ultimos 30 dias e Personalizado.
+- A tela recalcula por venda custo da peca, custos da venda, lucro e margem usando `financeiro-utils.js`.
+- O topo atual mostra receita total, custo das pecas, custos da venda, lucro total, margem media e quantidade vendida.
+- A lista atual suporta busca por SKU/nome/canal, filtro por canal e situacao do custo, seletor `Mostrar` e expansao `Detalhes` por venda.
+- Se faltar custo real em alguma venda, o agregado e a linha correspondente mostram `Custo nao calculado`.
+
 - `analise-custos.html` tem foco em custos operacionais, separando custos da peca e custos da venda.
 - Analise de custos mostra total de custos, maior tipo, quantidade de lancamentos e lista por tipo de custo; nao mostrar lucro/margem nessa tela.
+
+Implementacao atual confirmada:
+
+- `js/analise-custos.js` exige Supabase configurado para consolidar custos da peca, custos da venda, pecas e vendas.
+- A base atual e unificada por tipo normalizado, categoria, referencia e observacao.
+- O topo atual mostra total de custos, custos da peca, custos da venda, maior tipo e quantidade de lancamentos.
+- A lista atual agrupa por tipo e suporta filtros por periodo, tipo, categoria, origem do custo e busca textual.
+- Na expansao, a tela mostra ultimos lancamentos, pecas relacionadas, vendas relacionadas e observacoes.
+- Analise de custos continua sem lucro ou margem.
 - FIFO continua sendo regra tecnica interna.
 - A interface deve usar `Custo da peca`, `Custo calculado` e `Custo nao calculado`.
 - O custo real da venda vem de `venda_consumos_estoque`.

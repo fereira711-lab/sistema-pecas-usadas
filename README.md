@@ -441,6 +441,15 @@ Regras:
 - peca nasce depois da origem;
 - entrada de estoque continua obrigatoria.
 
+Implementacao atual confirmada:
+
+- `js/listar-origens.js` tenta carregar origens, entradas e pecas pelo Supabase e usa fallback local com aviso quando necessario;
+- a listagem atual usa busca por codigo, descricao ou tipo, seletor `Mostrar` e filtros por tipo, situacao da distribuicao e periodo;
+- os cards de resumo atuais mostram total de origens, origens pendentes, valor total comprado e valor nao distribuido;
+- a lista principal exibe codigo, tipo, descricao, data, valor pago, valor distribuido, valor nao distribuido, pecas vinculadas, situacao e acao `Ver detalhes`;
+- a situacao operacional atual segue `Falta distribuir`, `Distribuida`, `Acima do previsto` e `Sem valor pago`;
+- quando a origem veio apenas do armazenamento local, o script ainda preserva a possibilidade de remocao local.
+
 ## Cadastro de origem
 
 `paginas/cadastro-origem.html` e a tela para cadastrar lote, compra avulsa, carro de desmonte, estoque inicial, retorno ou outra origem. A origem e cadastrada antes da peca, funciona como agrupador operacional e financeiro e nao e peca.
@@ -529,6 +538,16 @@ O resumo da origem usa linguagem simples: receita relacionada, custo das pecas v
 
 Origem continua sendo agrupador operacional e financeiro. Origem nao e peca; peca nasce depois da origem. Entrada de estoque continua obrigatoria.
 
+Implementacao atual confirmada:
+
+- `js/detalhes-origem.js` carrega origem, entradas, pecas, vendas, consumos de estoque, custos da peca e custos da venda vinculados ao contexto da origem;
+- o bloco principal atual destaca codigo da origem, descricao, status da distribuicao, tipo, data, valor pago, valor restante e pecas vinculadas;
+- a distribuicao atual mostra valor total, valor distribuido, valor restante, quantidade prevista, quantidade distribuida e situacao da distribuicao;
+- pecas vinculadas permanecem operacionais, com busca por SKU/nome e acao `Ver produto`;
+- vendas relacionadas permanecem operacionais e mostram data, SKU, peca, quantidade, canal, valor vendido e acao `Ver detalhes da venda`;
+- o resumo da origem ficou enxuto: receita relacionada, custo das pecas vendidas, custos vinculados e resultado resumido;
+- nesta rodada foi removido um bloco legado duplicado do script, mantendo apenas a implementacao final usada em runtime.
+
 ## Detalhes do produto
 
 `paginas/detalhes-produto.html` funciona como central operacional/comercial da peca.
@@ -576,6 +595,15 @@ A pagina `paginas/cadastro-custo.html` usa fluxo operacional vertical:
 Ela serve para localizar uma peca, lancar custo, editar custo e excluir custo. O historico fica abaixo do formulario, em lista compacta sem barra horizontal, mostrando data, tipo, valor, observacao e acoes `Editar` e `Excluir`.
 
 Custo de peca pode mostrar valores de custo lancados. Produtos continua sem mostrar custo, lucro, margem ou resultado financeiro.
+
+Implementacao atual confirmada:
+
+- `js/custos.js` carrega pecas, origens, custos da peca e tipos de custo, priorizando Supabase e mantendo fallback local quando necessario;
+- a tela suporta abrir uma peca preselecionada por `?pecaId=...`, mostrando resumo operacional da peca antes do lancamento;
+- os tipos de custo atuais aceitam categoria `peca`, `venda` ou `ambos`, mas a tela filtra para uso de custos de peca;
+- o historico atual suporta busca textual, filtro por periodo e filtro por tipo;
+- cada linha do historico permite `Editar`, `Excluir` com confirmacao em duas etapas e `Ver detalhes` da peca vinculada;
+- exclusao real de custo depende de Supabase configurado; sem isso a tela nao promete exclusao persistente.
 
 ## Historico de vendas
 
@@ -697,7 +725,27 @@ Implementacao atual confirmada:
 
 Analise por periodo mostra resultado financeiro por intervalo de datas, com filtros por data, canal e situacao do custo. A lista de vendas do periodo e o resumo devem mostrar receita, custo das pecas, custos da venda, lucro, margem e quantidade vendida. Os valores devem bater com Detalhes da venda e Analise por produto.
 
+Implementacao atual confirmada:
+
+- `js/analise-periodo.js` depende de Supabase configurado; sem isso a tela informa que nao consegue carregar a analise;
+- o periodo padrao atual abre no mes corrente, com suporte a `Hoje`, `Ultimos 7 dias`, `Ultimos 30 dias` e `Personalizado`;
+- a tela consolida vendas, consumos de estoque e custos da venda com `financeiro-utils.js` para recalcular custo da peca, custos da venda, lucro e margem por venda;
+- o resumo superior mostra receita total, custo das pecas, custos da venda, lucro total, margem media e quantidade vendida;
+- a lista usa busca por SKU, nome da peca ou canal, filtro por canal e situacao do custo, alem do seletor `Mostrar`;
+- cada venda pode expandir `Detalhes` para exibir entradas consumidas, custos da venda e um resumo textual simples do calculo;
+- quando faltar custo real em alguma venda, a tela mostra `Custo nao calculado` e evita inventar lucro ou margem no agregado.
+
 Analise de custos foca custos operacionais. Deve separar custos da peca e custos da venda, mostrar total de custos, maior tipo, quantidade de lancamentos e lista por tipo de custo. Nao deve mostrar lucro/margem.
+
+Implementacao atual confirmada:
+
+- `js/analise-custos.js` depende de Supabase configurado para carregar custos da peca, custos da venda, pecas e vendas;
+- a tela transforma os lancamentos em uma base unificada com categoria `peca` ou `venda`, tipo normalizado, referencia e observacao;
+- o resumo superior atual mostra total de custos, custos da peca, custos da venda, maior tipo e quantidade de lancamentos;
+- os filtros cobrem periodo, tipo de custo, categoria, origem do custo e busca textual por tipo, peca, SKU ou observacao;
+- a lista principal agrupa por tipo de custo, exibindo categoria principal, quantidade, total, percentual do total e origem principal;
+- cada tipo pode expandir `Detalhes` para mostrar ultimos lancamentos, pecas relacionadas, vendas relacionadas e observacoes consolidadas;
+- a tela permanece sem lucro ou margem, focada apenas em leitura operacional dos custos.
 
 ## Tipos de custo
 
