@@ -391,7 +391,11 @@ function renderizarResumo(analises) {
   const totalCustosVenda = somar(analises, "custosVenda");
   const totalLucro = produtosComCustoPendente > 0 ? null : somar(analises, "lucro");
   const margemMedia = totalLucro === null || totalReceita <= 0 ? null : (totalLucro / totalReceita) * 100;
-  const classeLucro = totalLucro !== null && totalLucro >= 0 ? "summary-card--profit" : "summary-card--loss";
+  const classeLucro = totalLucro === null
+    ? ""
+    : totalLucro >= 0
+      ? "summary-card--profit"
+      : "summary-card--loss";
 
   resumoAnaliseProduto.innerHTML =
     criarCard("Receita total", formatarMoeda(totalReceita)) +

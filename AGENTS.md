@@ -241,6 +241,7 @@ Implementacao atual confirmada:
 - As acoes principais atuais levam para venda, lancamento de custo, edicao inline da peca e upload de imagem.
 - O resumo operacional final ficou enxuto: estoque atual, total vendido, receita relacionada, custo consumido e estado `Custo calculado` ou `Custo nao calculado`.
 - Vendas relacionadas permanecem operacionais e levam ao extrato `detalhes-venda.html?vendaId=...`.
+- Nesta rodada foi removido um bloco legado duplicado do script, mantendo apenas a implementacao final usada em runtime.
 - A area de marketplace continua visual apenas, sem integracao real.
 
 ## Padrao da tela Origens cadastradas
@@ -346,6 +347,7 @@ Implementacao atual confirmada:
 - Tipos de custo de categoria `peca` e `ambos` aparecem para selecao nesta tela.
 - O historico atual suporta busca textual, filtro por periodo e filtro por tipo.
 - Cada linha do historico permite `Editar`, `Excluir` com confirmacao em duas etapas e `Ver detalhes` da peca vinculada.
+- Nesta rodada foram removidas funcoes mortas que ainda calculavam custo por origem dentro da tela de custos.
 - Exclusao persistente de custo depende de Supabase configurado.
 
 ## Padrao da tela Historico de vendas
@@ -429,6 +431,7 @@ Implementacao atual confirmada:
 - O topo atual mostra receita total, custo das pecas vendidas, custos da venda, lucro total e margem media.
 - A lista atual suporta busca, `Mostrar`, filtros por periodo/canal/situacao do custo/resultado, ordenacao e expansao `Detalhes` por produto.
 - Na expansao, a tela mostra vendas relacionadas, entradas consumidas, custos vinculados e resumo simples do calculo.
+- Quando houver custo pendente, o card agregado de lucro total permanece neutro em vez de sinalizar perda.
 - Se houver venda sem custo real, lucro e margem ficam como `Custo nao calculado` ou `Pendente`.
 
 - `analise-periodo.html` mostra resultado financeiro por intervalo de datas, com filtros por data, canal e situacao do custo.

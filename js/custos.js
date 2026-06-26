@@ -293,41 +293,6 @@ function salvarCustoNoCache(custo) {
   salvarCustos(custos);
 }
 
-function somarCustosPorPeca(pecaId) {
-  return custosCustoCarregados
-    .filter(custo => Number(custo.pecaId || 0) === Number(pecaId || 0))
-    .reduce((total, custo) => total + Number(custo.valor || 0), 0);
-}
-
-function normalizarSku(sku) {
-  return String(sku || "").trim().toUpperCase();
-}
-
-function obterOrigensDoProduto(peca, origens) {
-  const sku = normalizarSku(peca.sku);
-  const origensPorSku = origens.filter(origem => normalizarSku(origem.produtoSku || origem.produto_sku) === sku);
-
-  return origensPorSku.length > 0
-    ? origensPorSku
-    : origens.filter(origem => Number(origem.id) === Number(peca.origemId || 0));
-}
-
-function calcularCustoPeca(peca, origens) {
-  const origensDoProduto = obterOrigensDoProduto(peca, origens);
-  const totalUnidades = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.quantidadeTotal || origem.quantidade_total || 0);
-  }, 0);
-  const totalInvestido = origensDoProduto.reduce((total, origem) => {
-    return total + Number(origem.valorPago || origem.valor_pago || origem.custoTotal || origem.custo_total || 0);
-  }, 0);
-
-  if (totalUnidades <= 0 || totalInvestido <= 0) {
-    return Number(peca.custo || 0);
-  }
-
-  return totalInvestido / totalUnidades;
-}
-
 function calcularQuantidadeDisponivel(peca) {
   return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
 }

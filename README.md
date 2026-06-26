@@ -591,6 +591,7 @@ Implementacao atual confirmada:
 - as acoes principais atuais abrem `cadastro-venda.html?pecaId=...`, `cadastro-custo.html?pecaId=...`, edicao inline da peca e upload de imagem quando o Supabase esta configurado;
 - o resumo operacional final foi mantido enxuto: estoque atual, total vendido, receita relacionada, custo consumido e estado `Custo calculado` ou `Custo nao calculado`;
 - vendas relacionadas mostram leitura operacional compacta e levam ao extrato em `detalhes-venda.html?vendaId=...`;
+- nesta rodada foi removido um bloco legado duplicado do script, mantendo apenas a implementacao final usada em runtime;
 - a area de marketplace continua apenas visual, sem integracao com banco ou Mercado Livre.
 
 ## Custo de peca
@@ -613,6 +614,7 @@ Implementacao atual confirmada:
 - os tipos de custo atuais aceitam categoria `peca`, `venda` ou `ambos`, mas a tela filtra para uso de custos de peca;
 - o historico atual suporta busca textual, filtro por periodo e filtro por tipo;
 - cada linha do historico permite `Editar`, `Excluir` com confirmacao em duas etapas e `Ver detalhes` da peca vinculada;
+- nesta rodada foram removidas funcoes mortas que ainda calculavam custo por origem dentro da tela de custos;
 - exclusao real de custo depende de Supabase configurado; sem isso a tela nao promete exclusao persistente.
 
 ## Historico de vendas
@@ -733,6 +735,7 @@ Implementacao atual confirmada:
 - o resumo superior mostra receita total, custo das pecas vendidas, custos da venda, lucro total e margem media;
 - a lista principal usa busca por SKU/nome, seletor `Mostrar`, filtros por periodo, canal, situacao do custo e resultado, alem de ordenacao por receita, lucro, margem, quantidade ou nome;
 - cada produto pode expandir `Detalhes` para exibir vendas relacionadas, entradas consumidas, custos vinculados e resumo simples do calculo;
+- quando houver custo pendente, o card agregado de lucro total permanece neutro em vez de sinalizar perda;
 - quando existir venda sem custo real calculado, lucro e margem ficam como `Custo nao calculado` ou `Pendente`, sem inventar resultado.
 
 Analise por periodo mostra resultado financeiro por intervalo de datas, com filtros por data, canal e situacao do custo. A lista de vendas do periodo e o resumo devem mostrar receita, custo das pecas, custos da venda, lucro, margem e quantidade vendida. Os valores devem bater com Detalhes da venda e Analise por produto.
