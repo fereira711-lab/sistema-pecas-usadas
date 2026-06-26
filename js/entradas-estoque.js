@@ -118,6 +118,10 @@ function obterTextoOrigem(entrada) {
   return String(entrada.origemDescricao || entrada.origem || "").trim() || (entrada.origemId ? `Origem ${entrada.origemId}` : "-");
 }
 
+function obterDataOrdenacaoEntrada(entrada) {
+  return String(entrada.dataEntrada || entrada.createdAt || "").slice(0, 10);
+}
+
 function criarCardResumo(titulo, valor) {
   return `
     <article class="summary-card">
@@ -230,6 +234,19 @@ function limitarEntradas(entradas) {
   return entradas.slice(0, Number(limite || 12));
 }
 
+function ordenarEntradas(entradas) {
+  return [...entradas].sort((a, b) => {
+    const dataA = obterDataOrdenacaoEntrada(a);
+    const dataB = obterDataOrdenacaoEntrada(b);
+
+    if (dataA !== dataB) {
+      return dataB.localeCompare(dataA);
+    }
+
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
+}
+
 function criarLinhaCabecalho() {
   return `
     <div class="stock-entry-row stock-entry-row--head">
@@ -279,7 +296,7 @@ function criarLinhaEntrada(entrada) {
 }
 
 function renderizarEntradas() {
-  const filtradas = entradasCarregadas.filter(entradaDentroDosFiltros);
+  const filtradas = ordenarEntradas(entradasCarregadas.filter(entradaDentroDosFiltros));
   const visiveis = limitarEntradas(filtradas);
 
   renderizarResumoEntradas(filtradas);

@@ -287,7 +287,12 @@ function criarCard(titulo, valor, classe = "") {
 
 function obterOrigemTexto(entradasDaPeca) {
   const entrada = entradasDaPeca.find(item => item.origemDescricao || item.origemId);
-  return String(entrada?.origemDescricao || entrada?.origemId || "").trim();
+
+  if (!entrada) {
+    return "";
+  }
+
+  return String(entrada.origemDescricao || "").trim() || (entrada.origemId ? `Origem ${entrada.origemId}` : "");
 }
 
 function calcularGiro(dados) {

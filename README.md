@@ -188,6 +188,8 @@ Implementacao atual confirmada:
 - `js/painel-geral.js` carrega origens, pecas, vendas, consumos, entradas e custos via `supabase-service.js`;
 - os atalhos atuais batem com a proposta operacional: Produtos, Cadastro de peca, Cadastro de venda, Custo de peca, Historico de vendas, Origens cadastradas e Analises;
 - os alertas atuais batem com a regra documental: produtos sem estoque, estoque baixo, custo nao calculado, distribuicao pendente e distribuicao acima do previsto;
+- as movimentacoes recentes agora ordenam entradas, custos e pecas por data antes de montar o bloco final, evitando perder registros novos por corte prematuro;
+- custos ligados a venda levam ao extrato da venda, e custos ligados a peca continuam levando ao detalhe da peca;
 - o painel usa custos para alertas e movimentacoes recentes, mas nao vira tela de analise financeira pesada.
 
 ## Previews
@@ -808,6 +810,59 @@ Relacao com outras telas:
 - Custo de peca usa tipos com categoria Peca ou Ambos.
 - Cadastro de venda usa tipos com categoria Venda ou Ambos.
 - Analise de custos depende dos tipos padronizados para agrupar corretamente.
+
+## Entradas de estoque
+
+`paginas/entradas-estoque.html` funciona como listagem operacional das entradas que sustentam saldo e custo.
+
+A tela mostra:
+
+- busca por codigo, SKU, peca e origem;
+- seletor `Mostrar`;
+- filtros por origem, produto, status e periodo;
+- resumo simples de entradas, saldo e quantidade consumida;
+- lista compacta com acoes `Ver produto` e `Ver origem`.
+
+Implementacao atual confirmada:
+
+- `js/entradas-estoque.js` exige Supabase configurado para carregar as entradas reais;
+- a listagem usa quantidade total, quantidade consumida, saldo disponivel, custo unitario e valor atribuido por entrada;
+- os status atuais sao `Com saldo`, `Parcial` e `Consumida`;
+- a ordenacao atual prioriza entradas mais recentes por data e depois por ID mais alto.
+
+## Giro de estoque
+
+`paginas/giro-estoque.html` e tela operacional de leitura de giro, sem virar analise financeira pesada.
+
+A tela mostra:
+
+- busca por SKU/nome;
+- filtros por periodo, status, origem e ordenacao;
+- resumo de maior giro, produtos parados, estoque baixo, sem estoque e quantidade vendida;
+- lista com ultima venda, tempo parado, classificacao e acao `Ver detalhes da peca`.
+
+Implementacao atual confirmada:
+
+- `js/giro-estoque.js` consolida pecas, vendas e entradas via Supabase;
+- o giro considera quantidade vendida no periodo, ultima venda, dias sem venda e estoque disponivel por peca;
+- a origem exibida no giro prioriza a descricao operacional da entrada e so cai para `Origem <id>` quando necessario.
+
+## Alertas
+
+`paginas/alertas.html` centraliza pontos de atencao operacionais.
+
+A tela mostra:
+
+- busca textual;
+- filtros por tipo, gravidade e status;
+- resumo por criticidade;
+- lista com tipo, descricao, entidade relacionada, gravidade e acao operacional.
+
+Implementacao atual confirmada:
+
+- `js/alertas.js` consolida alertas de pecas, entradas/lotes, vendas e origens via Supabase;
+- os alertas atuais cobrem sem estoque, estoque baixo, sem entrada, sem venda, venda sem custo calculado, saldo parado e distribuicao de origem fora do esperado;
+- vendas sem consumo FIFO continuam aparecendo como `Venda sem custo calculado`.
 
 ## Regras financeiras
 

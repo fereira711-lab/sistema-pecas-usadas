@@ -320,10 +320,23 @@ function criarMovimento(tipo, titulo, descricao, data, href = "#") {
   };
 }
 
+function ordenarPorDataDesc(lista, obterData) {
+  return [...lista].sort((a, b) => {
+    const dataA = String(obterData(a) || "").slice(0, 10);
+    const dataB = String(obterData(b) || "").slice(0, 10);
+
+    if (dataA !== dataB) {
+      return dataB.localeCompare(dataA);
+    }
+
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
+}
+
 function obterMovimentacoesRecentes(dados) {
   const movimentos = [];
 
-  dados.entradasEstoque.slice(0, 6).forEach(entrada => {
+  ordenarPorDataDesc(dados.entradasEstoque, entrada => entrada.dataEntrada || entrada.createdAt).slice(0, 6).forEach(entrada => {
     movimentos.push(criarMovimento(
       "entrada",
       "Entrada registrada",
@@ -333,17 +346,26 @@ function obterMovimentacoesRecentes(dados) {
     ));
   });
 
-  [...dados.custosPeca, ...dados.custosVenda].slice(0, 6).forEach(custo => {
+  ordenarPorDataDesc(
+    [...dados.custosPeca, ...dados.custosVenda],
+    custo => custo.dataCusto || custo.data
+  ).slice(0, 6).forEach(custo => {
+    const hrefCusto = custo.vendaId
+      ? `paginas/detalhes-venda.html?vendaId=${encodeURIComponent(custo.vendaId)}`
+      : custo.pecaId
+        ? `paginas/detalhes-produto.html?pecaId=${encodeURIComponent(custo.pecaId)}`
+        : "paginas/analise-custos.html";
+
     movimentos.push(criarMovimento(
       "custo",
       "Custo lançado",
       `${custo.tipoCusto || custo.tipo || "Custo"} registrado no sistema`,
       custo.dataCusto || custo.data,
-      custo.pecaId ? `paginas/detalhes-produto.html?pecaId=${encodeURIComponent(custo.pecaId)}` : "paginas/analise-custos.html"
+      hrefCusto
     ));
   });
 
-  dados.pecas.slice(0, 6).forEach(peca => {
+  ordenarPorDataDesc(dados.pecas, peca => peca.createdAt || peca.created_at).slice(0, 6).forEach(peca => {
     movimentos.push(criarMovimento(
       "peca",
       "Peça cadastrada",
