@@ -11,6 +11,12 @@ servidor*
 # node (se usar no futuro)
 node_modules/
 
+# backups e credenciais locais de infraestrutura
+backups/
+.env
+.env.*
+!.env.example
+
 # configuracao local do Supabase
 js/supabaseconfig.js
 
