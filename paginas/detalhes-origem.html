@@ -23,7 +23,7 @@
           <p id="subtituloOrigem">Dados operacionais da origem selecionada.</p>
         </div>
         <div class="form-actions">
-          <button type="button" id="botaoEditarOrigem" class="button-secondary" disabled>Editar origem</button>
+          <button type="button" id="botaoEditarOrigem" class="button-secondary">Editar origem</button>
           <a class="button-secondary" href="listar-origens.html">Voltar para origens</a>
           <a class="button-primary" id="linkCadastrarPecaOrigem" href="cadastro-peca.html">Cadastrar peça vinculada</a>
         </div>
@@ -31,6 +31,48 @@
 
       <p id="mensagemOrigemNaoEncontrada" class="empty-message"></p>
       <div id="dadosOrigem" class="detail-grid"></div>
+
+      <form id="formEditarOrigem" class="edit-panel" hidden>
+        <div class="product-detail-form-title">Editar origem</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editarOrigemTipo">Tipo</label>
+            <input id="editarOrigemTipo" type="text">
+          </div>
+
+          <div class="form-group">
+            <label for="editarOrigemDataCompra">Data da compra</label>
+            <input id="editarOrigemDataCompra" type="date">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editarOrigemDescricao">Descrição</label>
+          <input id="editarOrigemDescricao" type="text">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editarOrigemCustoTotal">Valor pago</label>
+            <input id="editarOrigemCustoTotal" type="text" inputmode="decimal">
+          </div>
+
+          <div class="form-group">
+            <label for="editarOrigemQuantidadeTotal">Quantidade prevista</label>
+            <input id="editarOrigemQuantidadeTotal" type="number" min="0" step="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editarOrigemObservacoes">Observações</label>
+          <textarea id="editarOrigemObservacoes" rows="3"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="button-primary">Salvar edição</button>
+          <button type="button" id="cancelarEdicaoOrigem" class="button-secondary">Cancelar</button>
+        </div>
+      </form>
     </section>
 
     <section class="origin-detail-content-grid">
@@ -160,6 +202,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
+  <script src="../js/moeda-utils.js?v=1"></script>
   <script src="../js/supabase-service.js?v=25"></script>
   <script src="../js/financeiro-utils.js?v=1"></script>
   <script src="../js/detalhes-origem.js?v=18"></script>

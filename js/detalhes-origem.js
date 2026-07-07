@@ -16,6 +16,15 @@ const campoBuscaPecasOrigem = document.getElementById("buscaPecasOrigem");
 const mensagemVendasOrigem = document.getElementById("mensagemVendasOrigem");
 const tabelaVendasOrigem = document.getElementById("tabelaVendasOrigem");
 const linkCadastrarPecaOrigem = document.getElementById("linkCadastrarPecaOrigem");
+const botaoEditarOrigem = document.getElementById("botaoEditarOrigem");
+const formEditarOrigem = document.getElementById("formEditarOrigem");
+const editarOrigemTipo = document.getElementById("editarOrigemTipo");
+const editarOrigemDataCompra = document.getElementById("editarOrigemDataCompra");
+const editarOrigemDescricao = document.getElementById("editarOrigemDescricao");
+const editarOrigemCustoTotal = document.getElementById("editarOrigemCustoTotal");
+const editarOrigemQuantidadeTotal = document.getElementById("editarOrigemQuantidadeTotal");
+const editarOrigemObservacoes = document.getElementById("editarOrigemObservacoes");
+const cancelarEdicaoOrigem = document.getElementById("cancelarEdicaoOrigem");
 
 let dadosDetalhesOrigem = {
   origem: null,
@@ -339,6 +348,14 @@ function formatarStatusTexto(texto) {
   }
 
   return valor.charAt(0).toUpperCase() + valor.slice(1);
+}
+
+function converterNumero(valor) {
+  if (window.moedaUtils?.parseMoedaBR) {
+    return window.moedaUtils.parseMoedaBR(valor);
+  }
+
+  return Number(String(valor || "0").replace(",", "."));
 }
 
 function obterClasseStatusDistribuicao(status) {
@@ -710,6 +727,95 @@ function renderizarObservacoesHistorico() {
   `;
 }
 
+function abrirFormularioEdicaoOrigem() {
+  const origem = dadosDetalhesOrigem.origem;
+
+  if (!origem || !formEditarOrigem) {
+    return;
+  }
+
+  editarOrigemTipo.value = origem.tipoOrigem || origem.tipo || "";
+  editarOrigemDataCompra.value = String(origem.dataCompra || origem.data_compra || "").slice(0, 10);
+  editarOrigemDescricao.value = origem.descricao || "";
+  editarOrigemCustoTotal.value = Number(origem.valorPago || origem.custoTotal || 0);
+  editarOrigemQuantidadeTotal.value = Number(origem.quantidadeTotal || origem.quantidade_total || 0);
+  editarOrigemObservacoes.value = origem.observacoes || "";
+  window.moedaUtils?.registrarCampoMoeda?.(editarOrigemCustoTotal);
+  formEditarOrigem.hidden = false;
+  editarOrigemTipo.focus();
+}
+
+function fecharFormularioEdicaoOrigem() {
+  if (formEditarOrigem) {
+    formEditarOrigem.hidden = true;
+  }
+}
+
+async function salvarEdicaoOrigem(evento) {
+  evento.preventDefault();
+
+  if (!window.supabaseService?.estaConfigurado() || !dadosDetalhesOrigem.origem) {
+    mensagemOrigemNaoEncontrada.textContent = "Configure o Supabase antes de editar a origem.";
+    return;
+  }
+
+  const tipoOrigem = editarOrigemTipo.value.trim();
+  const descricao = editarOrigemDescricao.value.trim();
+  const dataCompra = editarOrigemDataCompra.value;
+  const valorPago = converterNumero(editarOrigemCustoTotal.value);
+  const quantidadeTotal = Number(editarOrigemQuantidadeTotal.value || 0);
+
+  if (!tipoOrigem || !descricao || !dataCompra) {
+    mensagemOrigemNaoEncontrada.textContent = "Preencha tipo, descrição e data da origem.";
+    return;
+  }
+
+  if (Number.isNaN(valorPago) || valorPago < 0) {
+    mensagemOrigemNaoEncontrada.textContent = "Informe um valor pago válido.";
+    return;
+  }
+
+  if (!Number.isFinite(quantidadeTotal) || quantidadeTotal < 0) {
+    mensagemOrigemNaoEncontrada.textContent = "Informe uma quantidade prevista válida.";
+    return;
+  }
+
+  const botaoSalvar = formEditarOrigem.querySelector("button[type='submit']");
+  botaoSalvar.disabled = true;
+  mensagemOrigemNaoEncontrada.textContent = "Salvando dados da origem...";
+
+  try {
+    await window.supabaseService.atualizarOrigem({
+      id: dadosDetalhesOrigem.origem.id,
+      tipoOrigem,
+      tipo: tipoOrigem,
+      descricao,
+      custoTotal: valorPago,
+      valorPago,
+      custoTipo: dadosDetalhesOrigem.origem.custoTipo || "",
+      dataCompra,
+      quantidadeTotal,
+      produtoSku: dadosDetalhesOrigem.origem.produtoSku || "",
+      observacoes: editarOrigemObservacoes.value.trim()
+    });
+
+    dadosDetalhesOrigem = await carregarContextoSupabase(origemId);
+
+    if (!dadosDetalhesOrigem.origem) {
+      throw new Error("Não foi possível recarregar os dados da origem.");
+    }
+
+    fecharFormularioEdicaoOrigem();
+    mensagemOrigemNaoEncontrada.textContent = "";
+    renderizarTela();
+  } catch (erro) {
+    console.error("Erro ao editar origem:", erro);
+    mensagemOrigemNaoEncontrada.textContent = erro?.message || "Não foi possível atualizar a origem.";
+  } finally {
+    botaoSalvar.disabled = false;
+  }
+}
+
 function renderizarTela() {
   renderizarDadosOrigem(dadosDetalhesOrigem.origem);
   renderizarDistribuicaoOrigem();
@@ -760,5 +866,9 @@ async function iniciarDetalhesOrigem() {
 campoBuscaPecasOrigem?.addEventListener("input", () => {
   renderizarPecas();
 });
+
+botaoEditarOrigem?.addEventListener("click", abrirFormularioEdicaoOrigem);
+cancelarEdicaoOrigem?.addEventListener("click", fecharFormularioEdicaoOrigem);
+formEditarOrigem?.addEventListener("submit", salvarEdicaoOrigem);
 
 iniciarDetalhesOrigem();

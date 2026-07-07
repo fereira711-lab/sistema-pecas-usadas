@@ -886,6 +886,27 @@
     return mapearOrigemDoBanco(data);
   }
 
+  async function atualizarOrigem(origem) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("origens")
+      .update(mapearOrigemParaBanco(origem))
+      .eq("id", Number(origem.id))
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearOrigemDoBanco(data);
+  }
+
   async function salvarPeca(peca) {
     const cliente = obterCliente();
 
@@ -1288,6 +1309,7 @@
     listarEntradasDaPeca,
     calcularSaldoPeca,
     salvarOrigem,
+    atualizarOrigem,
     salvarPeca,
     atualizarPeca,
     atualizarDadosPeca,
