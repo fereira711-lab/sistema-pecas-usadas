@@ -42,6 +42,10 @@ function buscarProdutos() {
 }
 
 function formatarMoeda(valor) {
+  if (window.moedaUtils?.formatarMoedaBR) {
+    return window.moedaUtils.formatarMoedaBR(valor);
+  }
+
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL"
@@ -49,6 +53,10 @@ function formatarMoeda(valor) {
 }
 
 function converterNumero(valor) {
+  if (window.moedaUtils?.parseMoedaBR) {
+    return window.moedaUtils.parseMoedaBR(valor);
+  }
+
   return Number(String(valor || "0").replace(",", "."));
 }
 
@@ -113,12 +121,13 @@ function adicionarLinhaEdicaoCustoVenda(custo = {}) {
     <select data-campo="tipo" aria-label="Tipo de custo da venda">
       ${criarOpcoesTiposCustoVenda(custo.tipoCusto || custo.tipo || "")}
     </select>
-    <input data-campo="valor" type="number" min="0" step="0.01" placeholder="Valor" value="${custo.valor || ""}">
+    <input data-campo="valor" type="text" inputmode="decimal" placeholder="Valor" value="${custo.valor || ""}">
     <input data-campo="descricao" type="text" placeholder="Observacao" value="${escaparHtml(custo.descricao || "")}">
     <button type="button" class="button-secondary" data-acao="remover-custo">Remover</button>
   `;
 
   editarListaCustosVenda.appendChild(linha);
+  window.moedaUtils?.registrarCampoMoeda?.(linha.querySelector("[data-campo='valor']"));
 }
 
 function formatarData(data) {

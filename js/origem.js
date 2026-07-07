@@ -38,6 +38,10 @@ function formatarCodigoOrigem(valor) {
 }
 
 function formatarMoeda(valor) {
+  if (window.moedaUtils?.formatarMoedaBR) {
+    return window.moedaUtils.formatarMoedaBR(valor);
+  }
+
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL"
@@ -74,6 +78,9 @@ function lerOrigemDoFormulario() {
   const valorDigitado = document.getElementById("custoTotal").value;
   const tipoOrigem = document.getElementById("tipoOrigem").value;
   const quantidadeTotal = document.getElementById("quantidadeTotal")?.value;
+  const valorPago = window.moedaUtils?.parseMoedaBR
+    ? window.moedaUtils.parseMoedaBR(valorDigitado)
+    : Number(valorDigitado || 0);
 
   return {
     id: Date.now(),
@@ -81,8 +88,8 @@ function lerOrigemDoFormulario() {
     tipoOrigem,
     tipo: tipoOrigem,
     descricao: document.getElementById("descricao").value.trim(),
-    custoTotal: Number(valorDigitado || 0),
-    valorPago: Number(valorDigitado || 0),
+    custoTotal: valorPago,
+    valorPago,
     custoTipo: "",
     dataCompra: document.getElementById("dataCompra").value || obterDataHoje(),
     quantidadeTotal: Number(quantidadeTotal || 0),
@@ -209,6 +216,7 @@ async function salvarOrigem(redirecionarParaPeca = false) {
 preencherDataPadrao();
 atualizarCodigoOrigemProvisorio();
 atualizarResumoOrigem();
+window.moedaUtils?.registrarCampoMoeda?.(document.getElementById("custoTotal"));
 
 ["tipoOrigem", "descricao", "custoTotal", "quantidadeTotal", "dataCompra"].forEach(id => {
   const campo = document.getElementById(id);

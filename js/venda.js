@@ -75,6 +75,10 @@ function escaparRegex(texto) {
 }
 
 function formatarMoedaVenda(valor) {
+  if (window.moedaUtils?.formatarMoedaBR) {
+    return window.moedaUtils.formatarMoedaBR(valor);
+  }
+
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL"
@@ -246,12 +250,13 @@ function adicionarLinhaCustoVenda(custo = {}) {
     <select data-campo="tipo" aria-label="Tipo de custo da venda">
       ${criarOpcoesTiposCustoVenda(custo.tipoCusto || custo.tipo || "")}
     </select>
-    <input data-campo="valor" type="number" min="0" step="0.01" placeholder="Valor" value="${custo.valor || ""}">
+    <input data-campo="valor" type="text" inputmode="decimal" placeholder="Valor" value="${custo.valor || ""}">
     <input data-campo="descricao" type="text" placeholder="Observacao" value="${escaparHtml(custo.descricao || "")}">
     <button type="button" class="button-secondary" data-acao="remover-custo">Remover</button>
   `;
 
   listaCustosVenda.appendChild(linha);
+  window.moedaUtils?.registrarCampoMoeda?.(linha.querySelector("[data-campo='valor']"));
   atualizarResumoVenda();
   renderizarEstadoCustosVenda();
 }
@@ -332,6 +337,10 @@ function filtrarPecasPorBusca(pecas) {
 }
 
 function calcularQuantidadeDisponivel(peca) {
+  if (window.supabaseService?.estaConfigurado?.() && window.supabaseService?.calcularSaldoPeca) {
+    return window.supabaseService.calcularSaldoPeca(peca, entradasVendaCarregadas || []).quantidadeDisponivel;
+  }
+
   return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
 }
 
@@ -435,7 +444,10 @@ function lerCustosVendaDoFormulario() {
       const selectTipo = linha.querySelector("[data-campo='tipo']");
       const tipo = selectTipo?.value || "";
       const tipoCustoId = selectTipo?.selectedOptions[0]?.dataset?.tipoId || null;
-      const valor = Number(linha.querySelector("[data-campo='valor']")?.value || 0);
+      const valorDigitado = linha.querySelector("[data-campo='valor']")?.value || 0;
+      const valor = window.moedaUtils?.parseMoedaBR
+        ? window.moedaUtils.parseMoedaBR(valorDigitado)
+        : Number(valorDigitado);
       const descricao = linha.querySelector("[data-campo='descricao']")?.value.trim() || tipo;
 
       return {
@@ -493,7 +505,9 @@ function atualizarResumoVenda() {
   }
 
   const quantidade = Number(document.getElementById("quantidadeVendidaNaVenda")?.value || 0);
-  const valorUnitario = Number(document.getElementById("valorVenda")?.value || 0);
+  const valorUnitario = window.moedaUtils?.parseMoedaBR
+    ? window.moedaUtils.parseMoedaBR(document.getElementById("valorVenda")?.value || 0)
+    : Number(document.getElementById("valorVenda")?.value || 0);
   const custosVenda = lerCustosVendaDoFormulario();
   const totalVenda = quantidade * valorUnitario;
 
@@ -520,7 +534,12 @@ function existeCustoVendaNegativo() {
   }
 
   return Array.from(listaCustosVenda.querySelectorAll("[data-campo='valor']"))
-    .some(campo => Number(campo.value || 0) < 0);
+    .some(campo => {
+      const valor = window.moedaUtils?.parseMoedaBR
+        ? window.moedaUtils.parseMoedaBR(campo.value || 0)
+        : Number(campo.value || 0);
+      return valor < 0;
+    });
 }
 
 function existeCustoVendaIncompleto() {
@@ -531,7 +550,10 @@ function existeCustoVendaIncompleto() {
   return Array.from(listaCustosVenda.querySelectorAll(".cost-line"))
     .some(linha => {
       const tipo = linha.querySelector("[data-campo='tipo']")?.value || "";
-      const valor = Number(linha.querySelector("[data-campo='valor']")?.value || 0);
+      const valorDigitado = linha.querySelector("[data-campo='valor']")?.value || 0;
+      const valor = window.moedaUtils?.parseMoedaBR
+        ? window.moedaUtils.parseMoedaBR(valorDigitado)
+        : Number(valorDigitado);
       return valor > 0 && !tipo;
     });
 }
@@ -794,6 +816,7 @@ async function inicializarFormularioVenda() {
   }
 
   campoBuscaPecaVenda?.addEventListener("input", atualizarSugestoesVenda);
+  window.moedaUtils?.registrarCampoMoeda?.(document.getElementById("valorVenda"));
   document.getElementById("valorVenda")?.addEventListener("input", atualizarResumoVenda);
   document.getElementById("quantidadeVendidaNaVenda")?.addEventListener("input", atualizarResumoVenda);
   listaCustosVenda?.addEventListener("input", atualizarResumoVenda);
@@ -850,7 +873,9 @@ async function inicializarFormularioVenda() {
 
 function lerVendaDoFormulario() {
   const quantidadeVendida = Number(document.getElementById("quantidadeVendidaNaVenda").value);
-  const valorUnitario = Number(document.getElementById("valorVenda").value);
+  const valorUnitario = window.moedaUtils?.parseMoedaBR
+    ? window.moedaUtils.parseMoedaBR(document.getElementById("valorVenda").value)
+    : Number(document.getElementById("valorVenda").value);
   const custosVenda = lerCustosVendaDoFormulario();
   const totalCustosVenda = somarCustosVenda(custosVenda);
 
@@ -971,7 +996,10 @@ async function salvarVenda() {
 
     if (window.supabaseService && window.supabaseService.estaConfigurado()) {
       const resultado = await window.supabaseService.salvarVenda(venda);
-      const consumosEstoque = await window.supabaseService.listarConsumosEstoque();
+      const [consumosEstoque, entradasAtualizadas] = await Promise.all([
+        window.supabaseService.listarConsumosEstoque(),
+        window.supabaseService.listarEntradasEstoque()
+      ]);
       const resultadoFinanceiro = calcularResultadoFinanceiroVenda(
         resultado.venda,
         consumosEstoque,
@@ -985,6 +1013,7 @@ async function salvarVenda() {
 
       salvarVendaNoCache(vendaComLucro);
       salvarPecaNoCache(resultado.peca);
+      entradasVendaCarregadas = entradasAtualizadas || [];
       atualizarPecaNaListaVenda(resultado.peca);
       mostrarMensagemVenda("Venda e custos da venda cadastrados com sucesso.", "success");
     } else {

@@ -20,6 +20,7 @@ const linkCadastrarPecaOrigem = document.getElementById("linkCadastrarPecaOrigem
 let dadosDetalhesOrigem = {
   origem: null,
   entradas: [],
+  todasEntradas: [],
   pecas: [],
   vendas: [],
   consumosOrigem: [],
@@ -187,6 +188,42 @@ function agruparCustosVendaPorVenda(custosVenda) {
   }, {});
 }
 
+function montarLinhasVendasOrigem() {
+  const consumosPorVenda = agruparConsumosPorVenda(dadosDetalhesOrigem.consumosOrigem);
+
+  return Object.entries(consumosPorVenda)
+    .map(([vendaId, consumos]) => {
+      const venda = obterVendaPorId(Number(vendaId));
+
+      if (!venda) {
+        return null;
+      }
+
+      const quantidadeConsumida = somarCampo(consumos, "quantidadeConsumida");
+      const primeiroConsumo = consumos[0] || {};
+      const peca = obterPecaPorId(primeiroConsumo.pecaId || venda.pecaId);
+      const valorAtribuido = quantidadeConsumida * valorUnitarioVenda(venda);
+
+      return {
+        venda,
+        peca,
+        quantidadeConsumida,
+        valorAtribuido
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      const dataA = obterDataVenda(a.venda || {});
+      const dataB = obterDataVenda(b.venda || {});
+
+      if (dataA !== dataB) {
+        return dataB.localeCompare(dataA);
+      }
+
+      return Number(b.venda?.id || 0) - Number(a.venda?.id || 0);
+    });
+}
+
 async function carregarContextoSupabase(idOrigem) {
   if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
     throw new Error("Configure o Supabase para carregar os detalhes da origem.");
@@ -232,6 +269,7 @@ async function carregarContextoSupabase(idOrigem) {
   return {
     origem,
     entradas: entradasOrigem,
+    todasEntradas: entradas || [],
     pecas: pecasOrigem,
     vendas: vendasOrigem,
     consumosOrigem,
@@ -360,7 +398,7 @@ function calcularResumoOrigem() {
   const resultadoFinanceiro = window.financeiroUtils?.calcularResultadoOrigem
     ? window.financeiroUtils.calcularResultadoOrigem(
         dadosDetalhesOrigem.origem,
-        dadosDetalhesOrigem.entradas,
+        dadosDetalhesOrigem.todasEntradas.length > 0 ? dadosDetalhesOrigem.todasEntradas : dadosDetalhesOrigem.entradas,
         dadosDetalhesOrigem.vendas,
         dadosDetalhesOrigem.consumosOrigem,
         dadosDetalhesOrigem.custosPeca,
@@ -379,6 +417,7 @@ function calcularResumoOrigem() {
   }, 0);
   const custoConsumidoDaOrigem = resultadoFinanceiro?.custoConsumido ?? somarCampo(dadosDetalhesOrigem.consumosOrigem, "custoTotal");
   const custosDaPeca = resultadoFinanceiro?.custosPeca ?? somarCampo(dadosDetalhesOrigem.custosPeca, "valor");
+  const custosDaPecaNaoAtribuidos = resultadoFinanceiro?.custosPecaNaoAtribuidos ?? 0;
   const custosDaVenda = resultadoFinanceiro?.custosVenda ?? somarCampo(dadosDetalhesOrigem.custosVenda, "valor");
   const resultadoOrigem = receitaRelacionada - custoConsumidoDaOrigem - custosDaPeca - custosDaVenda;
   const distribuicao = calcularDistribuicaoOrigem();
@@ -387,6 +426,7 @@ function calcularResumoOrigem() {
     receitaTotal: receitaRelacionada,
     custoConsumidoDaOrigem,
     custosDaPeca,
+    custosDaPecaNaoAtribuidos,
     custosDaVenda,
     resultadoOrigem,
     valorInvestido: distribuicao.valorTotal,
@@ -396,7 +436,8 @@ function calcularResumoOrigem() {
     quantidadePrevista: distribuicao.quantidadePrevista,
     quantidadeDistribuida: distribuicao.quantidadeDistribuida,
     statusDistribuicao: distribuicao.status,
-    custosVendaPorVenda
+    custosVendaPorVenda,
+    possuiCustosPecaNaoAtribuidos: custosDaPecaNaoAtribuidos > 0
   };
 }
 
@@ -613,6 +654,10 @@ function renderizarResumoOrigem() {
   const resultadoPositivo = resumo.resultadoOrigem >= 0;
   const classeResultado = resultadoPositivo ? "summary-card summary-card--profit" : "summary-card summary-card--loss";
 
+  mensagemDistribuicaoOrigem.textContent = resumo.possuiCustosPecaNaoAtribuidos
+    ? `Custos da peça não atribuídos a esta origem: ${formatarMoeda(resumo.custosDaPecaNaoAtribuidos)}.`
+    : "";
+
   resumoOrigem.innerHTML = `
     <article class="summary-card">
       <span>Receita relacionada</span>
@@ -625,6 +670,10 @@ function renderizarResumoOrigem() {
     <article class="summary-card">
       <span>Custos vinculados</span>
       <strong>${formatarMoeda(resumo.custosDaPeca + resumo.custosDaVenda)}</strong>
+    </article>
+    <article class="summary-card summary-card--muted">
+      <span>Custos da peça não atribuídos</span>
+      <strong>${formatarMoeda(resumo.custosDaPecaNaoAtribuidos)}</strong>
     </article>
     <article class="${classeResultado}">
       <span>Resultado resumido</span>

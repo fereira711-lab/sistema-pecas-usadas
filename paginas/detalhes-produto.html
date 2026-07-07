@@ -24,6 +24,7 @@
         </div>
         <div class="form-actions">
           <button type="button" id="botaoVenderProduto" class="button-primary">Vender</button>
+          <button type="button" id="botaoAdicionarEstoqueProduto" class="button-secondary">Adicionar estoque</button>
           <button type="button" id="botaoLancamentoCustoProduto" class="button-secondary">Lançar custo</button>
           <button type="button" id="botaoEditarProduto" class="button-secondary">Editar dados</button>
           <button type="button" id="botaoImagemProduto" class="button-secondary">Adicionar imagem</button>
@@ -51,7 +52,7 @@
 
         <div class="form-group">
           <label for="editarProdutoPreco">Preço de venda</label>
-          <input id="editarProdutoPreco" type="number" min="0" step="0.01">
+          <input id="editarProdutoPreco" type="text" inputmode="decimal">
         </div>
 
         <div class="form-group">
@@ -86,15 +87,60 @@
           <h2>Entradas de estoque</h2>
           <p>Lotes vinculados à peça.</p>
         </div>
+        <div class="form-actions">
+          <button type="button" id="botaoAbrirEntradaProduto" class="button-secondary">Nova entrada</button>
+        </div>
       </div>
 
       <p id="mensagemEntradasProduto" class="empty-message"></p>
+
+      <form id="formAdicionarEstoqueProduto" class="edit-panel" hidden>
+        <div class="product-detail-form-title">Adicionar estoque da peça</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="entradaProdutoOrigemId">Origem</label>
+            <select id="entradaProdutoOrigemId">
+              <option value="">Selecione a origem</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="entradaProdutoQuantidade">Quantidade</label>
+            <input id="entradaProdutoQuantidade" type="number" min="1" step="1">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="entradaProdutoCustoUnitario">Custo unitário</label>
+            <input id="entradaProdutoCustoUnitario" type="text" inputmode="decimal" placeholder="0,00">
+          </div>
+
+          <div class="form-group">
+            <label for="entradaProdutoData">Data</label>
+            <input id="entradaProdutoData" type="date">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="entradaProdutoObservacoes">Observação</label>
+          <textarea id="entradaProdutoObservacoes" rows="2"></textarea>
+        </div>
+
+        <p id="mensagemAdicionarEstoqueProduto" class="form-message" aria-live="polite"></p>
+
+        <div class="form-actions">
+          <button type="submit" class="button-primary">Salvar entrada</button>
+          <button type="button" id="cancelarEntradaProduto" class="button-secondary">Cancelar</button>
+        </div>
+      </form>
 
       <div class="table-wrapper">
         <table class="stock-table product-detail-table">
           <thead>
             <tr>
               <th>Data</th>
+              <th>Origem</th>
               <th>Quantidade total</th>
               <th>Consumida</th>
               <th>Saldo</th>
@@ -128,7 +174,7 @@
 
           <div class="form-group">
             <label for="editarCustoValor">Valor</label>
-            <input id="editarCustoValor" type="number" min="0" step="0.01">
+            <input id="editarCustoValor" type="text" inputmode="decimal">
           </div>
         </div>
 
@@ -233,6 +279,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
+  <script src="../js/moeda-utils.js?v=1"></script>
   <script src="../js/supabase-service.js?v=29"></script>
   <script src="../js/financeiro-utils.js?v=1"></script>
   <script src="../js/detalhes-produto.js?v=17"></script>

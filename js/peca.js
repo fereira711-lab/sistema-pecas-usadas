@@ -61,6 +61,10 @@ function mostrarMensagem(texto, tipo) {
 }
 
 function formatarMoeda(valor) {
+  if (window.moedaUtils?.formatarMoedaBR) {
+    return window.moedaUtils.formatarMoedaBR(valor);
+  }
+
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL"
@@ -165,9 +169,21 @@ function lerNumeroDoCampo(id) {
   return valor === "" ? null : Number(valor);
 }
 
+function lerValorMonetarioDoCampo(id) {
+  const valor = document.getElementById(id).value.trim();
+
+  if (valor === "") {
+    return null;
+  }
+
+  return window.moedaUtils?.parseMoedaBR
+    ? window.moedaUtils.parseMoedaBR(valor)
+    : Number(valor);
+}
+
 function calcularCustoTotalEntrada() {
   const quantidade = lerNumeroDoCampo("quantidade");
-  const custoUnitario = lerNumeroDoCampo("custoUnitarioEntrada");
+  const custoUnitario = lerValorMonetarioDoCampo("custoUnitarioEntrada");
   const campoCustoTotal = document.getElementById("custoTotalEntrada");
 
   if (quantidade === null || custoUnitario === null || !Number.isFinite(quantidade) || !Number.isFinite(custoUnitario)) {
@@ -176,7 +192,7 @@ function calcularCustoTotalEntrada() {
   }
 
   const custoTotal = quantidade * custoUnitario;
-  campoCustoTotal.value = custoTotal.toFixed(2);
+  campoCustoTotal.value = formatarMoeda(custoTotal);
   atualizarResumoSalvarPeca();
   return custoTotal;
 }
@@ -287,7 +303,7 @@ async function atualizarResumoOrigemSelecionada() {
 
 function lerPecaDoFormulario() {
   const quantidade = lerNumeroDoCampo("quantidade");
-  const custoUnitario = lerNumeroDoCampo("custoUnitarioEntrada");
+  const custoUnitario = lerValorMonetarioDoCampo("custoUnitarioEntrada");
   const valorAtribuidoEntrada = Number(quantidade || 0) * Number(custoUnitario || 0);
 
   return {
@@ -420,7 +436,7 @@ function atualizarResumoSalvarPeca() {
   const nome = document.getElementById("nome").value.trim();
   const sku = document.getElementById("sku").value.trim().toUpperCase();
   const quantidade = lerNumeroDoCampo("quantidade") || 0;
-  const custoUnitario = lerNumeroDoCampo("custoUnitarioEntrada") || 0;
+  const custoUnitario = lerValorMonetarioDoCampo("custoUnitarioEntrada") || 0;
   const valorAtribuido = Number(quantidade || 0) * Number(custoUnitario || 0);
 
   resumoSalvarOrigem.textContent = obterTextoOrigem(origem);
@@ -468,6 +484,15 @@ async function salvarPeca() {
   if (!origemSelecionada) {
     mostrarMensagem("A origem selecionada nao foi encontrada.", "warning");
     return;
+  }
+
+  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
+    try {
+      await window.supabaseService.validarSkuDisponivel(peca.sku);
+    } catch (erro) {
+      mostrarMensagem(obterMensagemErroSupabase(erro), "warning");
+      return;
+    }
   }
 
   definirBotoesSalvando(true);
@@ -531,6 +556,7 @@ async function salvarPeca() {
 
 preencherDataEntradaPadrao();
 preencherSelectOrigens();
+window.moedaUtils?.registrarCampoMoeda?.(document.getElementById("custoUnitarioEntrada"));
 selectOrigem.addEventListener("change", atualizarResumoOrigemSelecionada);
 document.getElementById("quantidade").addEventListener("input", calcularCustoTotalEntrada);
 document.getElementById("custoUnitarioEntrada").addEventListener("input", calcularCustoTotalEntrada);

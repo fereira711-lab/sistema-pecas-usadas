@@ -121,12 +121,12 @@
 
             <div class="form-group field-span-4">
               <label for="custoUnitarioEntrada">Custo unitário</label>
-              <input id="custoUnitarioEntrada" type="number" min="0" step="0.01" placeholder="0,00">
+              <input id="custoUnitarioEntrada" type="text" inputmode="decimal" placeholder="0,00">
             </div>
 
             <div class="form-group field-span-4">
               <label for="custoTotalEntrada">Valor atribuído</label>
-              <input id="custoTotalEntrada" class="calculated-input" type="number" min="0" step="0.01" placeholder="0,00" readonly>
+              <input id="custoTotalEntrada" class="calculated-input" type="text" inputmode="decimal" placeholder="0,00" readonly>
               <p class="field-hint field-hint--calculated">Quantidade × custo unitário.</p>
             </div>
 
@@ -223,6 +223,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=4"></script>
   <script src="../js/auth.js?v=4"></script>
+  <script src="../js/moeda-utils.js?v=1"></script>
   <script src="../js/supabase-service.js?v=26"></script>
   <script src="../js/peca.js?v=14"></script>
   <script src="../js/sidebar.js?v=5"></script>

@@ -56,6 +56,17 @@
     };
   }
 
+  function obterQuantidadeOrigensDaPeca(pecaId, entradas) {
+    const origens = new Set(
+      (entradas || [])
+        .filter(entrada => obterId(entrada?.pecaId) === obterId(pecaId))
+        .map(entrada => obterId(entrada?.origemId))
+        .filter(origemId => origemId > 0)
+    );
+
+    return origens.size;
+  }
+
   function calcularLucroVenda(venda, consumos, custosVenda) {
     const receita = calcularReceitaVenda(venda);
     const custoConsumido = calcularCustoConsumidoVenda(venda?.id, consumos);
@@ -133,11 +144,19 @@
     const idsVendas = new Set(consumosDaOrigem.map(consumo => obterId(consumo.vendaId)));
     const vendasDaOrigem = (vendas || []).filter(venda => idsVendas.has(obterId(venda.id)));
     const idsPecas = new Set(entradasDaOrigem.map(entrada => obterId(entrada.pecaId)));
-    const custosPecaDaOrigem = (custosPeca || []).filter(custo => idsPecas.has(obterId(custo.pecaId)));
+    const custosPecaDaOrigem = (custosPeca || []).filter(custo => (
+      idsPecas.has(obterId(custo.pecaId)) &&
+      obterQuantidadeOrigensDaPeca(custo.pecaId, entradas) <= 1
+    ));
+    const custosPecaNaoAtribuidos = (custosPeca || []).filter(custo => (
+      idsPecas.has(obterId(custo.pecaId)) &&
+      obterQuantidadeOrigensDaPeca(custo.pecaId, entradas) > 1
+    ));
     const custosVendaDaOrigem = (custosVenda || []).filter(custo => idsVendas.has(obterId(custo.vendaId)));
     const receita = vendasDaOrigem.reduce((total, venda) => total + calcularReceitaVenda(venda), 0);
     const custoConsumido = somar(consumosDaOrigem, "custoTotal");
     const totalCustosPeca = somar(custosPecaDaOrigem, "valor");
+    const totalCustosPecaNaoAtribuidos = somar(custosPecaNaoAtribuidos, "valor");
     const totalCustosVenda = somar(custosVendaDaOrigem, "valor");
     const lucro = receita - custoConsumido - totalCustosPeca - totalCustosVenda;
 
@@ -146,11 +165,13 @@
       receita,
       custoConsumido,
       custosPeca: totalCustosPeca,
+      custosPecaNaoAtribuidos: totalCustosPecaNaoAtribuidos,
       custosVenda: totalCustosVenda,
       lucro,
       margem: receita > 0 ? (lucro / receita) * 100 : null,
       vendas: vendasDaOrigem,
-      consumos: consumosDaOrigem
+      consumos: consumosDaOrigem,
+      possuiCustosPecaNaoAtribuidos: totalCustosPecaNaoAtribuidos > 0
     };
   }
 

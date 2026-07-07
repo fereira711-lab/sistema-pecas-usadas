@@ -12,7 +12,7 @@ const botaoAbrirFiltrosProdutos = document.getElementById("botaoAbrirFiltrosProd
 const botaoFecharFiltrosProdutos = document.getElementById("botaoFecharFiltrosProdutos");
 const botaoLimparFiltrosProdutos = document.getElementById("botaoLimparFiltrosProdutos");
 const botaoAplicarFiltrosProdutos = document.getElementById("botaoAplicarFiltrosProdutos");
-let dadosProdutos = { pecas: [], origens: [] };
+let dadosProdutos = { pecas: [], origens: [], entradas: [] };
 let pecaSelecionadaParaImagem = null;
 
 function formatarNomePeca(peca) {
@@ -86,6 +86,10 @@ function normalizarPeca(peca) {
 }
 
 function calcularQuantidadeDisponivel(peca) {
+  if (window.supabaseService?.calcularSaldoPeca) {
+    return window.supabaseService.calcularSaldoPeca(peca, dadosProdutos.entradas || []).quantidadeDisponivel;
+  }
+
   return Math.max(Number(peca.quantidade || 0) - Number(peca.quantidadeVendida || 0), 0);
 }
 
@@ -96,19 +100,21 @@ async function carregarDados() {
   }
 
   try {
-    const [pecasSupabase, origensSupabase] = await Promise.all([
+    const [pecasSupabase, origensSupabase, entradasSupabase] = await Promise.all([
       window.supabaseService.listarPecas(),
-      window.supabaseService.listarOrigens()
+      window.supabaseService.listarOrigens(),
+      window.supabaseService.listarEntradasEstoque()
     ]);
 
     return {
       pecas: pecasSupabase.map(normalizarPeca),
-      origens: origensSupabase || []
+      origens: origensSupabase || [],
+      entradas: entradasSupabase || []
     };
   } catch (erro) {
     console.error("Erro ao carregar produtos do Supabase:", erro);
     mensagemProdutos.textContent = "Nao foi possivel carregar os dados do Supabase.";
-    return { pecas: [] };
+    return { pecas: [], origens: [], entradas: [] };
   }
 }
 

@@ -11,6 +11,7 @@ const mensagemVendasProduto = document.getElementById("mensagemVendasProduto");
 const tabelaVendasProduto = document.getElementById("tabelaVendasProduto");
 const botaoImagemProduto = document.getElementById("botaoImagemProduto");
 const botaoVenderProduto = document.getElementById("botaoVenderProduto");
+const botaoAdicionarEstoqueProduto = document.getElementById("botaoAdicionarEstoqueProduto");
 const botaoLancamentoCustoProduto = document.getElementById("botaoLancamentoCustoProduto");
 const origemVinculadaProduto = document.getElementById("origemVinculadaProduto");
 const campoImagemProdutoDetalhe = document.getElementById("imagemProdutoDetalhe");
@@ -29,6 +30,15 @@ const editarCustoDescricao = document.getElementById("editarCustoDescricao");
 const editarCustoData = document.getElementById("editarCustoData");
 const editarCustoObservacoes = document.getElementById("editarCustoObservacoes");
 const cancelarEdicaoCusto = document.getElementById("cancelarEdicaoCusto");
+const botaoAbrirEntradaProduto = document.getElementById("botaoAbrirEntradaProduto");
+const formAdicionarEstoqueProduto = document.getElementById("formAdicionarEstoqueProduto");
+const entradaProdutoOrigemId = document.getElementById("entradaProdutoOrigemId");
+const entradaProdutoQuantidade = document.getElementById("entradaProdutoQuantidade");
+const entradaProdutoCustoUnitario = document.getElementById("entradaProdutoCustoUnitario");
+const entradaProdutoData = document.getElementById("entradaProdutoData");
+const entradaProdutoObservacoes = document.getElementById("entradaProdutoObservacoes");
+const cancelarEntradaProduto = document.getElementById("cancelarEntradaProduto");
+const mensagemAdicionarEstoqueProduto = document.getElementById("mensagemAdicionarEstoqueProduto");
 
 let contextoProduto = {
   produto: null,
@@ -37,7 +47,8 @@ let contextoProduto = {
   vendas: [],
   custosVenda: [],
   consumosEstoque: [],
-  origemPrincipal: ""
+  origemPrincipal: "",
+  origens: []
 };
 let tiposCustoProduto = [];
 const tiposCustoPadraoProduto = ["Limpeza", "Solda", "Pintura", "Conserto", "Preparo"];
@@ -68,6 +79,10 @@ function escaparHtml(valor) {
 }
 
 function formatarMoeda(valor) {
+  if (window.moedaUtils?.formatarMoedaBR) {
+    return window.moedaUtils.formatarMoedaBR(valor);
+  }
+
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL"
@@ -82,6 +97,10 @@ function formatarNumero(valor) {
 }
 
 function converterNumero(valor) {
+  if (window.moedaUtils?.parseMoedaBR) {
+    return window.moedaUtils.parseMoedaBR(valor);
+  }
+
   return Number(String(valor || "0").replace(",", "."));
 }
 
@@ -434,6 +453,38 @@ function obterOrigemPrincipal(produto) {
   return primeiraEntrada?.origemDescricao || "-";
 }
 
+function obterDescricaoOrigem(entrada) {
+  return String(entrada?.origemDescricao || entrada?.origem || "").trim() || (entrada?.origemId ? `Origem ${entrada.origemId}` : "-");
+}
+
+function obterOrigensUtilizadas(produto) {
+  const mapa = new Map();
+  const origemIdProduto = Number(produto?.origemId || produto?.origem_id || 0);
+  const descricaoProduto = String(produto?.origem || "").trim();
+
+  contextoProduto.entradas.forEach(entrada => {
+    const origemId = Number(entrada.origemId || 0);
+    const descricao = obterDescricaoOrigem(entrada);
+    const chave = origemId > 0 ? `id:${origemId}` : `texto:${descricao}`;
+
+    if (!mapa.has(chave)) {
+      mapa.set(chave, {
+        id: origemId,
+        descricao
+      });
+    }
+  });
+
+  if (mapa.size === 0 && (origemIdProduto > 0 || descricaoProduto)) {
+    mapa.set(origemIdProduto > 0 ? `id:${origemIdProduto}` : `texto:${descricaoProduto}`, {
+      id: origemIdProduto,
+      descricao: descricaoProduto || (origemIdProduto ? `Origem ${origemIdProduto}` : "-")
+    });
+  }
+
+  return Array.from(mapa.values());
+}
+
 function obterOrigemIdPrincipal(produto) {
   const origemIdProduto = Number(produto.origemId || produto.origem_id || 0);
 
@@ -454,6 +505,7 @@ function abrirFormularioEdicaoProduto() {
   editarProdutoSku.value = formatarSku(contextoProduto.produto) === "-" ? "" : formatarSku(contextoProduto.produto);
   editarProdutoPreco.value = Number(contextoProduto.produto.precoVenda || 0);
   editarProdutoObservacoes.value = contextoProduto.produto.observacoes || "";
+  window.moedaUtils?.registrarCampoMoeda?.(editarProdutoPreco);
   formEditarProduto.hidden = false;
   editarProdutoNome.focus();
 }
@@ -486,12 +538,19 @@ async function salvarEdicaoProduto(evento) {
     return;
   }
 
+  try {
+    await window.supabaseService.validarSkuDisponivel(sku, contextoProduto.produto.id);
+  } catch (erro) {
+    mensagemProdutoNaoEncontrado.textContent = erro?.message || "Já existe uma peça cadastrada com este SKU.";
+    return;
+  }
+
   const botaoSalvar = formEditarProduto.querySelector("button[type='submit']");
   botaoSalvar.disabled = true;
   mensagemProdutoNaoEncontrado.textContent = "Salvando dados da peça...";
 
   try {
-    const produtoAtualizado = await window.supabaseService.atualizarDadosPeca({
+    await window.supabaseService.atualizarDadosPeca({
       id: contextoProduto.produto.id,
       nome,
       sku,
@@ -499,13 +558,19 @@ async function salvarEdicaoProduto(evento) {
       observacoes: editarProdutoObservacoes.value.trim()
     });
 
-    contextoProduto.produto = produtoAtualizado;
+    const contextoAtualizado = await recarregarContextoProduto(contextoProduto.produto.id);
+
+    if (!contextoAtualizado?.produto) {
+      throw new Error("Não foi possível recarregar os dados da peça.");
+    }
+
+    contextoProduto = contextoAtualizado;
     fecharFormularioEdicaoProduto();
     renderizarTela();
     mensagemProdutoNaoEncontrado.textContent = "Dados da peça atualizados com sucesso.";
   } catch (erro) {
     console.error("Erro ao editar peça:", erro);
-    mensagemProdutoNaoEncontrado.textContent = "Não foi possível atualizar os dados da peça.";
+    mensagemProdutoNaoEncontrado.textContent = erro?.message || "Não foi possível atualizar os dados da peça.";
   } finally {
     botaoSalvar.disabled = false;
   }
@@ -525,6 +590,7 @@ function abrirFormularioEdicaoCusto(custoId) {
   editarCustoDescricao.value = custo.descricao || "";
   editarCustoData.value = String(custo.dataCusto || custo.data || "").slice(0, 10);
   editarCustoObservacoes.value = custo.observacoes || custo.observacao || "";
+  window.moedaUtils?.registrarCampoMoeda?.(editarCustoValor);
   formEditarCustoProduto.hidden = false;
   editarCustoTipo.focus();
 }
@@ -668,6 +734,7 @@ async function carregarContextoSupabase(pecaId) {
 
   const [
     produto,
+    origens,
     entradas,
     custosPeca,
     vendas,
@@ -675,6 +742,7 @@ async function carregarContextoSupabase(pecaId) {
     consumosEstoque
   ] = await Promise.all([
     window.supabaseService.buscarPecaPorId(pecaId),
+    window.supabaseService.listarOrigens(),
     window.supabaseService.listarEntradasEstoque(),
     window.supabaseService.listarCustosPeca(),
     window.supabaseService.listarVendas(),
@@ -700,7 +768,8 @@ async function carregarContextoSupabase(pecaId) {
     vendas: vendasProduto,
     custosVenda: custosVendaProduto,
     consumosEstoque: consumosProduto,
-    origemPrincipal: produto.origem || entradasProduto.find(entrada => entrada.origemDescricao)?.origemDescricao || ""
+    origemPrincipal: produto.origem || entradasProduto.find(entrada => entrada.origemDescricao)?.origemDescricao || "",
+    origens: origens || []
   };
 }
 
@@ -733,7 +802,8 @@ function carregarContextoLocal(pecaId) {
       }));
     }).filter(custo => !custo.vendaId || vendaIds.has(Number(custo.vendaId))),
     consumosEstoque: [],
-    origemPrincipal
+    origemPrincipal,
+    origens
   };
 }
 
@@ -774,6 +844,162 @@ function mesclarContextoComDadosLocais(contexto, pecaId) {
       `custo-venda:${custo.vendaId || ""}:${custo.tipoCusto || custo.tipo}:${custo.valor || 0}:${custo.descricao || ""}`
     ))
   };
+}
+
+function preencherDataEntradaPadraoProduto() {
+  if (!entradaProdutoData) {
+    return;
+  }
+
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+  entradaProdutoData.value = `${ano}-${mes}-${dia}`;
+}
+
+function renderizarOpcoesOrigensEntradaProduto() {
+  if (!entradaProdutoOrigemId) {
+    return;
+  }
+
+  const valorAtual = entradaProdutoOrigemId.value;
+  entradaProdutoOrigemId.innerHTML = '<option value="">Selecione a origem</option>';
+
+  (contextoProduto.origens || [])
+    .slice()
+    .sort((a, b) => String(a.descricao || "").localeCompare(String(b.descricao || ""), "pt-BR"))
+    .forEach(origem => {
+      const opcao = document.createElement("option");
+      opcao.value = origem.id;
+      opcao.textContent = origem.descricao || origem.codigoOrigem || `Origem ${origem.id}`;
+      entradaProdutoOrigemId.appendChild(opcao);
+    });
+
+  const origemPrincipal = obterOrigemIdPrincipal(contextoProduto.produto || {});
+  entradaProdutoOrigemId.value = valorAtual || (origemPrincipal ? String(origemPrincipal) : "");
+}
+
+function mostrarMensagemEntradaProduto(texto, tipo = "success") {
+  if (!mensagemAdicionarEstoqueProduto) {
+    return;
+  }
+
+  mensagemAdicionarEstoqueProduto.textContent = texto;
+  mensagemAdicionarEstoqueProduto.className = texto ? `form-message form-message--${tipo}` : "form-message";
+}
+
+function limparFormularioEntradaProduto() {
+  if (entradaProdutoQuantidade) {
+    entradaProdutoQuantidade.value = "";
+  }
+
+  if (entradaProdutoCustoUnitario) {
+    entradaProdutoCustoUnitario.value = "";
+  }
+
+  if (entradaProdutoObservacoes) {
+    entradaProdutoObservacoes.value = "";
+  }
+
+  preencherDataEntradaPadraoProduto();
+  renderizarOpcoesOrigensEntradaProduto();
+  mostrarMensagemEntradaProduto("");
+}
+
+function abrirFormularioEntradaProduto() {
+  if (!contextoProduto.produto || !formAdicionarEstoqueProduto) {
+    return;
+  }
+
+  limparFormularioEntradaProduto();
+  formAdicionarEstoqueProduto.hidden = false;
+  entradaProdutoOrigemId?.focus();
+}
+
+function fecharFormularioEntradaProduto() {
+  if (formAdicionarEstoqueProduto) {
+    formAdicionarEstoqueProduto.hidden = true;
+  }
+
+  mostrarMensagemEntradaProduto("");
+}
+
+async function salvarEntradaProduto(evento) {
+  evento.preventDefault();
+
+  if (!window.supabaseService?.estaConfigurado() || !contextoProduto.produto?.id) {
+    mostrarMensagemEntradaProduto("Configure o Supabase antes de adicionar estoque.", "warning");
+    return;
+  }
+
+  const origemId = Number(entradaProdutoOrigemId?.value || 0);
+  const quantidadeTotal = Number(entradaProdutoQuantidade?.value || 0);
+  const custoUnitario = converterNumero(entradaProdutoCustoUnitario?.value);
+  const dataEntrada = entradaProdutoData?.value || "";
+
+  if (!origemId) {
+    mostrarMensagemEntradaProduto("Selecione a origem da nova entrada.", "warning");
+    return;
+  }
+
+  if (!Number.isInteger(quantidadeTotal) || quantidadeTotal <= 0) {
+    mostrarMensagemEntradaProduto("Informe uma quantidade válida para a entrada.", "warning");
+    return;
+  }
+
+  if (Number.isNaN(custoUnitario) || custoUnitario < 0) {
+    mostrarMensagemEntradaProduto("Informe um custo unitário válido.", "warning");
+    return;
+  }
+
+  if (!dataEntrada) {
+    mostrarMensagemEntradaProduto("Informe a data da entrada.", "warning");
+    return;
+  }
+
+  const botaoSalvar = formAdicionarEstoqueProduto.querySelector("button[type='submit']");
+  botaoSalvar.disabled = true;
+  mostrarMensagemEntradaProduto("Salvando entrada de estoque...", "success");
+
+  try {
+    await window.supabaseService.salvarEntradaEstoque({
+      pecaId: contextoProduto.produto.id,
+      origemId,
+      quantidadeTotal,
+      quantidadeConsumida: 0,
+      custoUnitario,
+      dataEntrada,
+      observacoes: entradaProdutoObservacoes?.value.trim() || ""
+    });
+
+    const contextoAtualizado = await recarregarContextoProduto(contextoProduto.produto.id);
+
+    if (!contextoAtualizado?.produto) {
+      throw new Error("Não foi possível recarregar os dados da peça.");
+    }
+
+    contextoProduto = contextoAtualizado;
+    renderizarTela();
+    renderizarOpcoesOrigensEntradaProduto();
+    fecharFormularioEntradaProduto();
+    mensagemEntradasProduto.textContent = "Entrada de estoque adicionada com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao adicionar estoque da peça:", erro);
+    mostrarMensagemEntradaProduto(erro?.message || "Não foi possível adicionar a entrada de estoque.", "warning");
+  } finally {
+    botaoSalvar.disabled = false;
+  }
+}
+
+async function recarregarContextoProduto(pecaId) {
+  const contextoSupabase = await carregarContextoSupabase(pecaId);
+
+  if (!contextoSupabase?.produto) {
+    return null;
+  }
+
+  return mesclarContextoComDadosLocais(contextoSupabase, pecaId);
 }
 
 function renderizarTela() {
@@ -865,6 +1091,14 @@ function renderizarOrigemVinculada(produto) {
   const descricaoOrigem = obterOrigemPrincipal(produto);
   const primeiraEntrada = contextoProduto.entradas[0] || {};
   const tipoOrigem = produto.origemTipo || produto.tipoOrigem || produto.tipo_origem || primeiraEntrada.origemTipo || primeiraEntrada.tipoOrigem || primeiraEntrada.tipo_origem || "Origem vinculada";
+  const origensUtilizadas = obterOrigensUtilizadas(produto);
+  const listaOrigens = origensUtilizadas.length > 0
+    ? origensUtilizadas.map(origem => (
+      origem.id
+        ? `<a class="table-link" href="detalhes-origem.html?origemId=${encodeURIComponent(origem.id)}">${escaparHtml(origem.descricao)}</a>`
+        : `<span>${escaparHtml(origem.descricao)}</span>`
+    )).join("<br>")
+    : "-";
 
   origemVinculadaProduto.innerHTML = `
     <div class="stock-header product-detail-section__header">
@@ -893,6 +1127,10 @@ function renderizarOrigemVinculada(produto) {
       <article class="detail-card">
         <span>ID</span>
         <strong>${origemId || "-"}</strong>
+      </article>
+      <article class="detail-card detail-card--wide">
+        <span>Origens utilizadas</span>
+        <strong>${listaOrigens}</strong>
       </article>
     </div>
   `;
@@ -947,6 +1185,7 @@ function renderizarEntradas() {
 
     linha.innerHTML = `
       <td data-label="Data">${formatarData(entrada.dataEntrada)}</td>
+      <td data-label="Origem">${escaparHtml(obterDescricaoOrigem(entrada))}</td>
       <td data-label="Quantidade total">${formatarNumero(entrada.quantidadeTotal)}</td>
       <td data-label="Consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
       <td data-label="Saldo">${formatarNumero(saldo)}</td>
@@ -1059,10 +1298,7 @@ async function iniciarDetalhes() {
   }
 
   try {
-    const contextoSupabase = await carregarContextoSupabase(pecaId);
-    contextoProduto = contextoSupabase
-      ? mesclarContextoComDadosLocais(contextoSupabase, pecaId)
-      : carregarContextoLocal(pecaId);
+    contextoProduto = await recarregarContextoProduto(pecaId) || carregarContextoLocal(pecaId);
 
     if (!contextoProduto.produto) {
       renderizarNaoEncontrado("Produto não encontrado.");
@@ -1070,6 +1306,7 @@ async function iniciarDetalhes() {
     }
 
     renderizarTela();
+    renderizarOpcoesOrigensEntradaProduto();
     if (deveAbrirEdicaoProduto()) {
       abrirFormularioEdicaoProduto();
     }
@@ -1086,6 +1323,9 @@ botaoVenderProduto?.addEventListener("click", () => {
     window.location.href = `cadastro-venda.html?pecaId=${encodeURIComponent(contextoProduto.produto.id)}`;
   }
 });
+
+botaoAdicionarEstoqueProduto?.addEventListener("click", abrirFormularioEntradaProduto);
+botaoAbrirEntradaProduto?.addEventListener("click", abrirFormularioEntradaProduto);
 
 botaoLancamentoCustoProduto?.addEventListener("click", () => {
   if (contextoProduto.produto?.id) {
@@ -1106,6 +1346,10 @@ cancelarEdicaoProduto?.addEventListener("click", fecharFormularioEdicaoProduto);
 formEditarProduto?.addEventListener("submit", salvarEdicaoProduto);
 cancelarEdicaoCusto?.addEventListener("click", fecharFormularioEdicaoCusto);
 formEditarCustoProduto?.addEventListener("submit", salvarEdicaoCusto);
+cancelarEntradaProduto?.addEventListener("click", fecharFormularioEntradaProduto);
+formAdicionarEstoqueProduto?.addEventListener("submit", salvarEntradaProduto);
+window.moedaUtils?.registrarCampoMoeda?.(entradaProdutoCustoUnitario);
+preencherDataEntradaPadraoProduto();
 
 tabelaCustosProduto?.addEventListener("click", evento => {
   const botao = evento.target.closest("[data-acao]");

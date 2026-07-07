@@ -43,6 +43,10 @@
     return `${ano}-${mes}-${dia}`;
   }
 
+  function normalizarSku(valor) {
+    return String(valor || "").trim().toUpperCase();
+  }
+
   function formatarCodigoOrigem(valor) {
     return `ORI-${String(valor || "").padStart(6, "0")}`;
   }
@@ -346,6 +350,40 @@
     };
   }
 
+  function listarEntradasDaPeca(pecaId, entradas = []) {
+    const idNormalizado = Number(pecaId || 0);
+
+    return (entradas || []).filter(entrada => Number(entrada?.pecaId || entrada?.peca_id || 0) === idNormalizado);
+  }
+
+  function calcularSaldoPeca(peca, entradas = []) {
+    const entradasDaPeca = listarEntradasDaPeca(peca?.id, entradas);
+
+    if (entradasDaPeca.length > 0) {
+      const quantidadeTotal = entradasDaPeca.reduce((total, entrada) => total + Number(entrada?.quantidadeTotal || entrada?.quantidade_total || 0), 0);
+      const quantidadeVendida = entradasDaPeca.reduce((total, entrada) => total + Number(entrada?.quantidadeConsumida || entrada?.quantidade_consumida || 0), 0);
+
+      return {
+        usaEntradas: true,
+        quantidadeTotal,
+        quantidadeVendida,
+        quantidadeDisponivel: Math.max(quantidadeTotal - quantidadeVendida, 0),
+        entradas: entradasDaPeca
+      };
+    }
+
+    const quantidadeTotal = Number(peca?.quantidade || 0);
+    const quantidadeVendida = Number(peca?.quantidadeVendida || peca?.quantidade_vendida || 0);
+
+    return {
+      usaEntradas: false,
+      quantidadeTotal,
+      quantidadeVendida,
+      quantidadeDisponivel: Math.max(quantidadeTotal - quantidadeVendida, 0),
+      entradas: []
+    };
+  }
+
   function padronizarNomeTipoCusto(nome) {
     const texto = String(nome || "").trim().replace(/\s+/g, " ").toLowerCase();
 
@@ -504,6 +542,41 @@
     }
 
     return mapearPecaDoBanco(data);
+  }
+
+  async function buscarPecaPorSku(sku, pecaIdIgnorado = null) {
+    const cliente = obterCliente();
+    const skuNormalizado = normalizarSku(sku);
+
+    if (!cliente || !skuNormalizado) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("pecas")
+      .select("*, origens(descricao)")
+      .ilike("sku", skuNormalizado)
+      .order("id", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    const pecaEncontrada = (data || []).find(item => (
+      normalizarSku(item?.sku) === skuNormalizado &&
+      Number(item.id) !== Number(pecaIdIgnorado || 0)
+    ));
+    return pecaEncontrada ? mapearPecaDoBanco(pecaEncontrada) : null;
+  }
+
+  async function validarSkuDisponivel(sku, pecaIdIgnorado = null) {
+    const pecaExistente = await buscarPecaPorSku(sku, pecaIdIgnorado);
+
+    if (pecaExistente) {
+      throw new Error("Já existe uma peça cadastrada com este SKU.");
+    }
+
+    return true;
   }
 
   async function listarVendas() {
@@ -861,15 +934,23 @@
       return null;
     }
 
+    const id = Number(peca?.id || 0);
+    const nome = String(peca?.nome || "").trim();
+    const sku = normalizarSku(peca?.sku);
+    const precoVenda = Number(peca?.precoVenda || 0);
+    const observacoes = String(peca?.observacoes || "").trim();
+
+    await validarSkuDisponivel(sku, id);
+
     const { data, error } = await cliente
       .from("pecas")
       .update({
-        nome_peca: peca.nome,
-        sku: peca.sku || null,
-        preco_sugerido: Number(peca.precoVenda || 0),
-        observacoes: peca.observacoes || null
+        nome_peca: nome,
+        sku: sku || null,
+        preco_sugerido: precoVenda,
+        observacoes: observacoes || null
       })
-      .eq("id", peca.id)
+      .eq("id", id)
       .select("*, origens(descricao)")
       .single();
 
@@ -927,8 +1008,10 @@
       return null;
     }
 
+    await validarSkuDisponivel(peca.sku);
+
     const { data, error } = await cliente.rpc("criar_peca_com_entrada", {
-      p_sku: peca.sku,
+      p_sku: normalizarSku(peca.sku),
       p_nome: peca.nome,
       p_origem_id: Number(peca.origemId),
       p_quantidade: Number(peca.quantidade),
@@ -1188,6 +1271,8 @@
     listarPecas,
     listarPecasPorOrigem,
     buscarPecaPorId,
+    buscarPecaPorSku,
+    validarSkuDisponivel,
     listarVendas,
     listarCustosPeca,
     listarCustosVenda,
@@ -1200,6 +1285,8 @@
     excluirTipoCusto,
     listarEntradasEstoque,
     listarConsumosEstoque,
+    listarEntradasDaPeca,
+    calcularSaldoPeca,
     salvarOrigem,
     salvarPeca,
     atualizarPeca,
