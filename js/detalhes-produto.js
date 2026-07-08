@@ -39,6 +39,14 @@ const entradaProdutoData = document.getElementById("entradaProdutoData");
 const entradaProdutoObservacoes = document.getElementById("entradaProdutoObservacoes");
 const cancelarEntradaProduto = document.getElementById("cancelarEntradaProduto");
 const mensagemAdicionarEstoqueProduto = document.getElementById("mensagemAdicionarEstoqueProduto");
+const formEditarEntradaProduto = document.getElementById("formEditarEntradaProduto");
+const editarEntradaProdutoId = document.getElementById("editarEntradaProdutoId");
+const editarEntradaProdutoOrigemId = document.getElementById("editarEntradaProdutoOrigemId");
+const editarEntradaProdutoQuantidade = document.getElementById("editarEntradaProdutoQuantidade");
+const editarEntradaProdutoCustoUnitario = document.getElementById("editarEntradaProdutoCustoUnitario");
+const editarEntradaProdutoData = document.getElementById("editarEntradaProdutoData");
+const mensagemEditarEntradaProduto = document.getElementById("mensagemEditarEntradaProduto");
+const cancelarEdicaoEntradaProduto = document.getElementById("cancelarEdicaoEntradaProduto");
 
 let contextoProduto = {
   produto: null,
@@ -888,6 +896,27 @@ function renderizarOpcoesOrigensEntradaProduto() {
   entradaProdutoOrigemId.value = valorAtual || (origemPrincipal ? String(origemPrincipal) : "");
 }
 
+function renderizarOpcoesOrigensEdicaoEntradaProduto() {
+  if (!editarEntradaProdutoOrigemId) {
+    return;
+  }
+
+  const valorAtual = editarEntradaProdutoOrigemId.value;
+  editarEntradaProdutoOrigemId.innerHTML = '<option value="">Selecione a origem</option>';
+
+  (contextoProduto.origens || [])
+    .slice()
+    .sort((a, b) => String(a.descricao || "").localeCompare(String(b.descricao || ""), "pt-BR"))
+    .forEach(origem => {
+      const opcao = document.createElement("option");
+      opcao.value = origem.id;
+      opcao.textContent = origem.descricao || origem.codigoOrigem || `Origem ${origem.id}`;
+      editarEntradaProdutoOrigemId.appendChild(opcao);
+    });
+
+  editarEntradaProdutoOrigemId.value = valorAtual || "";
+}
+
 function mostrarMensagemEntradaProduto(texto, tipo = "success") {
   if (!mensagemAdicionarEstoqueProduto) {
     return;
@@ -895,6 +924,15 @@ function mostrarMensagemEntradaProduto(texto, tipo = "success") {
 
   mensagemAdicionarEstoqueProduto.textContent = texto;
   mensagemAdicionarEstoqueProduto.className = texto ? `form-message form-message--${tipo}` : "form-message";
+}
+
+function mostrarMensagemEdicaoEntradaProduto(texto, tipo = "success") {
+  if (!mensagemEditarEntradaProduto) {
+    return;
+  }
+
+  mensagemEditarEntradaProduto.textContent = texto;
+  mensagemEditarEntradaProduto.className = texto ? `form-message form-message--${tipo}` : "form-message";
 }
 
 function limparFormularioEntradaProduto() {
@@ -931,6 +969,39 @@ function fecharFormularioEntradaProduto() {
   }
 
   mostrarMensagemEntradaProduto("");
+}
+
+function fecharFormularioEdicaoEntradaProduto() {
+  if (formEditarEntradaProduto) {
+    formEditarEntradaProduto.hidden = true;
+  }
+
+  mostrarMensagemEdicaoEntradaProduto("");
+}
+
+function abrirFormularioEdicaoEntradaProduto(entradaId) {
+  const entrada = contextoProduto.entradas.find(item => Number(item.id) === Number(entradaId));
+
+  if (!entrada) {
+    mensagemEntradasProduto.textContent = "Entrada de estoque não encontrada.";
+    return;
+  }
+
+  if (entradaPossuiConsumo(entrada)) {
+    mensagemEntradasProduto.textContent = "Esta entrada já possui movimentação e não pode ser editada.";
+    return;
+  }
+
+  renderizarOpcoesOrigensEdicaoEntradaProduto();
+  editarEntradaProdutoId.value = entrada.id;
+  editarEntradaProdutoOrigemId.value = String(entrada.origemId || "");
+  editarEntradaProdutoQuantidade.value = Number(entrada.quantidadeTotal || 0);
+  editarEntradaProdutoCustoUnitario.value = Number(entrada.custoUnitario || 0);
+  editarEntradaProdutoData.value = String(entrada.dataEntrada || "").slice(0, 10);
+  window.moedaUtils?.registrarCampoMoeda?.(editarEntradaProdutoCustoUnitario);
+  formEditarEntradaProduto.hidden = false;
+  mostrarMensagemEdicaoEntradaProduto("");
+  editarEntradaProdutoOrigemId?.focus();
 }
 
 async function salvarEntradaProduto(evento) {
@@ -995,6 +1066,88 @@ async function salvarEntradaProduto(evento) {
   } catch (erro) {
     console.error("Erro ao adicionar estoque da peça:", erro);
     mostrarMensagemEntradaProduto(erro?.message || "Não foi possível adicionar a entrada de estoque.", "warning");
+  } finally {
+    botaoSalvar.disabled = false;
+  }
+}
+
+async function salvarEdicaoEntradaProduto(evento) {
+  evento.preventDefault();
+
+  if (!window.supabaseService?.estaConfigurado() || !contextoProduto.produto?.id) {
+    mostrarMensagemEdicaoEntradaProduto("Configure o Supabase antes de editar a entrada.", "warning");
+    return;
+  }
+
+  const entradaId = Number(editarEntradaProdutoId?.value || 0);
+  const origemId = Number(editarEntradaProdutoOrigemId?.value || 0);
+  const quantidadeTotal = Number(editarEntradaProdutoQuantidade?.value || 0);
+  const custoUnitario = converterNumero(editarEntradaProdutoCustoUnitario?.value);
+  const dataEntrada = editarEntradaProdutoData?.value || "";
+  const entradaAtual = contextoProduto.entradas.find(item => Number(item.id) === entradaId);
+
+  if (!entradaAtual) {
+    mostrarMensagemEdicaoEntradaProduto("Entrada de estoque não encontrada.", "warning");
+    return;
+  }
+
+  const consumosAtualizados = await window.supabaseService.listarConsumosEstoque();
+
+  if (entradaPossuiConsumo(entradaAtual, consumosAtualizados || [])) {
+    mostrarMensagemEdicaoEntradaProduto("Esta entrada já possui movimentação e não pode ser editada.", "warning");
+    return;
+  }
+
+  if (!origemId) {
+    mostrarMensagemEdicaoEntradaProduto("Selecione a origem da entrada.", "warning");
+    return;
+  }
+
+  if (!Number.isInteger(quantidadeTotal) || quantidadeTotal <= 0) {
+    mostrarMensagemEdicaoEntradaProduto("Informe uma quantidade válida para a entrada.", "warning");
+    return;
+  }
+
+  if (Number.isNaN(custoUnitario) || custoUnitario < 0) {
+    mostrarMensagemEdicaoEntradaProduto("Informe um custo unitário válido.", "warning");
+    return;
+  }
+
+  if (!dataEntrada) {
+    mostrarMensagemEdicaoEntradaProduto("Informe a data da entrada.", "warning");
+    return;
+  }
+
+  const botaoSalvar = formEditarEntradaProduto.querySelector("button[type='submit']");
+  botaoSalvar.disabled = true;
+  mostrarMensagemEdicaoEntradaProduto("Salvando edição da entrada...", "success");
+
+  try {
+    await window.supabaseService.atualizarEntradaEstoque({
+      id: entradaId,
+      pecaId: contextoProduto.produto.id,
+      origemId,
+      quantidadeTotal,
+      quantidadeConsumida: 0,
+      custoUnitario,
+      dataEntrada
+    });
+
+    const contextoAtualizado = await recarregarContextoProduto(contextoProduto.produto.id);
+
+    if (!contextoAtualizado?.produto) {
+      throw new Error("Não foi possível recarregar os dados da peça.");
+    }
+
+    contextoProduto = contextoAtualizado;
+    renderizarTela();
+    renderizarOpcoesOrigensEntradaProduto();
+    renderizarOpcoesOrigensEdicaoEntradaProduto();
+    fecharFormularioEdicaoEntradaProduto();
+    mensagemEntradasProduto.textContent = "Entrada de estoque atualizada com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao editar entrada de estoque:", erro);
+    mostrarMensagemEdicaoEntradaProduto(erro?.message || "Não foi possível editar a entrada de estoque.", "warning");
   } finally {
     botaoSalvar.disabled = false;
   }
@@ -1201,7 +1354,8 @@ function renderizarEntradas() {
       <td data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
       <td data-label="Valor atribuído">${formatarMoeda(valorAtribuido)}</td>
       <td data-label="Ações">
-        <div class="table-actions table-actions--single">
+        <div class="table-actions">
+          <button type="button" data-acao="editar-entrada" data-entrada-id="${escaparHtml(entrada.id)}">Editar</button>
           <button type="button" class="button-danger-soft" data-acao="excluir-entrada" data-entrada-id="${escaparHtml(entrada.id)}" ${bloqueada ? "disabled" : ""}>Excluir</button>
         </div>
       </td>
@@ -1408,7 +1562,10 @@ cancelarEdicaoCusto?.addEventListener("click", fecharFormularioEdicaoCusto);
 formEditarCustoProduto?.addEventListener("submit", salvarEdicaoCusto);
 cancelarEntradaProduto?.addEventListener("click", fecharFormularioEntradaProduto);
 formAdicionarEstoqueProduto?.addEventListener("submit", salvarEntradaProduto);
+cancelarEdicaoEntradaProduto?.addEventListener("click", fecharFormularioEdicaoEntradaProduto);
+formEditarEntradaProduto?.addEventListener("submit", salvarEdicaoEntradaProduto);
 window.moedaUtils?.registrarCampoMoeda?.(entradaProdutoCustoUnitario);
+window.moedaUtils?.registrarCampoMoeda?.(editarEntradaProdutoCustoUnitario);
 preencherDataEntradaPadraoProduto();
 
 tabelaCustosProduto?.addEventListener("click", evento => {
@@ -1429,13 +1586,20 @@ tabelaCustosProduto?.addEventListener("click", evento => {
 });
 
 tabelaEntradasProduto?.addEventListener("click", evento => {
-  const botao = evento.target.closest("[data-acao='excluir-entrada']");
+  const botao = evento.target.closest("[data-acao]");
 
   if (!botao) {
     return;
   }
 
-  excluirEntradaProduto(botao.dataset.entradaId);
+  if (botao.dataset.acao === "editar-entrada") {
+    abrirFormularioEdicaoEntradaProduto(botao.dataset.entradaId);
+    return;
+  }
+
+  if (botao.dataset.acao === "excluir-entrada") {
+    excluirEntradaProduto(botao.dataset.entradaId);
+  }
 });
 
 iniciarDetalhes();

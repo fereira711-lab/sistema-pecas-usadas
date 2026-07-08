@@ -1048,6 +1048,28 @@
     return true;
   }
 
+  async function atualizarEntradaEstoque(entrada) {
+    const cliente = obterCliente();
+    const id = Number(entrada?.id || 0);
+
+    if (!cliente || !id) {
+      return null;
+    }
+
+    const { data, error } = await cliente
+      .from("entradas_estoque")
+      .update(mapearEntradaEstoqueParaBanco(entrada))
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapearEntradaEstoqueDoBanco(data);
+  }
+
   async function criarPecaComEntrada(peca) {
     const cliente = obterCliente();
 
@@ -1342,6 +1364,7 @@
     uploadImagemPeca,
     buscarEntradaEstoquePorId,
     excluirEntradaEstoque,
+    atualizarEntradaEstoque,
     criarPecaComEntrada,
     salvarEntradaEstoque,
     salvarCustoPeca,
