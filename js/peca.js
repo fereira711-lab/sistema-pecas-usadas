@@ -203,19 +203,22 @@ function calcularValorEntrada(entrada) {
 
 function origemTemQuantidadeTotalDefinida(origem) {
   const valor = origem?.quantidadeTotal;
-  return valor !== undefined && valor !== null && valor !== "" && Number.isFinite(Number(valor));
+  return valor !== undefined && valor !== null && valor !== "" && Number.isFinite(Number(valor)) && Number(valor) > 0;
 }
 
-function formatarQuantidadeRestante(quantidadeRestante, temQuantidadeTotal) {
-  if (!temQuantidadeTotal) {
-    return "Sem quantidade prevista";
+function montarMensagemPrevisaoOrigem(resumoOrigem) {
+  if (!resumoOrigem?.temQuantidadeTotal || Number(resumoOrigem.quantidadeTotal || 0) <= 0) {
+    return "";
   }
 
-  if (quantidadeRestante < 0) {
-    return "Quantidade excedida";
+  const quantidadeDistribuida = Number(resumoOrigem.quantidadeDistribuida || 0);
+  const quantidadeTotal = Number(resumoOrigem.quantidadeTotal || 0);
+
+  if (Number(resumoOrigem.quantidadeRestante || 0) < 0) {
+    return `Previsao da origem excedida: cadastradas ${quantidadeDistribuida} pecas de ${quantidadeTotal} previstas.`;
   }
 
-  return String(quantidadeRestante);
+  return `Previsao da origem: ${quantidadeDistribuida} de ${quantidadeTotal} pecas cadastradas.`;
 }
 
 function atualizarVisualQuantidadeRestante(quantidadeRestante, temQuantidadeTotal) {
@@ -295,7 +298,6 @@ async function atualizarResumoOrigemSelecionada() {
     quantidadeTotal,
     quantidadeDistribuida,
     quantidadeRestante,
-    quantidadeRestanteTexto: formatarQuantidadeRestante(quantidadeRestante, temQuantidadeTotal),
     temQuantidadeTotal,
     situacaoDistribuicao
   };
@@ -541,11 +543,12 @@ async function salvarPeca() {
     pecasCadastro = await carregarPecas();
     limparCamposDaPeca();
     const resumoAtualizado = await atualizarResumoOrigemSelecionada();
-    const complementoQuantidade = resumoAtualizado
-      ? ` Quantidade da origem: ${resumoAtualizado.quantidadeRestanteTexto}.`
-      : "";
+    const mensagemPrevisaoOrigem = montarMensagemPrevisaoOrigem(resumoAtualizado);
 
-    mostrarMensagem(`Peca cadastrada com sucesso.${complementoQuantidade} Voce pode cadastrar outra peca para a mesma origem.`, "success");
+    mostrarMensagem(
+      ["Peca cadastrada com sucesso.", mensagemPrevisaoOrigem].filter(Boolean).join(" "),
+      "success"
+    );
   } catch (erro) {
     console.error("Erro ao cadastrar peca:", erro);
     mostrarMensagem(`Nao foi possivel salvar a peca: ${obterMensagemErroSupabase(erro)}`, "warning");
