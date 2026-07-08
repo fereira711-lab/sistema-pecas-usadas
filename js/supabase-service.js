@@ -1022,6 +1022,32 @@
     return mapearEntradaEstoqueDoBanco(data);
   }
 
+  async function excluirEntradaEstoque(entradaId) {
+    const cliente = obterCliente();
+    const id = Number(entradaId || 0);
+
+    if (!cliente || !id) {
+      return false;
+    }
+
+    const { data, error } = await cliente
+      .from("entradas_estoque")
+      .delete()
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data?.id) {
+      throw new Error("Entrada de estoque nao encontrada para exclusao.");
+    }
+
+    return true;
+  }
+
   async function criarPecaComEntrada(peca) {
     const cliente = obterCliente();
 
@@ -1315,6 +1341,7 @@
     atualizarDadosPeca,
     uploadImagemPeca,
     buscarEntradaEstoquePorId,
+    excluirEntradaEstoque,
     criarPecaComEntrada,
     salvarEntradaEstoque,
     salvarCustoPeca,

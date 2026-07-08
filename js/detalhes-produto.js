@@ -727,6 +727,14 @@ function obterConsumosDaVenda(vendaId) {
   return contextoProduto.consumosEstoque.filter(consumo => Number(consumo.vendaId) === Number(vendaId));
 }
 
+function entradaPossuiConsumo(contextoEntrada, consumos = contextoProduto.consumosEstoque) {
+  if (Number(contextoEntrada?.quantidadeConsumida || 0) > 0) {
+    return true;
+  }
+
+  return (consumos || []).some(consumo => Number(consumo.entradaEstoqueId || 0) === Number(contextoEntrada?.id || 0));
+}
+
 async function carregarContextoSupabase(pecaId) {
   if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
     return null;
@@ -1181,6 +1189,7 @@ function renderizarEntradas() {
     const valorAtribuido = Number(
       entrada.valorAtribuido ?? entrada.valor_atribuido ?? entrada.valorAtribuidoEntrada ?? entrada.valor_atribuido_entrada ?? 0
     ) || Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0);
+    const bloqueada = entradaPossuiConsumo(entrada);
     const linha = document.createElement("tr");
 
     linha.innerHTML = `
@@ -1191,10 +1200,61 @@ function renderizarEntradas() {
       <td data-label="Saldo">${formatarNumero(saldo)}</td>
       <td data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
       <td data-label="Valor atribuído">${formatarMoeda(valorAtribuido)}</td>
+      <td data-label="Ações">
+        <div class="table-actions table-actions--single">
+          <button type="button" class="button-danger-soft" data-acao="excluir-entrada" data-entrada-id="${escaparHtml(entrada.id)}" ${bloqueada ? "disabled" : ""}>Excluir</button>
+        </div>
+      </td>
     `;
 
     tabelaEntradasProduto.appendChild(linha);
   });
+}
+
+async function excluirEntradaProduto(entradaId) {
+  if (!window.supabaseService?.estaConfigurado()) {
+    mensagemEntradasProduto.textContent = "Configure o Supabase antes de excluir entradas.";
+    return;
+  }
+
+  const entrada = contextoProduto.entradas.find(item => Number(item.id) === Number(entradaId));
+
+  if (!entrada) {
+    mensagemEntradasProduto.textContent = "Entrada de estoque não encontrada.";
+    return;
+  }
+
+  const consumosAtualizados = await window.supabaseService.listarConsumosEstoque();
+
+  if (entradaPossuiConsumo(entrada, consumosAtualizados || [])) {
+    mensagemEntradasProduto.textContent = "Esta entrada já possui movimentação e não pode ser excluída.";
+    return;
+  }
+
+  const confirmar = window.confirm("Excluir esta entrada de estoque?");
+
+  if (!confirmar) {
+    return;
+  }
+
+  mensagemEntradasProduto.textContent = "Excluindo entrada de estoque...";
+
+  try {
+    await window.supabaseService.excluirEntradaEstoque(entradaId);
+    const contextoAtualizado = await recarregarContextoProduto(contextoProduto.produto.id);
+
+    if (!contextoAtualizado?.produto) {
+      throw new Error("Não foi possível recarregar os dados da peça.");
+    }
+
+    contextoProduto = contextoAtualizado;
+    renderizarTela();
+    renderizarOpcoesOrigensEntradaProduto();
+    mensagemEntradasProduto.textContent = "Entrada de estoque excluída com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao excluir entrada de estoque:", erro);
+    mensagemEntradasProduto.textContent = erro?.message || "Não foi possível excluir a entrada de estoque.";
+  }
 }
 
 function renderizarCustos() {
@@ -1366,6 +1426,16 @@ tabelaCustosProduto?.addEventListener("click", evento => {
   if (botao.dataset.acao === "excluir-custo") {
     excluirCustoProduto(botao.dataset.custoId);
   }
+});
+
+tabelaEntradasProduto?.addEventListener("click", evento => {
+  const botao = evento.target.closest("[data-acao='excluir-entrada']");
+
+  if (!botao) {
+    return;
+  }
+
+  excluirEntradaProduto(botao.dataset.entradaId);
 });
 
 iniciarDetalhes();
