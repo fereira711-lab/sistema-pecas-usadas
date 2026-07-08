@@ -982,6 +982,32 @@
     return mapearPecaDoBanco(data);
   }
 
+  async function excluirPeca(pecaId) {
+    const cliente = obterCliente();
+    const id = Number(pecaId || 0);
+
+    if (!cliente || !id) {
+      return false;
+    }
+
+    const { data, error } = await cliente
+      .from("pecas")
+      .delete()
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data?.id) {
+      throw new Error("Peca nao encontrada para exclusao.");
+    }
+
+    return true;
+  }
+
   async function salvarEntradaEstoque(entrada) {
     const cliente = obterCliente();
 
@@ -1361,6 +1387,7 @@
     salvarPeca,
     atualizarPeca,
     atualizarDadosPeca,
+    excluirPeca,
     uploadImagemPeca,
     buscarEntradaEstoquePorId,
     excluirEntradaEstoque,

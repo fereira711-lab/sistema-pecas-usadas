@@ -1,6 +1,7 @@
 const tituloProduto = document.getElementById("tituloProduto");
 const subtituloProduto = document.getElementById("subtituloProduto");
 const mensagemProdutoNaoEncontrado = document.getElementById("mensagemProdutoNaoEncontrado");
+const secaoEntradasProduto = document.getElementById("secaoEntradasProduto");
 const dadosProduto = document.getElementById("dadosProduto");
 const resumoFinanceiro = document.getElementById("resumoFinanceiro");
 const mensagemEntradasProduto = document.getElementById("mensagemEntradasProduto");
@@ -16,6 +17,7 @@ const botaoLancamentoCustoProduto = document.getElementById("botaoLancamentoCust
 const origemVinculadaProduto = document.getElementById("origemVinculadaProduto");
 const campoImagemProdutoDetalhe = document.getElementById("imagemProdutoDetalhe");
 const botaoEditarProduto = document.getElementById("botaoEditarProduto");
+const botaoExcluirProduto = document.getElementById("botaoExcluirProduto");
 const formEditarProduto = document.getElementById("formEditarProduto");
 const editarProdutoNome = document.getElementById("editarProdutoNome");
 const editarProdutoSku = document.getElementById("editarProdutoSku");
@@ -1187,6 +1189,30 @@ function renderizarNaoEncontrado(mensagem) {
   tabelaVendasProduto.innerHTML = "";
 }
 
+function mostrarOrientacaoExclusaoProduto(mensagem, opcoes = {}) {
+  if (!mensagemProdutoNaoEncontrado) {
+    return;
+  }
+
+  mensagemProdutoNaoEncontrado.innerHTML = "";
+  mensagemProdutoNaoEncontrado.textContent = mensagem;
+
+  if (!opcoes.rolarParaEntradas) {
+    return;
+  }
+
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "button-secondary";
+  botao.textContent = "Ir para entradas";
+  botao.addEventListener("click", () => {
+    secaoEntradasProduto?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  mensagemProdutoNaoEncontrado.appendChild(document.createTextNode(" "));
+  mensagemProdutoNaoEncontrado.appendChild(botao);
+}
+
 function renderizarDadosProduto(produto) {
   const nomePeca = formatarNomePeca(produto);
   const nomeBase = produto.nome || produto.nome_peca || produto.nomeProduto || produto.produtoNome || produto.descricao || nomePeca;
@@ -1507,6 +1533,50 @@ async function excluirCustoProduto(custoId) {
   }
 }
 
+async function excluirProdutoAtual() {
+  if (!window.supabaseService?.estaConfigurado() || !contextoProduto.produto?.id) {
+    mensagemProdutoNaoEncontrado.textContent = "Configure o Supabase antes de excluir a peça.";
+    return;
+  }
+
+  const entradasDaPeca = contextoProduto.entradas || [];
+  const vendasDaPeca = contextoProduto.vendas || [];
+  const custosDaPeca = contextoProduto.custosPeca || [];
+  const consumosDaPeca = contextoProduto.consumosEstoque || [];
+
+  if (entradasDaPeca.length > 0) {
+    const existeEntradaSemConsumo = entradasDaPeca.some(entrada => !entradaPossuiConsumo(entrada, consumosDaPeca));
+
+    if (existeEntradaSemConsumo) {
+      mostrarOrientacaoExclusaoProduto("Exclua as entradas desta peça antes de excluir o produto.", {
+        rolarParaEntradas: true
+      });
+      return;
+    }
+  }
+
+  if (vendasDaPeca.length > 0 || custosDaPeca.length > 0 || consumosDaPeca.length > 0) {
+    mostrarOrientacaoExclusaoProduto("Esta peça possui movimentações e não pode ser excluída.");
+    return;
+  }
+
+  const confirmar = window.confirm("Excluir esta peça?");
+
+  if (!confirmar) {
+    return;
+  }
+
+  mensagemProdutoNaoEncontrado.textContent = "Excluindo peça...";
+
+  try {
+    await window.supabaseService.excluirPeca(contextoProduto.produto.id);
+    window.location.href = "produtos.html";
+  } catch (erro) {
+    console.error("Erro ao excluir peça:", erro);
+    mensagemProdutoNaoEncontrado.textContent = erro?.message || "Não foi possível excluir a peça.";
+  }
+}
+
 async function iniciarDetalhes() {
   await carregarTiposCustoProduto();
   const pecaId = obterPecaIdDaUrl();
@@ -1561,6 +1631,7 @@ campoImagemProdutoDetalhe?.addEventListener("change", evento => {
 });
 
 botaoEditarProduto?.addEventListener("click", abrirFormularioEdicaoProduto);
+botaoExcluirProduto?.addEventListener("click", excluirProdutoAtual);
 cancelarEdicaoProduto?.addEventListener("click", fecharFormularioEdicaoProduto);
 formEditarProduto?.addEventListener("submit", salvarEdicaoProduto);
 cancelarEdicaoCusto?.addEventListener("click", fecharFormularioEdicaoCusto);

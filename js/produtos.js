@@ -448,6 +448,7 @@ function renderizarProdutos(pecas) {
             <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lancar custo</button>
             <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
             <button type="button" data-acao="imagem" data-peca-id="${peca.id}">Trocar imagem</button>
+            <button type="button" data-acao="excluir" data-peca-id="${peca.id}">Excluir peça</button>
           </div>
         </details>
       </div>
@@ -519,6 +520,11 @@ tabelaProdutos.addEventListener("click", evento => {
 
   if (botao.dataset.acao === "imagem" && botao.dataset.pecaId) {
     pedirImagemProduto(botao.dataset.pecaId);
+    return;
+  }
+
+  if (botao.dataset.acao === "excluir" && botao.dataset.pecaId) {
+    abrirDetalhesProduto(botao.dataset.pecaId);
     return;
   }
 
