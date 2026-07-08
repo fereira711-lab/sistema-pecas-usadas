@@ -1195,7 +1195,12 @@ function renderizarDadosProduto(produto) {
   const quantidadeDisponivel = obterQuantidadeDisponivel(produto);
   const imagemUrl = obterImagemUrlProduto(produto);
   const statusProduto = obterStatusProduto(produto);
-  const precoVenda = Number(produto.precoVenda || produto.preco_venda || 0);
+  const totalEntradas = contextoProduto.entradas.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
+  const custoMedioEntradas = totalEntradas > 0
+    ? contextoProduto.entradas.reduce((total, entrada) => total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0)), 0) / totalEntradas
+    : null;
+  const custoCompra = custoMedioEntradas ?? Number(produto.custo || produto.custoTotal || 0);
+  const rotuloCusto = custoMedioEntradas !== null ? "Custo médio" : "Custo de compra";
   const observacoes = String(produto.observacoes || "").trim();
 
   tituloProduto.textContent = nomePeca;
@@ -1227,8 +1232,8 @@ function renderizarDadosProduto(produto) {
 
       <aside class="product-detail-main-metrics" aria-label="Resumo operacional do produto">
         <article class="detail-card">
-          <span>Preço de venda</span>
-          <strong>${precoVenda > 0 ? formatarMoeda(precoVenda) : "Sem preço"}</strong>
+          <span>${rotuloCusto}</span>
+          <strong>${custoCompra > 0 ? formatarMoeda(custoCompra) : "Sem custo"}</strong>
         </article>
         <article class="detail-card">
           <span>Disponível</span>
