@@ -604,7 +604,7 @@ async function carregarPecasParaVenda() {
     return pecas.map(normalizarPeca);
   }
 
-  return buscarPecas().map(normalizarPeca);
+  return [];
 }
 
 function selecionarPeca(peca) {
@@ -736,9 +736,7 @@ function atualizarLimiteQuantidadeSelecionada() {
     return;
   }
 
-  const peca = buscarPecas()
-    .map(normalizarPeca)
-    .find(item => Number(item.id) === Number(campoPeca.value));
+  const peca = pecasVendaCarregadas.find(item => Number(item.id) === Number(campoPeca.value));
 
   if (!peca) {
     campoQuantidade.removeAttribute("max");
@@ -808,11 +806,11 @@ async function inicializarFormularioVenda() {
     atualizarLimiteQuantidadeSelecionada();
   } catch (erro) {
     console.error("Erro ao carregar peças para venda:", erro);
-    pecasVendaCarregadas = buscarPecas().map(normalizarPeca);
-    entradasVendaCarregadas = buscarEntradasLocais();
+    pecasVendaCarregadas = [];
+    entradasVendaCarregadas = [];
     selecionarPecaDaUrl();
     atualizarLimiteQuantidadeSelecionada();
-    alert("Não foi possível carregar as peças do Supabase. Verifique a configuração e tente novamente.");
+    mostrarMensagemVenda("Não foi possível carregar as peças do Supabase. Nenhum produto foi disponibilizado para venda.", "warning");
   }
 
   campoBuscaPecaVenda?.addEventListener("input", atualizarSugestoesVenda);
