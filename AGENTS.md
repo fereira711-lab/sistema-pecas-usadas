@@ -598,3 +598,11 @@ Fluxo recomendado:
 Observacao: o preview `produtos-lista-ui-preview` foi usado como base para validar a UX/UI da lista operacional compacta antes de aplicar em `paginas/produtos.html`.
 
 A pasta previews/ é usada como laboratório visual e não faz parte do fluxo operacional real do sistema.
+
+## Contexto transversal do Ecossistema
+
+- Estado técnico do ERP: este repositório e seus serviços próprios.
+- Autoridade e coordenação institucional: Fundação Hefestos.
+- Memória e contexto auxiliar: Base IA.
+- Contexto transversal: consultar `REF-ECO-CTX-001 - Referência Transversal Mínima do Ecossistema Hefestos` na Fundação.
+- Hefestos ≠ ERP. Esta orientação não cria integração de runtime.
