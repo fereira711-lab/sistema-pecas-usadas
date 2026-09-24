@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/base.css?v=10">
-  <link rel="stylesheet" href="../css/registrar-venda.css?v=1">
+  <link rel="stylesheet" href="../css/base.css?v=11">
+  <link rel="stylesheet" href="../css/registrar-venda.css?v=2">
 </head>
 <body data-auth="protected" class="auth-checking ui-v2">
   <main class="page">
@@ -57,11 +57,11 @@
           </div>
           <div class="field">
             <span class="field__label" id="rotuloCanal">Canal</span>
-            <div class="segmented venda-canais" role="group" aria-labelledby="rotuloCanal" id="canaisVenda">
-              <button type="button" class="segmented__item" data-canal="Mercado Livre" aria-pressed="false">Mercado Livre</button>
-              <button type="button" class="segmented__item" data-canal="WhatsApp" aria-pressed="false">WhatsApp</button>
-              <button type="button" class="segmented__item" data-canal="Balcão" aria-pressed="false">Balcão</button>
-              <button type="button" class="segmented__item" data-canal="Outro" aria-pressed="false">Outro</button>
+            <div class="choice-group" role="group" aria-labelledby="rotuloCanal" id="canaisVenda">
+              <button type="button" class="choice" data-canal="Mercado Livre" aria-pressed="false">Mercado Livre</button>
+              <button type="button" class="choice" data-canal="WhatsApp" aria-pressed="false">WhatsApp</button>
+              <button type="button" class="choice" data-canal="Balcão" aria-pressed="false">Balcão</button>
+              <button type="button" class="choice" data-canal="Outro" aria-pressed="false">Outro</button>
             </div>
           </div>
           <div class="field">
@@ -74,6 +74,9 @@
           <div class="card__head">
             <h2 class="card__title" id="tituloCustosVenda">Custos da venda</h2>
             <span class="card__subtitle">Frete, embalagem, taxas</span>
+          </div>
+          <div class="venda-custos__cabecalho" id="cabecalhoCustosVenda" aria-hidden="true" hidden>
+            <span>Tipo</span><span>Valor</span>
           </div>
           <div id="listaCustosVenda" class="venda-custos"></div>
           <div>
@@ -108,7 +111,7 @@
   <script src="../js/moeda-utils.js?v=2"></script>
   <script src="../js/supabase-service.js?v=36"></script>
   <script src="../js/financeiro-utils.js?v=4"></script>
-  <script src="../js/venda.js?v=23"></script>
+  <script src="../js/venda.js?v=24"></script>
   <script src="../js/sidebar.js?v=9"></script>
 </body>
 </html>

@@ -17,6 +17,7 @@ const campoDataVenda = document.getElementById("dataVenda");
 const canaisVenda = document.getElementById("canaisVenda");
 const campoObservacoes = document.getElementById("observacoesVenda");
 const listaCustosVenda = document.getElementById("listaCustosVenda");
+const cabecalhoCustosVenda = document.getElementById("cabecalhoCustosVenda");
 const botaoAdicionarCustoVenda = document.getElementById("botaoAdicionarCustoVenda");
 const botaoRegistrarVenda = document.getElementById("botaoRegistrarVenda");
 
@@ -276,24 +277,25 @@ function criarOpcoesTipos(tipoSelecionado = "") {
     .join("");
 }
 
+// "Tipo" e "Valor" aparecem uma vez, no cabeçalho das colunas; cada campo tem o próprio aria-label.
+function atualizarCabecalhoCustos() {
+  if (cabecalhoCustosVenda) {
+    cabecalhoCustosVenda.hidden = !listaCustosVenda.querySelector(".venda-custo");
+  }
+}
+
 function adicionarLinhaCusto(custo = {}) {
-  const numero = listaCustosVenda.querySelectorAll(".venda-custo").length + 1;
   const linha = document.createElement("div");
   linha.className = "venda-custo";
   linha.innerHTML = `
-    <div class="field">
-      <label class="field__label" for="tipoCusto${numero}">Tipo</label>
-      <select id="tipoCusto${numero}" class="select venda-custo__tipo" data-campo="tipo">${criarOpcoesTipos(custo.tipo)}</select>
-    </div>
-    <div class="field">
-      <label class="field__label" for="valorCusto${numero}">Valor</label>
-      <input id="valorCusto${numero}" class="input" data-campo="valor" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
-    </div>
+    <select class="select venda-custo__tipo" data-campo="tipo" aria-label="Tipo do custo">${criarOpcoesTipos(custo.tipo)}</select>
+    <input class="input" data-campo="valor" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" aria-label="Valor do custo">
     <button type="button" class="btn btn--icon venda-custo__remover" data-acao="remover-custo" aria-label="Remover custo">
       <i class="ri-delete-bin-line" aria-hidden="true"></i>
     </button>
   `;
   listaCustosVenda.appendChild(linha);
+  atualizarCabecalhoCustos();
   window.moedaUtils?.registrarCampoMoeda?.(linha.querySelector("[data-campo='valor']"));
   linha.querySelector("[data-campo='valor']").focus();
   atualizarResumo();
@@ -335,6 +337,7 @@ function atualizarResumo() {
   resumoReceita.textContent = formatarMoeda(previa.receita);
   resumoCustosVenda.textContent = formatarNegativo(previa.custosVenda);
   resumoLucroLinha.classList.remove("summary-side__result--success", "summary-side__result--danger", "summary-side__result--neutral");
+  resumoMargem.classList.remove("text-success", "text-danger");
 
   if (previa.custoPeca === null) {
     resumoCustoPeca.textContent = pecaSelecionada ? "Custo não calculado" : "—";
@@ -351,6 +354,10 @@ function atualizarResumo() {
   resumoLucro.textContent = formatarMoeda(previa.lucro);
   resumoMargem.textContent = previa.margem === null ? "—" : formatarPercentual(previa.margem);
   resumoLucroLinha.classList.add(previa.lucro < 0 ? "summary-side__result--danger" : "summary-side__result--success");
+  // Margem na mesma cor do lucro.
+  if (previa.margem !== null) {
+    resumoMargem.classList.add(previa.lucro < 0 ? "text-danger" : "text-success");
+  }
   notaCustoVenda.textContent = "O custo vem da entrada mais antiga desta peça e é confirmado ao registrar.";
 }
 
@@ -389,6 +396,7 @@ function limparFormulario() {
   campoObservacoes.value = "";
   selecionarCanal("");
   listaCustosVenda.innerHTML = "";
+  atualizarCabecalhoCustos();
   renderizarCartaoPeca();
   atualizarResumo();
   if (window.location.search) window.history.replaceState({}, "", window.location.pathname);
@@ -517,6 +525,7 @@ listaCustosVenda?.addEventListener("click", evento => {
   const botao = evento.target.closest("[data-acao='remover-custo']");
   if (botao) {
     botao.closest(".venda-custo")?.remove();
+    atualizarCabecalhoCustos();
     atualizarResumo();
   }
 });

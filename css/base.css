@@ -26,6 +26,7 @@
   --text-2: #3D3B37;
   --text-muted: #5C5A55;
   --text-faint: #8E897F;
+  --text-on-dark: #FFFFFF;
 
   /* Destaque */
   --accent: #E8A93A;
@@ -1275,6 +1276,42 @@ body.ui-v2 a.action-menu__item--danger {
 .pill--warning { background: var(--warning-bg); color: var(--warning); }
 .pill--danger { background: var(--danger-bg); color: var(--danger); }
 .pill--info { background: var(--info-bg); color: var(--info); }
+
+/* ============ Escolha em botões (ex.: canal da venda) ============ */
+/* Opção de formulário com uma resposta só. Diferente do controle segmentado, que é filtro. */
+
+.choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.choice {
+  height: var(--control-height);
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.choice:hover {
+  border-color: var(--text-faint);
+}
+
+.choice[aria-pressed="true"] {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--text-on-dark);
+}
 
 /* ============ Controle segmentado ============ */
 

@@ -132,12 +132,6 @@
   font-weight: 600;
 }
 
-/* ---- Canal ---- */
-
-.venda-canais {
-  align-self: flex-start;
-}
-
 /* ---- Custos da venda em linhas: tipo + valor + remover ---- */
 
 .venda-custos {
@@ -150,11 +144,24 @@
   display: none;
 }
 
+/* Cabeçalho das colunas: mesma grade das linhas, com a coluna do botão remover vazia. */
+.venda-custos__cabecalho,
 .venda-custo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--control-height);
+  align-items: center;
   gap: var(--space-3);
+}
+
+.venda-custos__cabecalho {
+  margin-bottom: calc(var(--space-1-5) - var(--space-4));
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.venda-custos__cabecalho[hidden] {
+  display: none;
 }
 
 .venda-custo__tipo {
