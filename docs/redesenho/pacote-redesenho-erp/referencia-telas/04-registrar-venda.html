@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Registrar venda</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F5F2}
+a{color:#8A5A00}a:hover{color:#5E3D00}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1100px; display: flex; background: #F6F5F2; font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; color: #1C1B19; font-variant-numeric: tabular-nums">
+<nav aria-label="Navegação principal" style="width: 240px; flex-shrink: 0; box-sizing: border-box; background: #1C1B19; color: #F4F2EC; padding: 20px 14px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 6px">
+<div style="width: 34px; height: 34px; border-radius: 8px; background: {{accent}}; color: #1C1B19; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2-6h14l2 6v5H3z"></path><circle cx="7.5" cy="18" r="1.5"></circle><circle cx="16.5" cy="18" r="1.5"></circle></svg></div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 14px; font-weight: 700; letter-spacing: 0.2px">[NOME DO SISTEMA]</span>
+<span style="font-size: 12px; color: #B9B4AA">DWDW Autopeças</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 11px; font-weight: 600; color: #8E897F; letter-spacing: 0.8px; text-transform: uppercase; padding: 0 12px 6px">Operação</span>
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>Painel</a>
+<a href="Produtos.dc.html" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>Produtos</a>
+<a href="Origem.dc.html" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2-6h14l2 6v5H3z"></path><circle cx="7.5" cy="18" r="1.5"></circle><circle cx="16.5" cy="18" r="1.5"></circle></svg>Origens</a>
+<a href="#" aria-current="page" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; background: #2E2C28; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 600"><span style="color: {{accent}}; display: flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H6.2"></path><circle cx="9" cy="20" r="1.4"></circle><circle cx="18" cy="20" r="1.4"></circle></svg></span>Vendas</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"></path><path d="M4 17v3h16v-3"></path></svg>Entradas de estoque</a>
+<a href="#" style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500"><span style="display: flex; align-items: center; gap: 12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"></path><path d="M10 21h4"></path></svg>Alertas</span><span style="min-width: 22px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 10px; background: {{accent}}; color: #1C1B19; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">3</span></a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 11px; font-weight: 600; color: #8E897F; letter-spacing: 0.8px; text-transform: uppercase; padding: 0 12px 6px">Gestão</span>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"></path></svg>Análises</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg>Tipos de custo</a>
+</div>
+<div style="margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border-radius: 10px; background: #262521">
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="width: 32px; height: 32px; border-radius: 16px; background: #3A3833; color: #F4F2EC; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center">R</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="font-size: 13px; font-weight: 600">Rafael</span>
+<span style="font-size: 12px; color: #B9B4AA">Administrador</span>
+</div>
+</div>
+<button type="button" aria-label="Sair do sistema" style="width: 36px; height: 36px; border: none; border-radius: 8px; background: transparent; color: #D6D2C9; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"></path></svg></button>
+</div>
+</nav>
+<main style="flex-grow: 1; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<a href="#" style="font-size: 13px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Vendas</a>
+<h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.3px">Registrar venda</h1>
+<p style="margin: 0; font-size: 14px; color: #5C5A55">A baixa no estoque e o custo são calculados automaticamente.</p>
+</div>
+<div style="display: flex; align-items: center; gap: 10px"></div>
+</div>
+<div style="display: flex; gap: 20px; align-items: flex-start">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><h2 style="margin: 0; font-size: 16px; font-weight: 600">Peça vendida</h2></div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="busca-peca" style="font-size: 13px; font-weight: 600; color: #3D3B37">Peça</label>
+<input id="busca-peca" type="search" value="FAR-0231" style="height: 40px; box-sizing: border-box; width: 100%; padding: 0 12px; border: 1px solid #D9D6CE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #1C1B19">
+</div>
+<div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid #E4E2DC; border-radius: 10px; background: #FAF9F6">
+<div style="width: 52px; height: 52px; border-radius: 8px; background: #F1EFEA; color: #A8A399; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="10" r="1.5"></circle><path d="M21 16l-5-5-8 8"></path></svg></div>
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1">
+<span style="font-size: 15px; font-weight: 600">Farol dianteiro esquerdo</span>
+<span style="font-size: 13px; color: #5C5A55"><span style="font-family: 'IBM Plex Mono', monospace">FAR-0231</span> · Gol G6 1.0 2015</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+<span style="font-size: 13px; color: #5C5A55">Em estoque</span>
+<span style="font-size: 15px; font-weight: 600">1 un.</span>
+</div>
+</div>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><h2 style="margin: 0; font-size: 16px; font-weight: 600">Dados da venda</h2></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px"><div style="display: flex; flex-direction: column; gap: 6px"><label for="qtdv" style="font-size: 13px; font-weight: 600; color: #3D3B37">Quantidade</label><input id="qtdv" type="text" value="1" style="height: 40px; box-sizing: border-box; width: 100%; padding: 0 12px; border: 1px solid #D9D6CE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #1C1B19"></div><div style="display: flex; flex-direction: column; gap: 6px"><label for="valor" style="font-size: 13px; font-weight: 600; color: #3D3B37">Valor unitário</label><input id="valor" type="text" value="R$ 489,90" style="height: 40px; box-sizing: border-box; width: 100%; padding: 0 12px; border: 1px solid #D9D6CE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #1C1B19"><span style="font-size: 12px; color: #5C5A55">Preço cadastrado: R$ 489,90</span></div><div style="display: flex; flex-direction: column; gap: 6px"><label for="datav" style="font-size: 13px; font-weight: 600; color: #3D3B37">Data da venda</label><input id="datav" type="text" value="24/09/2026" style="height: 40px; box-sizing: border-box; width: 100%; padding: 0 12px; border: 1px solid #D9D6CE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #1C1B19"></div></div><div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 600; color: #3D3B37">Canal</span><div role="group" aria-label="Canal da venda" style="display: flex; gap: 8px"><button type="button" aria-pressed="true" style="height: 40px; padding: 0 16px; border-radius: 8px; background: #1C1B19; color: #FFFFFF; border: 1px solid #1C1B19; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Mercado Livre</button><button type="button" aria-pressed="false" style="height: 40px; padding: 0 16px; border-radius: 8px; background: #FFFFFF; color: #1C1B19; border: 1px solid #D9D6CE; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">WhatsApp</button><button type="button" aria-pressed="false" style="height: 40px; padding: 0 16px; border-radius: 8px; background: #FFFFFF; color: #1C1B19; border: 1px solid #D9D6CE; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Balcão</button><button type="button" aria-pressed="false" style="height: 40px; padding: 0 16px; border-radius: 8px; background: #FFFFFF; color: #1C1B19; border: 1px solid #D9D6CE; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Outro</button></div></div><div style="display: flex; flex-direction: column; gap: 6px"><label for="obsv" style="font-size: 13px; font-weight: 600; color: #3D3B37">Observação <span style="font-weight: 400; color: #5C5A55">(opcional)</span></label><input id="obsv" type="text" placeholder="Número do pedido, nome do cliente" style="height: 40px; box-sizing: border-box; width: 100%; padding: 0 12px; border: 1px solid #D9D6CE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #1C1B19"></div>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><h2 style="margin: 0; font-size: 16px; font-weight: 600">Custos da venda</h2><span style="font-size: 13px; color: #5C5A55">Frete, embalagem, taxas</span></div>
+<div style="display: grid; grid-template-columns: 2fr 1fr 40px; gap: 12px; align-items: end">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="tipo1" style="font-size: 13px; font-weight: 600; color: #3D3B37">Tipo</label><select id="tipo1" style="height: 40px; box-sizing: border-box; width: 100%; padding: 0 12px; border: 1px solid #D9D6CE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #1C1B19"><option>Frete</option><option>Embalagem</option></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="val1" style="font-size: 13px; font-weight: 600; color: #3D3B37">Valor</label><input id="val1" type="text" value="R$ 38,50" style="height: 40px; box-sizing: border-box; width: 100%; padding: 0 12px; border: 1px solid #D9D6CE; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #1C1B19"></div>
+<button type="button" aria-label="Remover custo" style="width: 40px; height: 40px; border: none; border-radius: 8px; background: transparent; color: #5C5A55; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div><button type="button" style="height: 40px; padding: 0 16px; border: 1px solid #D9D6CE; border-radius: 8px; background: #FFFFFF; color: #1C1B19; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Adicionar custo</button></div>
+</section>
+</div>
+<aside style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Resultado da venda</h2>
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px"><span style="color: #5C5A55">Receita</span><span style="font-weight: 500; color: #1C1B19">R$ 489,90</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px"><span style="color: #5C5A55">Custo da peça</span><span style="font-weight: 500; color: #1C1B19">− R$ 190,00</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px"><span style="color: #5C5A55">Custos da venda</span><span style="font-weight: 500; color: #1C1B19">− R$ 38,50</span></div>
+<div style="height: 1px; background: #EEEDEA"></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 16px"><span style="color: #5C5A55">Lucro</span><span style="font-weight: 700; color: #1F6B45">R$ 261,40</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px"><span style="color: #5C5A55">Margem</span><span style="font-weight: 500; color: #1F6B45">53,4%</span></div>
+<div style="height: 1px; background: #EEEDEA"></div>
+<p style="margin: 0; font-size: 13px; color: #5C5A55; line-height: 1.5">O custo vem da entrada mais antiga desta peça e é confirmado ao registrar.</p>
+</section>
+<button type="button" style="height: 40px; padding: 0 20px; border: none; border-radius: 8px; background: {{accent}}; color: #1C1B19; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; height: 48px; font-size: 15px">Registrar venda</button>
+<button type="button" style="height: 40px; padding: 0 12px; border: none; border-radius: 8px; background: transparent; color: #3D3B37; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Cancelar</button>
+</aside>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent": {"editor": "color", "default": "#E8A93A", "options": ["#E8A93A", "#F2B84B", "#D98E2B", "#C9A227"]}, "$preview": {"width": 1440, "height": 1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#E8A93A';
+    return { accent: accent };
+  }
+}
+</script>
+</body>
+</html>

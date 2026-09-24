@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Painel Geral</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F5F2}
+a{color:#8A5A00}a:hover{color:#5E3D00}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1080px; display: flex; background: #F6F5F2; font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; color: #1C1B19; font-variant-numeric: tabular-nums">
+
+<nav aria-label="Navegação principal" style="width: 240px; flex-shrink: 0; box-sizing: border-box; background: #1C1B19; color: #F4F2EC; padding: 20px 14px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 6px">
+<div style="width: 34px; height: 34px; border-radius: 8px; background: {{accent}}; color: #1C1B19; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2-6h14l2 6v5H3z"></path><circle cx="7.5" cy="18" r="1.5"></circle><circle cx="16.5" cy="18" r="1.5"></circle></svg>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 14px; font-weight: 700; letter-spacing: 0.2px">[NOME DO SISTEMA]</span>
+<span style="font-size: 12px; color: #B9B4AA">DWDW Autopeças</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 11px; font-weight: 600; color: #8E897F; letter-spacing: 0.8px; text-transform: uppercase; padding: 0 12px 6px">Operação</span>
+<a href="#" aria-current="page" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; background: #2E2C28; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 600">
+<span style="color: {{accent}}; display: flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>Painel</a>
+<a href="Produtos.dc.html" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>Produtos</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2-6h14l2 6v5H3z"></path><circle cx="7.5" cy="18" r="1.5"></circle><circle cx="16.5" cy="18" r="1.5"></circle></svg>Origens</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H6.2"></path><circle cx="9" cy="20" r="1.4"></circle><circle cx="18" cy="20" r="1.4"></circle></svg>Vendas</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"></path><path d="M4 17v3h16v-3"></path></svg>Entradas de estoque</a>
+<a href="#" style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500">
+<span style="display: flex; align-items: center; gap: 12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"></path><path d="M10 21h4"></path></svg>Alertas</span>
+<span style="min-width: 22px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 10px; background: {{accent}}; color: #1C1B19; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">3</span></a>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 11px; font-weight: 600; color: #8E897F; letter-spacing: 0.8px; text-transform: uppercase; padding: 0 12px 6px">Gestão</span>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"></path></svg>Análises</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 8px; color: #D6D2C9; text-decoration: none; font-size: 14px; font-weight: 500">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg>Tipos de custo</a>
+</div>
+
+<div style="margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border-radius: 10px; background: #262521">
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="width: 32px; height: 32px; border-radius: 16px; background: #3A3833; color: #F4F2EC; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center">R</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="font-size: 13px; font-weight: 600">Rafael</span>
+<span style="font-size: 12px; color: #B9B4AA">Administrador</span>
+</div>
+</div>
+<button type="button" aria-label="Sair do sistema" style="width: 36px; height: 36px; border: none; border-radius: 8px; background: transparent; color: #D6D2C9; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"></path></svg>
+</button>
+</div>
+</nav>
+
+<main style="flex-grow: 1; box-sizing: border-box; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px">
+
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.3px">Painel</h1>
+<p style="margin: 0; font-size: 14px; color: #5C5A55">Resultado de julho de 2026</p>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<button type="button" style="height: 40px; padding: 0 14px; border: 1px solid #D9D6CE; border-radius: 8px; background: #FFFFFF; color: #1C1B19; font-family: inherit; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer">Julho 2026<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+<button type="button" style="height: 40px; padding: 0 16px; border: 1px solid #D9D6CE; border-radius: 8px; background: #FFFFFF; color: #1C1B19; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Nova peça</button>
+<button type="button" style="height: 40px; padding: 0 18px; border: none; border-radius: 8px; background: {{accent}}; color: #1C1B19; font-family: inherit; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Registrar venda</button>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<div style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 500; color: #5C5A55">Receita do mês</span>
+<span style="font-size: 28px; font-weight: 600; letter-spacing: -0.4px">R$ 31.848,20</span>
+<span style="font-size: 13px; color: #5C5A55">20 vendas</span>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 500; color: #5C5A55">Lucro real</span>
+<span style="font-size: 28px; font-weight: 600; letter-spacing: -0.4px">R$ 7.408,80</span>
+<span style="font-size: 13px; color: #1F6B45; font-weight: 600">Margem de 23,3%</span>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 500; color: #5C5A55">Custo das peças vendidas</span>
+<span style="font-size: 28px; font-weight: 600; letter-spacing: -0.4px">R$ 22.822,40</span>
+<span style="font-size: 13px; color: #5C5A55">+ R$ 1.617,00 em fretes</span>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 500; color: #5C5A55">Peças em estoque</span>
+<span style="font-size: 28px; font-weight: 600; letter-spacing: -0.4px">36</span>
+<span style="font-size: 13px; color: #5C5A55">de 52 cadastradas</span>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 5fr 3fr; gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Retorno por origem</h2>
+<p style="margin: 0; font-size: 13px; color: #5C5A55">Quanto cada carro ou lote já devolveu do valor pago</p>
+</div>
+<a href="#" style="font-size: 14px; font-weight: 600; text-decoration: none">Ver origens</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 18px">
+<sc-for list="{{origens}}" as="o" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+<div style="display: flex; align-items: baseline; gap: 10px">
+<span style="font-size: 14px; font-weight: 600">{{o.nome}}</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5C5A55">{{o.codigo}}</span>
+</div>
+<span style="font-size: 13px; color: #5C5A55">{{o.resumo}}</span>
+</div>
+<div style="height: 10px; border-radius: 5px; background: #EEEDEA; overflow: hidden">
+<div style="height: 10px; border-radius: 5px; width: {{o.pct}}; background: {{o.cor}}"></div>
+</div>
+<span style="font-size: 13px; font-weight: 600; color: {{o.statusCor}}">{{o.status}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Precisa de atenção</h2>
+<a href="#" style="font-size: 14px; font-weight: 600; text-decoration: none">Ver alertas</a>
+</div>
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<div style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #FDF0DC; color: #8A4B00; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
+<div style="display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 14px; font-weight: 600">12 peças paradas há mais de 90 dias</span>
+<span style="font-size: 13px; color: #5C5A55">R$ 8.940,00 em estoque sem giro</span>
+<a href="#" style="font-size: 13px; font-weight: 600; text-decoration: none">Ver peças</a>
+</div>
+</div>
+<div style="height: 1px; background: #EEEDEA"></div>
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<div style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #FBE9E7; color: #A3241B; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l6 6 4-4 8 8"></path><path d="M21 12v5h-5"></path></svg></div>
+<div style="display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 14px; font-weight: 600">1 venda com prejuízo</span>
+<span style="font-size: 13px; color: #5C5A55">Caixa de câmbio 900A1 · margem de −109%</span>
+<a href="#" style="font-size: 13px; font-weight: 600; text-decoration: none">Ver venda</a>
+</div>
+</div>
+<div style="height: 1px; background: #EEEDEA"></div>
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<div style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #E8F0FA; color: #1F5FA8; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"></path><path d="M3 13l9 5 9-5"></path></svg></div>
+<div style="display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 14px; font-weight: 600">1 origem com valor a distribuir</span>
+<span style="font-size: 13px; color: #5C5A55">Lote São Gabriel · R$ 3.103,60 sem peça vinculada</span>
+<a href="#" style="font-size: 13px; font-weight: 600; text-decoration: none">Distribuir</a>
+</div>
+</div>
+<div style="height: 1px; background: #EEEDEA"></div>
+<div style="display: flex; gap: 12px; align-items: center">
+<div style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #E6F3EC; color: #1F6B45; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></div>
+<span style="font-size: 14px; color: #3D3B37">Todas as vendas com custo calculado</span>
+</div>
+</section>
+</div>
+
+<section style="background: #FFFFFF; border: 1px solid #E4E2DC; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Últimas vendas</h2>
+<a href="#" style="font-size: 14px; font-weight: 600; text-decoration: none">Ver todas</a>
+</div>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px">
+<thead>
+<tr style="text-align: left; color: #5C5A55; font-size: 12px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase">
+<th style="padding: 0 12px 10px 0; font-weight: 600; border-bottom: 1px solid #E4E2DC">Data</th>
+<th style="padding: 0 12px 10px 0; font-weight: 600; border-bottom: 1px solid #E4E2DC">Peça</th>
+<th style="padding: 0 12px 10px 0; font-weight: 600; border-bottom: 1px solid #E4E2DC">Canal</th>
+<th style="padding: 0 12px 10px 0; font-weight: 600; border-bottom: 1px solid #E4E2DC; text-align: right">Valor</th>
+<th style="padding: 0 12px 10px 0; font-weight: 600; border-bottom: 1px solid #E4E2DC; text-align: right">Custo da peça</th>
+<th style="padding: 0 0 10px 0; font-weight: 600; border-bottom: 1px solid #E4E2DC; text-align: right">Lucro</th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{vendas}}" as="v" hint-placeholder-count="5">
+<tr>
+<td style="padding: 14px 12px 14px 0; border-bottom: 1px solid #EEEDEA; color: #5C5A55">{{v.data}}</td>
+<td style="padding: 14px 12px 14px 0; border-bottom: 1px solid #EEEDEA"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5C5A55; margin-right: 10px">{{v.sku}}</span><span style="font-weight: 500">{{v.peca}}</span></td>
+<td style="padding: 14px 12px 14px 0; border-bottom: 1px solid #EEEDEA">{{v.canal}}</td>
+<td style="padding: 14px 12px 14px 0; border-bottom: 1px solid #EEEDEA; text-align: right">{{v.valor}}</td>
+<td style="padding: 14px 12px 14px 0; border-bottom: 1px solid #EEEDEA; text-align: right; color: #5C5A55">{{v.custo}}</td>
+<td style="padding: 14px 0; border-bottom: 1px solid #EEEDEA; text-align: right; font-weight: 600; color: {{v.lucroCor}}">{{v.lucro}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#E8A93A","options":["#E8A93A","#F2B84B","#D98E2B","#C9A227"]},"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const verde = '#1F6B45';
+    const accent = this.props.accent ?? '#E8A93A';
+    return {
+      accent: accent,
+      origens: [
+        { nome: 'Onix 1.4 2014', codigo: 'ORI-000001', resumo: 'R$ 21.410,00 de R$ 18.740,00', pct: '100%', cor: '#2F8A5B', status: 'Já se pagou · lucro de R$ 2.670,00', statusCor: verde },
+        { nome: 'Gol G6 1.0 2015', codigo: 'ORI-000003', resumo: 'R$ 7.120,00 de R$ 12.850,00', pct: '55%', cor: accent, status: 'Faltam R$ 5.730,00 para se pagar', statusCor: '#5C5A55' },
+        { nome: 'Toro · compra avulsa', codigo: 'ORI-000004', resumo: 'R$ 2.300,00 de R$ 7.980,00', pct: '29%', cor: accent, status: 'Faltam R$ 5.680,00 para se pagar', statusCor: '#5C5A55' },
+        { nome: 'Lote São Gabriel', codigo: 'ORI-000002', resumo: 'R$ 1.018,20 de R$ 5.840,00', pct: '17%', cor: accent, status: 'Faltam R$ 4.821,80 para se pagar', statusCor: '#5C5A55' }
+      ],
+      vendas: [
+        { data: '10/07', sku: 'FAR-0231', peca: 'Farol dianteiro esquerdo · Gol G6', canal: 'Mercado Livre', valor: 'R$ 489,90', custo: 'R$ 190,00', lucro: 'R$ 299,90', lucroCor: verde },
+        { data: '10/07', sku: 'ALT-0118', peca: 'Alternador 90A · Onix', canal: 'WhatsApp', valor: 'R$ 749,00', custo: 'R$ 420,00', lucro: 'R$ 329,00', lucroCor: verde },
+        { data: '10/07', sku: 'CAP-0045', peca: 'Capô · Gol G5', canal: 'Balcão', valor: 'R$ 650,00', custo: 'R$ 380,00', lucro: 'R$ 270,00', lucroCor: verde },
+        { data: '08/07', sku: 'CMP-0012', peca: 'Compressor do ar-condicionado · Onix', canal: 'Mercado Livre', valor: 'R$ 1.150,00', custo: 'R$ 700,00', lucro: 'R$ 450,00', lucroCor: verde },
+        { data: '07/07', sku: '900A1', peca: 'Caixa de câmbio · Onix', canal: 'Balcão', valor: 'R$ 1.580,00', custo: 'R$ 2.986,40', lucro: '−R$ 1.406,40', lucroCor: '#A3241B' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
