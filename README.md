@@ -45,6 +45,7 @@ Linguagem da interface:
 - `paginas/`: telas reais do sistema.
 - `previews/`: prototipos visuais. Nao fazem parte do fluxo real.
 - `sql/`: scripts de banco, FIFO, RPCs e tabelas auxiliares.
+- `tests/`: testes automatizados com `node:test`. Rodar com `node --test tests/`; detalhes em `TESTES.md`.
 
 ## Superficie real identificada
 

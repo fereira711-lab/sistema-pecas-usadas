@@ -499,6 +499,17 @@ async function carregarDados() {
   }
 }
 
+function calcularTodosAlertas(dados) {
+  const situacaoEstoquePorPeca = new Map();
+
+  return [
+    ...calcularAlertasPecas(dados, situacaoEstoquePorPeca),
+    ...calcularAlertasLotes(dados.entradasEstoque, situacaoEstoquePorPeca),
+    ...calcularAlertasVendas(dados),
+    ...calcularAlertasOrigens(dados)
+  ];
+}
+
 async function iniciarAlertas() {
   const dados = await carregarDados();
 
@@ -508,14 +519,7 @@ async function iniciarAlertas() {
     return;
   }
 
-  const situacaoEstoquePorPeca = new Map();
-
-  alertasCarregados = [
-    ...calcularAlertasPecas(dados, situacaoEstoquePorPeca),
-    ...calcularAlertasLotes(dados.entradasEstoque, situacaoEstoquePorPeca),
-    ...calcularAlertasVendas(dados),
-    ...calcularAlertasOrigens(dados)
-  ];
+  alertasCarregados = calcularTodosAlertas(dados);
   renderizarAlertas();
 }
 

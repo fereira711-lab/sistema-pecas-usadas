@@ -1,0 +1,82 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { carregarScript } = require("./helpers/carregar-script");
+const dados = require("./fixtures/vendas-simulacao-2026-07.json");
+
+const financeiro = carregarScript("js/financeiro-utils.js").financeiroUtils;
+
+function arredondar(valor, casas = 2) {
+  return Math.round(valor * 10 ** casas) / 10 ** casas;
+}
+
+test("calcularReceitaVenda: usa valorTotal quando positivo, senao quantidade x unitario", () => {
+  assert.equal(financeiro.calcularReceitaVenda({ valorTotal: 2180, quantidadeVendida: 4, valorUnitario: 545 }), 2180);
+  assert.equal(financeiro.calcularReceitaVenda({ valorTotal: 0, quantidadeVendida: 4, valorUnitario: 545 }), 2180);
+});
+
+test("calcularLucroVenda: lucro = receita - custo consumido - custos da venda", () => {
+  const venda = { id: 1, valorTotal: 1000 };
+  const resultado = financeiro.calcularLucroVenda(
+    venda,
+    [{ vendaId: 1, custoTotal: 600 }],
+    [{ vendaId: 1, valor: 100 }]
+  );
+
+  assert.equal(resultado.calculado, true);
+  assert.equal(resultado.custoConsumido, 600);
+  assert.equal(resultado.custosVenda, 100);
+  assert.equal(resultado.lucro, 300);
+  assert.equal(resultado.margem, 30);
+});
+
+test("calcularLucroVenda: sem consumo registrado, nao inventa lucro nem margem", () => {
+  const resultado = financeiro.calcularLucroVenda({ id: 9, valorTotal: 1000 }, [], [{ vendaId: 9, valor: 50 }]);
+
+  assert.equal(resultado.calculado, false);
+  assert.equal(resultado.motivo, "custo nao calculado");
+  assert.equal(resultado.custoConsumido, null);
+  assert.equal(resultado.lucro, null);
+  assert.equal(resultado.margem, null);
+  assert.equal(resultado.receita, 1000);
+});
+
+test("calcularLucroVenda: venda com prejuizo (caixa de cambio 900A1, venda 4 da simulacao)", () => {
+  const venda = dados.vendas.find(item => item.id === 4);
+  const resultado = financeiro.calcularLucroVenda(venda, dados.consumos, dados.custosVenda);
+
+  assert.equal(arredondar(resultado.lucro), -1725.3);
+  assert.equal(arredondar(resultado.margem, 1), -109.2);
+});
+
+test("calcularLucroPeca: pendencia de custo bloqueia lucro da peca", () => {
+  const resultado = financeiro.calcularLucroPeca(
+    { id: 1 },
+    [{ id: 1, pecaId: 1, valorTotal: 500 }, { id: 2, pecaId: 1, valorTotal: 500 }],
+    [{ vendaId: 1, custoTotal: 200 }],
+    [],
+    []
+  );
+
+  assert.equal(resultado.calculado, false);
+  assert.equal(resultado.vendasSemCusto, 1);
+  assert.equal(resultado.lucro, null);
+});
+
+// Numeros conferidos na tela Analise por produto e no banco Autopp em 2026-09-24
+// (dados da simulacao de teste): receita R$ 31.848,20, custo R$ 22.822,40,
+// custos da venda R$ 1.617,00, lucro R$ 7.408,80, margem 23,3%.
+test("agregado das 20 vendas da simulacao bate com a Analise por produto", () => {
+  const resultados = dados.vendas.map(venda => financeiro.calcularLucroVenda(venda, dados.consumos, dados.custosVenda));
+  const somar = campo => resultados.reduce((total, resultado) => total + resultado[campo], 0);
+  const receita = somar("receita");
+  const custoConsumido = somar("custoConsumido");
+  const custosVenda = somar("custosVenda");
+  const lucro = somar("lucro");
+
+  assert.ok(resultados.every(resultado => resultado.calculado), "todas as vendas tem custo calculado");
+  assert.equal(arredondar(receita), 31848.2);
+  assert.equal(arredondar(custoConsumido), 22822.4);
+  assert.equal(arredondar(custosVenda), 1617);
+  assert.equal(arredondar(lucro), 7408.8);
+  assert.equal(arredondar((lucro / receita) * 100, 1), 23.3);
+});
