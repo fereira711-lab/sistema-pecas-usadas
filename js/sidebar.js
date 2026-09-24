@@ -81,7 +81,7 @@
   }
 
   function criarSecao(secao) {
-    const idTitulo = `side-nav-${secao.titulo.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")}`;
+    const idTitulo = `side-nav-${secao.titulo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`;
 
     return `
       <div class="side-nav__section" role="group" aria-labelledby="${idTitulo}">

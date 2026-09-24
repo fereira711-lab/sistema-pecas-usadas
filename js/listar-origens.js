@@ -42,7 +42,7 @@ function escaparHtml(valor) {
 function normalizarTexto(valor) {
   return String(valor || "")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
 }

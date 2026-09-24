@@ -257,7 +257,7 @@ Implementacao atual confirmada:
 - `paginas/listar-origens.html` ("Origens") e a listagem operacional das origens/lotes. Tela ja migrada para o redesenho (`ui-v2`, `css/origens.css`, `js/listar-origens.js`).
 - Cabecalho: titulo "Origens", subtitulo "N origens cadastradas · M com valor a distribuir" e acao principal `Nova origem`.
 - KPIs: Origens (com o total de pecas vinculadas), Valor comprado, Distribuido nas pecas e A distribuir (nota em atencao quando ha origem pendente e em perigo quando ha origem acima do pago).
-- Filtros: busca por codigo, descricao ou tipo (cada palavra, sem acento), tipo da origem, periodo da compra ("Compra de ... até ...") e controle segmentado da situacao da distribuicao com contagem: Todas, Falta distribuir, Distribuída, Acima do pago, Sem valor pago.
+- Filtros: busca por codigo, descricao ou tipo (cada palavra, sem acento), tipo da origem, periodo da compra ("Compra de ... até ...", componente `.filtro-periodo` do `base.css`) e controle segmentado da situacao da distribuicao com contagem: Todas, Falta distribuir, Distribuída, Acima do pago, Sem valor pago.
 - Tabela: Origem (descricao com link para `detalhes-origem.html?origemId=` + codigo), Tipo, Compra, Valor pago, Distribuido, A distribuir, Pecas e Situacao (pilula). Mais recente primeiro; 20 por pagina.
 - Valor distribuido = soma de quantidade x custo unitario das entradas da origem (a mesma conta de Alertas e da Nova peca).
 - Sem analise financeira: o retorno da origem fica em Detalhes da origem.
@@ -308,19 +308,12 @@ Implementacao atual confirmada:
 
 ## Padrao da tela Historico de vendas
 
-- `paginas/historico-vendas.html` funciona como listagem operacional das vendas registradas.
-- A tela deve priorizar localizacao rapida da venda e acesso ao extrato, sem virar analise financeira pesada.
-- Estrutura UX: busca rapida por SKU/nome, seletor `Mostrar`, botao `Filtros`, filtros por data inicial, data final e canal, e lista compacta.
-- Lista atual: data, SKU, peca, quantidade, canal e acao `Ver detalhes`.
-- A acao principal deve abrir `paginas/detalhes-venda.html` com o `vendaId` correto.
-- Historico de vendas e operacional; lucro, margem e leitura financeira detalhada pertencem ao extrato e as telas de analise.
-
-Implementacao atual confirmada:
-
-- `js/historico-vendas.js` tenta carregar vendas e pecas via Supabase e usa fallback temporario no navegador quando necessario.
-- A ordenacao atual prioriza venda mais recente por data e depois por ID.
-- A busca rapida atual usa SKU e nome da peca; os filtros avancados atuais cobrem data e canal.
-- A acao principal atual e `Ver detalhes`.
+- `paginas/historico-vendas.html` ("Vendas") e a listagem operacional das vendas registradas. Tela ja migrada para o redesenho (`ui-v2`, so componentes do `base.css`, `js/historico-vendas.js`).
+- Cabecalho: titulo "Vendas", subtitulo "N vendas registradas" e acao principal `Registrar venda`.
+- Filtros: busca por SKU, peca, origem, canal ou observacao (cada palavra, sem acento), periodo ("De ... até ...") e controle segmentado de canal com contagem: Todos, Mercado Livre, WhatsApp, Balcão, Outro (canal antigo em texto livre entra em "Outro" no filtro e aparece como foi gravado na tabela).
+- Tabela: Data, Peca (nome com link para o extrato + SKU · origem), Canal, Qtd., Valor e `Ver venda`. Mais recente primeiro; 20 por pagina.
+- Historico de vendas e operacional; lucro, margem e leitura financeira pertencem ao extrato (`detalhes-venda.html?vendaId=`) e as Analises.
+- Sairam no redesenho: seletor `Mostrar`, painel lateral de filtros, "Voltar para o painel" e o modo sem Supabase (`localStorage`, "Remover local").
 
 ## Padrao da tela Cadastro de venda
 

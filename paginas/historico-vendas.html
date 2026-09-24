@@ -3,99 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Historico de Vendas</title>
+  <title>Vendas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/base.css?v=12">
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/base.css?v=15">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark sales-history-page">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Vendas operacionais</p>
-      <h1>Historico de vendas</h1>
-      <p class="hero__description">
-        Consulta operacional das vendas registradas.
-      </p>
-    </div>
-  </header>
-
-  <main class="container stock-layout sales-history-layout">
-    <section class="stock-card sales-history-shell">
-      <div class="stock-header sales-history-header">
-        <div>
-          <span class="piece-form-eyebrow">Historico operacional</span>
-          <h2>Vendas registradas</h2>
-        </div>
-        <a class="button-secondary" href="../painel.html">Voltar para o painel</a>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <h1 class="page-head__title">Vendas</h1>
+        <p class="page-head__subtitle" id="resumoVendas">Carregando vendas…</p>
       </div>
+      <div class="page-head__actions">
+        <a class="btn btn--primary" href="cadastro-venda.html">
+          <i class="ri-add-line" aria-hidden="true"></i>Registrar venda
+        </a>
+      </div>
+    </header>
 
-      <form id="formFiltrosHistorico" class="sales-history-filters operational-filter-toolbar">
-        <div class="products-main-controls operational-filter-main-controls sales-history-main-controls">
-          <div class="form-group products-search-field sales-history-search">
-            <label for="buscaRapidaHistorico">Buscar venda</label>
-            <input id="buscaRapidaHistorico" type="search" placeholder="Buscar por SKU ou nome da peca">
-          </div>
+    <p id="mensagemHistorico" class="page-message" role="status"></p>
 
-          <div class="form-group sales-history-page-size-field">
-            <label for="quantidadePaginaHistorico">Mostrar</label>
-            <select id="quantidadePaginaHistorico">
-              <option value="12">12</option>
-              <option value="24" selected>24</option>
-              <option value="48">48</option>
-            </select>
-          </div>
-
-          <button id="botaoAbrirFiltrosHistorico" type="button" class="button-secondary products-filter-toggle sales-history-filter-button" aria-controls="painelFiltrosHistorico" aria-expanded="false">Filtros</button>
+    <div class="toolbar">
+      <div class="toolbar__group">
+        <div class="search-field">
+          <label class="sr-only" for="buscaRapidaHistorico">Buscar venda</label>
+          <i class="ri-search-line search-field__icon" aria-hidden="true"></i>
+          <input id="buscaRapidaHistorico" class="input" type="search" placeholder="Buscar por SKU, peça, origem ou observação" autocomplete="off">
         </div>
+        <div class="filtro-periodo">
+          <label class="filtro-periodo__rotulo" for="dataInicialHistorico">De</label>
+          <input id="dataInicialHistorico" class="input filtro-periodo__data" type="date">
+          <label class="filtro-periodo__rotulo" for="dataFinalHistorico">até</label>
+          <input id="dataFinalHistorico" class="input filtro-periodo__data" type="date">
+        </div>
+      </div>
+      <div class="segmented" role="group" aria-label="Canal" id="filtroCanalHistorico">
+        <button type="button" class="segmented__item" data-canal="" aria-pressed="true">Todos <span class="segmented__count" data-contagem="">0</span></button>
+        <button type="button" class="segmented__item" data-canal="Mercado Livre" aria-pressed="false">Mercado Livre <span class="segmented__count" data-contagem="Mercado Livre">0</span></button>
+        <button type="button" class="segmented__item" data-canal="WhatsApp" aria-pressed="false">WhatsApp <span class="segmented__count" data-contagem="WhatsApp">0</span></button>
+        <button type="button" class="segmented__item" data-canal="Balcão" aria-pressed="false">Balcão <span class="segmented__count" data-contagem="Balcão">0</span></button>
+        <button type="button" class="segmented__item" data-canal="Outro" aria-pressed="false">Outro <span class="segmented__count" data-contagem="Outro">0</span></button>
+      </div>
+    </div>
 
-        <aside id="painelFiltrosHistorico" class="products-filter-panel sales-history-filter-panel" aria-label="Filtros avancados de vendas">
-          <div class="products-filter-panel__header sales-history-filter-panel__header">
-            <h3>Filtros avancados</h3>
-            <button id="botaoFecharFiltrosHistorico" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
-          </div>
-
-          <div class="products-filters sales-history-advanced">
-            <div class="form-group">
-              <label for="dataInicialHistorico">Data inicial</label>
-              <input id="dataInicialHistorico" type="date">
-            </div>
-
-            <div class="form-group">
-              <label for="dataFinalHistorico">Data final</label>
-              <input id="dataFinalHistorico" type="date">
-            </div>
-
-            <div class="form-group">
-              <label for="filtroCanalHistorico">Canal</label>
-              <input id="filtroCanalHistorico" type="search" placeholder="Ex.: WhatsApp">
-            </div>
-          </div>
-
-          <div class="products-filter-panel__actions sales-history-filter-panel__actions">
-            <button type="button" id="limparFiltrosHistorico" class="button-secondary">Limpar filtros</button>
-            <button type="submit" class="button-primary">Aplicar/Fechar</button>
-          </div>
-        </aside>
-      </form>
-
-      <p id="mensagemHistorico" class="empty-message"></p>
-
-      <div class="table-wrapper sales-history-table-wrapper">
-        <table class="stock-table sales-history-table">
+    <section class="card card--table" aria-label="Lista de vendas">
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive">
           <thead>
             <tr>
-              <th>Data</th>
-              <th>SKU</th>
-              <th>Peca</th>
-              <th>Quantidade</th>
-              <th>Canal</th>
-              <th>Acoes</th>
+              <th scope="col">Data</th>
+              <th scope="col">Peça</th>
+              <th scope="col">Canal</th>
+              <th scope="col" class="num">Qtd.</th>
+              <th scope="col" class="num">Valor</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody id="tabelaHistoricoVendas"></tbody>
         </table>
+      </div>
+      <div class="pager" id="paginacaoVendas" hidden>
+        <span id="paginacaoTexto"></span>
+        <div class="pager__buttons">
+          <button type="button" class="btn btn--secondary btn--compact" id="paginaAnterior">Anterior</button>
+          <button type="button" class="btn btn--secondary btn--compact" id="paginaProxima">Próxima</button>
+        </div>
       </div>
     </section>
   </main>
@@ -103,6 +77,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
+  <script src="../js/moeda-utils.js?v=2"></script>
   <script src="../js/supabase-service.js?v=36"></script>
   <script src="../js/historico-vendas.js?v=11"></script>
   <script src="../js/sidebar.js?v=9"></script>
