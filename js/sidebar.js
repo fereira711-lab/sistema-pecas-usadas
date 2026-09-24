@@ -20,14 +20,14 @@
         { id: "produtos", texto: "Produtos", icone: "ri-box-3-line", url: "paginas/produtos.html", paginas: ["cadastro-peca.html", "detalhes-produto.html", "cadastro-custo.html"] },
         { id: "origens", texto: "Origens", icone: "ri-car-line", url: "paginas/listar-origens.html", paginas: ["cadastro-origem.html", "detalhes-origem.html", "lotes.html"] },
         { id: "vendas", texto: "Vendas", icone: "ri-shopping-cart-2-line", url: "paginas/historico-vendas.html", paginas: ["cadastro-venda.html", "detalhes-venda.html"] },
-        { id: "entradas", texto: "Entradas de estoque", icone: "ri-download-2-line", url: "paginas/entradas-estoque.html", paginas: ["giro-estoque.html"] },
+        { id: "entradas", texto: "Entradas de estoque", icone: "ri-download-2-line", url: "paginas/entradas-estoque.html", paginas: [] },
         { id: "alertas", texto: "Alertas", icone: "ri-notification-3-line", url: "paginas/alertas.html", paginas: [], contador: true }
       ]
     },
     {
       titulo: "Gestão",
       itens: [
-        { id: "analises", texto: "Análises", icone: "ri-bar-chart-2-line", url: "paginas/analise-produto.html", paginas: ["analise-periodo.html", "analise-custos.html", "relatorios.html"] },
+        { id: "analises", texto: "Análises", icone: "ri-bar-chart-2-line", url: "paginas/analise-produto.html", paginas: ["analise-periodo.html", "analise-custos.html", "giro-estoque.html", "relatorios.html"] },
         { id: "tipos-custo", texto: "Tipos de custo", icone: "ri-price-tag-3-line", url: "paginas/tipos-custo.html", paginas: [] }
       ]
     }
@@ -203,7 +203,7 @@
     if (!servico || !servico.estaConfigurado?.()) return;
 
     try {
-      if (!window.financeiroUtils) await carregarScript("js/financeiro-utils.js?v=1");
+      if (!window.financeiroUtils) await carregarScript("js/financeiro-utils.js?v=2");
       if (!window.alertasRegras) await carregarScript("js/alertas-regras.js?v=1");
 
       const [origens, pecas, vendas, consumosEstoque, entradasEstoque, custosVenda] = await Promise.all([

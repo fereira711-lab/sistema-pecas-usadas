@@ -53,65 +53,61 @@ Linguagem de interface:
 
 ## Padrao da sidebar e navegacao
 
-- A sidebar e a navegacao principal do sistema.
+- A sidebar e a navegacao principal do sistema (redesenho de 2026-09-24, `js/sidebar.js` + `css/base.css`).
 - `painel.html` e a entrada oficial apos login.
 - `index.html` pode continuar como entrada tecnica/redirecionamento.
 - `dashboard.html` pode continuar como legado/redirecionamento, se existir.
 - `previews/` nao deve aparecer na navegacao real.
-- Atalhos do Painel Geral sao apoio para rotina e nao substituem a sidebar.
 
-Grupos oficiais da sidebar:
+Secoes e itens oficiais da sidebar (texto sempre visivel):
 
-- Painel Geral.
-- Produtos.
-- Vendas.
-- Estoque.
-- Origens.
-- Custos.
-- Analises.
-- Sistema.
+- Operação: Painel; Produtos; Origens; Vendas; Entradas de estoque; Alertas (com contador).
+- Gestão: Análises; Tipos de custo.
 
-Links oficiais:
+Telas sem item proprio, que deixam ativo o item da sua area:
 
-- Painel Geral: Painel Geral.
-- Produtos: Produtos; Cadastro de peca.
-- Vendas: Cadastro de venda; Historico de vendas.
-- Estoque: Entradas de estoque; Giro de estoque, se existir; Alertas, se existir.
-- Origens: Cadastro de origem; Origens cadastradas.
-- Custos: Custo de peca; Tipos de custo.
-- Analises: Analise por produto; Analise por periodo; Analise de custos.
-- Sistema: Documentacao / mapa mental, se existir; configuracoes futuras, se existirem.
+- Produtos: `cadastro-peca.html`, `detalhes-produto.html`, `cadastro-custo.html`.
+- Origens: `cadastro-origem.html`, `detalhes-origem.html`.
+- Vendas: `cadastro-venda.html`, `detalhes-venda.html`.
+- Análises: `analise-produto.html`, `analise-periodo.html`, `analise-custos.html`, `giro-estoque.html`.
 
-Nao colocar como item direto:
+Regras:
 
-- `detalhes-produto.html`.
-- `detalhes-venda.html`.
-- `detalhes-origem.html`.
-
-Implementacao atual confirmada:
-
-- `index.html` valida sessao e redireciona para `painel.html`;
-- `dashboard.html` e apenas redirecionamento/compatibilidade para `painel.html`;
-- `js/sidebar.js` implementa os grupos oficiais e mantem a sidebar como navegacao principal;
-- o grupo `Sistema` aponta hoje para `docs/mapa-mental.html` e `DOCUMENTACAO-SISTEMA.md`.
-
-Essas paginas abrem pelo contexto correto: Produtos, Historico de vendas e Origens cadastradas.
+- Análises e uma pagina com abas: Por produto, Por período, Custos e Giro de estoque. Cada aba reaproveita a tela existente; a barra de abas fica no cabecalho de cada uma.
+- Custo de peca nao tem item na sidebar: abre pelo botao `Lançar custo` no detalhe da peca (e no menu de acoes de Produtos).
+- Mapa mental e documentacao nao aparecem na navegacao do sistema (documentacao interna).
+- Nao colocar como item direto `detalhes-produto.html`, `detalhes-venda.html` e `detalhes-origem.html`.
+- Item ativo com `aria-current="page"`.
+- Contador de Alertas: quantos tipos de problema existem agora, pelas regras de `js/alertas-regras.js`. O Painel informa o total; nas outras telas a sidebar calcula e guarda em `sessionStorage` por 5 minutos.
+- Rodape: avatar com a inicial, nome tirado do e-mail e o e-mail embaixo. Sem papel/perfil (o sistema nao tem cadastro de papeis).
+- Marca: nome do sistema e nome da loja ficam em constantes no topo de `js/sidebar.js`; o nome comercial ainda esta pendente.
 
 Visual da sidebar:
 
-- Tema escuro operacional.
-- Fundo azul/cinza escuro.
-- Dourado apenas como detalhe discreto.
-- Item ativo visivel, sem excesso visual.
-- Bordas e espacamentos compativeis com os cards.
-- Usuario e botao `Sair` no rodape.
+- Fundo escuro (`--sidebar-bg`), largura fixa de 240px e 100% da altura.
+- Item de 40px com icone Remix de 18px e texto; ativo com fundo `--sidebar-item-active`, texto branco e icone na cor de destaque.
+- Em telas ate 860px vira uma barra no topo com botao de menu.
 
 Reforcos:
 
 - Produtos e operacional.
 - Detalhes sao centrais das entidades.
 - Analises sao financeiras.
-- Sistema/Admin deve conter apenas configuracoes, documentacao ou recursos administrativos.
+
+## Redesenho da interface (em andamento desde 2026-09-24)
+
+- Especificacao aprovada: `docs/redesenho/pacote-redesenho-erp/ESPECIFICACAO-REDESENHO.md`; telas de referencia em `docs/redesenho/pacote-redesenho-erp/referencia-telas/` (referencia visual, nao copiar o codigo).
+- `css/base.css` tem os tokens e os componentes novos. Fora do `:root`, nenhuma cor, raio ou espacamento literal. Ele convive com o `style.css` antigo: so atinge elementos soltos dentro de `body.ui-v2` (telas ja migradas).
+- Tela migrada: `body` com a classe `ui-v2`, sem carregar `style.css`; CSS especifico da tela num arquivo proprio em `css/` (ex.: `css/painel.css`).
+- Ordem das fases: 1 fundacao; 2 sidebar e Painel; 3 Produtos; 4 Alertas com as regras novas (atualizando os testes); 5 Nova peca (compatibilidade + SKU automatico so quando em branco); 6 Registrar venda (canal fixo e previa do resultado); 7 Detalhes da origem; 8 demais telas; 9 remover do `style.css` o que ficou sem uso.
+- Cada fase termina com commit; Rafael aprova visualmente antes da proxima quando pedir.
+
+Decisoes de 2026-09-24:
+
+- Retorno por origem: `recuperado = receita das vendas das pecas da origem - custos dessas vendas`, calculado em `financeiro-utils.calcularResultadoOrigem` (campo `recuperado`). O lucro/resultado da origem continua `receita - custo consumido - custos da peca - custos da venda`.
+- Valores negativos de moeda e percentual usam o sinal de menos (U+2212), nao hifen. A formatacao centralizada fica em `js/moeda-utils.js` (`formatarMoedaBR`, `formatarPercentualBR`); `parseMoedaBR` aceita os dois sinais. Telas com formatacao local passam a usar o `moeda-utils` quando forem migradas.
+- Painel, "Ultimas vendas": coluna `Custos` = custo da peca + custos da venda, para que valor - custos = lucro na mesma linha.
+- Regras de atencao do redesenho (secao 8 da especificacao) ficam em `js/alertas-regras.js` (funcoes puras): peca parada ha mais de 90 dias sem venda desde a entrada, venda sem custo calculado, venda com prejuizo, origem com valor a distribuir e distribuicao acima do pago. Quantidade 1 e peca recem-cadastrada sem venda nao sao alerta.
 
 ## Banco de dados e Supabase
 
@@ -527,34 +523,16 @@ Implementacao atual confirmada:
 - Os alertas atuais cobrem sem estoque, estoque baixo, sem entrada, sem venda, venda sem custo calculado, saldo parado e distribuicao de origem fora do esperado.
 - Vendas sem consumo FIFO continuam aparecendo como `Venda sem custo calculado`.
 
-## Padrao do Painel Geral
+## Padrao do Painel
 
-- `painel.html` e a entrada oficial do sistema apos login.
-- Usar `Painel Geral` como nome padrao da interface principal.
-- Evitar voltar a usar `Dashboard` na interface principal.
-- Painel Geral e visao inicial operacional, nao menu principal em cards e nao analise financeira pesada.
-- Estrutura UX: cabecalho, cards de resumo operacional, atalhos rapidos, alertas importantes, ultimas vendas e movimentacoes recentes.
-- Resumo operacional: produtos cadastrados, estoque baixo, vendas recentes, origens pendentes e alertas importantes.
-- Alertas: produtos sem estoque, estoque baixo, custo nao calculado, distribuicao pendente e distribuicao acima do previsto.
-- Atalhos rapidos: Produtos, Cadastro de peca, Cadastro de venda, Custo de peca, Historico de vendas, Origens cadastradas e Analises.
-- Sidebar continua sendo a navegacao principal.
-- Atalhos do painel sao apoio para rotina, nao menu completo duplicado.
-- `index.html` continua como entrada tecnica/redirecionamento.
-- `dashboard.html` continua como legado/redirecionamento, se existir.
-- Painel deve mostrar rotina e atencao operacional.
-- Lucro/margem pesada ficam nas telas de analise.
-- Produtos continua operacional.
-- Detalhes sao centrais das entidades.
-- Analises sao financeiras.
-
-Implementacao atual confirmada:
-
-- `js/painel-geral.js` carrega origens, pecas, vendas, consumos, entradas e custos via `supabase-service.js`;
-- os atalhos atuais batem com a proposta operacional: Produtos, Cadastro de peca, Cadastro de venda, Custo de peca, Historico de vendas, Origens cadastradas e Analises;
-- os alertas atuais batem com a regra documental: produtos sem estoque, estoque baixo, custo nao calculado, distribuicao pendente e distribuicao acima do previsto;
-- as movimentacoes recentes agora ordenam entradas, custos e pecas por data antes de montar o bloco final;
-- custos ligados a venda levam ao extrato da venda, e custos ligados a peca continuam levando ao detalhe da peca;
-- o painel usa custos para alertas e movimentacoes recentes, mas nao vira tela de analise financeira pesada.
+- `painel.html` e a entrada oficial do sistema apos login; titulo da tela: "Painel". Tela ja migrada para o redesenho (`ui-v2`, `css/painel.css`).
+- Acoes do cabecalho: seletor de periodo (meses com venda + mes atual + "Todo o período"), `Nova peça` (secundario) e `Registrar venda` (principal).
+- KPIs do periodo: Receita do mes; Lucro real com margem (mostra `Custo não calculado` se alguma venda do periodo nao tiver custo); Custo das pecas vendidas + custos da venda; Pecas em estoque (pecas com saldo, unidades e cadastradas).
+- "Retorno por origem": barra de quanto do valor pago ja voltou (`recuperado` do financeiro-utils), com "Já se pagou · lucro de R$ X" ou "Faltam R$ X para se pagar".
+- "Precisa de atencao": ate 4 itens pelas regras de `js/alertas-regras.js`; informa o total ao contador da sidebar.
+- "Ultimas vendas": 7 vendas mais recentes com data, SKU + peca · origem, canal, valor, custos (peca + venda) e lucro (vermelho se negativo).
+- Removidos no redesenho: bloco "Ações rápidas" (duplicava a sidebar), bloco de alertas que repetia os contadores e "Movimentações recentes".
+- Todos os valores financeiros vem do `financeiro-utils.js`; o Painel nao recalcula FIFO nem custo.
 
 ## Tarefas grandes
 

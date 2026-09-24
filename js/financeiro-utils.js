@@ -159,10 +159,13 @@
     const totalCustosPecaNaoAtribuidos = somar(custosPecaNaoAtribuidos, "valor");
     const totalCustosVenda = somar(custosVendaDaOrigem, "valor");
     const lucro = receita - custoConsumido - totalCustosPeca - totalCustosVenda;
+    // Quanto a origem já devolveu em dinheiro: receita das vendas das peças dela menos os custos dessas vendas.
+    const recuperado = receita - totalCustosVenda;
 
     return {
       calculado: true,
       receita,
+      recuperado,
       custoConsumido,
       custosPeca: totalCustosPeca,
       custosPecaNaoAtribuidos: totalCustosPecaNaoAtribuidos,

@@ -62,6 +62,43 @@ test("calcularLucroPeca: pendencia de custo bloqueia lucro da peca", () => {
   assert.equal(resultado.lucro, null);
 });
 
+test("calcularResultadoOrigem: recuperado = receita das vendas da origem - custos dessas vendas", () => {
+  const origem = { id: 1 };
+  const entradas = [
+    { id: 10, origemId: 1, pecaId: 100 },
+    { id: 11, origemId: 1, pecaId: 101 },
+    { id: 20, origemId: 2, pecaId: 200 }
+  ];
+  const vendas = [
+    { id: 1, pecaId: 100, valorTotal: 800 },
+    { id: 2, pecaId: 101, valorTotal: 450 },
+    { id: 3, pecaId: 200, valorTotal: 999 }
+  ];
+  const consumos = [
+    { vendaId: 1, entradaEstoqueId: 10, custoTotal: 300 },
+    { vendaId: 2, entradaEstoqueId: 11, custoTotal: 400 },
+    { vendaId: 3, entradaEstoqueId: 20, custoTotal: 500 }
+  ];
+  const custosVenda = [
+    { vendaId: 2, valor: 80 },
+    { vendaId: 3, valor: 50 }
+  ];
+
+  const resultado = financeiro.calcularResultadoOrigem(origem, entradas, vendas, consumos, [], custosVenda);
+
+  assert.equal(resultado.receita, 1250);
+  assert.equal(resultado.custosVenda, 80, "so os custos das vendas desta origem");
+  assert.equal(resultado.recuperado, 1170);
+  assert.equal(resultado.lucro, 1250 - 700 - 80, "lucro da origem continua o mesmo");
+});
+
+test("calcularResultadoOrigem: origem sem vendas recupera zero", () => {
+  const resultado = financeiro.calcularResultadoOrigem({ id: 9 }, [{ id: 1, origemId: 9, pecaId: 1 }], [], [], [], []);
+
+  assert.equal(resultado.receita, 0);
+  assert.equal(resultado.recuperado, 0);
+});
+
 // Numeros conferidos na tela Analise por produto e no banco Autopp em 2026-09-24
 // (dados da simulacao de teste): receita R$ 31.848,20, custo R$ 22.822,40,
 // custos da venda R$ 1.617,00, lucro R$ 7.408,80, margem 23,3%.

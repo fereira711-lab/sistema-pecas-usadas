@@ -7,15 +7,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/base.css?v=4">
+  <link rel="stylesheet" href="../css/base.css?v=5">
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body data-auth="protected" class="auth-checking ui-soft-dark product-analysis-page">
   <header class="page-header">
     <div>
-      <p class="hero__tag">Análise</p>
-      <h1>Análise por Produto</h1>
+      <h1>Análises</h1>
       <p class="hero__description">Resultado financeiro agrupado por peça.</p>
+      <nav class="tabs" aria-label="Tipos de análise">
+        <a class="tabs__item" href="analise-produto.html" aria-current="page">Por produto</a>
+        <a class="tabs__item" href="analise-periodo.html">Por período</a>
+        <a class="tabs__item" href="analise-custos.html">Custos</a>
+        <a class="tabs__item" href="giro-estoque.html">Giro de estoque</a>
+      </nav>
     </div>
   </header>
 
@@ -149,8 +154,8 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=28"></script>
-  <script src="../js/financeiro-utils.js?v=1"></script>
+  <script src="../js/financeiro-utils.js?v=2"></script>
   <script src="../js/analise-produto.js?v=6"></script>
-  <script src="../js/sidebar.js?v=6"></script>
+  <script src="../js/sidebar.js?v=7"></script>
 </body>
 </html>

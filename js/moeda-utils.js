@@ -1,7 +1,15 @@
 (function () {
+  // Sinal de menos tipográfico usado na exibição de valores negativos.
+  const SINAL_MENOS = "−";
+
+  function trocarHifenPorMenos(texto) {
+    return String(texto).replace(/^-/, SINAL_MENOS).replace(/\s-/, ` ${SINAL_MENOS}`);
+  }
+
   function normalizarTextoMoeda(valor) {
     return String(valor ?? "")
       .trim()
+      .replace(/−/g, "-")
       .replace(/\s+/g, "")
       .replace(/^R\$/i, "")
       .replace(/[^\d,.-]/g, "");
@@ -47,10 +55,19 @@
   }
 
   function formatarMoedaBR(valor) {
-    return parseMoedaBR(valor).toLocaleString("pt-BR", {
+    return trocarHifenPorMenos(parseMoedaBR(valor).toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL"
+    }));
+  }
+
+  function formatarPercentualBR(valor, casas = 1) {
+    const numero = Number(valor);
+    const texto = (Number.isFinite(numero) ? numero : 0).toLocaleString("pt-BR", {
+      minimumFractionDigits: casas,
+      maximumFractionDigits: casas
     });
+    return `${trocarHifenPorMenos(texto)}%`;
   }
 
   function formatarEntradaMoedaBR(valor) {
@@ -85,6 +102,7 @@
 
   window.moedaUtils = {
     formatarMoedaBR,
+    formatarPercentualBR,
     parseMoedaBR,
     formatarEntradaMoedaBR,
     registrarCampoMoeda

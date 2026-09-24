@@ -1026,6 +1026,49 @@ body.ui-v2 a.data-table__item:hover .data-table__name {
   font-weight: 500;
 }
 
+/* ============ Abas (navegação entre telas de uma mesma área, ex.: Análises) ============ */
+
+.tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-half);
+  margin-top: var(--space-3);
+  padding: var(--space-tight);
+  border-radius: var(--radius-sm);
+  background: var(--segmented-bg);
+  font-family: var(--font-sans);
+}
+
+.tabs a.tabs__item {
+  height: var(--control-height-compact);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-3-5);
+  border-radius: var(--radius-xs);
+  color: var(--text-2);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tabs a.tabs__item:hover {
+  color: var(--text);
+  background: var(--surface-muted);
+}
+
+.tabs a.tabs__item[aria-current="page"] {
+  background: var(--surface);
+  box-shadow: var(--shadow-segmented);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.tabs a.tabs__item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 /* ============ Barra de progresso ============ */
 
 .progress {

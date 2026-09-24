@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/base.css?v=4">
+  <link rel="stylesheet" href="css/base.css?v=5">
   <link rel="stylesheet" href="css/painel.css?v=1">
 </head>
 <body data-auth="protected" data-contador-pelo-painel="sim" class="auth-checking ui-v2">
@@ -38,7 +38,7 @@
         <div class="card__head">
           <div class="card__head-text">
             <h2 class="card__title" id="tituloRetorno">Retorno por origem</h2>
-            <p class="card__subtitle">Quanto cada carro ou lote já devolveu do valor pago</p>
+            <p class="card__subtitle">Quanto cada carro ou lote já devolveu do valor pago, descontados os custos da venda</p>
           </div>
           <a class="card__link" href="paginas/listar-origens.html">Ver origens</a>
         </div>
@@ -67,7 +67,7 @@
               <th scope="col">Peça</th>
               <th scope="col">Canal</th>
               <th scope="col" class="num">Valor</th>
-              <th scope="col" class="num">Custo da peça</th>
+              <th scope="col" class="num">Custos</th>
               <th scope="col" class="num">Lucro</th>
             </tr>
           </thead>
@@ -81,9 +81,10 @@
   <script src="js/supabase-config.js?v=6"></script>
   <script src="js/auth.js?v=4"></script>
   <script src="js/supabase-service.js?v=28"></script>
-  <script src="js/financeiro-utils.js?v=1"></script>
+  <script src="js/moeda-utils.js?v=2"></script>
+  <script src="js/financeiro-utils.js?v=2"></script>
   <script src="js/alertas-regras.js?v=1"></script>
-  <script src="js/painel-geral.js?v=14"></script>
-  <script src="js/sidebar.js?v=6"></script>
+  <script src="js/painel-geral.js?v=15"></script>
+  <script src="js/sidebar.js?v=7"></script>
 </body>
 </html>

@@ -200,3 +200,17 @@ As demais telas (Histórico de vendas, Origens, Entradas de estoque, Alertas, An
 
 - Nome comercial do sistema (nos mockups aparece `[NOME DO SISTEMA]`). O nome da loja cliente aparece abaixo da marca.
 - Tela de Login no novo padrão.
+
+## 10. Decisões tomadas durante a implementação (2026-09-24)
+
+Aprovadas por Rafael depois da Fase 2 (sidebar e Painel):
+
+1. **Análises vira uma página com abas:** Por produto, Por período, Custos e Giro de estoque. Cada aba reaproveita a tela atual como conteúdo; o título passa a ser "Análises" e a barra de abas fica no cabeçalho. O Giro de estoque sai de "Entradas de estoque" e passa para Análises.
+2. **Custo de peça** não tem item na sidebar: abre pelo botão "Lançar custo" no detalhe da peça.
+3. **Mapa mental e documentação** saem da navegação do sistema (são documentação interna).
+4. **Rodapé da sidebar:** nome tirado do e-mail + o e-mail. Sem papel/perfil.
+5. **Nova ordem das fases:** 3 Produtos, 4 Alertas (regras da seção 8, atualizando os testes), 5 Nova peça, 6 Registrar venda, 7 Detalhes da origem, 8 demais telas, 9 limpeza do `style.css`.
+6. **Retorno por origem:** recuperado = receita das vendas das peças da origem − custos dessas vendas. Calculado em `financeiro-utils.js` (`calcularResultadoOrigem`, campo `recuperado`), com teste. "Já se pagou · lucro de R$ X" usa X = recuperado − valor pago.
+7. **Valores negativos** de moeda e percentual com o sinal de menos (U+2212), não hífen, na formatação centralizada (`moeda-utils.js`).
+8. **Painel, "Últimas vendas":** a coluna "Custo da peça" vira "Custos" = custo da peça + custos da venda, para que valor − custos = lucro na mesma linha.
+9. **Painel:** o card "Retorno por origem" fica alinhado pelo topo, sem esticar até a altura do card vizinho. A sidebar ocupa 100% da altura da janela.

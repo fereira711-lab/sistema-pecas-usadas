@@ -25,7 +25,9 @@ function escaparHtml(valor) {
     .replaceAll("'", "&#039;");
 }
 
+// Formatação centralizada no moeda-utils.js (negativos com o sinal de menos U+2212).
 function formatarMoeda(valor) {
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(Number(valor || 0));
   return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
@@ -34,6 +36,7 @@ function formatarNumero(valor) {
 }
 
 function formatarPercentual(valor) {
+  if (window.moedaUtils?.formatarPercentualBR) return window.moedaUtils.formatarPercentualBR(Number(valor || 0));
   return `${Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 }
 
@@ -179,15 +182,15 @@ function renderizarKpis(dados, periodo) {
 
 // ---- Retorno por origem ----
 
-// Quanto a origem já devolveu: receita das vendas das peças dela (ligadas pelas entradas consumidas),
-// calculada pelo financeiro-utils.js, comparada com o valor pago.
+// Quanto a origem já devolveu: receita das vendas das peças dela (ligadas pelas entradas consumidas)
+// menos os custos dessas vendas, calculado pelo financeiro-utils.js, comparado com o valor pago.
 function calcularRetornoOrigem(origem, dados) {
   const financeiro = obterFinanceiro();
   const resultado = financeiro
     ? financeiro.calcularResultadoOrigem(origem, dados.entradasEstoque, dados.vendas, dados.consumosEstoque, dados.custosPeca, dados.custosVenda)
-    : { receita: 0 };
+    : { recuperado: 0 };
   const valorPago = Number(origem.valorPago || origem.custoTotal || 0);
-  const recuperado = Number(resultado.receita || 0);
+  const recuperado = Number(resultado.recuperado || 0);
 
   return {
     origem,
@@ -403,7 +406,8 @@ function renderizarUltimasVendas(dados) {
     const veiculo = origem?.descricao ? ` · ${origem.descricao}` : "";
     const sku = peca?.sku || venda.sku || "";
     const resultado = calcularResultadoVenda(venda, dados);
-    const custo = resultado.calculado ? formatarMoeda(resultado.custoConsumido) : "Custo não calculado";
+    // Custos = custo da peça + custos da venda, para que valor − custos = lucro na mesma linha.
+    const custos = resultado.calculado ? formatarMoeda(Number(resultado.custoConsumido || 0) + Number(resultado.custosVenda || 0)) : "Custo não calculado";
     const lucro = resultado.calculado ? formatarMoeda(resultado.lucro) : "—";
     const classeLucro = !resultado.calculado ? "cell-muted" : resultado.lucro < 0 ? "text-danger" : "text-success";
 
@@ -418,7 +422,7 @@ function renderizarUltimasVendas(dados) {
         </td>
         <td data-label="Canal">${escaparHtml(venda.canalVenda || "—")}</td>
         <td class="num" data-label="Valor">${formatarMoeda(resultado.receita)}</td>
-        <td class="num cell-muted" data-label="Custo da peça">${escaparHtml(custo)}</td>
+        <td class="num cell-muted" data-label="Custos">${escaparHtml(custos)}</td>
         <td class="num cell-strong ${classeLucro}" data-label="Lucro">${escaparHtml(lucro)}</td>
       </tr>
     `;
