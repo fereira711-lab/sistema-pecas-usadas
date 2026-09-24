@@ -20,7 +20,7 @@ const tipos = {
 function resolverArquivo(url) {
   const caminhoUrl = decodeURIComponent(new URL(url, `http://127.0.0.1:${port}`).pathname);
   const caminhoSeguro = path.normalize(caminhoUrl).replace(/^(\.\.[/\\])+/, "");
-  const arquivo = path.join(root, caminhoSeguro === "/" ? "index.html" : caminhoSeguro);
+  const arquivo = path.join(root, caminhoUrl === "/" ? "index.html" : caminhoSeguro);
 
   if (!arquivo.startsWith(root)) {
     return null;
