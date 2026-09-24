@@ -8,198 +8,105 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/base.css?v=11">
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/detalhes-origem.css?v=2">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark origin-detail-page">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Central da origem</p>
-      <h1>Detalhes da origem</h1>
-      <p class="hero__description">Central da origem para acompanhar distribuição, peças, entradas e vendas relacionadas.</p>
-    </div>
-  </header>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <a class="page-head__back" href="listar-origens.html"><i class="ri-arrow-left-s-line" aria-hidden="true"></i>Origens</a>
+        <h1 class="page-head__title" id="tituloOrigem">Origem</h1>
+        <p class="page-head__subtitle" id="subtituloOrigem">Carregando origem…</p>
+        <p class="origem-observacao" id="observacaoOrigem" hidden></p>
+      </div>
+      <div class="page-head__actions">
+        <button type="button" id="botaoEditarOrigem" class="btn btn--secondary" disabled>Editar origem</button>
+        <a class="btn btn--primary" id="linkAdicionarPeca" href="cadastro-peca.html">
+          <i class="ri-add-line" aria-hidden="true"></i>Adicionar peça
+        </a>
+      </div>
+    </header>
 
-  <main class="container stock-layout origin-detail-layout">
-    <section class="stock-card origin-detail-shell">
-      <div class="stock-header origin-detail-header">
-        <div>
-          <h2 id="tituloOrigem">Origem</h2>
-          <p id="subtituloOrigem">Dados operacionais da origem selecionada.</p>
+    <p id="mensagemOrigem" class="page-message" role="status"></p>
+
+    <form id="formEditarOrigem" class="card origem-edicao" aria-labelledby="tituloEdicaoOrigem" hidden>
+      <div class="card__head">
+        <h2 class="card__title" id="tituloEdicaoOrigem">Editar origem</h2>
+      </div>
+      <div class="field-grid field-grid--3">
+        <div class="field">
+          <label class="field__label" for="editarOrigemTipo">Tipo</label>
+          <input id="editarOrigemTipo" class="input" type="text" required>
         </div>
-        <div class="form-actions">
-          <button type="button" id="botaoEditarOrigem" class="button-secondary">Editar origem</button>
-          <a class="button-secondary" href="listar-origens.html">Voltar para origens</a>
-          <a class="button-primary" id="linkCadastrarPecaOrigem" href="cadastro-peca.html">Cadastrar peça vinculada</a>
+        <div class="field">
+          <label class="field__label" for="editarOrigemDataCompra">Data da compra</label>
+          <input id="editarOrigemDataCompra" class="input" type="date" required>
+        </div>
+        <div class="field">
+          <label class="field__label" for="editarOrigemCustoTotal">Valor pago</label>
+          <input id="editarOrigemCustoTotal" class="input" type="text" inputmode="decimal" autocomplete="off">
         </div>
       </div>
-
-      <p id="mensagemOrigemNaoEncontrada" class="empty-message"></p>
-      <div id="dadosOrigem" class="detail-grid"></div>
-
-      <form id="formEditarOrigem" class="edit-panel" hidden>
-        <div class="product-detail-form-title">Editar origem</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editarOrigemTipo">Tipo</label>
-            <input id="editarOrigemTipo" type="text">
-          </div>
-
-          <div class="form-group">
-            <label for="editarOrigemDataCompra">Data da compra</label>
-            <input id="editarOrigemDataCompra" type="date">
-          </div>
+      <div class="field-grid">
+        <div class="field">
+          <label class="field__label" for="editarOrigemDescricao">Descrição</label>
+          <input id="editarOrigemDescricao" class="input" type="text" required>
         </div>
-
-        <div class="form-group">
-          <label for="editarOrigemDescricao">Descrição</label>
-          <input id="editarOrigemDescricao" type="text">
+        <div class="field">
+          <label class="field__label" for="editarOrigemQuantidadeTotal">Quantidade prevista <span class="field__optional">(opcional)</span></label>
+          <input id="editarOrigemQuantidadeTotal" class="input" type="number" min="0" step="1">
         </div>
+      </div>
+      <div class="field">
+        <label class="field__label" for="editarOrigemObservacoes">Observações <span class="field__optional">(opcional)</span></label>
+        <textarea id="editarOrigemObservacoes" class="input" rows="3"></textarea>
+      </div>
+      <div class="origem-edicao__acoes">
+        <button type="button" id="cancelarEdicaoOrigem" class="btn btn--secondary">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Salvar origem</button>
+      </div>
+    </form>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editarOrigemCustoTotal">Valor pago</label>
-            <input id="editarOrigemCustoTotal" type="text" inputmode="decimal">
-          </div>
+    <section id="kpisOrigem" class="kpi-grid" aria-label="Resumo da origem"></section>
 
-          <div class="form-group">
-            <label for="editarOrigemQuantidadeTotal">Quantidade prevista</label>
-            <input id="editarOrigemQuantidadeTotal" type="number" min="0" step="1">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="editarOrigemObservacoes">Observações</label>
-          <textarea id="editarOrigemObservacoes" rows="3"></textarea>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Salvar edição</button>
-          <button type="button" id="cancelarEdicaoOrigem" class="button-secondary">Cancelar</button>
-        </div>
-      </form>
+    <section class="card origem-retorno" aria-labelledby="tituloRetornoOrigem" id="blocoRetornoOrigem" hidden>
+      <div class="origem-retorno__topo">
+        <h2 class="card__title" id="tituloRetornoOrigem">Retorno da origem</h2>
+        <span class="origem-retorno__percentual" id="percentualRetornoOrigem"></span>
+      </div>
+      <div class="progress progress--thick" id="barraRetornoOrigem" role="progressbar" aria-labelledby="tituloRetornoOrigem" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress__bar" id="preenchimentoRetornoOrigem"></div>
+      </div>
+      <div class="origem-retorno__legenda">
+        <span>R$ 0</span><span id="legendaPagoOrigem"></span>
+      </div>
+      <p class="origem-retorno__frase" id="fraseRetornoOrigem"></p>
     </section>
 
-    <section class="origin-detail-content-grid">
-    <section class="stock-card section-spaced origin-detail-section origin-detail-section--parts">
-      <div class="stock-header origin-detail-section__header">
-        <div>
-          <h2>Distribuição da origem</h2>
-          <p>Controle do valor atribuído às entradas.</p>
+    <section class="card card--flush" aria-labelledby="tituloPecasOrigem" id="blocoPecasOrigem" hidden>
+      <div class="card__head origem-pecas__topo">
+        <h2 class="card__title" id="tituloPecasOrigem">Peças desta origem</h2>
+        <div class="segmented" role="group" aria-label="Situação" id="filtroPecasOrigem">
+          <button type="button" class="segmented__item" data-filtro="todas" aria-pressed="true">Todas <span class="segmented__count" data-contagem="todas">0</span></button>
+          <button type="button" class="segmented__item" data-filtro="vendidas" aria-pressed="false">Vendidas <span class="segmented__count" data-contagem="vendidas">0</span></button>
+          <button type="button" class="segmented__item" data-filtro="estoque" aria-pressed="false">Em estoque <span class="segmented__count" data-contagem="estoque">0</span></button>
         </div>
       </div>
-
-      <p id="mensagemDistribuicaoOrigem" class="empty-message"></p>
-      <section id="resumoDistribuicaoOrigem" class="summary-grid summary-grid--compact" aria-label="Resumo da distribuição da origem"></section>
-    </section>
-
-    <section class="stock-card section-spaced origin-detail-section">
-      <div class="stock-header origin-detail-section__header">
-        <div>
-          <h2>Peças vinculadas</h2>
-          <p>Peças relacionadas às entradas desta origem.</p>
-        </div>
-      </div>
-
-      <p id="mensagemProdutosOrigem" class="empty-message"></p>
-
-      <div class="origin-detail-search">
-        <input id="buscaPecasOrigem" type="search" placeholder="Buscar peça por SKU ou nome">
-      </div>
-
-      <div class="table-wrapper">
-        <table class="stock-table origin-detail-table origin-parts-list">
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive origem-pecas">
           <thead>
             <tr>
-              <th>SKU</th>
-              <th>Peça</th>
-              <th>Quantidade</th>
-              <th>Disponível</th>
-              <th>Ações</th>
+              <th scope="col">Peça</th>
+              <th scope="col" class="num">Custo atribuído</th>
+              <th scope="col" class="num">Preço / vendida por</th>
+              <th scope="col">Situação</th>
+              <th scope="col" class="num">Lucro</th>
             </tr>
           </thead>
-          <tbody id="tabelaProdutosOrigem"></tbody>
+          <tbody id="tabelaPecasOrigem"></tbody>
         </table>
       </div>
-    </section>
-
-    <section class="stock-card section-spaced origin-detail-section origin-detail-section--wide">
-      <div class="stock-header origin-detail-section__header">
-        <div>
-          <h2>Entradas de estoque</h2>
-          <p>Entradas vinculadas à origem.</p>
-        </div>
-      </div>
-
-      <p id="mensagemEntradasOrigem" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table origin-detail-table">
-          <thead>
-            <tr>
-              <th>Peça</th>
-              <th>Data</th>
-              <th>Quantidade total</th>
-              <th>Consumida</th>
-              <th>Saldo</th>
-              <th>Custo unitário</th>
-              <th>Valor atribuído</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaEntradasOrigem"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="stock-card section-spaced origin-detail-section origin-detail-section--wide">
-      <div class="stock-header origin-detail-section__header">
-        <div>
-          <h2>Vendas relacionadas</h2>
-          <p>Vendas relacionadas às peças desta origem.</p>
-        </div>
-      </div>
-
-      <p id="mensagemVendasOrigem" class="empty-message"></p>
-
-      <div class="table-wrapper">
-        <table class="stock-table origin-detail-table">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>SKU</th>
-              <th>Peça</th>
-              <th>Quantidade</th>
-              <th>Canal</th>
-              <th>Valor vendido</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaVendasOrigem"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="stock-card section-spaced origin-detail-section origin-detail-section--wide origin-detail-result" aria-labelledby="tituloResultadoOrigem">
-      <div class="stock-header origin-detail-section__header">
-        <div>
-          <span class="origin-detail-eyebrow">Resumo da origem</span>
-          <h2 id="tituloResultadoOrigem">Resultado resumido</h2>
-          <p>Resumo simples de receita, custos e resultado da origem.</p>
-        </div>
-      </div>
-
-      <section class="summary-grid" id="resumoOrigem" aria-label="Resumo da origem"></section>
-    </section>
-
-    <section class="stock-card section-spaced origin-detail-section origin-detail-section--wide">
-      <div class="stock-header origin-detail-section__header">
-        <div>
-          <h2>Histórico da origem</h2>
-          <p>Observações e indicadores básicos da origem.</p>
-        </div>
-      </div>
-
-      <section id="historicoOrigem" class="detail-grid" aria-label="Histórico da origem"></section>
-    </section>
+      <div class="origem-pecas__rodape" id="rodapePecasOrigem"></div>
     </section>
   </main>
 
@@ -208,8 +115,9 @@
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/moeda-utils.js?v=2"></script>
   <script src="../js/supabase-service.js?v=36"></script>
-  <script src="../js/financeiro-utils.js?v=4"></script>
-  <script src="../js/detalhes-origem.js?v=18"></script>
+  <script src="../js/financeiro-utils.js?v=5"></script>
+  <script src="../js/alertas-regras.js?v=3"></script>
+  <script src="../js/detalhes-origem.js?v=21"></script>
   <script src="../js/sidebar.js?v=9"></script>
 </body>
 </html>

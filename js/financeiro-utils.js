@@ -178,6 +178,86 @@
     };
   }
 
+  // Retorno da origem (Detalhes da origem): quanto já voltou em dinheiro, o resultado contra o valor pago,
+  // o que ainda está em estoque (a preço de venda) e a conta de cada peça. Usa calcularResultadoOrigem e
+  // calcularLucroVenda; não cria regra de custo nova (custo vem das entradas e dos consumos registrados).
+  // resultado = recuperado − valor pago (mesma conta do "Retorno por origem" do Painel).
+  function calcularRetornoOrigem(origem, dados = {}) {
+    const origemId = obterId(origem?.id);
+    const entradas = dados.entradas || [];
+    const consumos = dados.consumos || [];
+    const custosPeca = dados.custosPeca || [];
+    const custosVenda = dados.custosVenda || [];
+    const resultadoOrigem = calcularResultadoOrigem(origem, entradas, dados.vendas, consumos, custosPeca, custosVenda);
+    const valorPago = Number(origem?.valorPago || origem?.custoTotal || 0);
+    const recuperado = resultadoOrigem.recuperado;
+    const entradasDaOrigem = filtrarPorId(entradas, "origemId", origemId);
+    const idsPecas = [...new Set(entradasDaOrigem.map(entrada => obterId(entrada.pecaId)))];
+    const pecasPorId = new Map((dados.pecas || []).map(peca => [obterId(peca.id), peca]));
+
+    const pecas = idsPecas.map(pecaId => {
+      const peca = pecasPorId.get(pecaId) || { id: pecaId };
+      const entradasDaPeca = entradasDaOrigem.filter(entrada => obterId(entrada.pecaId) === pecaId);
+      const quantidade = somar(entradasDaPeca, "quantidadeTotal");
+      const saldo = entradasDaPeca.reduce((total, entrada) => (
+        total + Math.max(0, Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0))
+      ), 0);
+      const custoAtribuido = entradasDaPeca.reduce((total, entrada) => (
+        total + Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0)
+      ), 0);
+      const vendas = resultadoOrigem.vendas.filter(venda => obterId(venda.pecaId) === pecaId);
+      const resultadosVenda = vendas.map(venda => calcularLucroVenda(venda, consumos, custosVenda));
+      const receita = resultadosVenda.reduce((total, resultado) => total + resultado.receita, 0);
+      // Custo lançado na peça só entra quando a peça tem uma origem só (mesma regra do resultado da origem).
+      const custosDaPeca = obterQuantidadeOrigensDaPeca(pecaId, entradas) <= 1 ? calcularCustosPeca(pecaId, custosPeca).valor : 0;
+      const lucroCalculado = vendas.length > 0 && resultadosVenda.every(resultado => resultado.calculado);
+      const precoVenda = Number(peca.precoVenda || peca.preco_venda || 0);
+
+      return {
+        peca,
+        quantidade,
+        saldo,
+        vendida: saldo <= 0 && vendas.length > 0,
+        custoAtribuido,
+        receita,
+        vendas,
+        precoVenda,
+        valorEstoque: precoVenda > 0 ? saldo * precoVenda : 0,
+        lucro: vendas.length === 0
+          ? null
+          : {
+              calculado: lucroCalculado,
+              valor: lucroCalculado
+                ? resultadosVenda.reduce((total, resultado) => total + resultado.lucro, 0) - custosDaPeca
+                : null
+            }
+      };
+    });
+
+    const pecasEmEstoque = pecas.filter(item => item.saldo > 0);
+
+    return {
+      valorPago,
+      recuperado,
+      resultado: recuperado - valorPago,
+      percentualRecuperado: valorPago > 0 ? (recuperado / valorPago) * 100 : null,
+      jaSePagou: valorPago > 0 && recuperado >= valorPago,
+      faltaParaSePagar: Math.max(0, valorPago - recuperado),
+      valorDistribuido: entradasDaOrigem.reduce((total, entrada) => (
+        total + Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0)
+      ), 0),
+      estoque: {
+        unidades: pecasEmEstoque.reduce((total, item) => total + item.saldo, 0),
+        pecas: pecasEmEstoque.length,
+        valorPrecoVenda: pecasEmEstoque.reduce((total, item) => total + item.valorEstoque, 0),
+        pecasSemPreco: pecasEmEstoque.filter(item => item.precoVenda <= 0).length
+      },
+      pecasVendidas: pecas.filter(item => item.vendida).length,
+      pecas,
+      resultadoOrigem
+    };
+  }
+
   // Ordem de consumo do estoque (regra oficial): data de entrada e depois id.
   function compararOrdemConsumo(a, b) {
     const dataA = String(a?.dataEntrada || a?.data_entrada || "");
@@ -266,6 +346,7 @@
     calcularCustosPeca,
     calcularLucroVenda,
     calcularLucroPeca,
-    calcularResultadoOrigem
+    calcularResultadoOrigem,
+    calcularRetornoOrigem
   };
 })();

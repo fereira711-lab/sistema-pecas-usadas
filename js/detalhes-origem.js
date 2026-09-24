@@ -1,22 +1,25 @@
-const params = new URLSearchParams(window.location.search);
-const origemId = Number(params.get("origemId") || params.get("id"));
+// Detalhes da origem (redesenho): quanto a origem custou, quanto já voltou em vendas, o resultado contra
+// o valor pago, o que ainda está em estoque e a conta de cada peça.
+// Os valores vêm do financeiro-utils.js (calcularRetornoOrigem); "parada" vem do alertas-regras.js.
+const PECAS_VISIVEIS = 10;
 
 const tituloOrigem = document.getElementById("tituloOrigem");
 const subtituloOrigem = document.getElementById("subtituloOrigem");
-const mensagemOrigemNaoEncontrada = document.getElementById("mensagemOrigemNaoEncontrada");
-const dadosOrigem = document.getElementById("dadosOrigem");
-const resumoOrigem = document.getElementById("resumoOrigem");
-const mensagemDistribuicaoOrigem = document.getElementById("mensagemDistribuicaoOrigem");
-const resumoDistribuicaoOrigem = document.getElementById("resumoDistribuicaoOrigem");
-const mensagemEntradasOrigem = document.getElementById("mensagemEntradasOrigem");
-const tabelaEntradasOrigem = document.getElementById("tabelaEntradasOrigem");
-const mensagemProdutosOrigem = document.getElementById("mensagemProdutosOrigem");
-const tabelaProdutosOrigem = document.getElementById("tabelaProdutosOrigem");
-const campoBuscaPecasOrigem = document.getElementById("buscaPecasOrigem");
-const mensagemVendasOrigem = document.getElementById("mensagemVendasOrigem");
-const tabelaVendasOrigem = document.getElementById("tabelaVendasOrigem");
-const linkCadastrarPecaOrigem = document.getElementById("linkCadastrarPecaOrigem");
+const observacaoOrigem = document.getElementById("observacaoOrigem");
+const mensagemOrigem = document.getElementById("mensagemOrigem");
 const botaoEditarOrigem = document.getElementById("botaoEditarOrigem");
+const linkAdicionarPeca = document.getElementById("linkAdicionarPeca");
+const kpisOrigem = document.getElementById("kpisOrigem");
+const blocoRetornoOrigem = document.getElementById("blocoRetornoOrigem");
+const percentualRetornoOrigem = document.getElementById("percentualRetornoOrigem");
+const barraRetornoOrigem = document.getElementById("barraRetornoOrigem");
+const preenchimentoRetornoOrigem = document.getElementById("preenchimentoRetornoOrigem");
+const legendaPagoOrigem = document.getElementById("legendaPagoOrigem");
+const fraseRetornoOrigem = document.getElementById("fraseRetornoOrigem");
+const blocoPecasOrigem = document.getElementById("blocoPecasOrigem");
+const filtroPecasOrigem = document.getElementById("filtroPecasOrigem");
+const tabelaPecasOrigem = document.getElementById("tabelaPecasOrigem");
+const rodapePecasOrigem = document.getElementById("rodapePecasOrigem");
 const formEditarOrigem = document.getElementById("formEditarOrigem");
 const editarOrigemTipo = document.getElementById("editarOrigemTipo");
 const editarOrigemDataCompra = document.getElementById("editarOrigemDataCompra");
@@ -26,16 +29,13 @@ const editarOrigemQuantidadeTotal = document.getElementById("editarOrigemQuantid
 const editarOrigemObservacoes = document.getElementById("editarOrigemObservacoes");
 const cancelarEdicaoOrigem = document.getElementById("cancelarEdicaoOrigem");
 
-let dadosDetalhesOrigem = {
-  origem: null,
-  entradas: [],
-  todasEntradas: [],
-  pecas: [],
-  vendas: [],
-  consumosOrigem: [],
-  custosPeca: [],
-  custosVenda: []
-};
+let origemId = 0;
+let dadosOrigem = null;
+let linhasPecas = [];
+let filtroAtual = "todas";
+let mostrarTodas = false;
+
+// ---- Formatação ----
 
 function escaparHtml(valor) {
   return String(valor ?? "")
@@ -47,828 +47,447 @@ function escaparHtml(valor) {
 }
 
 function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(Number(valor || 0));
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatarPercentualInteiro(valor) {
+  if (window.moedaUtils?.formatarPercentualBR) return window.moedaUtils.formatarPercentualBR(valor, 0);
+  return `${Math.round(Number(valor || 0))}%`;
 }
 
 function formatarNumero(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  });
+  return Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 }
 
-function formatarPercentual(valor) {
-  return `${Number(valor || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  })}%`;
+function plural(quantidade, singular, pluralTexto) {
+  return `${formatarNumero(quantidade)} ${quantidade === 1 ? singular : pluralTexto}`;
 }
 
 function formatarData(data) {
-  if (!data) {
-    return "-";
-  }
-
-  const dataIso = String(data).slice(0, 10);
-  const partes = dataIso.split("-");
-
-  if (partes.length !== 3) {
-    return dataIso;
-  }
-
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  const [ano, mes, dia] = String(data || "").slice(0, 10).split("-");
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : "";
 }
 
-function obterDataVenda(venda) {
-  return String(venda.dataVenda || venda.data_venda || "").slice(0, 10);
+// ---- Regras da tela (sem cálculo financeiro próprio) ----
+
+// Situação da peça com as mesmas regras e a mesma prioridade de Produtos:
+// Vendida; Preço abaixo do custo > Parada há N dias > Em estoque.
+function calcularSituacao(item, parada, financeiro, dados) {
+  if (item.vendida) return { chave: "vendida" };
+  if (item.saldo <= 0) return { chave: "sem-saldo" };
+
+  const custo = financeiro.calcularCustoReferenciaPeca(item.peca.id, dados.entradas, dados.consumos);
+  const margem = custo.calculado ? financeiro.calcularMargemPreco(item.precoVenda, custo.valor) : null;
+
+  if (margem !== null && margem < 0) return { chave: "abaixo-custo" };
+  if (parada) return { chave: "parada", dias: parada.dias };
+  return { chave: "estoque" };
 }
 
-function formatarNomePeca(peca) {
-  return peca?.nome || peca?.nome_peca || peca?.nomeProduto || peca?.produtoNome || peca?.descricao || `Peça ${peca?.id || peca?.pecaId || ""}`.trim();
+function obterUltimaVenda(item) {
+  return item.vendas.map(venda => String(venda.dataVenda || "").slice(0, 10)).sort().pop() || "";
 }
 
-function formatarSku(peca) {
-  return String(peca?.sku || peca?.codigo || peca?.codigo_peca || peca?.cod || "").trim() || "-";
-}
-
-function valorVenda(venda) {
-  if (window.financeiroUtils?.calcularReceitaVenda) {
-    return window.financeiroUtils.calcularReceitaVenda(venda);
-  }
-
-  const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || venda.quantidade_vendida || 0);
-  const unitario = Number(venda.valorUnitario || venda.precoUnitario || venda.valor_unitario || 0);
-  return Number(venda.valorTotal || venda.valor_total || venda.valorVenda || unitario * quantidade || 0);
-}
-
-function valorUnitarioVenda(venda) {
-  const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || venda.quantidade_vendida || 0);
-  const total = valorVenda(venda);
-  const unitario = Number(venda.valorUnitario || venda.precoUnitario || venda.valor_unitario || 0);
-
-  return unitario > 0 ? unitario : quantidade > 0 ? total / quantidade : 0;
-}
-
-function somarCampo(lista, campo) {
-  return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
-}
-
-function filtrarPecasPorBusca(pecas) {
-  const termo = String(campoBuscaPecasOrigem?.value || "").trim().toLowerCase();
-
-  if (!termo) {
-    return pecas;
-  }
-
-  return pecas.filter(peca => {
-    const nome = formatarNomePeca(peca).toLowerCase();
-    const sku = formatarSku(peca).toLowerCase();
-
-    return nome.includes(termo) || sku.includes(termo);
+// Vendidas primeiro (a mais recente no topo), depois as que ainda estão em estoque (maior custo no topo).
+function ordenarLinhas(linhas) {
+  return [...linhas].sort((a, b) => {
+    if (a.vendida !== b.vendida) return a.vendida ? -1 : 1;
+    if (a.vendida) return obterUltimaVenda(b).localeCompare(obterUltimaVenda(a)) || b.custoAtribuido - a.custoAtribuido;
+    return b.custoAtribuido - a.custoAtribuido;
   });
 }
 
-function obterStatusEntrada(entrada) {
-  const total = Number(entrada.quantidadeTotal || 0);
-  const consumida = Number(entrada.quantidadeConsumida || 0);
-  const saldo = Math.max(total - consumida, 0);
+function montarLinhasPecas(retorno, dados, opcoes = {}) {
+  const financeiro = opcoes.financeiro || window.financeiroUtils;
+  const regras = opcoes.alertasRegras || window.alertasRegras;
+  const paradas = new Map(
+    (regras?.calcularPecasParadas({
+      pecas: retorno.pecas.map(item => item.peca),
+      vendas: dados.vendas,
+      entradasEstoque: dados.entradas
+    }, opcoes.hoje) || []).map(item => [Number(item.peca.id), item])
+  );
 
-  if (saldo <= 0 && total > 0) {
-    return "esgotada";
+  return ordenarLinhas(retorno.pecas.map(item => ({
+    ...item,
+    situacao: calcularSituacao(item, paradas.get(Number(item.peca.id)), financeiro, dados)
+  })));
+}
+
+function linhaCombinaComFiltro(linha, filtro) {
+  if (filtro === "vendidas") return linha.vendida;
+  if (filtro === "estoque") return linha.saldo > 0;
+  return true;
+}
+
+// Frase do bloco "Retorno da origem": se já se pagou (ou quanto falta) e quanto o estoque ainda pode render.
+function montarFraseRetorno(retorno) {
+  const { estoque } = retorno;
+
+  if (retorno.valorPago <= 0) {
+    return "Origem sem valor pago registrado: não há o que recuperar.";
   }
 
-  if (consumida > 0) {
-    return "parcial";
-  }
+  const pecasEstoque = `<strong>${escaparHtml(plural(estoque.pecas, "peça em estoque", "peças em estoque"))}</strong>`;
+  const podeRender = `<strong>${escaparHtml(formatarMoeda(estoque.valorPrecoVenda))}</strong>`;
+  let frase;
 
-  return "disponível";
-}
+  if (retorno.jaSePagou) {
+    frase = `Esta origem já se pagou e deixou ${escaparHtml(formatarMoeda(retorno.resultado))} de lucro até agora.`;
+    frase += estoque.pecas > 0
+      ? ` ${estoque.pecas === 1 ? "A" : "As"} ${pecasEstoque} ainda ${estoque.pecas === 1 ? "pode" : "podem"} render ${podeRender} pelos preços cadastrados.`
+      : " Não há mais peças em estoque.";
+  } else {
+    frase = `Faltam <strong>${escaparHtml(formatarMoeda(retorno.faltaParaSePagar))}</strong> para esta origem se pagar.`;
 
-function obterStatusPeca(peca, entradasDaPeca) {
-  if (peca.status) {
-    return peca.status;
-  }
-
-  const saldo = entradasDaPeca.reduce((total, entrada) => {
-    return total + Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
-  }, 0);
-
-  return saldo > 0 ? "em_estoque" : "vendida";
-}
-
-function obterVendaPorId(vendaId) {
-  return dadosDetalhesOrigem.vendas.find(venda => Number(venda.id) === Number(vendaId));
-}
-
-function obterPecaPorId(pecaId) {
-  return dadosDetalhesOrigem.pecas.find(peca => Number(peca.id) === Number(pecaId));
-}
-
-function obterEntradaPorId(entradaId) {
-  return dadosDetalhesOrigem.entradas.find(entrada => Number(entrada.id) === Number(entradaId));
-}
-
-function agruparConsumosPorVenda(consumos) {
-  return consumos.reduce((mapa, consumo) => {
-    const vendaId = Number(consumo.vendaId || 0);
-
-    if (!mapa[vendaId]) {
-      mapa[vendaId] = [];
+    if (estoque.pecas > 0) {
+      const cobre = estoque.valorPrecoVenda >= retorno.faltaParaSePagar;
+      frase += ` ${estoque.pecas === 1 ? "A" : "As"} ${pecasEstoque} ainda ${estoque.pecas === 1 ? "pode" : "podem"} render ${podeRender} pelos preços cadastrados, ${cobre ? "o suficiente para cobrir o que falta" : "menos do que falta"}.`;
+    } else {
+      frase += " Não há mais peças em estoque.";
     }
+  }
 
-    mapa[vendaId].push(consumo);
-    return mapa;
-  }, {});
+  if (estoque.pecasSemPreco > 0) {
+    frase += ` ${estoque.pecasSemPreco === 1 ? "1 peça em estoque está sem preço e não entra" : `${formatarNumero(estoque.pecasSemPreco)} peças em estoque estão sem preço e não entram`} nessa conta.`;
+  }
+
+  return frase;
 }
 
-function agruparCustosVendaPorVenda(custosVenda) {
-  return custosVenda.reduce((mapa, custo) => {
-    const vendaId = Number(custo.vendaId || 0);
+// ---- Carga ----
 
-    if (!mapa[vendaId]) {
-      mapa[vendaId] = [];
-    }
+async function carregarDados(idOrigem) {
+  const servico = window.supabaseService;
 
-    mapa[vendaId].push(custo);
-    return mapa;
-  }, {});
-}
-
-function montarLinhasVendasOrigem() {
-  const consumosPorVenda = agruparConsumosPorVenda(dadosDetalhesOrigem.consumosOrigem);
-
-  return Object.entries(consumosPorVenda)
-    .map(([vendaId, consumos]) => {
-      const venda = obterVendaPorId(Number(vendaId));
-
-      if (!venda) {
-        return null;
-      }
-
-      const quantidadeConsumida = somarCampo(consumos, "quantidadeConsumida");
-      const primeiroConsumo = consumos[0] || {};
-      const peca = obterPecaPorId(primeiroConsumo.pecaId || venda.pecaId);
-      const valorAtribuido = quantidadeConsumida * valorUnitarioVenda(venda);
-
-      return {
-        venda,
-        peca,
-        quantidadeConsumida,
-        valorAtribuido
-      };
-    })
-    .filter(Boolean)
-    .sort((a, b) => {
-      const dataA = obterDataVenda(a.venda || {});
-      const dataB = obterDataVenda(b.venda || {});
-
-      if (dataA !== dataB) {
-        return dataB.localeCompare(dataA);
-      }
-
-      return Number(b.venda?.id || 0) - Number(a.venda?.id || 0);
-    });
-}
-
-async function carregarContextoSupabase(idOrigem) {
-  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
+  if (!servico?.estaConfigurado()) {
     throw new Error("Configure o Supabase para carregar os detalhes da origem.");
   }
 
-  const [
-    origem,
-    entradas,
-    pecas,
-    vendas,
-    consumosEstoque,
-    custosPeca,
-    custosVenda
-  ] = await Promise.all([
-    window.supabaseService.buscarOrigemPorId(idOrigem),
-    window.supabaseService.listarEntradasEstoque(),
-    window.supabaseService.listarPecas(),
-    window.supabaseService.listarVendas(),
-    window.supabaseService.listarConsumosEstoque(),
-    window.supabaseService.listarCustosPeca(),
-    window.supabaseService.listarCustosVenda()
+  const [origem, entradas, pecas, vendas, consumos, custosPeca, custosVenda] = await Promise.all([
+    servico.buscarOrigemPorId(idOrigem),
+    servico.listarEntradasEstoque(),
+    servico.listarPecas(),
+    servico.listarVendas(),
+    servico.listarConsumosEstoque(),
+    servico.listarCustosPeca(),
+    servico.listarCustosVenda()
   ]);
 
-  const entradasOrigem = (entradas || []).filter(entrada => Number(entrada.origemId || 0) === Number(idOrigem));
-  const idsPecasOrigem = new Set(entradasOrigem.map(entrada => Number(entrada.pecaId)));
-  const skuOrigem = String(origem?.produtoSku || "").trim().toUpperCase();
-  const pecasOrigem = (pecas || []).filter(peca => {
-    const skuPeca = String(peca.sku || "").trim().toUpperCase();
-
-    return idsPecasOrigem.has(Number(peca.id)) ||
-      Number(peca.origemId || 0) === Number(idOrigem) ||
-      Boolean(skuOrigem && skuPeca === skuOrigem);
-  });
-  pecasOrigem.forEach(peca => idsPecasOrigem.add(Number(peca.id)));
-
-  const idsEntradasOrigem = new Set(entradasOrigem.map(entrada => Number(entrada.id)));
-  const consumosOrigem = (consumosEstoque || []).filter(consumo => idsEntradasOrigem.has(Number(consumo.entradaEstoqueId)));
-  const idsVendasOrigem = new Set(consumosOrigem.map(consumo => Number(consumo.vendaId)));
-  const vendasOrigem = (vendas || []).filter(venda => idsVendasOrigem.has(Number(venda.id)));
-  const custosPecaOrigem = (custosPeca || []).filter(custo => idsPecasOrigem.has(Number(custo.pecaId)));
-  const custosVendaOrigem = (custosVenda || []).filter(custo => idsVendasOrigem.has(Number(custo.vendaId)));
-
   return {
     origem,
-    entradas: entradasOrigem,
-    todasEntradas: entradas || [],
-    pecas: pecasOrigem,
-    vendas: vendasOrigem,
-    consumosOrigem,
-    custosPeca: custosPecaOrigem,
-    custosVenda: custosVendaOrigem
+    entradas: entradas || [],
+    pecas: pecas || [],
+    vendas: vendas || [],
+    consumos: consumos || [],
+    custosPeca: custosPeca || [],
+    custosVenda: custosVenda || []
   };
 }
 
-function obterCodigoOrigem(origem) {
-  return origem?.codigoOrigem || origem?.codigo_origem || `ORI-${String(origem?.id || "").padStart(6, "0")}`;
+// ---- Renderização ----
+
+function renderizarCabecalho(origem) {
+  document.title = `${origem.descricao || "Origem"} · Detalhes da origem`;
+  tituloOrigem.textContent = origem.descricao || "Origem sem descrição";
+  const partes = [origem.tipoOrigem || origem.tipo, origem.dataCompra ? `comprado em ${formatarData(origem.dataCompra)}` : ""]
+    .filter(Boolean)
+    .map(escaparHtml);
+  subtituloOrigem.innerHTML = [`<span class="mono">${escaparHtml(origem.codigoOrigem || "")}</span>`, ...partes].join(" · ");
+  observacaoOrigem.textContent = origem.observacoes || "";
+  observacaoOrigem.hidden = !origem.observacoes;
+  linkAdicionarPeca.href = `cadastro-peca.html?origemId=${encodeURIComponent(origem.id)}`;
+  botaoEditarOrigem.disabled = false;
 }
 
-function obterValorTotalOrigem(origem) {
-  return Number(origem?.valorPago || origem?.valor_total || origem?.custoTotal || 0);
-}
-
-function obterQuantidadePrevistaOrigem(origem) {
-  return Number(origem?.quantidadePrevista || origem?.quantidade_prevista || origem?.quantidadeTotal || origem?.quantidade_total || 0);
-}
-
-function obterQuantidadeDistribuidaOrigem() {
-  const quantidadeDistribuida = dadosDetalhesOrigem.entradas.reduce((total, entrada) => {
-    return total + Number(entrada.quantidadeTotal || 0);
-  }, 0);
-
-  if (quantidadeDistribuida > 0) {
-    return quantidadeDistribuida;
-  }
-
-  return dadosDetalhesOrigem.pecas.length || 0;
-}
-
-function obterPrecoVendaPeca(peca) {
-  return Number(peca?.precoVenda || peca?.preco_venda || peca?.valorVenda || peca?.valor_venda || 0);
-}
-
-function obterQuantidadeDisponivelPeca(peca, entradasDaPeca) {
-  const saldoEntradas = entradasDaPeca.reduce((total, entrada) => {
-    return total + Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
-  }, 0);
-
-  if (saldoEntradas > 0) {
-    return saldoEntradas;
-  }
-
-  const quantidade = Number(peca?.quantidade || peca?.quantidadeDisponivel || peca?.quantidade_disponivel || 0);
-  const vendida = Number(peca?.quantidadeVendida || peca?.quantidade_vendida || 0);
-  return Math.max(quantidade - vendida, 0);
-}
-
-function formatarCustoCalculado(valor, resumo) {
-  const temVendaRelacionada = dadosDetalhesOrigem.vendas.length > 0;
-  const temConsumo = dadosDetalhesOrigem.consumosOrigem.length > 0;
-
-  if (temVendaRelacionada && !temConsumo) {
-    return "Custo não calculado";
-  }
-
-  return formatarMoeda(valor);
-}
-
-function formatarStatusTexto(texto) {
-  const valor = String(texto || "").replaceAll("_", " ").trim();
-
-  if (!valor) {
-    return "-";
-  }
-
-  return valor.charAt(0).toUpperCase() + valor.slice(1);
-}
-
-function converterNumero(valor) {
-  if (window.moedaUtils?.parseMoedaBR) {
-    return window.moedaUtils.parseMoedaBR(valor);
-  }
-
-  return Number(String(valor || "0").replace(",", "."));
-}
-
-function obterClasseStatusDistribuicao(status) {
-  if (status === "distribuída acima do valor") {
-    return "status-badge--empty";
-  }
-
-  if (status === "falta distribuir") {
-    return "status-badge--warning";
-  }
-
-  return "status-badge--stock";
-}
-
-function alternarTabelaOrigemVazia(tabela, vazia) {
-  const wrapper = tabela?.closest(".table-wrapper");
-
-  if (wrapper) {
-    wrapper.hidden = vazia;
-  }
-}
-
-function calcularDistribuicaoOrigem() {
-  const origem = dadosDetalhesOrigem.origem || {};
-  const valorTotal = obterValorTotalOrigem(origem);
-  const quantidadePrevista = obterQuantidadePrevistaOrigem(origem);
-  const quantidadeDistribuida = obterQuantidadeDistribuidaOrigem();
-  const valorDistribuido = dadosDetalhesOrigem.entradas.reduce((total, entrada) => {
-    const valorAtribuido = Number(entrada.valorAtribuidoEntrada || entrada.valor_atribuido_entrada || 0);
-
-    if (valorAtribuido > 0) {
-      return total + valorAtribuido;
-    }
-
-    return total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0));
-  }, 0);
-  const valorRestante = valorTotal - valorDistribuido;
-  const percentualDistribuido = valorTotal > 0 ? (valorDistribuido / valorTotal) * 100 : 0;
-  const status = valorRestante < -0.009
-    ? "distribuída acima do valor"
-    : valorRestante > 0.009
-      ? "falta distribuir"
-      : "totalmente distribuída";
-
-  return {
-    valorTotal,
-    valorDistribuido,
-    valorRestante,
-    percentualDistribuido,
-    quantidadePrevista,
-    quantidadeDistribuida,
-    status
-  };
-}
-
-function calcularResumoOrigem() {
-  const resultadoFinanceiro = window.financeiroUtils?.calcularResultadoOrigem
-    ? window.financeiroUtils.calcularResultadoOrigem(
-        dadosDetalhesOrigem.origem,
-        dadosDetalhesOrigem.todasEntradas.length > 0 ? dadosDetalhesOrigem.todasEntradas : dadosDetalhesOrigem.entradas,
-        dadosDetalhesOrigem.vendas,
-        dadosDetalhesOrigem.consumosOrigem,
-        dadosDetalhesOrigem.custosPeca,
-        dadosDetalhesOrigem.custosVenda
-      )
-    : null;
-  const consumosPorVenda = agruparConsumosPorVenda(dadosDetalhesOrigem.consumosOrigem);
-  const custosVendaPorVenda = agruparCustosVendaPorVenda(dadosDetalhesOrigem.custosVenda);
-  const vendaIds = Object.keys(consumosPorVenda).map(Number);
-  const receitaRelacionada = vendaIds.reduce((total, vendaId) => {
-    const venda = obterVendaPorId(vendaId);
-    const valorUnitario = valorUnitarioVenda(venda || {});
-    const quantidadeConsumida = somarCampo(consumosPorVenda[vendaId] || [], "quantidadeConsumida");
-
-    return total + (quantidadeConsumida * valorUnitario);
-  }, 0);
-  const custoConsumidoDaOrigem = resultadoFinanceiro?.custoConsumido ?? somarCampo(dadosDetalhesOrigem.consumosOrigem, "custoTotal");
-  const custosDaPeca = resultadoFinanceiro?.custosPeca ?? somarCampo(dadosDetalhesOrigem.custosPeca, "valor");
-  const custosDaPecaNaoAtribuidos = resultadoFinanceiro?.custosPecaNaoAtribuidos ?? 0;
-  const custosDaVenda = resultadoFinanceiro?.custosVenda ?? somarCampo(dadosDetalhesOrigem.custosVenda, "valor");
-  const resultadoOrigem = receitaRelacionada - custoConsumidoDaOrigem - custosDaPeca - custosDaVenda;
-  const distribuicao = calcularDistribuicaoOrigem();
-
-  return {
-    receitaTotal: receitaRelacionada,
-    custoConsumidoDaOrigem,
-    custosDaPeca,
-    custosDaPecaNaoAtribuidos,
-    custosDaVenda,
-    resultadoOrigem,
-    valorInvestido: distribuicao.valorTotal,
-    valorAtribuidoNasEntradas: distribuicao.valorDistribuido,
-    saldoParaDistribuir: distribuicao.valorRestante,
-    percentualDistribuido: distribuicao.percentualDistribuido,
-    quantidadePrevista: distribuicao.quantidadePrevista,
-    quantidadeDistribuida: distribuicao.quantidadeDistribuida,
-    statusDistribuicao: distribuicao.status,
-    custosVendaPorVenda,
-    possuiCustosPecaNaoAtribuidos: custosDaPecaNaoAtribuidos > 0
-  };
-}
-
-function renderizarDadosOrigem(origem) {
-  const codigoOrigem = obterCodigoOrigem(origem);
-  const resumo = calcularResumoOrigem();
-  const descricao = origem.descricao || `Origem ${origem.id}`;
-  const tipoOrigem = origem.tipoOrigem || origem.tipo || "-";
-  const dataOrigem = origem.dataCompra || origem.data_origem;
-
-  tituloOrigem.textContent = "Detalhes da origem";
-  subtituloOrigem.textContent = `${codigoOrigem} - ${descricao} - ${formatarData(dataOrigem)}`;
-
-  if (linkCadastrarPecaOrigem) {
-    linkCadastrarPecaOrigem.href = `cadastro-peca.html?origemId=${encodeURIComponent(origem.id)}`;
-  }
-
-  dadosOrigem.innerHTML = `
-    <section class="origin-detail-main-card" aria-label="Resumo principal da origem">
-      <div class="origin-detail-main-info">
-        <span class="origin-detail-eyebrow">${escaparHtml(codigoOrigem)}</span>
-        <h3>${escaparHtml(descricao)}</h3>
-        <p>${escaparHtml(origem.observacoes || "Sem observações registradas.")}</p>
-        <div class="origin-detail-badges">
-          <span class="status-badge ${obterClasseStatusDistribuicao(resumo.statusDistribuicao)}">${escaparHtml(formatarStatusTexto(resumo.statusDistribuicao))}</span>
-          <span class="status-badge status-badge--info">${escaparHtml(tipoOrigem)}</span>
-          <span class="status-badge status-badge--info">${formatarData(dataOrigem)}</span>
-        </div>
-      </div>
-
-      <aside class="origin-detail-main-metrics" aria-label="Indicadores da origem">
-        <article class="detail-card">
-          <span>Valor pago</span>
-          <strong>${formatarMoeda(resumo.valorInvestido)}</strong>
-        </article>
-        <article class="detail-card">
-          <span>Valor restante</span>
-          <strong>${formatarMoeda(resumo.saldoParaDistribuir)}</strong>
-        </article>
-        <article class="detail-card">
-          <span>Peças vinculadas</span>
-          <strong>${formatarNumero(dadosDetalhesOrigem.pecas.length)}</strong>
-        </article>
-      </aside>
-    </section>
-
-    <section class="origin-detail-data-grid" aria-label="Dados da origem">
-      <article class="detail-card">
-        <span>Código</span>
-        <strong>${escaparHtml(codigoOrigem)}</strong>
-      </article>
-      <article class="detail-card">
-        <span>Tipo</span>
-        <strong>${escaparHtml(tipoOrigem)}</strong>
-      </article>
-      <article class="detail-card">
-        <span>Data da compra</span>
-        <strong>${formatarData(dataOrigem)}</strong>
-      </article>
-      <article class="detail-card">
-        <span>Valor pago</span>
-        <strong>${formatarMoeda(resumo.valorInvestido)}</strong>
-      </article>
-      <article class="detail-card detail-card--wide">
-        <span>Descrição</span>
-        <strong>${escaparHtml(descricao || "-")}</strong>
-      </article>
-      <article class="detail-card detail-card--wide">
-        <span>Observações</span>
-        <strong>${escaparHtml(origem.observacoes || "-")}</strong>
-      </article>
-    </section>
+function criarKpi({ rotulo, valor, classeValor = "", nota = "", classeNota = "" }) {
+  return `
+    <article class="kpi">
+      <span class="kpi__label">${escaparHtml(rotulo)}</span>
+      <span class="kpi__value kpi__value--tight ${classeValor}">${escaparHtml(valor)}</span>
+      <span class="kpi__note ${classeNota}">${escaparHtml(nota)}</span>
+    </article>
   `;
 }
 
-function renderizarDistribuicaoOrigem() {
-  const resumo = calcularResumoOrigem();
+function renderizarKpis(retorno) {
+  const quantidadePecas = retorno.pecas.length;
+  const aDistribuir = retorno.valorPago - retorno.valorDistribuido;
+  let notaPago = quantidadePecas ? `Distribuído em ${plural(quantidadePecas, "peça", "peças")}` : "Nenhuma peça cadastrada";
+  let classeNotaPago = "";
 
-  mensagemDistribuicaoOrigem.textContent = "";
-  resumoDistribuicaoOrigem.innerHTML = `
-    <article class="summary-card">
-      <span>Valor total</span>
-      <strong>${formatarMoeda(resumo.valorInvestido)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Valor distribuído</span>
-      <strong>${formatarMoeda(resumo.valorAtribuidoNasEntradas)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Valor restante</span>
-      <strong>${formatarMoeda(resumo.saldoParaDistribuir)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Quantidade prevista</span>
-      <strong>${resumo.quantidadePrevista > 0 ? formatarNumero(resumo.quantidadePrevista) : "-"}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Quantidade distribuída</span>
-      <strong>${formatarNumero(resumo.quantidadeDistribuida)}</strong>
-    </article>
-    <article class="summary-card summary-card--muted">
-      <span>Situação da distribuição</span>
-      <strong><span class="status-badge ${obterClasseStatusDistribuicao(resumo.statusDistribuicao)}">${escaparHtml(formatarStatusTexto(resumo.statusDistribuicao))}</span></strong>
-    </article>
+  if (retorno.valorPago > 0 && aDistribuir > 0.009) {
+    notaPago += ` · ${formatarMoeda(aDistribuir)} a distribuir`;
+    classeNotaPago = "kpi__note--warning";
+  } else if (aDistribuir < -0.009) {
+    notaPago += ` · ${formatarMoeda(-aDistribuir)} acima do pago`;
+    classeNotaPago = "kpi__note--danger";
+  }
+
+  const custosVenda = retorno.resultadoOrigem.custosVenda;
+  const notaRecuperado = [
+    plural(retorno.pecasVendidas, "peça vendida", "peças vendidas"),
+    custosVenda > 0 ? `descontados ${formatarMoeda(custosVenda)} de custos da venda` : ""
+  ].filter(Boolean).join(" · ");
+
+  let kpiResultado;
+  if (retorno.valorPago <= 0) {
+    kpiResultado = criarKpi({ rotulo: "Resultado da origem", valor: "—", classeValor: "kpi__value--muted", nota: "Sem valor pago" });
+  } else if (retorno.jaSePagou) {
+    kpiResultado = criarKpi({ rotulo: "Resultado da origem", valor: formatarMoeda(retorno.resultado), classeValor: "text-success", nota: "Já se pagou", classeNota: "kpi__note--success" });
+  } else {
+    kpiResultado = criarKpi({ rotulo: "Resultado da origem", valor: formatarMoeda(retorno.resultado), nota: `Faltam ${formatarMoeda(retorno.faltaParaSePagar)} para se pagar`, classeNota: "kpi__note--warning" });
+  }
+
+  const { estoque } = retorno;
+  const notaEstoque = [
+    estoque.unidades !== estoque.pecas ? `em ${plural(estoque.pecas, "peça", "peças")}` : "",
+    `${formatarMoeda(estoque.valorPrecoVenda)} a preço de venda`
+  ].filter(Boolean).join(" · ");
+
+  kpisOrigem.innerHTML = [
+    criarKpi({ rotulo: "Valor pago", valor: formatarMoeda(retorno.valorPago), nota: notaPago, classeNota: classeNotaPago }),
+    criarKpi({ rotulo: "Recuperado em vendas", valor: formatarMoeda(retorno.recuperado), nota: notaRecuperado }),
+    kpiResultado,
+    criarKpi({ rotulo: "Ainda em estoque", valor: plural(estoque.unidades, "unidade", "unidades"), nota: notaEstoque })
+  ].join("");
+}
+
+function renderizarRetorno(retorno) {
+  const percentual = retorno.percentualRecuperado;
+  const largura = percentual === null ? 0 : Math.min(100, Math.max(0, percentual));
+
+  percentualRetornoOrigem.textContent = percentual === null ? "Sem valor pago" : `${formatarPercentualInteiro(percentual)} do valor pago já recuperado`;
+  percentualRetornoOrigem.classList.toggle("origem-retorno__percentual--pago", retorno.jaSePagou);
+  preenchimentoRetornoOrigem.className = `progress__bar ${retorno.jaSePagou ? "progress__bar--complete" : "progress__bar--partial"}`;
+  preenchimentoRetornoOrigem.style.width = `${Math.round(largura)}%`;
+  barraRetornoOrigem.setAttribute("aria-valuenow", String(Math.round(largura)));
+  legendaPagoOrigem.textContent = `Pago: ${formatarMoeda(retorno.valorPago)}`;
+  fraseRetornoOrigem.innerHTML = montarFraseRetorno(retorno);
+  blocoRetornoOrigem.hidden = false;
+}
+
+function renderizarSituacao(situacao) {
+  if (situacao.chave === "vendida") return '<span class="pill pill--neutral">Vendida</span>';
+  if (situacao.chave === "abaixo-custo") return '<span class="pill pill--warning">Preço abaixo do custo</span>';
+  if (situacao.chave === "parada") return `<span class="pill pill--warning">Parada há ${formatarNumero(situacao.dias)} dias</span>`;
+  if (situacao.chave === "sem-saldo") return '<span class="pill pill--neutral">Sem saldo</span>';
+  return '<span class="pill pill--success">Em estoque</span>';
+}
+
+function renderizarPreco(linha) {
+  if (linha.vendida) {
+    return `<td class="num cell-strong" data-label="Vendida por">${escaparHtml(formatarMoeda(linha.receita))}</td>`;
+  }
+
+  const preco = linha.precoVenda > 0 ? escaparHtml(formatarMoeda(linha.precoVenda)) : '<span class="text-warning">Sem preço</span>';
+  const unidadesVendidas = linha.quantidade - linha.saldo;
+  const parcial = linha.vendas.length > 0
+    ? `<span class="origem-pecas__sub">${escaparHtml(plural(unidadesVendidas, "vendida", "vendidas"))} por ${escaparHtml(formatarMoeda(linha.receita))}</span>`
+    : "";
+
+  return `<td class="num" data-label="Preço">${preco}${parcial}</td>`;
+}
+
+function renderizarLucro(linha) {
+  if (!linha.lucro) return '<td class="num cell-muted" data-label="Lucro">—</td>';
+  if (!linha.lucro.calculado) return '<td class="num cell-muted" data-label="Lucro">Custo não calculado</td>';
+
+  const classe = linha.lucro.valor < 0 ? "text-danger" : "text-success";
+  return `<td class="num cell-strong ${classe}" data-label="Lucro">${escaparHtml(formatarMoeda(linha.lucro.valor))}</td>`;
+}
+
+function renderizarLinha(linha) {
+  const { peca } = linha;
+  const detalhe = [peca.sku, linha.quantidade > 1 ? `${formatarNumero(linha.quantidade)} un.` : ""].filter(Boolean).join(" · ");
+
+  return `
+    <tr>
+      <td data-label="Peça">
+        <div class="item-cell__text">
+          <a class="item-cell__name" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}">${escaparHtml(peca.nome || `Peça ${peca.id}`)}</a>
+          ${detalhe ? `<span class="mono">${escaparHtml(detalhe)}</span>` : ""}
+        </div>
+      </td>
+      <td class="num" data-label="Custo atribuído">${escaparHtml(formatarMoeda(linha.custoAtribuido))}</td>
+      ${renderizarPreco(linha)}
+      <td data-label="Situação">${renderizarSituacao(linha.situacao)}</td>
+      ${renderizarLucro(linha)}
+    </tr>
   `;
 }
 
 function renderizarPecas() {
-  tabelaProdutosOrigem.innerHTML = "";
-  const pecasFiltradas = filtrarPecasPorBusca(dadosDetalhesOrigem.pecas);
+  const filtradas = linhasPecas.filter(linha => linhaCombinaComFiltro(linha, filtroAtual));
+  const visiveis = mostrarTodas ? filtradas : filtradas.slice(0, PECAS_VISIVEIS);
 
-  if (pecasFiltradas.length === 0) {
-    mensagemProdutosOrigem.textContent = campoBuscaPecasOrigem?.value
-      ? "Nenhuma peça encontrada para a busca."
-      : "Nenhuma peça vinculada.";
-    alternarTabelaOrigemVazia(tabelaProdutosOrigem, true);
-    return;
-  }
-
-  mensagemProdutosOrigem.textContent = "";
-  alternarTabelaOrigemVazia(tabelaProdutosOrigem, false);
-
-  pecasFiltradas.forEach(peca => {
-    const entradasDaPeca = dadosDetalhesOrigem.entradas.filter(entrada => Number(entrada.pecaId) === Number(peca.id));
-    const quantidadeTotal = somarCampo(entradasDaPeca, "quantidadeTotal") || Number(peca.quantidade || 0);
-    const quantidadeDisponivel = obterQuantidadeDisponivelPeca(peca, entradasDaPeca);
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td data-label="SKU">${escaparHtml(formatarSku(peca))}</td>
-      <td data-label="Peça">${escaparHtml(formatarNomePeca(peca))}</td>
-      <td data-label="Quantidade">${formatarNumero(quantidadeTotal)}</td>
-      <td data-label="Disponível">${formatarNumero(quantidadeDisponivel)}</td>
-      <td data-label="Ações">
-        <div class="table-actions table-actions--single">
-          <a class="table-link" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}">Ver produto</a>
-        </div>
-      </td>
-    `;
-
-    tabelaProdutosOrigem.appendChild(linha);
+  filtroPecasOrigem.querySelectorAll("[data-filtro]").forEach(botao => {
+    botao.setAttribute("aria-pressed", String(botao.dataset.filtro === filtroAtual));
   });
-}
-
-function renderizarEntradas() {
-  tabelaEntradasOrigem.innerHTML = "";
-
-  if (dadosDetalhesOrigem.entradas.length === 0) {
-    mensagemEntradasOrigem.textContent = "Nenhuma entrada registrada.";
-    alternarTabelaOrigemVazia(tabelaEntradasOrigem, true);
-    return;
-  }
-
-  mensagemEntradasOrigem.textContent = "";
-  alternarTabelaOrigemVazia(tabelaEntradasOrigem, false);
-
-  dadosDetalhesOrigem.entradas.forEach(entrada => {
-    const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
-    const peca = obterPecaPorId(entrada.pecaId) || entrada;
-    const valorAtribuidoEntrada = Number(entrada.valorAtribuidoEntrada || entrada.valor_atribuido_entrada || 0) ||
-      Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0);
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td data-label="Peça">${escaparHtml(formatarNomePeca(peca))}</td>
-      <td data-label="Data">${formatarData(entrada.dataEntrada)}</td>
-      <td data-label="Quantidade total">${formatarNumero(entrada.quantidadeTotal)}</td>
-      <td data-label="Consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
-      <td data-label="Saldo">${formatarNumero(saldo)}</td>
-      <td data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
-      <td data-label="Valor atribuído">${formatarMoeda(valorAtribuidoEntrada)}</td>
-    `;
-
-    tabelaEntradasOrigem.appendChild(linha);
+  filtroPecasOrigem.querySelectorAll("[data-contagem]").forEach(contador => {
+    contador.textContent = formatarNumero(linhasPecas.filter(linha => linhaCombinaComFiltro(linha, contador.dataset.contagem)).length);
   });
-}
 
-function renderizarVendas() {
-  tabelaVendasOrigem.innerHTML = "";
-  const linhas = montarLinhasVendasOrigem();
+  tabelaPecasOrigem.innerHTML = visiveis.length
+    ? visiveis.map(renderizarLinha).join("")
+    : `<tr><td colspan="5" class="data-table__empty">${linhasPecas.length ? "Nenhuma peça nesta situação." : "Nenhuma peça cadastrada nesta origem."}</td></tr>`;
 
-  if (linhas.length === 0) {
-    mensagemVendasOrigem.textContent = "Nenhuma venda relacionada.";
-    alternarTabelaOrigemVazia(tabelaVendasOrigem, true);
-    return;
+  if (filtradas.length > PECAS_VISIVEIS) {
+    rodapePecasOrigem.innerHTML = `Mostrando ${formatarNumero(visiveis.length)} de ${formatarNumero(filtradas.length)} · <button type="button" class="origem-pecas__alternar" data-acao="alternar-todas">${mostrarTodas ? "Mostrar menos" : "Ver todas"}</button>`;
+    rodapePecasOrigem.hidden = false;
+  } else {
+    rodapePecasOrigem.innerHTML = "";
+    rodapePecasOrigem.hidden = true;
   }
 
-  mensagemVendasOrigem.textContent = "";
-  alternarTabelaOrigemVazia(tabelaVendasOrigem, false);
-
-  linhas.forEach(item => {
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td data-label="Data">${formatarData(obterDataVenda(item.venda || {}))}</td>
-      <td data-label="SKU">${escaparHtml(formatarSku(item.peca || item.venda))}</td>
-      <td data-label="Peça">${escaparHtml(formatarNomePeca(item.peca || item.venda))}</td>
-      <td data-label="Quantidade">${formatarNumero(item.quantidadeConsumida)}</td>
-      <td data-label="Canal">${escaparHtml(item.venda?.canalVenda || "-")}</td>
-      <td data-label="Valor vendido">${formatarMoeda(item.valorAtribuido)}</td>
-      <td data-label="Ações">
-        <div class="table-actions table-actions--single">
-          <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(item.venda?.id || "")}">Ver detalhes da venda</a>
-        </div>
-      </td>
-    `;
-
-    tabelaVendasOrigem.appendChild(linha);
-  });
+  blocoPecasOrigem.hidden = false;
 }
 
-function renderizarResumoOrigem() {
-  const resumo = calcularResumoOrigem();
-  const resultadoPositivo = resumo.resultadoOrigem >= 0;
-  const classeResultado = resultadoPositivo ? "summary-card summary-card--profit" : "summary-card summary-card--loss";
+function renderizarTela() {
+  const financeiro = window.financeiroUtils;
+  const retorno = financeiro.calcularRetornoOrigem(dadosOrigem.origem, dadosOrigem);
 
-  mensagemDistribuicaoOrigem.textContent = resumo.possuiCustosPecaNaoAtribuidos
-    ? `Custos da peça não atribuídos a esta origem: ${formatarMoeda(resumo.custosDaPecaNaoAtribuidos)}.`
-    : "";
-
-  resumoOrigem.innerHTML = `
-    <article class="summary-card">
-      <span>Receita relacionada</span>
-      <strong>${formatarMoeda(resumo.receitaTotal)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custo das peças vendidas</span>
-      <strong>${formatarCustoCalculado(resumo.custoConsumidoDaOrigem, resumo)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custos vinculados</span>
-      <strong>${formatarMoeda(resumo.custosDaPeca + resumo.custosDaVenda)}</strong>
-    </article>
-    <article class="summary-card summary-card--muted">
-      <span>Custos da peça não atribuídos</span>
-      <strong>${formatarMoeda(resumo.custosDaPecaNaoAtribuidos)}</strong>
-    </article>
-    <article class="${classeResultado}">
-      <span>Resultado resumido</span>
-      <strong>${formatarMoeda(resumo.resultadoOrigem)}</strong>
-    </article>
-  `;
+  renderizarCabecalho(dadosOrigem.origem);
+  renderizarKpis(retorno);
+  renderizarRetorno(retorno);
+  linhasPecas = montarLinhasPecas(retorno, dadosOrigem);
+  renderizarPecas();
 }
 
-function renderizarObservacoesHistorico() {
-  const historicoOrigem = document.getElementById("historicoOrigem");
-  const origem = dadosDetalhesOrigem.origem || {};
-
-  if (!historicoOrigem) {
-    return;
-  }
-
-  historicoOrigem.innerHTML = `
-    <article class="detail-card detail-card--wide">
-      <span>Observações</span>
-      <strong>${escaparHtml(origem.observacoes || "Sem observações registradas.")}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Data da origem</span>
-      <strong>${formatarData(origem.dataCompra || origem.data_origem)}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Entradas vinculadas</span>
-      <strong>${formatarNumero(dadosDetalhesOrigem.entradas.length)}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Peças vinculadas</span>
-      <strong>${formatarNumero(dadosDetalhesOrigem.pecas.length)}</strong>
-    </article>
-  `;
+function mostrarMensagem(texto) {
+  mensagemOrigem.textContent = texto;
 }
 
-function abrirFormularioEdicaoOrigem() {
-  const origem = dadosDetalhesOrigem.origem;
+// ---- Edição da origem ----
 
-  if (!origem || !formEditarOrigem) {
-    return;
-  }
+function abrirEdicao() {
+  const origem = dadosOrigem?.origem;
+  if (!origem) return;
 
   editarOrigemTipo.value = origem.tipoOrigem || origem.tipo || "";
-  editarOrigemDataCompra.value = String(origem.dataCompra || origem.data_compra || "").slice(0, 10);
+  editarOrigemDataCompra.value = String(origem.dataCompra || "").slice(0, 10);
   editarOrigemDescricao.value = origem.descricao || "";
-  editarOrigemCustoTotal.value = Number(origem.valorPago || origem.custoTotal || 0);
-  editarOrigemQuantidadeTotal.value = Number(origem.quantidadeTotal || origem.quantidade_total || 0);
+  editarOrigemCustoTotal.value = formatarMoeda(origem.valorPago || origem.custoTotal || 0);
+  editarOrigemQuantidadeTotal.value = Number(origem.quantidadeTotal || 0) || "";
   editarOrigemObservacoes.value = origem.observacoes || "";
   window.moedaUtils?.registrarCampoMoeda?.(editarOrigemCustoTotal);
   formEditarOrigem.hidden = false;
   editarOrigemTipo.focus();
 }
 
-function fecharFormularioEdicaoOrigem() {
-  if (formEditarOrigem) {
-    formEditarOrigem.hidden = true;
-  }
+function fecharEdicao() {
+  formEditarOrigem.hidden = true;
 }
 
-async function salvarEdicaoOrigem(evento) {
+async function salvarEdicao(evento) {
   evento.preventDefault();
-
-  if (!window.supabaseService?.estaConfigurado() || !dadosDetalhesOrigem.origem) {
-    mensagemOrigemNaoEncontrada.textContent = "Configure o Supabase antes de editar a origem.";
-    return;
-  }
+  const origem = dadosOrigem?.origem;
+  if (!origem) return;
 
   const tipoOrigem = editarOrigemTipo.value.trim();
   const descricao = editarOrigemDescricao.value.trim();
   const dataCompra = editarOrigemDataCompra.value;
-  const valorPago = converterNumero(editarOrigemCustoTotal.value);
+  const valorPago = window.moedaUtils?.parseMoedaBR
+    ? window.moedaUtils.parseMoedaBR(editarOrigemCustoTotal.value)
+    : Number(String(editarOrigemCustoTotal.value || "0").replace(",", "."));
   const quantidadeTotal = Number(editarOrigemQuantidadeTotal.value || 0);
 
   if (!tipoOrigem || !descricao || !dataCompra) {
-    mensagemOrigemNaoEncontrada.textContent = "Preencha tipo, descrição e data da origem.";
+    mostrarMensagem("Preencha tipo, descrição e data da compra.");
     return;
   }
 
-  if (Number.isNaN(valorPago) || valorPago < 0) {
-    mensagemOrigemNaoEncontrada.textContent = "Informe um valor pago válido.";
+  if (!Number.isFinite(valorPago) || valorPago < 0) {
+    mostrarMensagem("Informe um valor pago válido.");
+    editarOrigemCustoTotal.focus();
     return;
   }
 
   if (!Number.isFinite(quantidadeTotal) || quantidadeTotal < 0) {
-    mensagemOrigemNaoEncontrada.textContent = "Informe uma quantidade prevista válida.";
+    mostrarMensagem("Informe uma quantidade prevista válida.");
+    editarOrigemQuantidadeTotal.focus();
     return;
   }
 
   const botaoSalvar = formEditarOrigem.querySelector("button[type='submit']");
   botaoSalvar.disabled = true;
-  mensagemOrigemNaoEncontrada.textContent = "Salvando dados da origem...";
+  mostrarMensagem("Salvando origem…");
 
   try {
     await window.supabaseService.atualizarOrigem({
-      id: dadosDetalhesOrigem.origem.id,
+      id: origem.id,
       tipoOrigem,
       tipo: tipoOrigem,
       descricao,
       custoTotal: valorPago,
       valorPago,
-      custoTipo: dadosDetalhesOrigem.origem.custoTipo || "",
+      custoTipo: origem.custoTipo || "",
       dataCompra,
       quantidadeTotal,
-      produtoSku: dadosDetalhesOrigem.origem.produtoSku || "",
+      produtoSku: origem.produtoSku || "",
       observacoes: editarOrigemObservacoes.value.trim()
     });
 
-    dadosDetalhesOrigem = await carregarContextoSupabase(origemId);
-
-    if (!dadosDetalhesOrigem.origem) {
-      throw new Error("Não foi possível recarregar os dados da origem.");
-    }
-
-    fecharFormularioEdicaoOrigem();
-    mensagemOrigemNaoEncontrada.textContent = "";
+    dadosOrigem = await carregarDados(origemId);
+    fecharEdicao();
+    mostrarMensagem("");
     renderizarTela();
   } catch (erro) {
     console.error("Erro ao editar origem:", erro);
-    mensagemOrigemNaoEncontrada.textContent = erro?.message || "Não foi possível atualizar a origem.";
+    mostrarMensagem(erro?.message || "Não foi possível salvar a origem.");
   } finally {
     botaoSalvar.disabled = false;
   }
 }
 
-function renderizarTela() {
-  renderizarDadosOrigem(dadosDetalhesOrigem.origem);
-  renderizarDistribuicaoOrigem();
-  renderizarPecas();
-  renderizarEntradas();
-  renderizarVendas();
-  renderizarResumoOrigem();
-  renderizarObservacoesHistorico();
-}
-
-function limparTela(mensagem) {
-  mensagemOrigemNaoEncontrada.textContent = mensagem;
-  dadosOrigem.innerHTML = "";
-  resumoOrigem.innerHTML = "";
-  resumoDistribuicaoOrigem.innerHTML = "";
-  tabelaEntradasOrigem.innerHTML = "";
-  tabelaProdutosOrigem.innerHTML = "";
-  tabelaVendasOrigem.innerHTML = "";
-  const historicoOrigem = document.getElementById("historicoOrigem");
-
-  if (historicoOrigem) {
-    historicoOrigem.innerHTML = "";
-  }
-}
+// ---- Início ----
 
 async function iniciarDetalhesOrigem() {
+  origemId = Number(new URLSearchParams(window.location.search).get("origemId") || 0);
+
   if (!origemId) {
-    limparTela("Selecione uma origem pela listagem para abrir os detalhes.");
+    tituloOrigem.textContent = "Origem";
+    subtituloOrigem.textContent = "";
+    mostrarMensagem("Abra uma origem pela lista de Origens.");
     return;
   }
 
   try {
-    dadosDetalhesOrigem = await carregarContextoSupabase(origemId);
+    dadosOrigem = await carregarDados(origemId);
 
-    if (!dadosDetalhesOrigem.origem) {
-      limparTela("Origem não encontrada.");
+    if (!dadosOrigem.origem) {
+      subtituloOrigem.textContent = "";
+      mostrarMensagem("Origem não encontrada.");
       return;
     }
 
-    mensagemOrigemNaoEncontrada.textContent = "";
     renderizarTela();
   } catch (erro) {
     console.error(erro);
-    limparTela(erro.message || "Não foi possível carregar os detalhes da origem pelo Supabase.");
+    subtituloOrigem.textContent = "";
+    mostrarMensagem(erro?.message || "Não foi possível carregar a origem.");
   }
 }
 
-campoBuscaPecasOrigem?.addEventListener("input", () => {
-  renderizarPecas();
-});
+if (tabelaPecasOrigem) {
+  filtroPecasOrigem.addEventListener("click", evento => {
+    const botao = evento.target.closest("[data-filtro]");
+    if (!botao) return;
+    filtroAtual = botao.dataset.filtro;
+    mostrarTodas = false;
+    renderizarPecas();
+  });
 
-botaoEditarOrigem?.addEventListener("click", abrirFormularioEdicaoOrigem);
-cancelarEdicaoOrigem?.addEventListener("click", fecharFormularioEdicaoOrigem);
-formEditarOrigem?.addEventListener("submit", salvarEdicaoOrigem);
+  rodapePecasOrigem.addEventListener("click", evento => {
+    if (!evento.target.closest("[data-acao='alternar-todas']")) return;
+    mostrarTodas = !mostrarTodas;
+    renderizarPecas();
+  });
 
-iniciarDetalhesOrigem();
+  botaoEditarOrigem.addEventListener("click", abrirEdicao);
+  cancelarEdicaoOrigem.addEventListener("click", fecharEdicao);
+  formEditarOrigem.addEventListener("submit", salvarEdicao);
+
+  iniciarDetalhesOrigem();
+}

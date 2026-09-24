@@ -104,7 +104,7 @@ Reforcos:
 
 Decisoes de 2026-09-24:
 
-- Retorno por origem: `recuperado = receita das vendas das pecas da origem - custos dessas vendas`, calculado em `financeiro-utils.calcularResultadoOrigem` (campo `recuperado`). O lucro/resultado da origem continua `receita - custo consumido - custos da peca - custos da venda`.
+- Retorno por origem: `recuperado = receita das vendas das pecas da origem - custos dessas vendas`, calculado em `financeiro-utils.calcularResultadoOrigem` (campo `recuperado`). O lucro das pecas vendidas continua `receita - custo consumido - custos da peca - custos da venda` (campo `lucro`); o "Resultado da origem" mostrado em Detalhes da origem e o do Painel e `recuperado - valor pago` (`calcularRetornoOrigem`).
 - Valores negativos de moeda e percentual usam o sinal de menos (U+2212), nao hifen. A formatacao centralizada fica em `js/moeda-utils.js` (`formatarMoedaBR`, `formatarPercentualBR`); `parseMoedaBR` aceita os dois sinais. Telas com formatacao local passam a usar o `moeda-utils` quando forem migradas.
 - Painel, "Ultimas vendas": coluna `Custos` = custo da peca + custos da venda, para que valor - custos = lucro na mesma linha.
 - Regras de atencao do redesenho (secao 8 da especificacao) ficam em `js/alertas-regras.js` (funcoes puras): peca parada ha mais de 90 dias sem venda desde a entrada, venda sem custo calculado, venda com prejuizo, origem com valor a distribuir e distribuicao acima do pago. Na Fase 4 entrou tambem "preco abaixo do custo" (peca com saldo cujo preco cadastrado e menor que o custo da proxima unidade a sair; peca sem preco nao entra).
@@ -309,32 +309,15 @@ Implementacao atual confirmada:
 
 ## Padrao da tela Detalhes da origem
 
-- `paginas/detalhes-origem.html` funciona como central operacional da origem/lote.
-- A tela mostra dados da origem, distribuicao, pecas vinculadas, entradas de estoque, vendas relacionadas e resumo da origem.
-- Nao transformar Detalhes da origem em analise financeira pesada.
-- Estrutura UX: cabecalho com acoes principais, bloco principal da origem, dados da origem, distribuicao da origem, pecas vinculadas, entradas de estoque, vendas relacionadas e resumo da origem.
-- Acoes principais: `Editar origem`, `Voltar para origens`, `Cadastrar peca vinculada`, `Ver produto` e `Ver detalhes da venda`.
-- Distribuicao mostra valor total, valor distribuido, valor restante, quantidade prevista quando existir, quantidade distribuida e situacao da distribuicao.
-- Pecas vinculadas usam lista compacta sem barra horizontal, com SKU, nome da peca, quantidade, disponivel e acao `Ver produto`.
-- Entradas mostram peca, data, quantidade total, consumida, saldo, custo unitario e valor atribuido.
-- Vendas relacionadas mostram data, SKU, peca, quantidade, canal, valor vendido e acao `Ver detalhes da venda`.
-- Resumo da origem usa linguagem simples: receita relacionada, custo das pecas vendidas, custos vinculados e resultado resumido.
-- Se nao houver custo calculado, mostrar `Custo nao calculado`.
-- Nao destacar termos tecnicos internos na interface.
-- Estados vazios aparecem somente quando nao houver dados: `Nenhuma peca vinculada`, `Nenhuma entrada registrada` e `Nenhuma venda relacionada`.
-- Origem continua sendo agrupador operacional e financeiro.
-- Origem nao e peca; peca nasce depois da origem.
-- Entrada de estoque continua obrigatoria.
-- Analises financeiras pesadas continuam nas telas de analise.
-
-Implementacao atual confirmada:
-
-- `js/detalhes-origem.js` carrega origem, entradas, pecas, vendas, consumos de estoque, custos da peca e custos da venda ligados ao contexto da origem.
-- O bloco principal atual destaca codigo da origem, descricao, status da distribuicao, tipo, data, valor pago, valor restante e pecas vinculadas.
-- A distribuicao atual mostra valor total, valor distribuido, valor restante, quantidade prevista, quantidade distribuida e situacao da distribuicao.
-- Pecas vinculadas continuam operacionais, com busca por SKU/nome e acao `Ver produto`.
-- Vendas relacionadas continuam operacionais e levam a `detalhes-venda.html?vendaId=...`.
-- O resumo da origem atual ficou enxuto: receita relacionada, custo das pecas vendidas, custos vinculados e resultado resumido.
+- `paginas/detalhes-origem.html` e a central da origem/lote. Tela ja migrada para o redesenho (`ui-v2`, `css/detalhes-origem.css`, `js/detalhes-origem.js`), pelo mockup `05-detalhes-origem`.
+- Cabecalho: link `Origens`, titulo com a descricao da origem, subtitulo "codigo · tipo · comprado em dd/mm/aaaa" e a observacao da origem (se houver). Acoes: `Editar origem` (secundario, abre o formulario na propria tela) e `Adicionar peça` (principal, `cadastro-peca.html?origemId=`).
+- KPIs: Valor pago ("Distribuído em N peças", com "R$ X a distribuir" ou "R$ X acima do pago"); Recuperado em vendas (receita das vendas das pecas da origem menos os custos dessas vendas; nota com pecas vendidas e custos descontados); Resultado da origem (recuperado - valor pago; "Já se pagou" ou "Faltam R$ X para se pagar"); Ainda em estoque (unidades, "em N peças" quando difere, e o valor a preco de venda).
+- "Retorno da origem": "N% do valor pago já recuperado", barra (verde quando ja se pagou), legenda "R$ 0 · Pago: R$ X" e frase: se ja se pagou (e o lucro ate agora) ou quanto falta, e quanto as pecas em estoque ainda podem render pelos precos cadastrados (se cobre o que falta ou nao). Pecas em estoque sem preco sao avisadas e ficam fora dessa conta.
+- "Peças desta origem": controle segmentado Todas / Vendidas / Em estoque com contagem; colunas Peca (nome + SKU, e "N un." quando a entrada tem mais de 1), Custo atribuido (quantidade x custo unitario das entradas desta origem), Preco / vendida por (valor vendido quando a peca acabou; senao o preco cadastrado, com "N vendidas por R$ X" se ja vendeu parte), Situacao e Lucro (vendas da peca menos custo consumido, custos da venda e custos da peca; "—" sem venda; `Custo não calculado` sem consumo). Vendidas primeiro (venda mais recente no topo), depois em estoque (maior custo no topo). Mostra 10 e "Ver todas".
+- Situacao da peca com as mesmas regras e prioridade de Produtos: Vendida; Preço abaixo do custo > Parada ha N dias (`alertas-regras.js`) > Em estoque.
+- Todos os valores vem de `financeiro-utils.calcularRetornoOrigem` (que usa `calcularResultadoOrigem` e `calcularLucroVenda`); a tela nao recalcula custo. Custo da peca so entra no lucro quando a peca tem uma origem so (mesma regra do resultado da origem).
+- Sairam no redesenho: blocos Distribuicao, Pecas vinculadas com busca, Entradas de estoque, Vendas relacionadas, Resultado resumido e Historico. A distribuicao ficou na nota do KPI Valor pago; entradas continuam em `entradas-estoque.html` e vendas no detalhe da peca e em Vendas.
+- Origem nao e peca; peca nasce depois da origem. Entrada de estoque continua obrigatoria. Analises financeiras pesadas continuam nas telas de analise.
 
 ## Padrao da tela Custo de peca
 

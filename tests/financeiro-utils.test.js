@@ -164,3 +164,89 @@ test("agregado das 20 vendas da simulacao bate com a Analise por produto", () =>
   assert.equal(arredondar(lucro), 7408.8);
   assert.equal(arredondar((lucro / receita) * 100, 1), 23.3);
 });
+
+// Retorno da origem (Detalhes da origem): origem de R$ 1.000 com 4 peças.
+// A vendida (custo 400, vendeu 700, frete 50, limpeza 30); B em estoque (custo 300, preço 500);
+// C com 2 unidades, 1 vendida (custo 150 cada, vendeu 250, preço 260); D em estoque sem preço.
+function montarOrigemRetorno() {
+  return {
+    origem: { id: 7, valorPago: 1000 },
+    dados: {
+      pecas: [
+        { id: 1, precoVenda: 700 },
+        { id: 2, precoVenda: 500 },
+        { id: 3, precoVenda: 260 },
+        { id: 4, precoVenda: 0 }
+      ],
+      entradas: [
+        { id: 11, origemId: 7, pecaId: 1, quantidadeTotal: 1, quantidadeConsumida: 1, custoUnitario: 400 },
+        { id: 12, origemId: 7, pecaId: 2, quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 300 },
+        { id: 13, origemId: 7, pecaId: 3, quantidadeTotal: 2, quantidadeConsumida: 1, custoUnitario: 150 },
+        { id: 14, origemId: 7, pecaId: 4, quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 0 },
+        // Entrada de outra origem: não entra na conta.
+        { id: 99, origemId: 8, pecaId: 9, quantidadeTotal: 1, quantidadeConsumida: 1, custoUnitario: 999 }
+      ],
+      vendas: [
+        { id: 101, pecaId: 1, valorTotal: 700 },
+        { id: 102, pecaId: 3, valorTotal: 250 },
+        { id: 199, pecaId: 9, valorTotal: 5000 }
+      ],
+      consumos: [
+        { vendaId: 101, entradaEstoqueId: 11, custoTotal: 400 },
+        { vendaId: 102, entradaEstoqueId: 13, custoTotal: 150 },
+        { vendaId: 199, entradaEstoqueId: 99, custoTotal: 999 }
+      ],
+      custosPeca: [{ pecaId: 1, valor: 30 }],
+      custosVenda: [{ vendaId: 101, valor: 50 }, { vendaId: 199, valor: 100 }]
+    }
+  };
+}
+
+test("calcularRetornoOrigem: recuperado, resultado contra o valor pago e estoque a preço de venda", () => {
+  const { origem, dados } = montarOrigemRetorno();
+  const retorno = financeiro.calcularRetornoOrigem(origem, dados);
+
+  assert.equal(retorno.valorPago, 1000);
+  assert.equal(retorno.recuperado, 900);
+  assert.equal(retorno.resultado, -100);
+  assert.equal(retorno.percentualRecuperado, 90);
+  assert.equal(retorno.jaSePagou, false);
+  assert.equal(retorno.faltaParaSePagar, 100);
+  assert.equal(retorno.valorDistribuido, 1000);
+  assert.deepEqual({ ...retorno.estoque }, { unidades: 3, pecas: 3, valorPrecoVenda: 760, pecasSemPreco: 1 });
+  assert.equal(retorno.pecasVendidas, 1);
+});
+
+test("calcularRetornoOrigem: conta de cada peça (custo atribuído, vendido, lucro)", () => {
+  const { origem, dados } = montarOrigemRetorno();
+  const porPeca = new Map(financeiro.calcularRetornoOrigem(origem, dados).pecas.map(item => [item.peca.id, item]));
+
+  // A: 700 − 400 de custo − 50 de frete − 30 de limpeza.
+  assert.equal(porPeca.get(1).vendida, true);
+  assert.equal(porPeca.get(1).custoAtribuido, 400);
+  assert.equal(porPeca.get(1).receita, 700);
+  assert.deepEqual({ ...porPeca.get(1).lucro }, { calculado: true, valor: 220 });
+  // B: em estoque, sem lucro ainda.
+  assert.equal(porPeca.get(2).vendida, false);
+  assert.equal(porPeca.get(2).lucro, null);
+  assert.equal(porPeca.get(2).valorEstoque, 500);
+  // C: parcial, continua em estoque e já tem o lucro da unidade vendida.
+  assert.equal(porPeca.get(3).vendida, false);
+  assert.equal(porPeca.get(3).saldo, 1);
+  assert.equal(porPeca.get(3).custoAtribuido, 300);
+  assert.deepEqual({ ...porPeca.get(3).lucro }, { calculado: true, valor: 100 });
+  assert.equal(porPeca.has(9), false);
+});
+
+test("calcularRetornoOrigem: origem que já se pagou e origem sem valor pago", () => {
+  const { dados } = montarOrigemRetorno();
+  const paga = financeiro.calcularRetornoOrigem({ id: 7, valorPago: 600 }, dados);
+  const semValor = financeiro.calcularRetornoOrigem({ id: 7, valorPago: 0 }, dados);
+
+  assert.equal(paga.jaSePagou, true);
+  assert.equal(paga.resultado, 300);
+  assert.equal(paga.faltaParaSePagar, 0);
+  assert.equal(arredondar(paga.percentualRecuperado), 150);
+  assert.equal(semValor.percentualRecuperado, null);
+  assert.equal(semValor.jaSePagou, false);
+});

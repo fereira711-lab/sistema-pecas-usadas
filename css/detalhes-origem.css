@@ -1,0 +1,110 @@
+/* Detalhes da origem (redesenho). Só o que é específico desta tela; KPIs, cards, barra e tabela vêm do base.css. */
+
+.origem-observacao {
+  max-width: 72ch;
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+
+.origem-observacao[hidden] {
+  display: none;
+}
+
+/* ---- Edição da origem ---- */
+
+.origem-edicao[hidden] {
+  display: none;
+}
+
+.origem-edicao__acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2-5);
+}
+
+/* ---- Retorno da origem ---- */
+
+.origem-retorno {
+  gap: var(--space-3-5);
+}
+
+.origem-retorno[hidden] {
+  display: none;
+}
+
+.origem-retorno__topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
+.origem-retorno__percentual {
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.origem-retorno__percentual--pago {
+  color: var(--success);
+}
+
+.origem-retorno__legenda {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+
+.origem-retorno__frase {
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+/* ---- Peças desta origem ---- */
+
+.card[hidden] {
+  display: none;
+}
+
+.origem-pecas__topo {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.origem-pecas__sub {
+  display: block;
+  margin-top: var(--space-half);
+  font-size: var(--fs-small);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.origem-pecas__rodape {
+  padding: var(--space-3-5) var(--space-6);
+  border-top: 1px solid var(--divider);
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+
+.origem-pecas__rodape[hidden] {
+  display: none;
+}
+
+.origem-pecas__alternar {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--link);
+  font-family: var(--font-sans);
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.origem-pecas__alternar:hover {
+  text-decoration: underline;
+}
