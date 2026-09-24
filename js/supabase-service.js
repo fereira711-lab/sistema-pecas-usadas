@@ -126,7 +126,8 @@
       precoVenda: Number(peca.preco_venda || peca.preco_sugerido || 0),
       imagemUrl: peca.imagem_url || peca.imagemUrl || "",
       createdAt: peca.created_at,
-      observacoes: peca.observacoes || ""
+      observacoes: peca.observacoes || "",
+      compatibilidade: peca.compatibilidade || ""
     };
   }
 

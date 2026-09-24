@@ -214,3 +214,11 @@ Aprovadas por Rafael depois da Fase 2 (sidebar e Painel):
 7. **Valores negativos** de moeda e percentual com o sinal de menos (U+2212), não hífen, na formatação centralizada (`moeda-utils.js`).
 8. **Painel, "Últimas vendas":** a coluna "Custo da peça" vira "Custos" = custo da peça + custos da venda, para que valor − custos = lucro na mesma linha.
 9. **Painel:** o card "Retorno por origem" fica alinhado pelo topo, sem esticar até a altura do card vizinho. A sidebar ocupa 100% da altura da janela.
+
+Aprovadas por Rafael depois da Fase 3 (Produtos):
+
+10. **Produtos, preço abaixo do custo:** peça com saldo e margem negativa mostra a pílula de atenção "Preço abaixo do custo" no lugar de "Em estoque". Na Fase 4 isso vira também uma regra de atenção em `alertas-regras.js`.
+11. **Produtos, "Sem preço":** na cor de atenção, sem negrito. No menu "⋯" dessa peça, "Definir preço" é a primeira opção.
+12. **Produtos, "Ver venda":** mesmo formato e posição de "Vender" (botão secundário compacto, alinhado à direita).
+13. **Produtos, ordem padrão:** mais recente primeiro (última entrada ou última venda).
+14. **Dados de demonstração fixos** (`sql/90_demo_carregar.sql`, `sql/91_demo_apagar.sql`, `scripts\demo-*.bat`) usados em todas as conferências das fases seguintes. A coluna de compatibilidade (seção 9, item 1) foi criada antes, em `sql/14_compatibilidade_pecas.sql`, para esse conjunto.

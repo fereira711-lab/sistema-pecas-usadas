@@ -116,6 +116,15 @@ function obterUltimaVendaDaPeca(pecaId) {
     .sort((a, b) => String(b.dataVenda || "").localeCompare(String(a.dataVenda || "")) || Number(b.id) - Number(a.id))[0] || null;
 }
 
+function obterDataMaisRecente(pecaId) {
+  const datas = [
+    ...dadosProdutos.entradas.filter(entrada => Number(entrada.pecaId) === Number(pecaId)).map(entrada => entrada.dataEntrada || entrada.createdAt),
+    ...dadosProdutos.vendas.filter(venda => Number(venda.pecaId) === Number(pecaId)).map(venda => venda.dataVenda)
+  ].map(data => String(data || "").slice(0, 10)).filter(Boolean);
+
+  return datas.sort().pop() || "";
+}
+
 function montarLinhas() {
   const financeiro = window.financeiroUtils;
   const origemPorId = new Map(dadosProdutos.origens.map(origem => [Number(origem.id), origem]));
@@ -139,9 +148,14 @@ function montarLinhas() {
     if (!temEntrada) situacao = "sem-entrada";
     else if (saldo <= 0) situacao = "vendida";
     else if (parada) situacao = "parada";
+    else if (margem !== null && margem < 0) situacao = "abaixo-custo";
     else situacao = "estoque";
 
-    return { peca, saldo, custo, margem, parada, origem, situacao, ultimaVenda: situacao === "vendida" ? obterUltimaVendaDaPeca(peca.id) : null };
+    return {
+      peca, saldo, custo, margem, parada, origem, situacao,
+      ultimaVenda: situacao === "vendida" ? obterUltimaVendaDaPeca(peca.id) : null,
+      dataMaisRecente: obterDataMaisRecente(peca.id)
+    };
   });
 }
 
@@ -176,7 +190,8 @@ function obterLinhasFiltradas() {
 
   return antesDaSituacao
     .filter(linha => linhaCombinaComSituacao(linha, situacaoSelecionada))
-    .sort((a, b) => String(a.peca.nome).localeCompare(String(b.peca.nome), "pt-BR"));
+    // Mais recente primeiro: a última entrada ou a última venda da peça, o que for mais novo.
+    .sort((a, b) => b.dataMaisRecente.localeCompare(a.dataMaisRecente) || b.peca.id - a.peca.id);
 }
 
 function atualizarContagens(linhas) {
@@ -216,15 +231,16 @@ function renderizarSituacao(linha) {
   if (linha.situacao === "vendida") return '<span class="pill pill--neutral">Vendida</span>';
   if (linha.situacao === "parada") return `<span class="pill pill--warning">Parada há ${formatarNumero(linha.parada.dias)} dias</span>`;
   if (linha.situacao === "sem-entrada") return '<span class="pill pill--neutral">Sem entrada</span>';
+  if (linha.situacao === "abaixo-custo") return '<span class="pill pill--warning">Preço abaixo do custo</span>';
   return '<span class="pill pill--success">Em estoque</span>';
 }
 
 function renderizarAcoes(linha) {
   const { peca } = linha;
   const principal = linha.saldo > 0
-    ? `<a class="btn btn--secondary btn--compact" href="cadastro-venda.html?pecaId=${encodeURIComponent(peca.id)}">Vender</a>`
+    ? `<a class="btn btn--secondary btn--compact produtos-acao-principal" href="cadastro-venda.html?pecaId=${encodeURIComponent(peca.id)}">Vender</a>`
     : linha.ultimaVenda
-      ? `<a class="btn btn--quiet btn--compact produtos-ver-venda" href="detalhes-venda.html?vendaId=${encodeURIComponent(linha.ultimaVenda.id)}">Ver venda</a>`
+      ? `<a class="btn btn--secondary btn--compact produtos-acao-principal" href="detalhes-venda.html?vendaId=${encodeURIComponent(linha.ultimaVenda.id)}">Ver venda</a>`
       : "";
 
   return `
@@ -235,6 +251,7 @@ function renderizarAcoes(linha) {
           <i class="ri-more-2-fill" aria-hidden="true"></i>
         </summary>
         <div class="action-menu__list">
+          ${peca.precoVenda > 0 ? "" : `<a class="action-menu__item" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}&editar=1&campo=preco">Definir preço</a>`}
           <a class="action-menu__item" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}">Ver detalhes</a>
           <a class="action-menu__item" href="cadastro-custo.html?pecaId=${encodeURIComponent(peca.id)}">Lançar custo</a>
           ${peca.origemId ? `<a class="action-menu__item" href="detalhes-origem.html?origemId=${encodeURIComponent(peca.origemId)}">Ver origem</a>` : ""}
@@ -266,7 +283,7 @@ function renderizarLinha(linha) {
         </div>
       </td>
       <td class="cell-origem" data-label="Origem">${escaparHtml(linha.origem?.descricao || "—")}</td>
-      <td class="num cell-preco${peca.precoVenda > 0 ? "" : " cell-muted"}" data-label="Preço">${escaparHtml(preco)}</td>
+      <td class="num${peca.precoVenda > 0 ? " cell-preco" : " text-warning"}" data-label="Preço">${escaparHtml(preco)}</td>
       <td class="num cell-muted" data-label="Custo">${escaparHtml(textoCusto)}</td>
       <td class="num${classeMargem}" data-label="Margem">${escaparHtml(textoMargem)}</td>
       <td class="cell-estoque" data-label="Estoque">${saldo > 0 ? `${formatarNumero(saldo)} un.` : "—"}</td>

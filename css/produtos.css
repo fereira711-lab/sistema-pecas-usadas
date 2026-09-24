@@ -37,6 +37,12 @@
   white-space: nowrap;
 }
 
+/* "Vender" e "Ver venda" com a mesma largura, para o "⋯" ficar alinhado em todas as linhas. */
+.produtos-tabela .produtos-acao-principal {
+  min-width: var(--action-min-width);
+  justify-content: center;
+}
+
 .produtos-lista .pager[hidden] {
   display: none;
 }

@@ -517,7 +517,9 @@ function abrirFormularioEdicaoProduto() {
   editarProdutoObservacoes.value = contextoProduto.produto.observacoes || "";
   window.moedaUtils?.registrarCampoMoeda?.(editarProdutoPreco);
   formEditarProduto.hidden = false;
-  editarProdutoNome.focus();
+  // Vindo de "Definir preço" (Produtos), o foco já cai no campo de preço.
+  const focarPreco = new URLSearchParams(window.location.search).get("campo") === "preco";
+  (focarPreco ? editarProdutoPreco : editarProdutoNome).focus();
 }
 
 function fecharFormularioEdicaoProduto() {
