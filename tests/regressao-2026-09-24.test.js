@@ -1,5 +1,6 @@
 // Trava os dois bugs de contagem corrigidos em 2026-09-24:
 // - fc5320b: card "Vendas recentes" (limite 7) e lista "Ultimas vendas" (limite 8) divergiam no Painel Geral.
+//   O redesenho removeu o card; continua travado que a lista usa um limite unico (7).
 // - 6a53817: tela Alertas contava a mesma falta de estoque como alerta da peca e alerta da entrada.
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -8,18 +9,12 @@ const dados = require("./fixtures/vendas-simulacao-2026-07.json");
 
 function carregarPainel() {
   const elementos = {
-    cardsPainelGeral: { innerHTML: "" },
-    listaUltimasVendas: { innerHTML: "" },
-    mensagemUltimasVendas: { textContent: "" }
+    listaUltimasVendas: { innerHTML: "" }
   };
   const painel = carregarScript("js/painel-geral.js", { elementos });
+  painel.financeiroUtils = carregarScript("js/financeiro-utils.js").financeiroUtils;
 
   return { painel, elementos };
-}
-
-function lerValorDoCard(html, titulo) {
-  const card = html.split("</article>").find(trecho => trecho.includes(`<span>${titulo}</span>`));
-  return Number(card.match(/<strong>([^<]*)<\/strong>/)[1]);
 }
 
 test("Painel: obterUltimasVendas com 20 vendas retorna exatamente 7", () => {
@@ -29,17 +24,14 @@ test("Painel: obterUltimasVendas com 20 vendas retorna exatamente 7", () => {
   assert.equal(painel.obterUltimasVendas(dados.vendas).length, 7);
 });
 
-test("Painel: card 'Vendas recentes' e lista 'Ultimas vendas' mostram o mesmo numero", () => {
+test("Painel: a tabela 'Ultimas vendas' renderiza exatamente 7 linhas com 20 vendas", () => {
   const { painel, elementos } = carregarPainel();
 
-  painel.renderizarCards({ pecas: [], vendas: dados.vendas, entradasEstoque: [], consumosEstoque: [], origens: [] });
-  painel.renderizarUltimasVendas(dados.vendas);
+  painel.renderizarUltimasVendas({ vendas: dados.vendas, pecas: [], origens: [], consumosEstoque: dados.consumos, custosVenda: dados.custosVenda });
 
-  const valorCard = lerValorDoCard(elementos.cardsPainelGeral.innerHTML, "Vendas recentes");
-  const linhasLista = (elementos.listaUltimasVendas.innerHTML.match(/class="general-dashboard-row"/g) || []).length;
+  const linhas = (elementos.listaUltimasVendas.innerHTML.match(/class="linha-venda"/g) || []).length;
 
-  assert.equal(valorCard, 7);
-  assert.equal(linhasLista, 7);
+  assert.equal(linhas, 7);
 });
 
 function criarCenarioAlertas() {

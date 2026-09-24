@@ -1,0 +1,71 @@
+/* Painel (redesenho). Só o que é específico desta tela; componentes vêm do base.css. */
+
+.painel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 3fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .painel-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.retorno-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4-5);
+}
+
+.retorno-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.retorno-item__linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.retorno-item__nome {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2-5);
+  min-width: 0;
+  color: var(--text);
+  text-decoration: none;
+}
+
+body.ui-v2 a.retorno-item__nome {
+  color: var(--text);
+}
+
+body.ui-v2 a.retorno-item__nome:hover .retorno-item__titulo {
+  text-decoration: underline;
+}
+
+.retorno-item__titulo {
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.retorno-item__valores {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+
+.retorno-item__status {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.retorno-item__status--pago {
+  color: var(--success);
+}

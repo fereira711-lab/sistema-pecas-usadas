@@ -254,7 +254,7 @@ body.has-side-nav {
   box-sizing: border-box;
 }
 
-.side-nav__brand {
+.side-nav a.side-nav__brand {
   display: flex;
   align-items: center;
   gap: var(--space-2-5);
@@ -311,7 +311,7 @@ body.has-side-nav {
   color: var(--sidebar-section);
 }
 
-.side-nav__link {
+.side-nav a.side-nav__link {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -332,18 +332,18 @@ body.has-side-nav {
   transition: background-color 0.12s ease;
 }
 
-.side-nav__link:hover {
+.side-nav a.side-nav__link:hover {
   background: var(--sidebar-item-active);
   color: var(--sidebar-text-strong);
 }
 
-.side-nav__link[aria-current="page"] {
+.side-nav a.side-nav__link[aria-current="page"] {
   background: var(--sidebar-item-active);
   color: var(--sidebar-text-strong);
   font-weight: 600;
 }
 
-.side-nav__link:focus-visible,
+.side-nav a.side-nav__link:focus-visible,
 .side-nav__logout:focus-visible,
 .side-nav__toggle:focus-visible {
   outline: none;
@@ -879,6 +879,17 @@ textarea.input {
   font-weight: 600;
 }
 
+/* Célula de item clicável (SKU + nome): texto normal, sublinha só o nome ao passar o mouse. */
+body.ui-v2 a.data-table__item,
+body.ui-v2 a.data-table__item:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+body.ui-v2 a.data-table__item:hover .data-table__name {
+  text-decoration: underline;
+}
+
 .data-table__item {
   display: flex;
   align-items: baseline;
@@ -894,6 +905,66 @@ textarea.input {
   padding: var(--space-6);
   color: var(--text-muted);
   text-align: center;
+}
+
+/* Telas estreitas: a tabela vira uma lista de blocos (cada célula com seu rótulo em data-label),
+   para nunca precisar de rolagem horizontal dentro do card. */
+@media (max-width: 760px) {
+  .data-table--responsive thead {
+    display: none;
+  }
+
+  .data-table--responsive,
+  .data-table--responsive tbody,
+  .data-table--responsive tr,
+  .data-table--responsive td {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table--responsive tr {
+    padding: var(--space-3) var(--space-6);
+    border-bottom: 1px solid var(--divider);
+  }
+
+  .data-table--responsive tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .data-table--responsive td,
+  .data-table--responsive td:first-child,
+  .data-table--responsive td:last-child {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+    border-bottom: 0;
+    text-align: right;
+  }
+
+  .data-table--responsive td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .data-table--responsive .data-table__item {
+    justify-content: flex-end;
+  }
+
+  .data-table--responsive .data-table__empty td {
+    justify-content: center;
+  }
+
+  .data-table--responsive .data-table__empty td::before {
+    content: none;
+  }
 }
 
 /* ============ Pílula de situação ============ */
