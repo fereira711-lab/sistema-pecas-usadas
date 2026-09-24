@@ -147,8 +147,8 @@ function montarLinhas() {
     let situacao;
     if (!temEntrada) situacao = "sem-entrada";
     else if (saldo <= 0) situacao = "vendida";
-    else if (parada) situacao = "parada";
     else if (margem !== null && margem < 0) situacao = "abaixo-custo";
+    else if (parada) situacao = "parada";
     else situacao = "estoque";
 
     return {
@@ -176,7 +176,8 @@ function linhaCombinaComBusca(linha, termo) {
 function linhaCombinaComSituacao(linha, situacao) {
   if (situacao === "estoque") return linha.saldo > 0;
   if (situacao === "vendidas") return linha.situacao === "vendida";
-  if (situacao === "paradas") return linha.situacao === "parada";
+  // Uma peça parada com preço abaixo do custo mostra a pílula de preço, mas continua no filtro de paradas.
+  if (situacao === "paradas") return Boolean(linha.parada);
   return true;
 }
 

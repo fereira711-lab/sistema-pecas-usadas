@@ -228,3 +228,11 @@ Fase 4 (Alertas):
 15. **Tela Alertas** com um card por tipo de problema, na ordem de gravidade, e uma linha por ocorrência com a ação para resolver. Filtro por gravidade em controle segmentado e busca. O filtro "Status" (sempre "Aberto") saiu.
 16. **Regra nova "preço abaixo do custo"** em `alertas-regras.js`: peça com saldo cujo preço cadastrado é menor que o custo da próxima unidade a sair. Peça sem preço não entra (aparece como "Sem preço" em Produtos).
 17. **Painel:** os links de "Precisa de atenção" levam direto ao card do tipo em Alertas (`alertas.html#peca-parada`, por exemplo).
+
+Aprovadas por Rafael depois da Fase 4:
+
+18. **Alertas:** pílula de gravidade (Crítico, Atenção, Informação) ao lado do título de cada card, além do ícone. Com busca ativa, o título mostra o parcial ("2 de 6 peças paradas").
+19. **Peças paradas:** "Valor parado" vira "Custo parado"; resumo "R$ X de custo parado" (também no Painel); ordenadas pelo maior custo parado.
+20. **Produtos:** prioridade da pílula de situação: Preço abaixo do custo > Parada > Em estoque.
+21. **Painel:** card de estoque com o número grande em unidades ("22 unidades" / "em 17 peças · 27 cadastradas"); "Últimas vendas" com subtítulo "Independente do período".
+22. **Mercado Livre** (anunciar peça, inclusive a partir do alerta de peça parada) fica para depois de o sistema de controle estar concluído e em uso.

@@ -110,6 +110,10 @@ Decisoes de 2026-09-24:
 - Regras de atencao do redesenho (secao 8 da especificacao) ficam em `js/alertas-regras.js` (funcoes puras): peca parada ha mais de 90 dias sem venda desde a entrada, venda sem custo calculado, venda com prejuizo, origem com valor a distribuir e distribuicao acima do pago. Na Fase 4 entrou tambem "preco abaixo do custo" (peca com saldo cujo preco cadastrado e menor que o custo da proxima unidade a sair; peca sem preco nao entra).
 - Compatibilidade da peca: coluna `pecas.compatibilidade` (texto livre, opcional), migration `sql/14_compatibilidade_pecas.sql`, adiantada da Fase 5 para o conjunto de demonstracao. Ja entra na busca de Produtos; o campo no cadastro/edicao vem na Fase 5. Quantidade 1 e peca recem-cadastrada sem venda nao sao alerta.
 
+## Integracoes futuras
+
+- Mercado Livre (anunciar peca direto do ERP, inclusive a partir do alerta de peca parada) fica para DEPOIS de o sistema de controle estar concluido e em uso real. Nao implementar agora: nem conexao, nem botao "Anunciar". A area de marketplace em Detalhes do produto continua so visual (decisao de 2026-09-24, registrada tambem em `_base-ia/05-projetos/sistema-pecas-usadas.md`).
+
 ## Dados de demonstracao
 
 - Conjunto fixo para as conferencias do redesenho: `sql/90_demo_carregar.sql` e `sql/91_demo_apagar.sql`, ou `scripts\demo-carregar.bat` e `scripts\demo-apagar.bat` (usam a senha salva do backup; o apagar pede `APAGAR DEMO`).
@@ -119,6 +123,8 @@ Decisoes de 2026-09-24:
 - Usar esse conjunto em todas as conferencias das proximas fases, em vez de criar dados avulsos.
 
 ## Banco de dados e Supabase
+
+- Qualquer mudanca de estrutura no banco (coluna, tabela, funcao/RPC, politica RLS ou de Storage) precisa ser avisada e aprovada por Rafael ANTES de aplicar, mesmo que prevista numa fase ja aprovada (regra de 2026-09-24).
 
 - Antes de sugerir ou fazer mudancas no banco, explicar a logica.
 - Nao alterar regras importantes de estoque, venda, compra ou custo sem explicar o impacto.
@@ -198,7 +204,7 @@ Scripts criticos:
 - Preco: sem preco cadastrado mostra "Sem preço" na cor de atencao (sem negrito).
 - Custo (decisao do redesenho aprovada por Rafael, substitui a regra antiga de nao mostrar custo/margem em Produtos): custo unitario da proxima unidade a sair (entrada mais antiga com saldo, na ordem de consumo), ou da ultima unidade consumida se a peca estiver vendida. Calculado por `financeiro-utils.calcularCustoReferenciaPeca`. Sem custo medio.
 - Margem: margem prevista sobre o preco cadastrado, `(preco − custo) / preco`, por `financeiro-utils.calcularMargemPreco`. Sem preco ou sem custo: "—". Lucro e resultado financeiro continuam fora de Produtos.
-- Situacao: Em estoque (success), Vendida (neutral), Parada ha N dias (warning, pela regra de `alertas-regras.js`), Preço abaixo do custo (warning, peca com saldo e margem negativa), Sem entrada (neutral).
+- Situacao: Em estoque (success), Vendida (neutral), Parada ha N dias (warning, pela regra de `alertas-regras.js`), Preço abaixo do custo (warning, peca com saldo e margem negativa), Sem entrada (neutral). Prioridade da pilula: Preço abaixo do custo > Parada > Em estoque; o filtro "Paradas +90 dias" inclui a peca parada mesmo quando a pilula mostra o preco.
 - Acoes: `Vender` quando ha saldo; `Ver venda` quando vendida; os dois no mesmo formato (botao secundario compacto, mesma largura, alinhado a direita). Menu "⋯": `Definir preço` primeiro quando a peca nao tem preco (abre a edicao em `detalhes-produto.html?editar=1&campo=preco`), Ver detalhes, Lançar custo, Ver origem, Trocar imagem e, separado, Excluir peça (a exclusao acontece em `detalhes-produto.html`).
 - Edicao dos dados da peca continua em `detalhes-produto.html`.
 
@@ -523,13 +529,14 @@ Implementacao atual confirmada:
 - As regras sao as mesmas do Painel e do contador da sidebar: `js/alertas-regras.js`. A tela so agrupa, filtra e mostra (`js/alertas.js`).
 - Cabecalho: titulo "Alertas" e subtitulo "N tipos de problema · M ocorrências" (ou "Nada precisa de atenção agora").
 - Filtros: busca por SKU, peca, origem ou canal (cada palavra, sem acento) e controle segmentado de gravidade com contagem: Todos, Críticos, Atenção, Informação.
-- Um card por tipo, na ordem de gravidade, com icone, titulo com a quantidade, resumo e tabela com uma linha por ocorrencia e a acao para resolver:
+- Um card por tipo, na ordem de gravidade, com icone, titulo com a quantidade, pilula de gravidade (Crítico, Atenção, Informação), resumo e tabela com uma linha por ocorrencia e a acao para resolver:
   - Venda com prejuizo (critico): data, peca, canal, valor, custos, lucro; `Ver venda`.
   - Distribuicao acima do pago (critico): origem, valor pago, distribuido, acima do pago; `Ver origem`.
   - Venda sem custo calculado (atencao): data, peca, canal, valor; `Ver venda`.
   - Preco abaixo do custo (atencao): peca, preco, custo, margem; `Ajustar preço` (abre a edicao com foco no preco).
-  - Peca parada ha mais de 90 dias (atencao): peca, origem, dias, estoque, valor parado; `Ver peça`.
+  - Peca parada ha mais de 90 dias (atencao): peca, origem, dias, estoque, custo parado (saldo x custo unitario da entrada), ordenada pelo maior custo parado; resumo "R$ X de custo parado" (o mesmo texto no Painel); `Ver peça`.
   - Origem com valor a distribuir (informacao): origem, valor pago, distribuido, a distribuir; `Distribuir`.
+- Com busca ativa, o titulo mostra o parcial: "2 de 6 peças paradas há mais de 90 dias".
 - Cada card tem ancora com o tipo (ex.: `alertas.html#peca-parada`), usada pelos links do Painel.
 - Removidos no redesenho: Sem estoque, Estoque baixo, Lote esgotado, Saldo baixo, Sem entrada, Sem venda e Produto parado por 30 dias (nao fazem sentido em desmanche).
 - A tela informa o total de tipos ao contador da sidebar, como o Painel.
@@ -538,10 +545,10 @@ Implementacao atual confirmada:
 
 - `painel.html` e a entrada oficial do sistema apos login; titulo da tela: "Painel". Tela ja migrada para o redesenho (`ui-v2`, `css/painel.css`).
 - Acoes do cabecalho: seletor de periodo (meses com venda + mes atual + "Todo o período"), `Nova peça` (secundario) e `Registrar venda` (principal).
-- KPIs do periodo: Receita do mes; Lucro real com margem (mostra `Custo não calculado` se alguma venda do periodo nao tiver custo); Custo das pecas vendidas + custos da venda; Pecas em estoque (pecas com saldo, unidades e cadastradas).
+- KPIs do periodo: Receita do mes; Lucro real com margem (mostra `Custo não calculado` se alguma venda do periodo nao tiver custo); Custo das pecas vendidas + custos da venda; Estoque (numero grande em unidades, "22 unidades", e embaixo "em 17 peças · 27 cadastradas").
 - "Retorno por origem": barra de quanto do valor pago ja voltou (`recuperado` do financeiro-utils), com "Já se pagou · lucro de R$ X" ou "Faltam R$ X para se pagar".
 - "Precisa de atencao": ate 4 itens pelas regras de `js/alertas-regras.js`; informa o total ao contador da sidebar.
-- "Ultimas vendas": 7 vendas mais recentes com data, SKU + peca · origem, canal, valor, custos (peca + venda) e lucro (vermelho se negativo).
+- "Ultimas vendas" (subtitulo "Independente do período"): 7 vendas mais recentes com data, SKU + peca · origem, canal, valor, custos (peca + venda) e lucro (vermelho se negativo).
 - Removidos no redesenho: bloco "Ações rápidas" (duplicava a sidebar), bloco de alertas que repetia os contadores e "Movimentações recentes".
 - Todos os valores financeiros vem do `financeiro-utils.js`; o Painel nao recalcula FIFO nem custo.
 

@@ -169,9 +169,9 @@ function renderizarKpis(dados, periodo) {
       nota: `+ ${formatarMoeda(custosDaVenda)} em custos da venda`
     }),
     criarKpi({
-      rotulo: "Peças em estoque",
-      valor: formatarNumero(pecasComSaldo),
-      nota: `${plural(unidades, "unidade", "unidades")} · ${plural(dados.pecas.length, "cadastrada", "cadastradas")}`
+      rotulo: "Estoque",
+      valor: plural(unidades, "unidade", "unidades"),
+      nota: `em ${plural(pecasComSaldo, "peça", "peças")} · ${plural(dados.pecas.length, "cadastrada", "cadastradas")}`
     })
   ].join("");
 
@@ -316,7 +316,7 @@ function descreverGrupoAtencao(grupo, dados) {
       const valorParado = itens.reduce((total, item) => total + item.valorParado, 0);
       return {
         titulo: `${plural(quantidade, "peça parada", "peças paradas")} há mais de ${window.alertasRegras?.DIAS_PARA_PECA_PARADA || 90} dias`,
-        detalhe: `${formatarMoeda(valorParado)} em estoque sem giro`,
+        detalhe: `${formatarMoeda(valorParado)} de custo parado`,
         acao: "Ver peças",
         href: "paginas/alertas.html#peca-parada"
       };

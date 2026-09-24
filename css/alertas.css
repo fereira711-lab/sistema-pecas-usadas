@@ -13,6 +13,13 @@
   gap: var(--space-3);
 }
 
+.alertas-grupo__titulo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .alertas-grupo {
   scroll-margin-top: var(--space-6);
 }

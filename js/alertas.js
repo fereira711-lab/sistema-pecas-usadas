@@ -94,18 +94,27 @@ function linkOrigem(origemId) {
   return `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}`;
 }
 
+const ROTULOS_GRAVIDADE = { danger: "Crítico", warning: "Atenção", info: "Informação" };
+
+// Título do card: "6 peças paradas há mais de 90 dias"; com busca ativa, "2 de 6 peças paradas…".
+function montarTitulo(grupo, visiveis = grupo.total) {
+  const [singular, pluralTexto] = grupo.nome;
+  const contagem = visiveis === grupo.total ? formatarNumero(grupo.total) : `${formatarNumero(visiveis)} de ${formatarNumero(grupo.total)}`;
+  return `${contagem} ${grupo.total === 1 ? singular : pluralTexto} ${grupo.complemento}`;
+}
+
 // Cada tipo de alerta vira um grupo com título, resumo, colunas e uma linha por ocorrência.
 function descreverGrupo(grupo, dados) {
   const pecaPorId = new Map((dados.pecas || []).map(peca => [Number(peca.id), peca]));
   const origemPorId = new Map((dados.origens || []).map(origem => [Number(origem.id), origem]));
   const itens = grupo.itens;
-  const quantidade = itens.length;
 
   switch (grupo.tipo) {
     case "venda-prejuizo": {
       const prejuizo = itens.reduce((total, item) => total + Number(item.resultado.lucro || 0), 0);
       return {
-        titulo: `${plural(quantidade, "venda", "vendas")} com prejuízo`,
+        nome: ["venda", "vendas"],
+        complemento: "com prejuízo",
         resumo: `Prejuízo somado de ${formatarMoeda(Math.abs(prejuizo))}`,
         colunas: [["Data"], ["Peça"], ["Canal"], ["Valor", "num"], ["Custos", "num"], ["Lucro", "num"]],
         linhas: itens.map(({ venda, resultado }) => ({
@@ -126,9 +135,8 @@ function descreverGrupo(grupo, dados) {
       const acima = grupo.tipo === "distribuicao-acima";
       const total = itens.reduce((soma, item) => soma + Math.abs(item.diferenca), 0);
       return {
-        titulo: acima
-          ? `${plural(quantidade, "origem", "origens")} com distribuição acima do valor pago`
-          : `${plural(quantidade, "origem", "origens")} com valor a distribuir`,
+        nome: ["origem", "origens"],
+        complemento: acima ? "com distribuição acima do valor pago" : "com valor a distribuir",
         resumo: acima
           ? `O custo lançado nas peças passa do valor pago em ${formatarMoeda(total)}`
           : `${formatarMoeda(total)} ainda sem peça vinculada`,
@@ -146,7 +154,8 @@ function descreverGrupo(grupo, dados) {
     }
     case "venda-sem-custo":
       return {
-        titulo: `${plural(quantidade, "venda", "vendas")} sem custo calculado`,
+        nome: ["venda", "vendas"],
+        complemento: "sem custo calculado",
         resumo: "Lucro e margem ficam pendentes até o custo ser calculado",
         colunas: [["Data"], ["Peça"], ["Canal"], ["Valor", "num"]],
         linhas: itens.map(({ venda, resultado }) => ({
@@ -161,7 +170,8 @@ function descreverGrupo(grupo, dados) {
       };
     case "preco-abaixo-custo":
       return {
-        titulo: `${plural(quantidade, "peça", "peças")} com preço abaixo do custo`,
+        nome: ["peça", "peças"],
+        complemento: "com preço abaixo do custo",
         resumo: "Vendendo pelo preço cadastrado, a peça dá prejuízo",
         colunas: [["Peça"], ["Preço", "num"], ["Custo", "num"], ["Margem", "num"]],
         linhas: itens.map(item => ({
@@ -178,11 +188,13 @@ function descreverGrupo(grupo, dados) {
       const valorParado = itens.reduce((total, item) => total + item.valorParado, 0);
       const dias = window.alertasRegras?.DIAS_PARA_PECA_PARADA || 90;
       return {
-        titulo: `${plural(quantidade, "peça parada", "peças paradas")} há mais de ${dias} dias`,
-        resumo: `${formatarMoeda(valorParado)} em estoque sem venda desde a entrada`,
-        colunas: [["Peça"], ["Origem"], ["Parada há", "num"], ["Estoque", "num"], ["Valor parado", "num"]],
+        nome: ["peça parada", "peças paradas"],
+        complemento: `há mais de ${dias} dias`,
+        resumo: `${formatarMoeda(valorParado)} de custo parado`,
+        colunas: [["Peça"], ["Origem"], ["Parada há", "num"], ["Estoque", "num"], ["Custo parado", "num"]],
+        // Maior custo parado primeiro: é o dinheiro que mais pesa.
         linhas: [...itens]
-          .sort((a, b) => b.dias - a.dias)
+          .sort((a, b) => b.valorParado - a.valorParado || b.dias - a.dias)
           .map(item => ({
             celulas: [
               criarCelulaPeca(item.peca),
@@ -206,15 +218,18 @@ function montarGruposAlertas(dados, opcoes = {}) {
       const texto = descreverGrupo(grupo, dados);
       if (!texto) return null;
 
-      return {
+      const montado = {
         tipo: grupo.tipo,
         gravidade: grupo.gravidade,
         ...texto,
+        total: texto.linhas.length,
         linhas: texto.linhas.map(linha => ({
           ...linha,
           busca: normalizarTexto(linha.celulas.map(item => item.texto).join(" "))
         }))
       };
+      montado.titulo = montarTitulo(montado);
+      return montado;
     })
     .filter(Boolean);
 }
@@ -261,7 +276,10 @@ function renderizarGrupo(grupo) {
       <div class="card__head alertas-grupo__head">
         <span class="alert-item__icon alert-item__icon--${grupo.gravidade}" aria-hidden="true"><i class="${ICONES_ALERTA[grupo.tipo] || "ri-alert-line"}"></i></span>
         <div class="card__head-text">
-          <h2 class="card__title" id="titulo-${escaparHtml(grupo.tipo)}">${escaparHtml(grupo.titulo)}</h2>
+          <div class="alertas-grupo__titulo">
+            <h2 class="card__title" id="titulo-${escaparHtml(grupo.tipo)}">${escaparHtml(montarTitulo(grupo, grupo.linhas.length))}</h2>
+            <span class="pill pill--${grupo.gravidade}">${escaparHtml(ROTULOS_GRAVIDADE[grupo.gravidade] || "")}</span>
+          </div>
           <p class="card__subtitle">${escaparHtml(grupo.resumo)}</p>
         </div>
       </div>

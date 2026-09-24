@@ -134,6 +134,25 @@ test("Alertas: grupos na ordem de gravidade e contador = numero de tipos", () =>
   assert.equal(alertasRegras.contarGruposDeAtencao(dados, { financeiro: financeiroUtils, hoje: HOJE }), 4);
 });
 
+test("Tela Alertas: pecas paradas ordenadas pelo maior custo parado", () => {
+  const tela = carregarScript("js/alertas.js");
+  tela.alertasRegras = alertasRegras;
+  tela.financeiroUtils = financeiroUtils;
+
+  const [paradas] = tela.montarGruposAlertas({
+    pecas: [{ id: 1, sku: "A", nome: "Mais antiga e barata" }, { id: 2, sku: "B", nome: "Mais nova e cara" }],
+    entradasEstoque: [
+      { id: 10, pecaId: 1, quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 50, dataEntrada: "2026-01-10" },
+      { id: 20, pecaId: 2, quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 300, dataEntrada: "2026-05-10" }
+    ],
+    vendas: [], consumosEstoque: [], custosVenda: [], origens: []
+  }, { financeiro: financeiroUtils, hoje: HOJE });
+
+  assert.equal(paradas.titulo, "2 peças paradas há mais de 90 dias");
+  assert.equal(paradas.resumo.replace(/\s/g, " "), "R$ 350,00 de custo parado");
+  assert.deepEqual(Array.from(paradas.linhas, linha => linha.celulas[0].texto), ["B Mais nova e cara", "A Mais antiga e barata"]);
+});
+
 test("Tela Alertas: um grupo por tipo, uma linha por ocorrencia, com acao e busca", () => {
   const tela = carregarScript("js/alertas.js");
   tela.alertasRegras = alertasRegras;
@@ -157,5 +176,9 @@ test("Tela Alertas: um grupo por tipo, uma linha por ocorrencia, com acao e busc
 
   // A busca aceita palavras sem acento e em qualquer ordem.
   assert.equal(tela.filtrarGrupos(grupos, "combustivel whatsapp", "todas").length, 1);
+
+  // Com busca ativa, o titulo mostra quantas ocorrencias sobraram do total.
+  const filtrado = tela.filtrarGrupos(grupos, "combustivel", "todas")[0];
+  assert.equal(tela.montarTitulo({ ...filtrado, total: 6 }, filtrado.linhas.length), "1 de 6 vendas com prejuízo");
   assert.equal(tela.filtrarGrupos(grupos, "radiador", "danger").length, 0);
 });
