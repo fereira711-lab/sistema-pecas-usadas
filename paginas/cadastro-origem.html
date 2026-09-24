@@ -3,162 +3,101 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro de origem</title>
+  <title>Nova origem</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/base.css?v=12">
-  <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark origin-cadastro-page">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Origens</p>
-      <h1>Cadastro de origem</h1>
-      <p class="hero__description">
-        Cadastre lote, compra, estoque inicial ou origem antes de vincular peças.
-      </p>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <a class="page-head__back" href="listar-origens.html"><i class="ri-arrow-left-s-line" aria-hidden="true"></i>Origens</a>
+        <h1 class="page-head__title">Nova origem</h1>
+        <p class="page-head__subtitle">Carro, lote ou compra de onde as peças vêm. As peças são cadastradas depois.</p>
+      </div>
+    </header>
+
+    <p id="mensagemFormulario" class="page-message" role="status" aria-live="polite"></p>
+
+    <div class="form-layout">
+      <form id="formNovaOrigem" class="form-stack" novalidate>
+        <section class="card" aria-labelledby="tituloIdentificacao">
+          <h2 class="card__title" id="tituloIdentificacao">Origem</h2>
+          <div class="field">
+            <span class="field__label" id="rotuloTipoOrigem">Tipo</span>
+            <div class="choice-group" role="group" aria-labelledby="rotuloTipoOrigem" id="tiposOrigem">
+              <button type="button" class="choice" data-tipo="Carro para desmonte" aria-pressed="false">Carro para desmonte</button>
+              <button type="button" class="choice" data-tipo="Lote" aria-pressed="false">Lote</button>
+              <button type="button" class="choice" data-tipo="Compra avulsa" aria-pressed="false">Compra avulsa</button>
+              <button type="button" class="choice" data-tipo="Estoque Inicial" aria-pressed="false">Estoque inicial</button>
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label class="field__label" for="descricao">Descrição</label>
+              <input id="descricao" class="input" type="text" placeholder="Ex.: Onix 1.4 2015 prata" autocomplete="off" required>
+            </div>
+            <div class="field">
+              <label class="field__label" for="dataCompra">Data da compra</label>
+              <input id="dataCompra" class="input" type="date" required>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="tituloValores">
+          <h2 class="card__title" id="tituloValores">Valor</h2>
+          <div class="field-grid">
+            <div class="field">
+              <label class="field__label" for="custoTotal">Valor pago</label>
+              <input id="custoTotal" class="input" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+              <span class="field__hint">O valor é distribuído depois, no custo de cada peça cadastrada.</span>
+            </div>
+            <div class="field">
+              <label class="field__label" for="quantidadeTotal">Quantidade prevista de peças <span class="field__optional">(opcional)</span></label>
+              <input id="quantidadeTotal" class="input" type="number" min="0" step="1" placeholder="0">
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="tituloObservacoes">
+          <h2 class="card__title" id="tituloObservacoes">Observações <span class="field__optional">(opcional)</span></h2>
+          <div class="field">
+            <label class="sr-only" for="observacoes">Observações</label>
+            <textarea id="observacoes" class="input" rows="3" placeholder="Fornecedor, documento ou referência da compra"></textarea>
+          </div>
+        </section>
+
+        <div class="form-actions-bar">
+          <a class="btn btn--quiet" href="listar-origens.html">Cancelar</a>
+          <button id="btnSalvarPecaVinculada" type="button" class="btn btn--secondary">Salvar e cadastrar peça</button>
+          <button id="btnSalvarOrigem" type="submit" class="btn btn--primary">Salvar origem</button>
+        </div>
+      </form>
+
+      <aside class="card summary-side" aria-labelledby="tituloResumo">
+        <h2 class="card__title" id="tituloResumo">Resumo</h2>
+        <div class="summary-side__rows">
+          <div class="summary-side__row"><span class="summary-side__label">Tipo</span><span class="summary-side__value" id="resumoTipoOrigem">—</span></div>
+          <div class="summary-side__row"><span class="summary-side__label">Descrição</span><span class="summary-side__value" id="resumoDescricaoOrigem">—</span></div>
+          <div class="summary-side__row"><span class="summary-side__label">Data da compra</span><span class="summary-side__value" id="resumoDataOrigem">—</span></div>
+          <div class="summary-side__row"><span class="summary-side__label">Peças previstas</span><span class="summary-side__value" id="resumoQuantidadeOrigem">—</span></div>
+        </div>
+        <div class="summary-side__result summary-side__result--neutral">
+          <span>Valor pago</span><span id="resumoValorOrigem">R$ 0,00</span>
+        </div>
+        <div><span id="resumoStatusOrigem" class="pill pill--neutral">Sem valor pago</span></div>
+      </aside>
     </div>
-    <a class="button-secondary button-compact" href="listar-origens.html">Voltar para origens</a>
-  </header>
-
-  <main class="container origin-form-layout">
-    <section class="form-card origin-form-shell">
-      <div class="piece-form-top">
-        <div>
-          <span class="piece-form-eyebrow">Cadastro operacional</span>
-          <h2>Nova origem</h2>
-        </div>
-        <span class="piece-status-chip piece-status-chip--muted">Origem antes da peça</span>
-      </div>
-
-      <div class="piece-form-sections">
-        <section class="form-section origin-section">
-          <div class="form-section__header">
-            <div>
-              <h3>Etapa 1 — Identificação da origem</h3>
-            </div>
-            <span class="required-marker">Obrigatório</span>
-          </div>
-
-          <div class="form-fields">
-            <div class="form-group field-span-4">
-              <label for="tipoOrigem">Tipo da origem</label>
-              <select id="tipoOrigem">
-                <option value="">Selecione o tipo</option>
-                <option value="Carro para desmonte">Carro para desmonte</option>
-                <option value="Lote">Lote</option>
-                <option value="Compra avulsa">Compra avulsa</option>
-                <option value="Estoque Inicial">Estoque Inicial</option>
-              </select>
-            </div>
-
-            <div class="form-group field-span-4">
-              <label for="codigoOrigem">Código da origem</label>
-              <input id="codigoOrigem" readonly placeholder="Gerado automaticamente">
-            </div>
-
-            <div class="form-group field-span-4">
-              <label for="dataCompra">Data da compra/entrada</label>
-              <input id="dataCompra" type="date">
-            </div>
-
-            <div class="form-group field-span-12">
-              <label for="descricao">Descrição / nome da origem</label>
-              <input id="descricao" placeholder="Ex: Lote Civic 2014 prata">
-            </div>
-          </div>
-        </section>
-
-        <section class="form-section origin-section">
-          <div class="form-section__header">
-            <div>
-              <h3>Etapa 2 — Valores e distribuição</h3>
-            </div>
-          </div>
-
-          <div class="form-fields">
-            <div class="form-group field-span-6">
-              <label for="custoTotal">Valor pago</label>
-              <input id="custoTotal" type="text" inputmode="decimal" placeholder="0,00">
-            </div>
-
-            <div class="form-group field-span-6">
-              <label for="quantidadeTotal">Quantidade prevista de peças</label>
-              <input id="quantidadeTotal" type="number" min="0" step="1" placeholder="0">
-            </div>
-          </div>
-
-          <p class="origin-info-note">O valor será distribuído depois nas peças/entradas vinculadas.</p>
-        </section>
-
-        <section class="form-section origin-section">
-          <div class="form-section__header">
-            <div>
-              <h3>Etapa 3 — Observações</h3>
-            </div>
-          </div>
-
-          <div class="form-fields">
-            <div class="form-group field-span-12 compact-textarea">
-              <label for="observacoes">Observações internas</label>
-              <textarea id="observacoes" rows="4" placeholder="Fornecedor, documento/referência e observações da compra"></textarea>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <p id="mensagemFormulario" class="form-message" aria-live="polite"></p>
-
-      <div class="form-actions">
-        <button id="btnSalvarOrigem" type="button" class="button-primary" onclick="salvarOrigem(false)">Salvar origem</button>
-        <button type="button" class="button-secondary" onclick="limparFormularioOrigem()">Limpar</button>
-        <button id="btnSalvarPecaVinculada" type="button" class="button-secondary" onclick="salvarOrigem(true)">Salvar e cadastrar peça vinculada</button>
-      </div>
-    </section>
-
-    <aside class="form-card origin-summary-panel">
-      <div class="form-section__header">
-        <div>
-          <h3>Resumo antes de salvar</h3>
-        </div>
-      </div>
-
-      <div class="origin-summary-list">
-        <div>
-          <span>Tipo</span>
-          <strong id="resumoTipoOrigem">Não informado</strong>
-        </div>
-        <div>
-          <span>Descrição</span>
-          <strong id="resumoDescricaoOrigem">Não informada</strong>
-        </div>
-        <div>
-          <span>Valor pago</span>
-          <strong id="resumoValorOrigem">R$ 0,00</strong>
-        </div>
-        <div>
-          <span>Data</span>
-          <strong id="resumoDataOrigem">Hoje</strong>
-        </div>
-        <div>
-          <span>Status inicial</span>
-          <strong id="resumoStatusOrigem">Sem valor pago</strong>
-        </div>
-      </div>
-
-      <div class="origin-status-stack">
-        <span id="badgeStatusDistribuicao" class="status-badge status-badge--warning">Aguardando distribuição</span>
-      </div>
-    </aside>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../js/supabase-config.js?v=4"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/moeda-utils.js?v=2"></script>
   <script src="../js/supabase-service.js?v=36"></script>
-  <script src="../js/origem.js?v=6"></script>
+  <script src="../js/origem.js?v=7"></script>
   <script src="../js/sidebar.js?v=9"></script>
 </body>
 </html>

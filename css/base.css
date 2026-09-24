@@ -918,6 +918,14 @@ textarea.input {
 }
 
 /* Rodapé de formulário: Cancelar · secundário · principal, alinhados à direita. */
+/* Coluna de blocos (cards) de um formulário, dentro de .form-layout. */
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
 .form-actions-bar {
   display: flex;
   align-items: center;

@@ -266,30 +266,12 @@ Implementacao atual confirmada:
 
 ## Padrao da tela Cadastro de origem
 
-- `paginas/cadastro-origem.html` e a tela para cadastrar lote, compra avulsa, carro de desmonte, retorno ou outra origem.
-- Origem e cadastrada antes da peca.
-- Origem funciona como agrupador operacional e financeiro.
-- Origem nao e peca.
-- Estrutura UX: cabecalho `Cadastro de origem`, Etapa 1 Identificacao da origem, Etapa 2 Valores e distribuicao, Etapa 3 Observacoes, Resumo antes de salvar e Acoes finais.
-- Identificacao: tipo da origem, codigo da origem, descricao/nome da origem e data da compra/entrada.
-- Valores e distribuicao: valor pago, quantidade prevista de pecas quando existir e aviso de que o valor sera distribuido depois nas pecas/entradas vinculadas.
-- Observacoes: fornecedor se existir, documento/referencia se existir e observacoes internas.
-- Resumo antes de salvar: tipo, descricao, valor pago, data e status inicial.
-- Status inicial: `Aguardando distribuicao`, `Pronta para vincular pecas` ou `Sem valor pago` somente quando valor for R$ 0,00.
-- Acoes: `Salvar origem`, `Limpar`, `Salvar e cadastrar peca vinculada` e `Voltar para origens`.
-- Nao criar peca dentro da origem.
-- A peca nasce depois da origem.
-- Entrada de estoque continua obrigatoria apos cadastro da peca.
-- Distribuicao da origem acontece nas pecas/entradas vinculadas.
-- Analises financeiras pesadas ficam nas telas de analise.
-
-Implementacao atual confirmada:
-
-- `js/origem.js` atualiza o resumo em tempo real antes do salvamento.
-- O status inicial atual segue `Sem valor pago`, `Pronta para vincular pecas` ou `Aguardando distribuicao`, conforme valor pago e quantidade prevista.
-- O salvamento prioriza Supabase e sincroniza o cache local da origem.
-- A acao `Salvar e cadastrar peca vinculada` redireciona para `cadastro-peca.html?origemId=...` usando a origem salva.
-- O codigo da origem permanece como gerado automaticamente ate a persistencia.
+- `paginas/cadastro-origem.html` ("Nova origem") cadastra carro para desmonte, lote, compra avulsa ou estoque inicial, antes das pecas. Tela ja migrada para o redesenho (`ui-v2`, so componentes do `base.css`, `js/origem.js`).
+- Blocos: Origem (tipo por botoes `.choice`: Carro para desmonte, Lote, Compra avulsa, Estoque inicial; descricao; data da compra, padrao hoje), Valor (valor pago, com a dica de que ele e distribuido depois no custo de cada peca; quantidade prevista opcional) e Observacoes (opcional).
+- Resumo lateral: tipo, descricao, data, pecas previstas, valor pago e a situacao inicial ("Sem valor pago" ou "Falta distribuir nas peças").
+- Rodape: `Cancelar` (volta a Origens) · `Salvar e cadastrar peça` (abre `cadastro-peca.html?origemId=`) · `Salvar origem` (principal; abre o detalhe da origem salva).
+- O codigo (ORI-000123) e gerado ao salvar; o campo de codigo "Gerado automaticamente" e o botao `Limpar` sairam, assim como o cache em `localStorage`.
+- Nao criar peca dentro da origem. A distribuicao acontece nas pecas/entradas vinculadas. Analises financeiras ficam nas telas de analise.
 
 ## Padrao da tela Detalhes da origem
 

@@ -1,228 +1,162 @@
+// Nova origem (redesenho): carro, lote, compra avulsa ou estoque inicial, cadastrada antes das peças.
+// O valor pago é distribuído depois, no custo de cada peça cadastrada (entrada de estoque).
+const formNovaOrigem = document.getElementById("formNovaOrigem");
 const mensagemFormulario = document.getElementById("mensagemFormulario");
-const campoCodigoOrigem = document.getElementById("codigoOrigem");
+const tiposOrigem = document.getElementById("tiposOrigem");
+const campoDescricao = document.getElementById("descricao");
 const campoDataCompra = document.getElementById("dataCompra");
-const camposResumoOrigem = {
+const campoValorPago = document.getElementById("custoTotal");
+const campoQuantidade = document.getElementById("quantidadeTotal");
+const campoObservacoes = document.getElementById("observacoes");
+const botaoSalvarOrigem = document.getElementById("btnSalvarOrigem");
+const botaoSalvarPecaVinculada = document.getElementById("btnSalvarPecaVinculada");
+const resumo = {
   tipo: document.getElementById("resumoTipoOrigem"),
   descricao: document.getElementById("resumoDescricaoOrigem"),
-  valor: document.getElementById("resumoValorOrigem"),
   data: document.getElementById("resumoDataOrigem"),
-  status: document.getElementById("resumoStatusOrigem"),
-  badgeStatus: document.getElementById("badgeStatusDistribuicao")
+  quantidade: document.getElementById("resumoQuantidadeOrigem"),
+  valor: document.getElementById("resumoValorOrigem"),
+  status: document.getElementById("resumoStatusOrigem")
 };
 
-function buscarOrigensLocais() {
-  return JSON.parse(localStorage.getItem("origens")) || [];
-}
-
-function salvarOrigensLocais(origens) {
-  localStorage.setItem("origens", JSON.stringify(origens));
-}
-
-function salvarOrigemNoCache(origem) {
-  const origens = buscarOrigensLocais().filter(item => Number(item.id) !== Number(origem.id));
-  origens.push(origem);
-  salvarOrigensLocais(origens);
-}
-
-function mostrarMensagem(texto, tipo) {
-  mensagemFormulario.textContent = texto;
-  mensagemFormulario.className = `form-message form-message--${tipo}`;
-}
+let tipoSelecionado = "";
 
 function obterDataHoje() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function formatarCodigoOrigem(valor) {
-  return `ORI-${String(valor || Date.now()).padStart(6, "0")}`;
+  const hoje = new Date();
+  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 }
 
 function formatarMoeda(valor) {
-  if (window.moedaUtils?.formatarMoedaBR) {
-    return window.moedaUtils.formatarMoedaBR(valor);
-  }
-
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(valor);
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function formatarDataVisual(data) {
-  if (!data) {
-    return "Hoje";
-  }
-
-  const [ano, mes, dia] = String(data).split("-");
-
-  if (!ano || !mes || !dia) {
-    return data;
-  }
-
-  return `${dia}/${mes}/${ano}`;
+function formatarData(data) {
+  const [ano, mes, dia] = String(data || "").split("-");
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : "—";
 }
 
-function atualizarCodigoOrigemProvisorio() {
-  if (campoCodigoOrigem) {
-    campoCodigoOrigem.value = "Gerado ao salvar";
-  }
+function mostrarMensagem(texto, tipo = "") {
+  mensagemFormulario.textContent = texto;
+  mensagemFormulario.className = `page-message${tipo === "success" ? " page-message--success" : ""}`;
 }
 
-function preencherDataPadrao() {
-  if (campoDataCompra && !campoDataCompra.value) {
-    campoDataCompra.value = obterDataHoje();
-  }
+function lerValorPago() {
+  const digitado = campoValorPago.value;
+  if (!String(digitado || "").trim()) return 0;
+  return window.moedaUtils?.parseMoedaBR ? window.moedaUtils.parseMoedaBR(digitado) : Number(digitado);
 }
 
 function lerOrigemDoFormulario() {
-  const valorDigitado = document.getElementById("custoTotal").value;
-  const tipoOrigem = document.getElementById("tipoOrigem").value;
-  const quantidadeTotal = document.getElementById("quantidadeTotal")?.value;
-  const valorPago = window.moedaUtils?.parseMoedaBR
-    ? window.moedaUtils.parseMoedaBR(valorDigitado)
-    : Number(valorDigitado || 0);
+  const valorPago = lerValorPago();
 
   return {
-    id: Date.now(),
-    codigoOrigem: formatarCodigoOrigem(Date.now()),
-    tipoOrigem,
-    tipo: tipoOrigem,
-    descricao: document.getElementById("descricao").value.trim(),
+    tipoOrigem: tipoSelecionado,
+    tipo: tipoSelecionado,
+    descricao: campoDescricao.value.trim(),
     custoTotal: valorPago,
     valorPago,
     custoTipo: "",
-    dataCompra: document.getElementById("dataCompra").value || obterDataHoje(),
-    quantidadeTotal: Number(quantidadeTotal || 0),
+    dataCompra: campoDataCompra.value,
+    quantidadeTotal: Number(campoQuantidade.value || 0),
     produtoSku: "",
-    observacoes: document.getElementById("observacoes").value.trim()
+    observacoes: campoObservacoes.value.trim()
   };
 }
 
+// Devolve o primeiro problema com o campo para focar, ou null.
 function validarOrigem(origem) {
-  if (!origem.tipoOrigem || !origem.descricao || !origem.dataCompra) {
-    return "Preencha tipo da origem, descrição e data.";
-  }
-
-  if (!Number.isFinite(origem.valorPago) || origem.valorPago < 0) {
-    return "Informe um valor válido para a origem.";
-  }
-
-  if (!Number.isFinite(origem.quantidadeTotal) || origem.quantidadeTotal < 0) {
-    return "Informe uma quantidade prevista válida.";
-  }
-
-  return "";
+  if (!origem.tipoOrigem) return { campo: tiposOrigem.querySelector("[data-tipo]"), mensagem: "Escolha o tipo da origem." };
+  if (!origem.descricao) return { campo: campoDescricao, mensagem: "Informe a descrição da origem." };
+  if (!origem.dataCompra) return { campo: campoDataCompra, mensagem: "Informe a data da compra." };
+  if (!Number.isFinite(origem.valorPago) || origem.valorPago < 0) return { campo: campoValorPago, mensagem: "Informe um valor pago válido." };
+  if (!Number.isInteger(origem.quantidadeTotal) || origem.quantidadeTotal < 0) return { campo: campoQuantidade, mensagem: "Informe uma quantidade prevista válida." };
+  return null;
 }
 
-function obterStatusInicialOrigem(origem) {
-  if (Number(origem.valorPago || 0) <= 0) {
-    return "Sem valor pago";
-  }
-
-  if (Number(origem.quantidadeTotal || 0) > 0) {
-    return "Pronta para vincular peças";
-  }
-
-  return "Aguardando distribuição";
+// Situação logo depois de salvar: sem valor pago, ou valor esperando ser distribuído nas peças.
+function obterStatusInicial(origem) {
+  if (!(Number(origem.valorPago) > 0)) return { texto: "Sem valor pago", pilula: "pill--neutral" };
+  return { texto: "Falta distribuir nas peças", pilula: "pill--warning" };
 }
 
-function atualizarResumoOrigem() {
-  if (!camposResumoOrigem.tipo) {
-    return;
-  }
-
+function atualizarResumo() {
   const origem = lerOrigemDoFormulario();
-  const status = obterStatusInicialOrigem(origem);
+  const status = obterStatusInicial(origem);
 
-  camposResumoOrigem.tipo.textContent = origem.tipoOrigem || "Não informado";
-  camposResumoOrigem.descricao.textContent = origem.descricao || "Não informada";
-  camposResumoOrigem.valor.textContent = formatarMoeda(origem.valorPago);
-  camposResumoOrigem.data.textContent = formatarDataVisual(origem.dataCompra);
-  camposResumoOrigem.status.textContent = status;
-
-  if (camposResumoOrigem.badgeStatus) {
-    camposResumoOrigem.badgeStatus.textContent = status;
-    camposResumoOrigem.badgeStatus.className = status === "Sem valor pago"
-      ? "status-badge status-badge--muted"
-      : status === "Pronta para vincular peças"
-        ? "status-badge status-badge--ok"
-        : "status-badge status-badge--warning";
-  }
+  resumo.tipo.textContent = origem.tipoOrigem === "Estoque Inicial" ? "Estoque inicial" : origem.tipoOrigem || "—";
+  resumo.descricao.textContent = origem.descricao || "—";
+  resumo.data.textContent = formatarData(origem.dataCompra);
+  resumo.quantidade.textContent = origem.quantidadeTotal > 0 ? `${origem.quantidadeTotal}` : "—";
+  resumo.valor.textContent = formatarMoeda(Number.isFinite(origem.valorPago) ? origem.valorPago : 0);
+  resumo.status.textContent = status.texto;
+  resumo.status.className = `pill ${status.pilula}`;
 }
 
-function definirBotoesSalvando(salvando) {
-  const botoes = [
-    document.getElementById("btnSalvarOrigem"),
-    document.getElementById("btnSalvarPecaVinculada")
-  ];
-
-  botoes.forEach(botao => {
-    if (botao) {
-      botao.disabled = salvando;
-    }
+function selecionarTipo(tipo) {
+  tipoSelecionado = tipo;
+  tiposOrigem.querySelectorAll("[data-tipo]").forEach(botao => {
+    botao.setAttribute("aria-pressed", String(botao.dataset.tipo === tipo));
   });
+  atualizarResumo();
 }
 
-function limparFormularioOrigem() {
-  document.getElementById("tipoOrigem").value = "";
-  document.getElementById("descricao").value = "";
-  document.getElementById("custoTotal").value = "";
-  document.getElementById("quantidadeTotal").value = "";
-  document.getElementById("observacoes").value = "";
-  campoDataCompra.value = obterDataHoje();
-  mensagemFormulario.textContent = "";
-  mensagemFormulario.className = "form-message";
-  preencherDataPadrao();
-  atualizarCodigoOrigemProvisorio();
-  atualizarResumoOrigem();
+function definirSalvando(salvando) {
+  botaoSalvarOrigem.disabled = salvando;
+  botaoSalvarPecaVinculada.disabled = salvando;
 }
 
-async function salvarOrigem(redirecionarParaPeca = false) {
+// "Salvar origem" abre o detalhe da origem salva; "Salvar e cadastrar peça" abre a Nova peça com ela escolhida.
+async function salvarOrigem(cadastrarPeca) {
   const origem = lerOrigemDoFormulario();
-  const erroValidacao = validarOrigem(origem);
+  const problema = validarOrigem(origem);
 
-  if (erroValidacao) {
-    mostrarMensagem(erroValidacao, "warning");
+  if (problema) {
+    mostrarMensagem(problema.mensagem);
+    problema.campo?.focus();
     return;
   }
 
-  definirBotoesSalvando(true);
+  if (!window.supabaseService?.estaConfigurado()) {
+    mostrarMensagem("Configure o Supabase para salvar a origem.");
+    return;
+  }
+
+  definirSalvando(true);
+  mostrarMensagem("Salvando origem…");
 
   try {
-    const origemSalva = window.supabaseService && window.supabaseService.estaConfigurado()
-      ? await window.supabaseService.salvarOrigem(origem)
-      : origem;
-
-    salvarOrigemNoCache(origemSalva);
-    if (campoCodigoOrigem) {
-      campoCodigoOrigem.value = origemSalva.codigoOrigem || formatarCodigoOrigem(origemSalva.id);
-    }
-
-    mostrarMensagem("Origem salva com sucesso.", "success");
-
-    if (redirecionarParaPeca) {
-      setTimeout(() => {
-        window.location.href = `cadastro-peca.html?origemId=${encodeURIComponent(origemSalva.id)}`;
-      }, 500);
-    }
+    const origemSalva = await window.supabaseService.salvarOrigem(origem);
+    window.location.href = cadastrarPeca
+      ? `cadastro-peca.html?origemId=${encodeURIComponent(origemSalva.id)}`
+      : `detalhes-origem.html?origemId=${encodeURIComponent(origemSalva.id)}`;
   } catch (erro) {
     console.error("Erro ao cadastrar origem:", erro);
-    mostrarMensagem("Não foi possível salvar a origem no Supabase.", "warning");
-  } finally {
-    definirBotoesSalvando(false);
+    mostrarMensagem(erro?.message || "Não foi possível salvar a origem.");
+    definirSalvando(false);
   }
 }
 
-preencherDataPadrao();
-atualizarCodigoOrigemProvisorio();
-atualizarResumoOrigem();
-window.moedaUtils?.registrarCampoMoeda?.(document.getElementById("custoTotal"));
+if (formNovaOrigem) {
+  campoDataCompra.value = obterDataHoje();
+  window.moedaUtils?.registrarCampoMoeda?.(campoValorPago);
 
-["tipoOrigem", "descricao", "custoTotal", "quantidadeTotal", "dataCompra"].forEach(id => {
-  const campo = document.getElementById(id);
+  tiposOrigem.addEventListener("click", evento => {
+    const botao = evento.target.closest("[data-tipo]");
+    if (botao) selecionarTipo(botao.dataset.tipo);
+  });
 
-  if (campo) {
-    campo.addEventListener("input", atualizarResumoOrigem);
-    campo.addEventListener("change", atualizarResumoOrigem);
-  }
-});
+  [campoDescricao, campoDataCompra, campoValorPago, campoQuantidade].forEach(campo => {
+    campo.addEventListener("input", atualizarResumo);
+    campo.addEventListener("change", atualizarResumo);
+  });
+
+  formNovaOrigem.addEventListener("submit", evento => {
+    evento.preventDefault();
+    salvarOrigem(false);
+  });
+
+  botaoSalvarPecaVinculada.addEventListener("click", () => salvarOrigem(true));
+
+  atualizarResumo();
+}
