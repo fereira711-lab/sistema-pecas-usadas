@@ -1,20 +1,32 @@
+// Entradas de estoque (redesenho): cada entrada é o saldo e o custo de uma peça vindo de uma origem.
+// O consumo das entradas acontece nas vendas (regra oficial de custo); aqui só se consulta.
+const ITENS_POR_PAGINA = 20;
+
+const resumoEntradas = document.getElementById("resumoEntradas");
 const mensagemEntradasEstoque = document.getElementById("mensagemEntradasEstoque");
-const resumoEntradasEstoque = document.getElementById("resumoEntradasEstoque");
-const listaEntradasEstoque = document.getElementById("listaEntradasEstoque");
+const kpisEntradas = document.getElementById("kpisEntradas");
 const buscaEntradasEstoque = document.getElementById("buscaEntradasEstoque");
-const quantidadePorPaginaEntradas = document.getElementById("quantidadePorPaginaEntradas");
-const entradasEstoqueShell = document.getElementById("entradasEstoqueShell");
-const botaoAbrirFiltrosEntradas = document.getElementById("botaoAbrirFiltrosEntradas");
-const botaoFecharFiltrosEntradas = document.getElementById("botaoFecharFiltrosEntradas");
-const botaoLimparFiltrosEntradas = document.getElementById("botaoLimparFiltrosEntradas");
-const botaoAplicarFiltrosEntradas = document.getElementById("botaoAplicarFiltrosEntradas");
 const filtroOrigemEntradas = document.getElementById("filtroOrigemEntradas");
-const filtroProdutoEntradas = document.getElementById("filtroProdutoEntradas");
-const filtroStatusEntradas = document.getElementById("filtroStatusEntradas");
 const dataInicialEntradas = document.getElementById("dataInicialEntradas");
 const dataFinalEntradas = document.getElementById("dataFinalEntradas");
+const filtroStatusEntradas = document.getElementById("filtroStatusEntradas");
+const tabelaEntradas = document.getElementById("tabelaEntradas");
+const paginacaoEntradas = document.getElementById("paginacaoEntradas");
+const paginacaoTexto = document.getElementById("paginacaoTexto");
+const botaoPaginaAnterior = document.getElementById("paginaAnterior");
+const botaoPaginaProxima = document.getElementById("paginaProxima");
 
-let entradasCarregadas = [];
+let linhasEntradas = [];
+let statusSelecionado = "";
+let paginaAtual = 1;
+
+const SITUACOES = {
+  "com-saldo": { texto: "Com saldo", pilula: "pill--success" },
+  parcial: { texto: "Parcial", pilula: "pill--warning" },
+  consumida: { texto: "Consumida", pilula: "pill--neutral" }
+};
+
+// ---- Formatação ----
 
 function escaparHtml(valor) {
   return String(valor ?? "")
@@ -27,350 +39,243 @@ function escaparHtml(valor) {
 
 function normalizarTexto(valor) {
   return String(valor || "")
-    .trim()
-    .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(Number(valor || 0));
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function formatarNumero(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  });
+  return Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}
+
+function plural(quantidade, singular, pluralTexto) {
+  return `${formatarNumero(quantidade)} ${quantidade === 1 ? singular : pluralTexto}`;
 }
 
 function formatarData(data) {
-  if (!data) {
-    return "-";
-  }
-
-  const dataIso = String(data).slice(0, 10);
-  const partes = dataIso.split("-");
-
-  if (partes.length !== 3) {
-    return dataIso;
-  }
-
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  const [ano, mes, dia] = String(data || "").slice(0, 10).split("-");
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : "—";
 }
 
-function obterCodigoEntrada(entrada) {
-  return `ENT-${String(entrada.id || 0).padStart(6, "0")}`;
-}
+// ---- Regras da lista ----
 
-function obterSaldoDisponivel(entrada) {
-  return Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
-}
-
-function obterValorAtribuido(entrada) {
-  return Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0);
-}
-
-function obterStatusEntrada(entrada) {
-  const saldo = obterSaldoDisponivel(entrada);
-  const consumida = Number(entrada.quantidadeConsumida || 0);
-  const total = Number(entrada.quantidadeTotal || 0);
-
-  if (saldo <= 0) {
-    return "consumida";
-  }
-
-  if (consumida > 0 && consumida < total) {
-    return "parcial";
-  }
-
+function obterStatusEntrada(total, consumida, saldo) {
+  if (saldo <= 0) return "consumida";
+  if (consumida > 0 && consumida < total) return "parcial";
   return "com-saldo";
 }
 
-function obterTextoStatusEntrada(status) {
-  const textos = {
-    "com-saldo": "Com saldo",
-    parcial: "Parcial",
-    consumida: "Consumida"
-  };
+function montarLinhasEntradas(entradas) {
+  return entradas.map(entrada => {
+    const total = Number(entrada.quantidadeTotal || 0);
+    const consumida = Number(entrada.quantidadeConsumida || 0);
+    const saldo = Math.max(total - consumida, 0);
+    const custoUnitario = Number(entrada.custoUnitario || 0);
 
-  return textos[status] || "Com saldo";
+    return {
+      entrada,
+      codigo: `ENT-${String(entrada.id || 0).padStart(6, "0")}`,
+      data: String(entrada.dataEntrada || entrada.createdAt || "").slice(0, 10),
+      nome: String(entrada.nomePeca || "").trim() || "Peça sem nome",
+      sku: entrada.sku || "",
+      origem: String(entrada.origemDescricao || "").trim() || (entrada.origemId ? `Origem ${entrada.origemId}` : ""),
+      total,
+      consumida,
+      saldo,
+      custoUnitario,
+      valorAtribuido: total * custoUnitario,
+      custoEmEstoque: saldo * custoUnitario,
+      status: obterStatusEntrada(total, consumida, saldo)
+    };
+  }).sort((a, b) => b.data.localeCompare(a.data) || Number(b.entrada.id) - Number(a.entrada.id));
 }
 
-function obterClasseStatusEntrada(status) {
-  const classes = {
-    "com-saldo": "status-badge status-badge--stock",
-    parcial: "status-badge status-badge--warning",
-    consumida: "status-badge status-badge--empty"
-  };
-
-  return classes[status] || "status-badge";
+// Cada palavra digitada precisa aparecer no código da entrada, no SKU, na peça ou na origem.
+function linhaCombinaComBusca(linha, termo) {
+  if (!termo) return true;
+  const texto = normalizarTexto(`${linha.codigo} ${linha.sku} ${linha.nome} ${linha.origem}`);
+  return termo.split(/\s+/).every(palavra => texto.includes(palavra));
 }
 
-function obterTextoProduto(entrada) {
-  return String(entrada.nomePeca || entrada.pecaNome || entrada.nome || "").trim() || "Peça sem nome";
+function filtrarLinhas(linhas, filtros) {
+  return linhas.filter(linha => (
+    linhaCombinaComBusca(linha, filtros.termo) &&
+    (!filtros.origemId || Number(linha.entrada.origemId) === filtros.origemId) &&
+    (!filtros.dataInicial || (linha.data && linha.data >= filtros.dataInicial)) &&
+    (!filtros.dataFinal || (linha.data && linha.data <= filtros.dataFinal))
+  ));
 }
 
-function obterTextoOrigem(entrada) {
-  return String(entrada.origemDescricao || entrada.origem || "").trim() || (entrada.origemId ? `Origem ${entrada.origemId}` : "-");
-}
+// ---- Renderização ----
 
-function obterDataOrdenacaoEntrada(entrada) {
-  return String(entrada.dataEntrada || entrada.createdAt || "").slice(0, 10);
-}
-
-function criarCardResumo(titulo, valor) {
+function criarKpi({ rotulo, valor, nota = "" }) {
   return `
-    <article class="summary-card">
-      <span>${titulo}</span>
-      <strong>${valor}</strong>
+    <article class="kpi">
+      <span class="kpi__label">${escaparHtml(rotulo)}</span>
+      <span class="kpi__value kpi__value--tight">${escaparHtml(valor)}</span>
+      <span class="kpi__note">${escaparHtml(nota)}</span>
     </article>
   `;
 }
 
-function renderizarResumoEntradas(entradas) {
-  const entradasComSaldo = entradas.filter(entrada => obterSaldoDisponivel(entrada) > 0).length;
-  const quantidadeDisponivel = entradas.reduce((total, entrada) => total + obterSaldoDisponivel(entrada), 0);
-  const quantidadeConsumida = entradas.reduce((total, entrada) => total + Number(entrada.quantidadeConsumida || 0), 0);
+function renderizarResumo() {
+  const comSaldo = linhasEntradas.filter(linha => linha.saldo > 0);
+  const unidadesEmEstoque = comSaldo.reduce((soma, linha) => soma + linha.saldo, 0);
+  const unidadesConsumidas = linhasEntradas.reduce((soma, linha) => soma + linha.consumida, 0);
+  const custoEmEstoque = comSaldo.reduce((soma, linha) => soma + linha.custoEmEstoque, 0);
 
-  resumoEntradasEstoque.innerHTML =
-    criarCardResumo("Total de entradas", formatarNumero(entradas.length)) +
-    criarCardResumo("Entradas com saldo", formatarNumero(entradasComSaldo)) +
-    criarCardResumo("Quantidade disponível", formatarNumero(quantidadeDisponivel)) +
-    criarCardResumo("Quantidade consumida", formatarNumero(quantidadeConsumida));
+  resumoEntradas.textContent = linhasEntradas.length
+    ? `${plural(linhasEntradas.length, "entrada registrada", "entradas registradas")} · ${plural(unidadesEmEstoque, "unidade em estoque", "unidades em estoque")}`
+    : "Nenhuma entrada registrada";
+
+  kpisEntradas.innerHTML = [
+    criarKpi({
+      rotulo: "Entradas",
+      valor: formatarNumero(linhasEntradas.length),
+      nota: `${formatarNumero(linhasEntradas.filter(linha => linha.status === "com-saldo").length)} com saldo · ${plural(linhasEntradas.filter(linha => linha.status === "parcial").length, "parcial", "parciais")}`
+    }),
+    criarKpi({ rotulo: "Em estoque", valor: plural(unidadesEmEstoque, "unidade", "unidades"), nota: "Saldo das entradas" }),
+    criarKpi({ rotulo: "Consumidas", valor: plural(unidadesConsumidas, "unidade", "unidades"), nota: "Baixadas pelas vendas" }),
+    criarKpi({ rotulo: "Custo em estoque", valor: formatarMoeda(custoEmEstoque), nota: "Saldo × custo unitário" })
+  ].join("");
 }
 
-function preencherSelect(select, valores, rotuloInicial) {
-  if (!select) {
-    return;
-  }
-
-  const valorAtual = select.value;
-  select.innerHTML = `<option value="">${rotuloInicial}</option>`;
-
-  valores.forEach(valor => {
-    const opcao = document.createElement("option");
-    opcao.value = valor;
-    opcao.textContent = valor;
-    select.appendChild(opcao);
+function renderizarFiltroOrigens() {
+  const origens = new Map();
+  linhasEntradas.forEach(linha => {
+    const id = Number(linha.entrada.origemId || 0);
+    if (id && !origens.has(id)) origens.set(id, linha.origem);
   });
-
-  select.value = valores.includes(valorAtual) ? valorAtual : "";
+  const atual = filtroOrigemEntradas.value;
+  filtroOrigemEntradas.innerHTML = '<option value="">Todas as origens</option>' + [...origens.entries()]
+    .sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))
+    .map(([id, descricao]) => `<option value="${id}">${escaparHtml(descricao)}</option>`)
+    .join("");
+  filtroOrigemEntradas.value = origens.has(Number(atual)) ? atual : "";
 }
 
-function preencherFiltrosEntradas(entradas) {
-  const origens = Array.from(new Set(entradas.map(obterTextoOrigem).filter(valor => valor && valor !== "-"))).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  const produtos = Array.from(new Set(entradas.map(obterTextoProduto).filter(Boolean))).sort((a, b) => a.localeCompare(b, "pt-BR"));
+function renderizarLinha(linha) {
+  const pecaId = Number(linha.entrada.pecaId || 0);
+  const origemId = Number(linha.entrada.origemId || 0);
+  const situacao = SITUACOES[linha.status];
+  const meta = [
+    linha.sku ? `<span class="mono">${escaparHtml(linha.sku)}</span>` : "",
+    `<span class="mono">${escaparHtml(linha.codigo)}</span>`
+  ].filter(Boolean).join(" · ");
 
-  preencherSelect(filtroOrigemEntradas, origens, "Todas");
-  preencherSelect(filtroProdutoEntradas, produtos, "Todos");
-}
-
-function entradaDentroDoPeriodo(entrada) {
-  const inicio = dataInicialEntradas?.value || "";
-  const fim = dataFinalEntradas?.value || "";
-  const data = String(entrada.dataEntrada || entrada.createdAt || "").slice(0, 10);
-
-  if (!inicio && !fim) {
-    return true;
-  }
-
-  if (!data) {
-    return false;
-  }
-
-  if (inicio && data < inicio) {
-    return false;
-  }
-
-  if (fim && data > fim) {
-    return false;
-  }
-
-  return true;
-}
-
-function entradaDentroDosFiltros(entrada) {
-  const termo = normalizarTexto(buscaEntradasEstoque?.value || "");
-  const origem = filtroOrigemEntradas?.value || "";
-  const produto = filtroProdutoEntradas?.value || "";
-  const status = filtroStatusEntradas?.value || "";
-  const textoBusca = normalizarTexto([
-    obterCodigoEntrada(entrada),
-    entrada.sku,
-    obterTextoProduto(entrada),
-    obterTextoOrigem(entrada)
-  ].join(" "));
-
-  if (termo && !textoBusca.includes(termo)) {
-    return false;
-  }
-
-  if (origem && obterTextoOrigem(entrada) !== origem) {
-    return false;
-  }
-
-  if (produto && obterTextoProduto(entrada) !== produto) {
-    return false;
-  }
-
-  if (status && obterStatusEntrada(entrada) !== status) {
-    return false;
-  }
-
-  return entradaDentroDoPeriodo(entrada);
-}
-
-function limitarEntradas(entradas) {
-  const limite = quantidadePorPaginaEntradas?.value || "12";
-
-  if (limite === "todos") {
-    return entradas;
-  }
-
-  return entradas.slice(0, Number(limite || 12));
-}
-
-function ordenarEntradas(entradas) {
-  return [...entradas].sort((a, b) => {
-    const dataA = obterDataOrdenacaoEntrada(a);
-    const dataB = obterDataOrdenacaoEntrada(b);
-
-    if (dataA !== dataB) {
-      return dataB.localeCompare(dataA);
-    }
-
-    return Number(b.id || 0) - Number(a.id || 0);
-  });
-}
-
-function criarLinhaCabecalho() {
   return `
-    <div class="stock-entry-row stock-entry-row--head">
-      <span>Código</span>
-      <span>Data</span>
-      <span>SKU / Peça</span>
-      <span>Origem</span>
-      <span>Qtd. total</span>
-      <span>Entrada consumida</span>
-      <span>Saldo disponível</span>
-      <span>Custo unitário</span>
-      <span>Valor atribuído</span>
-      <span>Status</span>
-      <span>Ações</span>
-    </div>
+    <tr>
+      <td class="cell-nowrap" data-label="Data">${formatarData(linha.data)}</td>
+      <td data-label="Peça">
+        <div class="item-cell__text">
+          ${pecaId ? `<a class="item-cell__name" href="detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}">${escaparHtml(linha.nome)}</a>` : `<span class="cell-strong">${escaparHtml(linha.nome)}</span>`}
+          <span class="item-cell__meta">${meta}</span>
+        </div>
+      </td>
+      <td data-label="Origem">${origemId ? `<a href="detalhes-origem.html?origemId=${encodeURIComponent(origemId)}">${escaparHtml(linha.origem)}</a>` : "—"}</td>
+      <td class="num" data-label="Qtd.">${formatarNumero(linha.total)}</td>
+      <td class="num cell-muted" data-label="Consumida">${formatarNumero(linha.consumida)}</td>
+      <td class="num cell-strong" data-label="Saldo">${formatarNumero(linha.saldo)}</td>
+      <td class="num" data-label="Custo unitário">${formatarMoeda(linha.custoUnitario)}</td>
+      <td class="num" data-label="Valor atribuído">${formatarMoeda(linha.valorAtribuido)}</td>
+      <td data-label="Situação"><span class="pill ${situacao.pilula}">${situacao.texto}</span></td>
+    </tr>
   `;
 }
 
-function criarLinhaEntrada(entrada) {
-  const status = obterStatusEntrada(entrada);
-  const pecaId = Number(entrada.pecaId || 0);
-  const origemId = Number(entrada.origemId || 0);
-  const linkProduto = pecaId ? `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}` : "produtos.html";
-  const linkOrigem = origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "listar-origens.html";
+function renderizarLista() {
+  const filtros = {
+    termo: normalizarTexto(buscaEntradasEstoque.value),
+    origemId: Number(filtroOrigemEntradas.value || 0),
+    dataInicial: dataInicialEntradas.value,
+    dataFinal: dataFinalEntradas.value
+  };
+  const semStatus = filtrarLinhas(linhasEntradas, filtros);
+  const filtradas = semStatus.filter(linha => !statusSelecionado || linha.status === statusSelecionado);
 
-  return `
-    <article class="stock-entry-row">
-      <strong data-label="Código">${escaparHtml(obterCodigoEntrada(entrada))}</strong>
-      <span data-label="Data">${formatarData(entrada.dataEntrada || entrada.createdAt)}</span>
-      <span data-label="SKU / Peça">
-        <b>${escaparHtml(entrada.sku || "-")}</b>
-        <small>${escaparHtml(obterTextoProduto(entrada))}</small>
-      </span>
-      <span data-label="Origem">${escaparHtml(obterTextoOrigem(entrada))}</span>
-      <span data-label="Qtd. total">${formatarNumero(entrada.quantidadeTotal)}</span>
-      <span data-label="Entrada consumida">${formatarNumero(entrada.quantidadeConsumida)}</span>
-      <span data-label="Saldo disponível">${formatarNumero(obterSaldoDisponivel(entrada))}</span>
-      <span data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</span>
-      <span data-label="Valor atribuído">${formatarMoeda(obterValorAtribuido(entrada))}</span>
-      <span data-label="Status"><mark class="${obterClasseStatusEntrada(status)}">${obterTextoStatusEntrada(status)}</mark></span>
-      <span data-label="Ações" class="stock-entry-actions">
-        <a class="table-link" href="${linkProduto}">Ver produto</a>
-        <a class="table-link" href="${linkOrigem}">Ver origem</a>
-      </span>
-    </article>
-  `;
-}
+  filtroStatusEntradas.querySelectorAll("[data-contagem]").forEach(contador => {
+    const chave = contador.dataset.contagem;
+    contador.textContent = formatarNumero(semStatus.filter(linha => !chave || linha.status === chave).length);
+  });
 
-function renderizarEntradas() {
-  const filtradas = ordenarEntradas(entradasCarregadas.filter(entradaDentroDosFiltros));
-  const visiveis = limitarEntradas(filtradas);
-
-  renderizarResumoEntradas(filtradas);
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ITENS_POR_PAGINA));
+  paginaAtual = Math.min(Math.max(1, paginaAtual), totalPaginas);
+  const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const pagina = filtradas.slice(inicio, inicio + ITENS_POR_PAGINA);
 
   if (filtradas.length === 0) {
-    mensagemEntradasEstoque.textContent = "Nenhuma entrada encontrada para os filtros selecionados.";
-    listaEntradasEstoque.innerHTML = "";
+    const vazio = linhasEntradas.length ? "Nenhuma entrada encontrada para esta busca ou filtro." : "Nenhuma entrada registrada ainda.";
+    tabelaEntradas.innerHTML = `<tr class="data-table__empty"><td colspan="9">${vazio}</td></tr>`;
+    paginacaoEntradas.hidden = true;
     return;
   }
 
-  mensagemEntradasEstoque.textContent = "";
-  listaEntradasEstoque.innerHTML = criarLinhaCabecalho() + visiveis.map(criarLinhaEntrada).join("");
+  tabelaEntradas.innerHTML = pagina.map(renderizarLinha).join("");
+  paginacaoEntradas.hidden = filtradas.length <= ITENS_POR_PAGINA;
+  paginacaoTexto.textContent = `Mostrando ${formatarNumero(inicio + 1)}–${formatarNumero(inicio + pagina.length)} de ${formatarNumero(filtradas.length)}`;
+  botaoPaginaAnterior.disabled = paginaAtual <= 1;
+  botaoPaginaProxima.disabled = paginaAtual >= totalPaginas;
 }
 
-function definirPainelFiltrosAberto(aberto) {
-  entradasEstoqueShell?.classList.toggle("stock-entries-shell--filters-open", aberto);
-  botaoAbrirFiltrosEntradas?.setAttribute("aria-expanded", aberto ? "true" : "false");
+function selecionarStatus(status) {
+  statusSelecionado = status;
+  filtroStatusEntradas.querySelectorAll("[data-status]").forEach(botao => {
+    botao.setAttribute("aria-pressed", String(botao.dataset.status === status));
+  });
+  paginaAtual = 1;
+  renderizarLista();
 }
 
-async function carregarEntradasEstoque() {
-  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
-    mensagemEntradasEstoque.textContent = "Configure o Supabase para carregar as entradas de estoque.";
-    return [];
+// ---- Início ----
+
+async function iniciarEntradasEstoque() {
+  if (!window.supabaseService?.estaConfigurado()) {
+    resumoEntradas.textContent = "";
+    mensagemEntradasEstoque.textContent = "Configure o Supabase para ver as entradas de estoque.";
+    return;
   }
 
   try {
-    const entradas = await window.supabaseService.listarEntradasEstoque();
+    linhasEntradas = montarLinhasEntradas(await window.supabaseService.listarEntradasEstoque() || []);
     mensagemEntradasEstoque.textContent = "";
-    return entradas || [];
+    renderizarFiltroOrigens();
+    renderizarResumo();
+    renderizarLista();
   } catch (erro) {
     console.error("Erro ao carregar entradas de estoque:", erro);
+    resumoEntradas.textContent = "";
     mensagemEntradasEstoque.textContent = "Não foi possível carregar as entradas de estoque.";
-    return [];
   }
 }
 
-async function iniciarEntradasEstoque() {
-  entradasCarregadas = await carregarEntradasEstoque();
-  preencherFiltrosEntradas(entradasCarregadas);
-  renderizarEntradas();
-}
-
-buscaEntradasEstoque?.addEventListener("input", renderizarEntradas);
-quantidadePorPaginaEntradas?.addEventListener("change", renderizarEntradas);
-
-[filtroOrigemEntradas, filtroProdutoEntradas, filtroStatusEntradas, dataInicialEntradas, dataFinalEntradas].forEach(campo => {
-  campo?.addEventListener("change", renderizarEntradas);
-});
-
-botaoAbrirFiltrosEntradas?.addEventListener("click", () => {
-  definirPainelFiltrosAberto(!entradasEstoqueShell?.classList.contains("stock-entries-shell--filters-open"));
-});
-
-botaoFecharFiltrosEntradas?.addEventListener("click", () => {
-  definirPainelFiltrosAberto(false);
-});
-
-botaoAplicarFiltrosEntradas?.addEventListener("click", () => {
-  renderizarEntradas();
-  definirPainelFiltrosAberto(false);
-});
-
-botaoLimparFiltrosEntradas?.addEventListener("click", () => {
-  if (buscaEntradasEstoque) {
-    buscaEntradasEstoque.value = "";
-  }
-
-  [filtroOrigemEntradas, filtroProdutoEntradas, filtroStatusEntradas, dataInicialEntradas, dataFinalEntradas].forEach(campo => {
-    if (campo) {
-      campo.value = "";
-    }
+if (tabelaEntradas) {
+  [buscaEntradasEstoque, filtroOrigemEntradas, dataInicialEntradas, dataFinalEntradas].forEach(campo => {
+    campo.addEventListener("input", () => {
+      paginaAtual = 1;
+      renderizarLista();
+    });
   });
 
-  renderizarEntradas();
-});
+  filtroStatusEntradas.addEventListener("click", evento => {
+    const botao = evento.target.closest("[data-status]");
+    if (botao) selecionarStatus(botao.dataset.status);
+  });
 
-document.addEventListener("DOMContentLoaded", iniciarEntradasEstoque);
+  botaoPaginaAnterior.addEventListener("click", () => {
+    paginaAtual -= 1;
+    renderizarLista();
+  });
+
+  botaoPaginaProxima.addEventListener("click", () => {
+    paginaAtual += 1;
+    renderizarLista();
+  });
+
+  iniciarEntradasEstoque();
+}

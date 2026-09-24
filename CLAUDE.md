@@ -431,16 +431,12 @@ Implementacao atual confirmada:
 
 ## Entradas de estoque
 
-- `paginas/entradas-estoque.html` funciona como listagem operacional das entradas que sustentam saldo e custo.
-- A tela deve mostrar busca, seletor `Mostrar`, filtros por origem/produto/status/periodo, resumo simples e lista compacta.
-- A lista atual deve exibir codigo, data, SKU/peca, origem, quantidade total, entrada consumida, saldo disponivel, custo unitario, valor atribuido e acoes `Ver produto` e `Ver origem`.
-
-Implementacao atual confirmada:
-
-- `js/entradas-estoque.js` exige Supabase configurado para carregar entradas reais.
-- A tela usa `quantidadeTotal`, `quantidadeConsumida`, saldo disponivel, custo unitario e valor atribuido por entrada.
-- Os status atuais sao `Com saldo`, `Parcial` e `Consumida`.
-- A ordenacao atual prioriza entradas mais recentes por data e depois por ID.
+- `paginas/entradas-estoque.html` e a listagem operacional das entradas que sustentam saldo e custo. Tela ja migrada para o redesenho (`ui-v2`, so componentes do `base.css`, `js/entradas-estoque.js`).
+- Cabecalho: titulo, subtitulo "N entradas registradas · M unidades em estoque" e acao principal `Nova peça`.
+- KPIs: Entradas (com saldo · parciais), Em estoque (unidades), Consumidas (unidades baixadas pelas vendas) e Custo em estoque (saldo x custo unitario).
+- Filtros: busca por codigo da entrada (ENT-000123), SKU, peca ou origem (cada palavra, sem acento), origem, periodo e controle segmentado com contagem: Todas, Com saldo, Parcial, Consumida.
+- Tabela: Data, Peca (link para o produto + SKU · codigo da entrada), Origem (link para a origem), Qtd., Consumida, Saldo, Custo unitario, Valor atribuido e Situacao. Mais recente primeiro; 20 por pagina.
+- Sairam no redesenho: seletor `Mostrar`, painel lateral de filtros, filtro por produto (a busca cobre) e os botoes `Ver produto`/`Ver origem` (viraram links no nome).
 
 ## Giro de estoque
 
