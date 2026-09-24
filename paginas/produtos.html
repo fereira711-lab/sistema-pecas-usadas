@@ -3,141 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estoque / Produtos</title>
+  <title>Produtos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/base.css?v=5">
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/base.css?v=7">
+  <link rel="stylesheet" href="../css/produtos.css?v=2">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark products-operational-page">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Estoque</p>
-      <h1>Produtos</h1>
-      <p class="hero__description">
-        Lista operacional compacta para consulta rapida de estoque.
-      </p>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <h1 class="page-head__title">Produtos</h1>
+        <p class="page-head__subtitle" id="resumoProdutos">Carregando peças…</p>
+      </div>
+      <div class="page-head__actions">
+        <a class="btn btn--primary" href="cadastro-peca.html">
+          <i class="ri-add-line" aria-hidden="true"></i>Nova peça
+        </a>
+      </div>
+    </header>
+
+    <p id="mensagemProdutos" class="page-message" role="status"></p>
+
+    <div class="toolbar">
+      <div class="toolbar__group">
+        <div class="search-field">
+          <label class="sr-only" for="buscaProdutos">Buscar produtos</label>
+          <i class="ri-search-line search-field__icon" aria-hidden="true"></i>
+          <input id="buscaProdutos" class="input" type="search" placeholder="Buscar por SKU, peça, veículo ou compatibilidade" autocomplete="off">
+        </div>
+        <label class="sr-only" for="filtroOrigemProdutos">Filtrar por origem</label>
+        <select id="filtroOrigemProdutos" class="select">
+          <option value="">Todas as origens</option>
+        </select>
+      </div>
+      <div class="segmented" role="group" aria-label="Situação" id="filtroSituacaoProdutos">
+        <button type="button" class="segmented__item" data-situacao="todas" aria-pressed="true">Todas <span class="segmented__count" data-contagem="todas">0</span></button>
+        <button type="button" class="segmented__item" data-situacao="estoque" aria-pressed="false">Em estoque <span class="segmented__count" data-contagem="estoque">0</span></button>
+        <button type="button" class="segmented__item" data-situacao="vendidas" aria-pressed="false">Vendidas <span class="segmented__count" data-contagem="vendidas">0</span></button>
+        <button type="button" class="segmented__item" data-situacao="paradas" aria-pressed="false">Paradas +90 dias <span class="segmented__count" data-contagem="paradas">0</span></button>
+      </div>
     </div>
-  </header>
 
-  <main class="container stock-layout products-page">
-    <section class="stock-card products-shell">
-      <div class="stock-header products-header">
-        <div>
-          <span class="piece-form-eyebrow">Estoque operacional</span>
-          <h2>Produtos</h2>
-          <p>Consulta rapida de pecas, estoque e acoes principais.</p>
-        </div>
-
-        <div class="products-header__actions">
-          <a class="button-secondary products-action-primary" href="cadastro-peca.html">+ Nova peca</a>
+    <section class="card card--flush produtos-lista" aria-label="Lista de produtos">
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive produtos-tabela">
+          <thead>
+            <tr>
+              <th scope="col">Peça</th>
+              <th scope="col">Origem</th>
+              <th scope="col" class="num">Preço</th>
+              <th scope="col" class="num">Custo</th>
+              <th scope="col" class="num">Margem</th>
+              <th scope="col" class="produtos-tabela__centro">Estoque</th>
+              <th scope="col">Situação</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody id="tabelaProdutos"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="paginacaoProdutos">
+        <span id="paginacaoTexto"></span>
+        <div class="pager__buttons">
+          <button type="button" class="btn btn--secondary btn--compact" id="paginaAnterior">Anterior</button>
+          <button type="button" class="btn btn--secondary btn--compact" id="paginaProxima">Próxima</button>
         </div>
       </div>
-
-      <section class="products-toolbar" aria-label="Filtros e busca de produtos">
-        <div class="products-main-controls">
-          <div class="form-group products-search-field">
-            <label for="buscaProdutos">Buscar</label>
-            <input id="buscaProdutos" type="search" placeholder="Buscar por SKU, nome ou codigo">
-          </div>
-
-          <div class="form-group products-page-size-field">
-            <label for="quantidadePaginaProdutos">Mostrar</label>
-            <select id="quantidadePaginaProdutos">
-              <option value="12">12</option>
-              <option value="24" selected>24</option>
-              <option value="48">48</option>
-              <option value="todos">Todos</option>
-            </select>
-          </div>
-
-          <button id="botaoAbrirFiltrosProdutos" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosProdutos" aria-expanded="false">
-            Filtros
-          </button>
-        </div>
-      </section>
-
-      <p id="mensagemProdutos" class="empty-message products-message"></p>
-
-      <input id="imagemProdutoExistente" class="file-input-hidden" type="file" accept="image/*">
-
-      <div class="products-content-layout">
-        <section class="products-list" aria-labelledby="tituloListaProdutos">
-          <div class="products-list__header">
-            <div>
-              <h3 id="tituloListaProdutos">Lista de produtos</h3>
-            </div>
-          </div>
-
-          <div class="products-list-head" aria-hidden="true">
-            <span>Produto</span>
-            <span>Preco</span>
-            <span>Estoque</span>
-            <span>Status</span>
-            <span>Acoes</span>
-          </div>
-
-          <div id="tabelaProdutos" class="products-operational-list" aria-label="Produtos cadastrados"></div>
-        </section>
-      </div>
-
-      <aside id="painelFiltrosProdutos" class="products-filter-panel" aria-label="Filtros avancados de produtos">
-        <div class="products-filter-panel__header">
-          <h3>Filtros avancados</h3>
-          <button id="botaoFecharFiltrosProdutos" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
-        </div>
-
-        <div class="products-filters">
-          <div class="form-group">
-            <label for="filtroEstoqueProdutos">Estoque</label>
-            <select id="filtroEstoqueProdutos">
-              <option value="">Todos</option>
-              <option value="em-estoque">Em estoque</option>
-              <option value="sem-estoque">Sem estoque</option>
-              <option value="estoque-baixo">Estoque baixo</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="filtroOrigemProdutos">Origem</label>
-            <select id="filtroOrigemProdutos">
-              <option value="">Todas</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="filtroStatusProdutos">Status</label>
-            <select id="filtroStatusProdutos">
-              <option value="">Todos</option>
-              <option value="em_estoque">Em estoque</option>
-              <option value="vendida">Vendido</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="ordenacaoProdutos">Ordenar por</label>
-            <select id="ordenacaoProdutos">
-              <option value="nome">Nome</option>
-              <option value="sku">SKU</option>
-              <option value="estoque">Estoque</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="products-filter-panel__actions">
-          <button id="botaoLimparFiltrosProdutos" class="button-secondary" type="button">Limpar filtros</button>
-          <button id="botaoAplicarFiltrosProdutos" class="button-primary" type="button">Aplicar/Fechar</button>
-        </div>
-      </aside>
     </section>
+
+    <input id="imagemProdutoExistente" class="sr-only" type="file" accept="image/*" tabindex="-1" aria-hidden="true">
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
-  <script src="../js/supabase-service.js?v=25"></script>
-  <script src="../js/produtos.js?v=29"></script>
+  <script src="../js/supabase-service.js?v=28"></script>
+  <script src="../js/moeda-utils.js?v=2"></script>
+  <script src="../js/financeiro-utils.js?v=3"></script>
+  <script src="../js/alertas-regras.js?v=2"></script>
+  <script src="../js/produtos.js?v=31"></script>
   <script src="../js/sidebar.js?v=7"></script>
 </body>
 </html>

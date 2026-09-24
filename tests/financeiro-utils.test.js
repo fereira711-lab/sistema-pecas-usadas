@@ -99,6 +99,53 @@ test("calcularResultadoOrigem: origem sem vendas recupera zero", () => {
   assert.equal(resultado.recuperado, 0);
 });
 
+test("calcularCustoReferenciaPeca: com saldo usa a entrada mais antiga com saldo (ordem de consumo)", () => {
+  const entradas = [
+    { id: 3, pecaId: 7, dataEntrada: "2026-08-01", quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 250 },
+    { id: 1, pecaId: 7, dataEntrada: "2026-07-01", quantidadeTotal: 2, quantidadeConsumida: 2, custoUnitario: 100 },
+    { id: 2, pecaId: 7, dataEntrada: "2026-07-15", quantidadeTotal: 2, quantidadeConsumida: 1, custoUnitario: 180 },
+    { id: 4, pecaId: 8, dataEntrada: "2026-01-01", quantidadeTotal: 5, quantidadeConsumida: 0, custoUnitario: 1 }
+  ];
+
+  const resultado = financeiro.calcularCustoReferenciaPeca(7, entradas, []);
+
+  assert.equal(resultado.calculado, true);
+  assert.equal(resultado.fonte, "proxima-entrada");
+  assert.equal(resultado.valor, 180, "a de 07/07 esgotou; a proxima com saldo e a de 15/07");
+});
+
+test("calcularCustoReferenciaPeca: mesma data desempata pelo id", () => {
+  const entradas = [
+    { id: 9, pecaId: 1, dataEntrada: "2026-07-01", quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 90 },
+    { id: 5, pecaId: 1, dataEntrada: "2026-07-01", quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 50 }
+  ];
+
+  assert.equal(financeiro.calcularCustoReferenciaPeca(1, entradas, []).valor, 50);
+});
+
+test("calcularCustoReferenciaPeca: sem saldo usa a ultima unidade consumida; sem entrada nao calcula", () => {
+  const entradas = [{ id: 1, pecaId: 7, dataEntrada: "2026-07-01", quantidadeTotal: 2, quantidadeConsumida: 2, custoUnitario: 100 }];
+  const consumos = [
+    { id: 10, pecaId: 7, vendaId: 1, quantidadeConsumida: 1, custoUnitario: 100, custoTotal: 100 },
+    { id: 11, pecaId: 7, vendaId: 2, quantidadeConsumida: 1, custoUnitario: 120, custoTotal: 120 }
+  ];
+
+  const vendida = financeiro.calcularCustoReferenciaPeca(7, entradas, consumos);
+  assert.equal(vendida.fonte, "ultima-venda");
+  assert.equal(vendida.valor, 120);
+
+  const semEntrada = financeiro.calcularCustoReferenciaPeca(99, entradas, consumos);
+  assert.equal(semEntrada.calculado, false);
+  assert.equal(semEntrada.valor, null);
+});
+
+test("calcularMargemPreco: (preco - custo) / preco; sem preco ou sem custo nao calcula", () => {
+  assert.equal(financeiro.calcularMargemPreco(800, 300), 62.5);
+  assert.equal(financeiro.calcularMargemPreco(450, 480), (450 - 480) / 450 * 100);
+  assert.equal(financeiro.calcularMargemPreco(0, 300), null);
+  assert.equal(financeiro.calcularMargemPreco(500, null), null);
+});
+
 // Numeros conferidos na tela Analise por produto e no banco Autopp em 2026-09-24
 // (dados da simulacao de teste): receita R$ 31.848,20, custo R$ 22.822,40,
 // custos da venda R$ 1.617,00, lucro R$ 7.408,80, margem 23,3%.

@@ -57,6 +57,7 @@
   --radius-lg: 12px;
   --radius-pill: 999px;
   --shadow-segmented: 0 1px 2px rgba(28, 27, 25, 0.12);
+  --shadow-menu: 0 8px 24px rgba(28, 27, 25, 0.12);
   --focus-ring: 0 0 0 3px rgba(232, 169, 58, 0.45);
 
   /* Espaço */
@@ -967,6 +968,208 @@ body.ui-v2 a.data-table__item:hover .data-table__name {
   }
 }
 
+/* ============ Barra de filtros ============ */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  flex-grow: 1;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.search-field {
+  position: relative;
+  flex-grow: 1;
+  max-width: 460px;
+  min-width: 200px;
+}
+
+.search-field__icon {
+  position: absolute;
+  top: 50%;
+  left: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--icon-size);
+  line-height: 1;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.search-field .input {
+  padding-left: var(--space-10);
+}
+
+.select {
+  height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+/* ============ Miniatura (foto da peça) ============ */
+
+.thumb {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-faint);
+  font-size: var(--icon-size-lg);
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Célula "peça": miniatura + nome + SKU. */
+.item-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.item-cell__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+  min-width: 0;
+}
+
+body.ui-v2 a.item-cell__name {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+body.ui-v2 a.item-cell__name:hover {
+  text-decoration: underline;
+}
+
+/* ============ Menu de ações (⋯) ============ */
+
+.action-menu {
+  position: relative;
+}
+
+.action-menu > summary {
+  list-style: none;
+}
+
+.action-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.action-menu__list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-menu);
+}
+
+.action-menu__item {
+  height: var(--control-height-compact);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+body.ui-v2 a.action-menu__item {
+  color: var(--text);
+}
+
+.action-menu__item:hover {
+  background: var(--surface-sunken);
+}
+
+.action-menu__item:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.action-menu__item--danger,
+body.ui-v2 a.action-menu__item--danger {
+  color: var(--danger);
+}
+
+.action-menu__divider {
+  height: 1px;
+  margin: var(--space-1) 0;
+  background: var(--divider);
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1-5);
+}
+
+/* ============ Paginação ============ */
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--divider);
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+}
+
+.pager__buttons {
+  display: flex;
+  gap: var(--space-1-5);
+}
+
 /* ============ Pílula de situação ============ */
 
 .pill {
@@ -990,6 +1193,7 @@ body.ui-v2 a.data-table__item:hover .data-table__name {
 
 .segmented {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: var(--space-half);
   padding: var(--space-tight);
   border-radius: var(--radius-sm);
@@ -1011,6 +1215,7 @@ body.ui-v2 a.data-table__item:hover .data-table__name {
   font-family: var(--font-sans);
   font-size: var(--fs-label);
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
 }
 

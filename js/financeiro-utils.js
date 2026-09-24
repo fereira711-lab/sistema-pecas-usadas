@@ -178,7 +178,57 @@
     };
   }
 
+  // Ordem de consumo do estoque (regra oficial): data de entrada e depois id.
+  function compararOrdemConsumo(a, b) {
+    const dataA = String(a?.dataEntrada || a?.data_entrada || "");
+    const dataB = String(b?.dataEntrada || b?.data_entrada || "");
+
+    if (dataA !== dataB) {
+      return dataA.localeCompare(dataB);
+    }
+
+    return obterId(a?.id) - obterId(b?.id);
+  }
+
+  // Custo de referência de uma peça, sem custo médio:
+  // - com saldo: custo unitário da entrada mais antiga com saldo (a próxima unidade a ser consumida);
+  // - sem saldo: custo unitário da última unidade consumida;
+  // - sem entrada: não calculado.
+  function calcularCustoReferenciaPeca(pecaId, entradas, consumos) {
+    const entradasDaPeca = filtrarPorId(entradas, "pecaId", pecaId);
+    const proximaEntrada = entradasDaPeca
+      .filter(entrada => Number(entrada?.quantidadeTotal || 0) - Number(entrada?.quantidadeConsumida || 0) > 0)
+      .sort(compararOrdemConsumo)[0];
+
+    if (proximaEntrada) {
+      return { calculado: true, valor: Number(proximaEntrada.custoUnitario || 0), fonte: "proxima-entrada", entrada: proximaEntrada };
+    }
+
+    const ultimoConsumo = filtrarPorId(consumos, "pecaId", pecaId).sort((a, b) => obterId(b?.id) - obterId(a?.id))[0];
+
+    if (ultimoConsumo) {
+      const quantidade = Number(ultimoConsumo.quantidadeConsumida || 0);
+      const custoUnitario = Number(ultimoConsumo.custoUnitario || 0) || (quantidade > 0 ? Number(ultimoConsumo.custoTotal || 0) / quantidade : 0);
+      return { calculado: true, valor: custoUnitario, fonte: "ultima-venda", consumo: ultimoConsumo };
+    }
+
+    return { calculado: false, valor: null, fonte: null };
+  }
+
+  // Margem prevista sobre o preço de venda cadastrado: (preço − custo) / preço.
+  function calcularMargemPreco(preco, custo) {
+    const precoNumero = Number(preco || 0);
+
+    if (!(precoNumero > 0) || custo === null || custo === undefined) {
+      return null;
+    }
+
+    return ((precoNumero - Number(custo)) / precoNumero) * 100;
+  }
+
   window.financeiroUtils = {
+    calcularCustoReferenciaPeca,
+    calcularMargemPreco,
     calcularReceitaVenda,
     calcularCustoConsumidoVenda,
     calcularCustosVenda,

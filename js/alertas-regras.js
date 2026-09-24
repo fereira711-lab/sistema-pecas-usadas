@@ -140,6 +140,7 @@
 
   window.alertasRegras = {
     DIAS_PARA_PECA_PARADA,
+    calcularPecasParadas,
     calcularAtencao,
     contarGruposDeAtencao
   };

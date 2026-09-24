@@ -1,0 +1,62 @@
+/* Produtos (redesenho). Só o que é específico desta tela; componentes vêm do base.css. */
+
+/* A tabela encosta no topo do card (sem título). Os cantos do cabeçalho acompanham o raio do card;
+   sem overflow: hidden, para não cortar o menu "⋯" das últimas linhas. */
+.produtos-lista {
+  padding: 0;
+  gap: 0;
+}
+
+.produtos-tabela thead th:first-child {
+  border-top-left-radius: var(--radius-lg);
+}
+
+.produtos-tabela thead th:last-child {
+  border-top-right-radius: var(--radius-lg);
+}
+
+.produtos-tabela__centro {
+  text-align: center;
+}
+
+.produtos-tabela .cell-origem {
+  color: var(--text-2);
+}
+
+.produtos-tabela .cell-preco {
+  font-weight: 600;
+}
+
+.produtos-tabela .cell-estoque {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.produtos-tabela .cell-acoes {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.produtos-lista .pager[hidden] {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .produtos-tabela .cell-estoque {
+    text-align: right;
+  }
+
+  .produtos-tabela .cell-acoes {
+    width: 100%;
+  }
+
+  .produtos-tabela .cell-acoes::before {
+    content: none;
+  }
+
+  .produtos-tabela .row-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: var(--space-2);
+  }
+}

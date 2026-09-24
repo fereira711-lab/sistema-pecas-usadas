@@ -1,30 +1,25 @@
+// Produtos (redesenho, seção 7 da especificação): lista operacional com busca, filtro por origem,
+// situação (em estoque, vendidas, paradas), preço, custo e margem prevista.
+// Custo e margem vêm do financeiro-utils.js (sem custo médio); "parada" vem do alertas-regras.js.
 const tabelaProdutos = document.getElementById("tabelaProdutos");
 const mensagemProdutos = document.getElementById("mensagemProdutos");
+const resumoProdutos = document.getElementById("resumoProdutos");
 const campoBuscaProdutos = document.getElementById("buscaProdutos");
-const filtroEstoqueProdutos = document.getElementById("filtroEstoqueProdutos");
 const filtroOrigemProdutos = document.getElementById("filtroOrigemProdutos");
-const filtroStatusProdutos = document.getElementById("filtroStatusProdutos");
-const ordenacaoProdutos = document.getElementById("ordenacaoProdutos");
-const quantidadePaginaProdutos = document.getElementById("quantidadePaginaProdutos");
+const filtroSituacaoProdutos = document.getElementById("filtroSituacaoProdutos");
+const paginacaoProdutos = document.getElementById("paginacaoProdutos");
+const paginacaoTexto = document.getElementById("paginacaoTexto");
+const botaoPaginaAnterior = document.getElementById("paginaAnterior");
+const botaoPaginaProxima = document.getElementById("paginaProxima");
 const campoImagemProdutoExistente = document.getElementById("imagemProdutoExistente");
-const shellProdutos = document.querySelector(".products-shell");
-const botaoAbrirFiltrosProdutos = document.getElementById("botaoAbrirFiltrosProdutos");
-const botaoFecharFiltrosProdutos = document.getElementById("botaoFecharFiltrosProdutos");
-const botaoLimparFiltrosProdutos = document.getElementById("botaoLimparFiltrosProdutos");
-const botaoAplicarFiltrosProdutos = document.getElementById("botaoAplicarFiltrosProdutos");
-let dadosProdutos = { pecas: [], origens: [], entradas: [] };
+
+const ITENS_POR_PAGINA = 20;
+
+let dadosProdutos = { pecas: [], origens: [], entradas: [], vendas: [], consumos: [] };
+let linhasProdutos = [];
+let situacaoSelecionada = "todas";
+let paginaAtual = 1;
 let pecaSelecionadaParaImagem = null;
-
-function formatarNomePeca(peca) {
-  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
-  const sku = String(peca.sku || "").trim();
-
-  return sku ? `${sku} - ${nome}` : nome;
-}
-
-function formatarSku(peca) {
-  return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
-}
 
 function escaparHtml(valor) {
   return String(valor ?? "")
@@ -35,257 +30,299 @@ function escaparHtml(valor) {
     .replaceAll("'", "&#039;");
 }
 
-function formatarMoeda(valor) {
-  const numero = Number(valor || 0);
-
-  return numero.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
+function normalizarTexto(valor) {
+  return String(valor || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
 }
 
-function obterIniciaisProduto(peca) {
-  const sku = formatarSku(peca);
+function formatarMoeda(valor) {
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(Number(valor || 0));
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
 
-  if (sku !== "-") {
-    return sku
-      .split("-")
-      .map(parte => parte[0])
-      .join("")
-      .slice(0, 3)
-      .toUpperCase();
-  }
+function formatarPercentualInteiro(valor) {
+  if (window.moedaUtils?.formatarPercentualBR) return window.moedaUtils.formatarPercentualBR(valor, 0);
+  return `${Math.round(Number(valor || 0))}%`;
+}
 
-  return String(peca.nome || "P")
-    .split(" ")
-    .filter(Boolean)
-    .map(parte => parte[0])
-    .join("")
-    .slice(0, 3)
-    .toUpperCase();
+function formatarNumero(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+}
+
+function plural(quantidade, singular, pluralTexto) {
+  return `${formatarNumero(quantidade)} ${quantidade === 1 ? singular : pluralTexto}`;
 }
 
 function normalizarPeca(peca) {
-  const quantidade = Number(peca.quantidade || 1);
-  const quantidadeVendida = Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
-  const origemId = Number(peca.origemId || peca.origem_id || 0);
-
   return {
     ...peca,
     id: Number(peca.id),
-    nome: peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`,
+    nome: peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peça ${peca.id}`,
     sku: peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "",
-    origemId,
-    quantidade,
-    quantidadeVendida,
-    status: peca.status || "em_estoque",
+    origemId: Number(peca.origemId || peca.origem_id || 0),
     imagemUrl: peca.imagemUrl || peca.imagem_url || "",
     precoVenda: Number(peca.precoVenda || peca.preco_venda || peca.valorVenda || peca.valor_venda || peca.preco_sugerido || 0),
-    preparada: Boolean(peca.preparada)
+    compatibilidade: peca.compatibilidade || ""
   };
 }
 
-function calcularQuantidadeDisponivel(peca) {
-  if (window.supabaseService?.calcularSaldoPeca) {
-    return window.supabaseService.calcularSaldoPeca(peca, dadosProdutos.entradas || []).quantidadeDisponivel;
-  }
-
-  return Math.max(Number(peca.quantidade || 0) - Number(peca.quantidadeVendida || 0), 0);
-}
+// ---- Carga ----
 
 async function carregarDados() {
   if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
-    mensagemProdutos.textContent = "Configure o Supabase para carregar a lista de pecas.";
-    return { pecas: [] };
+    mensagemProdutos.textContent = "Configure o Supabase para carregar a lista de peças.";
+    return null;
   }
 
   try {
-    const [pecasSupabase, origensSupabase, entradasSupabase] = await Promise.all([
+    const [pecas, origens, entradas, vendas, consumos] = await Promise.all([
       window.supabaseService.listarPecas(),
       window.supabaseService.listarOrigens(),
-      window.supabaseService.listarEntradasEstoque()
+      window.supabaseService.listarEntradasEstoque(),
+      window.supabaseService.listarVendas(),
+      window.supabaseService.listarConsumosEstoque()
     ]);
 
+    mensagemProdutos.textContent = "";
+
     return {
-      pecas: pecasSupabase.map(normalizarPeca),
-      origens: origensSupabase || [],
-      entradas: entradasSupabase || []
+      pecas: (pecas || []).map(normalizarPeca),
+      origens: origens || [],
+      entradas: entradas || [],
+      vendas: vendas || [],
+      consumos: consumos || []
     };
   } catch (erro) {
     console.error("Erro ao carregar produtos do Supabase:", erro);
-    mensagemProdutos.textContent = "Nao foi possivel carregar os dados do Supabase.";
-    return { pecas: [], origens: [], entradas: [] };
+    mensagemProdutos.textContent = "Não foi possível carregar os dados do Supabase.";
+    return null;
   }
 }
 
-function abrirDetalhesOrigem(origemId) {
-  window.location.href = `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}`;
+// ---- Montagem das linhas ----
+
+function calcularSaldoPeca(pecaId) {
+  return dadosProdutos.entradas
+    .filter(entrada => Number(entrada.pecaId) === Number(pecaId))
+    .reduce((total, entrada) => total + Math.max(0, Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0)), 0);
 }
 
-function abrirDetalhesProduto(pecaId) {
-  window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}`;
+function obterUltimaVendaDaPeca(pecaId) {
+  return dadosProdutos.vendas
+    .filter(venda => Number(venda.pecaId) === Number(pecaId))
+    .sort((a, b) => String(b.dataVenda || "").localeCompare(String(a.dataVenda || "")) || Number(b.id) - Number(a.id))[0] || null;
 }
 
-function abrirLancamentoCusto(pecaId) {
-  window.location.href = `cadastro-custo.html?pecaId=${encodeURIComponent(pecaId)}`;
-}
-
-function filtrarPecasPorBusca(pecas) {
-  const termo = String(campoBuscaProdutos?.value || "").trim().toLowerCase();
-
-  if (!termo) {
-    return pecas;
-  }
-
-  return pecas.filter(peca => {
-    const nome = String(peca.nome || peca.nome_peca || "").toLowerCase();
-    const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").toLowerCase();
-    const codigo = String(peca.codigo || peca.codigo_peca || peca.cod || peca.id || "").toLowerCase();
-
-    return nome.includes(termo) || sku.includes(termo) || codigo.includes(termo);
-  });
-}
-
-function filtrarPecasPorEstoque(pecas) {
-  const filtro = filtroEstoqueProdutos?.value || "";
-
-  if (!filtro) {
-    return pecas;
-  }
-
-  return pecas.filter(peca => {
-    const disponivel = calcularQuantidadeDisponivel(peca);
-
-    if (filtro === "em-estoque") {
-      return disponivel > 0;
-    }
-
-    if (filtro === "sem-estoque") {
-      return disponivel <= 0;
-    }
-
-    if (filtro === "estoque-baixo") {
-      return disponivel > 0 && disponivel <= 2;
-    }
-
-    return true;
-  });
-}
-
-function filtrarPecasPorOrigem(pecas) {
-  const origemId = Number(filtroOrigemProdutos?.value || 0);
-
-  if (!origemId) {
-    return pecas;
-  }
-
-  return pecas.filter(peca => Number(peca.origemId || 0) === origemId);
-}
-
-function filtrarPecasPorStatus(pecas) {
-  const status = filtroStatusProdutos?.value || "";
-
-  if (!status) {
-    return pecas;
-  }
-
-  return pecas.filter(peca => String(peca.status || "") === status);
-}
-
-function ordenarPecas(pecas) {
-  const ordenacao = ordenacaoProdutos?.value || "nome";
-
-  return [...pecas].sort((a, b) => {
-    if (ordenacao === "sku") {
-      return formatarSku(a).localeCompare(formatarSku(b), "pt-BR");
-    }
-
-    if (ordenacao === "estoque") {
-      return calcularQuantidadeDisponivel(b) - calcularQuantidadeDisponivel(a);
-    }
-
-    return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR");
-  });
-}
-
-function obterPecasVisiveis() {
-  return ordenarPecas(
-    filtrarPecasPorStatus(
-      filtrarPecasPorOrigem(
-        filtrarPecasPorEstoque(
-          filtrarPecasPorBusca(dadosProdutos.pecas)
-        )
-      )
-    )
+function montarLinhas() {
+  const financeiro = window.financeiroUtils;
+  const origemPorId = new Map(dadosProdutos.origens.map(origem => [Number(origem.id), origem]));
+  const paradas = new Map(
+    (window.alertasRegras?.calcularPecasParadas({
+      pecas: dadosProdutos.pecas,
+      vendas: dadosProdutos.vendas,
+      entradasEstoque: dadosProdutos.entradas
+    }) || []).map(item => [Number(item.peca.id), item])
   );
+
+  return dadosProdutos.pecas.map(peca => {
+    const saldo = calcularSaldoPeca(peca.id);
+    const temEntrada = dadosProdutos.entradas.some(entrada => Number(entrada.pecaId) === peca.id);
+    const custo = financeiro ? financeiro.calcularCustoReferenciaPeca(peca.id, dadosProdutos.entradas, dadosProdutos.consumos) : { calculado: false, valor: null };
+    const margem = financeiro && custo.calculado ? financeiro.calcularMargemPreco(peca.precoVenda, custo.valor) : null;
+    const parada = paradas.get(peca.id) || null;
+    const origem = origemPorId.get(peca.origemId) || null;
+
+    let situacao;
+    if (!temEntrada) situacao = "sem-entrada";
+    else if (saldo <= 0) situacao = "vendida";
+    else if (parada) situacao = "parada";
+    else situacao = "estoque";
+
+    return { peca, saldo, custo, margem, parada, origem, situacao, ultimaVenda: situacao === "vendida" ? obterUltimaVendaDaPeca(peca.id) : null };
+  });
 }
 
-function limitarPecasPorPagina(pecas) {
-  const valor = quantidadePaginaProdutos?.value || "24";
+// ---- Filtros ----
 
-  if (valor === "todos") {
-    return pecas;
-  }
+// Cada palavra digitada precisa aparecer em algum campo (SKU, peça, veículo/origem ou compatibilidade),
+// em qualquer ordem e sem diferenciar acentos: "modulo injecao" encontra "Módulo de injeção".
+function linhaCombinaComBusca(linha, termo) {
+  if (!termo) return true;
 
-  const limite = Number(valor);
-  return Number.isFinite(limite) && limite > 0 ? pecas.slice(0, limite) : pecas;
+  const texto = [linha.peca.sku, linha.peca.nome, linha.origem?.descricao, linha.origem?.codigoOrigem, linha.peca.compatibilidade]
+    .map(normalizarTexto)
+    .join(" ");
+
+  return termo.split(/\s+/).every(palavra => texto.includes(palavra));
 }
 
-function alternarPainelFiltrosProdutos(aberto) {
-  shellProdutos?.classList.toggle("products-shell--filters-open", aberto);
-  botaoAbrirFiltrosProdutos?.setAttribute("aria-expanded", aberto ? "true" : "false");
+function linhaCombinaComSituacao(linha, situacao) {
+  if (situacao === "estoque") return linha.saldo > 0;
+  if (situacao === "vendidas") return linha.situacao === "vendida";
+  if (situacao === "paradas") return linha.situacao === "parada";
+  return true;
 }
 
-function limparFiltrosProdutos() {
-  if (filtroEstoqueProdutos) filtroEstoqueProdutos.value = "";
-  if (filtroOrigemProdutos) filtroOrigemProdutos.value = "";
-  if (filtroStatusProdutos) filtroStatusProdutos.value = "";
-  if (ordenacaoProdutos) ordenacaoProdutos.value = "nome";
+function obterLinhasFiltradas() {
+  const termo = normalizarTexto(campoBuscaProdutos.value);
+  const origemId = Number(filtroOrigemProdutos.value || 0);
+  const antesDaSituacao = linhasProdutos.filter(linha =>
+    linhaCombinaComBusca(linha, termo) && (!origemId || linha.peca.origemId === origemId));
 
-  renderizarProdutos(obterPecasVisiveis());
+  atualizarContagens(antesDaSituacao);
+
+  return antesDaSituacao
+    .filter(linha => linhaCombinaComSituacao(linha, situacaoSelecionada))
+    .sort((a, b) => String(a.peca.nome).localeCompare(String(b.peca.nome), "pt-BR"));
+}
+
+function atualizarContagens(linhas) {
+  const contagens = {
+    todas: linhas.length,
+    estoque: linhas.filter(linha => linhaCombinaComSituacao(linha, "estoque")).length,
+    vendidas: linhas.filter(linha => linhaCombinaComSituacao(linha, "vendidas")).length,
+    paradas: linhas.filter(linha => linhaCombinaComSituacao(linha, "paradas")).length
+  };
+
+  filtroSituacaoProdutos.querySelectorAll("[data-contagem]").forEach(elemento => {
+    elemento.textContent = formatarNumero(contagens[elemento.dataset.contagem]);
+  });
 }
 
 function renderizarFiltroOrigens() {
-  if (!filtroOrigemProdutos) {
-    return;
-  }
-
   const valorAtual = filtroOrigemProdutos.value;
-  filtroOrigemProdutos.innerHTML = '<option value="">Todas</option>';
-
-  dadosProdutos.origens
+  filtroOrigemProdutos.innerHTML = '<option value="">Todas as origens</option>' + dadosProdutos.origens
     .slice()
     .sort((a, b) => String(a.descricao || "").localeCompare(String(b.descricao || ""), "pt-BR"))
-    .forEach(origem => {
-      const opcao = document.createElement("option");
-      opcao.value = origem.id;
-      opcao.textContent = origem.descricao || origem.codigoOrigem || `Origem ${origem.id}`;
-      filtroOrigemProdutos.appendChild(opcao);
-    });
-
+    .map(origem => `<option value="${origem.id}">${escaparHtml(origem.descricao || origem.codigoOrigem || `Origem ${origem.id}`)}</option>`)
+    .join("");
   filtroOrigemProdutos.value = valorAtual;
 }
 
-function abrirVenda(pecaId) {
-  const id = Number(pecaId);
+// ---- Renderização ----
 
-  if (!id) {
-    alert("Nao foi possivel identificar a peca selecionada.");
+function renderizarMiniatura(peca) {
+  const imagemUrl = String(peca.imagemUrl || "").trim();
+
+  return imagemUrl
+    ? `<span class="thumb"><img src="${escaparHtml(imagemUrl)}" alt="" loading="lazy"></span>`
+    : `<span class="thumb" aria-hidden="true"><i class="ri-image-line"></i></span>`;
+}
+
+function renderizarSituacao(linha) {
+  if (linha.situacao === "vendida") return '<span class="pill pill--neutral">Vendida</span>';
+  if (linha.situacao === "parada") return `<span class="pill pill--warning">Parada há ${formatarNumero(linha.parada.dias)} dias</span>`;
+  if (linha.situacao === "sem-entrada") return '<span class="pill pill--neutral">Sem entrada</span>';
+  return '<span class="pill pill--success">Em estoque</span>';
+}
+
+function renderizarAcoes(linha) {
+  const { peca } = linha;
+  const principal = linha.saldo > 0
+    ? `<a class="btn btn--secondary btn--compact" href="cadastro-venda.html?pecaId=${encodeURIComponent(peca.id)}">Vender</a>`
+    : linha.ultimaVenda
+      ? `<a class="btn btn--quiet btn--compact produtos-ver-venda" href="detalhes-venda.html?vendaId=${encodeURIComponent(linha.ultimaVenda.id)}">Ver venda</a>`
+      : "";
+
+  return `
+    <div class="row-actions">
+      ${principal}
+      <details class="action-menu">
+        <summary class="btn btn--icon btn--compact" aria-label="Mais ações para ${escaparHtml(peca.nome)}">
+          <i class="ri-more-2-fill" aria-hidden="true"></i>
+        </summary>
+        <div class="action-menu__list">
+          <a class="action-menu__item" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}">Ver detalhes</a>
+          <a class="action-menu__item" href="cadastro-custo.html?pecaId=${encodeURIComponent(peca.id)}">Lançar custo</a>
+          ${peca.origemId ? `<a class="action-menu__item" href="detalhes-origem.html?origemId=${encodeURIComponent(peca.origemId)}">Ver origem</a>` : ""}
+          <button type="button" class="action-menu__item" data-acao="imagem" data-peca-id="${peca.id}">Trocar imagem</button>
+          <div class="action-menu__divider"></div>
+          <a class="action-menu__item action-menu__item--danger" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}#excluir">Excluir peça</a>
+        </div>
+      </details>
+    </div>
+  `;
+}
+
+function renderizarLinha(linha) {
+  const { peca, custo, margem, saldo } = linha;
+  const preco = peca.precoVenda > 0 ? formatarMoeda(peca.precoVenda) : "Sem preço";
+  const textoCusto = custo.calculado ? formatarMoeda(custo.valor) : "—";
+  const textoMargem = margem === null ? "—" : formatarPercentualInteiro(margem);
+  const classeMargem = margem !== null && margem < 0 ? " text-danger" : "";
+
+  return `
+    <tr>
+      <td data-label="Peça">
+        <div class="item-cell">
+          ${renderizarMiniatura(peca)}
+          <div class="item-cell__text">
+            <a class="item-cell__name" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}">${escaparHtml(peca.nome)}</a>
+            ${peca.sku ? `<span class="mono">${escaparHtml(peca.sku)}</span>` : ""}
+          </div>
+        </div>
+      </td>
+      <td class="cell-origem" data-label="Origem">${escaparHtml(linha.origem?.descricao || "—")}</td>
+      <td class="num cell-preco${peca.precoVenda > 0 ? "" : " cell-muted"}" data-label="Preço">${escaparHtml(preco)}</td>
+      <td class="num cell-muted" data-label="Custo">${escaparHtml(textoCusto)}</td>
+      <td class="num${classeMargem}" data-label="Margem">${escaparHtml(textoMargem)}</td>
+      <td class="cell-estoque" data-label="Estoque">${saldo > 0 ? `${formatarNumero(saldo)} un.` : "—"}</td>
+      <td data-label="Situação">${renderizarSituacao(linha)}</td>
+      <td class="cell-acoes">${renderizarAcoes(linha)}</td>
+    </tr>
+  `;
+}
+
+function renderizarResumo() {
+  const total = linhasProdutos.length;
+  const emEstoque = linhasProdutos.filter(linha => linha.saldo > 0).length;
+  resumoProdutos.textContent = total
+    ? `${plural(total, "peça cadastrada", "peças cadastradas")} · ${formatarNumero(emEstoque)} em estoque`
+    : "Nenhuma peça cadastrada";
+}
+
+function renderizarProdutos() {
+  const linhas = obterLinhasFiltradas();
+  const totalPaginas = Math.max(1, Math.ceil(linhas.length / ITENS_POR_PAGINA));
+  paginaAtual = Math.min(Math.max(1, paginaAtual), totalPaginas);
+  const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const pagina = linhas.slice(inicio, inicio + ITENS_POR_PAGINA);
+
+  if (linhas.length === 0) {
+    const vazio = linhasProdutos.length === 0
+      ? "Nenhuma peça cadastrada ainda."
+      : "Nenhuma peça encontrada para esta busca ou filtro.";
+    tabelaProdutos.innerHTML = `<tr class="data-table__empty"><td colspan="8">${vazio}</td></tr>`;
+    paginacaoProdutos.hidden = true;
     return;
   }
 
-  window.location.href = `cadastro-venda.html?pecaId=${encodeURIComponent(id)}`;
+  tabelaProdutos.innerHTML = pagina.map(renderizarLinha).join("");
+  paginacaoProdutos.hidden = false;
+  paginacaoTexto.textContent = `Mostrando ${formatarNumero(inicio + 1)}–${formatarNumero(inicio + pagina.length)} de ${formatarNumero(linhas.length)}`;
+  botaoPaginaAnterior.disabled = paginaAtual <= 1;
+  botaoPaginaProxima.disabled = paginaAtual >= totalPaginas;
 }
 
-function buscarPecaCarregada(pecaId) {
-  return dadosProdutos.pecas.find(peca => Number(peca.id) === Number(pecaId));
+function selecionarSituacao(situacao) {
+  situacaoSelecionada = situacao;
+  filtroSituacaoProdutos.querySelectorAll("[data-situacao]").forEach(botao => {
+    botao.setAttribute("aria-pressed", String(botao.dataset.situacao === situacao));
+  });
+  paginaAtual = 1;
+  renderizarProdutos();
 }
+
+// ---- Trocar imagem (mesmo fluxo de antes: envia ao Storage e grava a url na peça) ----
 
 function pedirImagemProduto(pecaId) {
-  const peca = buscarPecaCarregada(pecaId);
+  const peca = dadosProdutos.pecas.find(item => item.id === Number(pecaId));
 
   if (!peca) {
-    alert("Nao foi possivel encontrar a peca selecionada.");
+    mensagemProdutos.textContent = "Não foi possível encontrar a peça selecionada.";
     return;
   }
 
@@ -294,252 +331,107 @@ function pedirImagemProduto(pecaId) {
   campoImagemProdutoExistente.click();
 }
 
-function validarArquivoImagem(arquivo) {
-  if (!arquivo) {
-    return "Selecione uma imagem.";
-  }
-
-  if (!arquivo.type.startsWith("image/")) {
-    return "Selecione um arquivo de imagem valido.";
-  }
-
-  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
-    return "Configure o Supabase antes de enviar imagens.";
-  }
-
-  return "";
-}
-
 async function salvarImagemProdutoExistente(arquivo) {
-  const erroImagem = validarArquivoImagem(arquivo);
-
-  if (erroImagem) {
-    alert(erroImagem);
+  if (!arquivo.type.startsWith("image/")) {
+    mensagemProdutos.textContent = "Selecione um arquivo de imagem válido.";
     return;
   }
 
   if (!pecaSelecionadaParaImagem) {
-    alert("Selecione uma peca antes de enviar a imagem.");
     return;
   }
 
-  mensagemProdutos.textContent = "Enviando imagem da peca...";
+  mensagemProdutos.textContent = "Enviando imagem da peça…";
 
   try {
     const imagemUrl = await window.supabaseService.uploadImagemPeca(arquivo, pecaSelecionadaParaImagem);
-    const pecaAtualizada = await window.supabaseService.atualizarPeca({
-      ...pecaSelecionadaParaImagem,
-      imagemUrl
-    });
+    const pecaAtualizada = await window.supabaseService.atualizarPeca({ ...pecaSelecionadaParaImagem, imagemUrl });
 
-    dadosProdutos.pecas = dadosProdutos.pecas.map(peca => {
-      return Number(peca.id) === Number(pecaAtualizada.id)
-        ? normalizarPeca(pecaAtualizada)
-        : peca;
-    });
-
-    renderizarProdutos(obterPecasVisiveis());
-    mensagemProdutos.textContent = "Imagem da peca atualizada com sucesso.";
+    dadosProdutos.pecas = dadosProdutos.pecas.map(peca => (peca.id === Number(pecaAtualizada.id) ? normalizarPeca(pecaAtualizada) : peca));
+    linhasProdutos = montarLinhas();
+    renderizarProdutos();
+    mensagemProdutos.textContent = "";
   } catch (erro) {
-    console.error("Erro ao atualizar imagem da peca:", erro);
-    mensagemProdutos.textContent = "Nao foi possivel atualizar a imagem da peca.";
+    console.error("Erro ao atualizar imagem da peça:", erro);
+    mensagemProdutos.textContent = "Não foi possível atualizar a imagem da peça.";
   } finally {
     pecaSelecionadaParaImagem = null;
     campoImagemProdutoExistente.value = "";
   }
 }
 
-function obterClasseStatus(status) {
-  if (status === "vendida") {
-    return "status-badge status-badge--sold";
-  }
-
-  return "status-badge status-badge--stock";
-}
-
-function formatarStatusProduto(status, quantidadeDisponivel) {
-  if (quantidadeDisponivel <= 0) {
-    return "Sem estoque";
-  }
-
-  if (status === "vendida") {
-    return "Vendido";
-  }
-
-  return "Em estoque";
-}
-
-function obterClasseStatusProduto(status, quantidadeDisponivel) {
-  if (quantidadeDisponivel <= 0) {
-    return "status-badge status-badge--empty";
-  }
-
-  return obterClasseStatus(status);
-}
-
-function renderizarBadgeStatusProduto(status, quantidadeDisponivel) {
-  if (quantidadeDisponivel <= 0 || status === "vendida") {
-    const classeStatus = obterClasseStatusProduto(status, quantidadeDisponivel);
-    const statusProduto = formatarStatusProduto(status, quantidadeDisponivel);
-    return `<span class="${classeStatus}">${escaparHtml(statusProduto)}</span>`;
-  }
-
-  if (quantidadeDisponivel <= 2) {
-    return '<span class="status-badge status-badge--warning">Estoque baixo</span>';
-  }
-
-  return '<span class="status-badge status-badge--stock">Em estoque</span>';
-}
-
-function renderizarMidiaProduto(peca) {
-  const imagemUrl = String(peca.imagemUrl || "").trim();
-
-  if (imagemUrl) {
-    return `<img src="${escaparHtml(imagemUrl)}" alt="Imagem de ${escaparHtml(formatarNomePeca(peca))}" loading="lazy">`;
-  }
-
-  return `<span>${escaparHtml(obterIniciaisProduto(peca))}</span>`;
-}
-
-function renderizarProdutos(pecas) {
-  tabelaProdutos.innerHTML = "";
-  const pecasPaginadas = limitarPecasPorPagina(pecas);
-
-  if (pecas.length === 0) {
-    mensagemProdutos.textContent = campoBuscaProdutos?.value
-      ? "Nenhuma peca encontrada para a busca."
-      : "Nenhuma peca cadastrada.";
-    return;
-  }
-
-  mensagemProdutos.textContent = "";
-
-  pecasPaginadas.forEach(peca => {
-    const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-    const badgeStatus = renderizarBadgeStatusProduto(peca.status, quantidadeDisponivel);
-    const precoOperacional = Number(peca.precoVenda || 0) > 0 ? formatarMoeda(peca.precoVenda) : "Sem preco";
-    const linha = document.createElement("article");
-    linha.className = `product-line${quantidadeDisponivel <= 0 ? " product-line--muted" : ""}`;
-
-    linha.innerHTML = `
-      <div class="product-line__thumb">
-        ${renderizarMidiaProduto(peca)}
-      </div>
-
-      <div class="product-line__identity">
-        <strong>${escaparHtml(formatarSku(peca))}</strong>
-        <h3>${escaparHtml(peca.nome || "-")}</h3>
-      </div>
-
-      <div class="product-line__price">${escaparHtml(precoOperacional)}</div>
-
-      <div class="product-line__stock">
-        <span>${quantidadeDisponivel}</span>
-      </div>
-
-      ${badgeStatus}
-
-      <div class="product-line__actions">
-        <button class="product-line__button" type="button" data-acao="detalhes" data-peca-id="${peca.id}">Detalhes</button>
-        <button class="product-line__button product-line__button--sale" type="button" data-acao="venda" data-peca-id="${peca.id}" ${quantidadeDisponivel > 0 ? "" : "disabled"}>Vender</button>
-        <details class="product-line__menu">
-          <summary aria-label="Mais acoes">...</summary>
-          <div class="product-line__menu-list">
-            <button type="button" data-acao="custo" data-peca-id="${peca.id}">Lancar custo</button>
-            <button type="button" data-acao="origem" data-origem-id="${peca.origemId}" ${peca.origemId ? "" : "disabled"}>Ver origem</button>
-            <button type="button" data-acao="imagem" data-peca-id="${peca.id}">Trocar imagem</button>
-            <button type="button" data-acao="excluir" data-peca-id="${peca.id}">Excluir peça</button>
-          </div>
-        </details>
-      </div>
-    `;
-
-    tabelaProdutos.appendChild(linha);
+function fecharMenus(exceto = null) {
+  document.querySelectorAll(".action-menu[open]").forEach(menu => {
+    if (menu !== exceto) menu.removeAttribute("open");
   });
 }
 
+// ---- Início ----
+
 async function inicializarProdutos() {
-  dadosProdutos = await carregarDados();
+  const dados = await carregarDados();
+
+  if (!dados) {
+    resumoProdutos.textContent = "";
+    return;
+  }
+
+  dadosProdutos = dados;
+  linhasProdutos = montarLinhas();
   renderizarFiltroOrigens();
-  renderizarProdutos(obterPecasVisiveis());
+  renderizarResumo();
+  renderizarProdutos();
 }
 
 campoBuscaProdutos?.addEventListener("input", () => {
-  renderizarProdutos(obterPecasVisiveis());
+  paginaAtual = 1;
+  renderizarProdutos();
 });
 
-[filtroEstoqueProdutos, filtroOrigemProdutos, filtroStatusProdutos, ordenacaoProdutos, quantidadePaginaProdutos].forEach(campo => {
-  campo?.addEventListener("change", () => renderizarProdutos(obterPecasVisiveis()));
+filtroOrigemProdutos?.addEventListener("change", () => {
+  paginaAtual = 1;
+  renderizarProdutos();
 });
 
-botaoAbrirFiltrosProdutos?.addEventListener("click", () => {
-  const aberto = !shellProdutos?.classList.contains("products-shell--filters-open");
-  alternarPainelFiltrosProdutos(aberto);
+filtroSituacaoProdutos?.addEventListener("click", evento => {
+  const botao = evento.target.closest("[data-situacao]");
+  if (botao) selecionarSituacao(botao.dataset.situacao);
 });
 
-botaoFecharFiltrosProdutos?.addEventListener("click", () => {
-  alternarPainelFiltrosProdutos(false);
+botaoPaginaAnterior?.addEventListener("click", () => {
+  paginaAtual -= 1;
+  renderizarProdutos();
 });
 
-botaoAplicarFiltrosProdutos?.addEventListener("click", () => {
-  renderizarProdutos(obterPecasVisiveis());
-  alternarPainelFiltrosProdutos(false);
+botaoPaginaProxima?.addEventListener("click", () => {
+  paginaAtual += 1;
+  renderizarProdutos();
 });
 
-botaoLimparFiltrosProdutos?.addEventListener("click", () => {
-  limparFiltrosProdutos();
+tabelaProdutos?.addEventListener("click", evento => {
+  const botao = evento.target.closest("button[data-acao='imagem']");
+  if (botao) {
+    fecharMenus();
+    pedirImagemProduto(botao.dataset.pecaId);
+  }
+});
+
+// Só um menu "⋯" aberto por vez; clicar fora ou apertar Esc fecha.
+document.addEventListener("toggle", evento => {
+  if (evento.target.matches?.(".action-menu") && evento.target.open) fecharMenus(evento.target);
+}, true);
+
+document.addEventListener("click", evento => {
+  if (!evento.target.closest(".action-menu")) fecharMenus();
 });
 
 document.addEventListener("keydown", evento => {
-  if (evento.key === "Escape") {
-    alternarPainelFiltrosProdutos(false);
-  }
-});
-
-tabelaProdutos.addEventListener("click", evento => {
-  const botao = evento.target.closest("button[data-acao]");
-
-  if (!botao) {
-    return;
-  }
-
-  if (botao.dataset.acao === "origem" && botao.dataset.origemId) {
-    abrirDetalhesOrigem(botao.dataset.origemId);
-    return;
-  }
-
-  if (botao.dataset.acao === "detalhes" && botao.dataset.pecaId) {
-    abrirDetalhesProduto(botao.dataset.pecaId);
-    return;
-  }
-
-  if (botao.dataset.acao === "custo" && botao.dataset.pecaId) {
-    abrirLancamentoCusto(botao.dataset.pecaId);
-    return;
-  }
-
-  if (botao.dataset.acao === "imagem" && botao.dataset.pecaId) {
-    pedirImagemProduto(botao.dataset.pecaId);
-    return;
-  }
-
-  if (botao.dataset.acao === "excluir" && botao.dataset.pecaId) {
-    abrirDetalhesProduto(botao.dataset.pecaId);
-    return;
-  }
-
-  if (botao.dataset.acao === "venda" && botao.dataset.pecaId) {
-    abrirVenda(botao.dataset.pecaId);
-    return;
-  }
+  if (evento.key === "Escape") fecharMenus();
 });
 
 campoImagemProdutoExistente?.addEventListener("change", evento => {
   const arquivo = evento.target.files?.[0];
-
-  if (arquivo) {
-    salvarImagemProdutoExistente(arquivo);
-  }
+  if (arquivo) salvarImagemProdutoExistente(arquivo);
 });
 
 document.addEventListener("DOMContentLoaded", inicializarProdutos);

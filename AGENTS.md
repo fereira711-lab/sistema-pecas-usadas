@@ -181,21 +181,15 @@ Scripts criticos:
 
 ## Padrao da tela Produtos
 
-- `paginas/produtos.html` e uma tela operacional de consulta rapida.
-- O padrao principal e lista operacional compacta, nao cards grandes.
-- Cada item deve priorizar imagem pequena, SKU, nome, preco de venda, quantidade disponivel, status e acoes.
-- Acoes principais visiveis: `Detalhes` e `Vender`.
-- Menu de tres pontos apenas para acoes secundarias: `Lancar custo`, `Ver origem` e `Trocar imagem`, quando existir.
-- Edicao dos dados da peca deve ficar dentro de `detalhes-produto.html`.
-- Produtos pode mostrar preco de venda, mas nao deve mostrar lucro, custo da peca, margem ou resultado financeiro.
-- Analise financeira pesada deve ficar nas telas de analise. Detalhes mostram apenas o contexto completo da entidade.
-
-Implementacao atual confirmada:
-
-- `js/produtos.js` mantem foco em busca, filtros, estoque, status e acoes operacionais;
-- as acoes principais continuam `Detalhes` e `Vender`;
-- `Lancar custo` permanece como acao secundaria;
-- a listagem continua sem expor lucro, margem ou analise financeira pesada.
+- `paginas/produtos.html` e a tela operacional de consulta rapida das pecas. Tela ja migrada para o redesenho (`ui-v2`, `css/produtos.css`).
+- Cabecalho: titulo "Produtos", subtitulo com contagens ("N peças cadastradas · M em estoque") e acao principal `Nova peça`.
+- Filtros: busca por SKU, peca, veiculo/origem e compatibilidade (cada palavra em qualquer ordem, sem diferenciar acentos), filtro por origem e controle segmentado de situacao com contagem: Todas, Em estoque, Vendidas, Paradas +90 dias.
+- Tabela: Peca (miniatura 44px + nome + SKU), Origem, Preco, Custo, Margem, Estoque, Situacao e Acoes. Sem foto: icone de imagem. Paginacao de 20 por pagina.
+- Custo (decisao do redesenho aprovada por Rafael, substitui a regra antiga de nao mostrar custo/margem em Produtos): custo unitario da proxima unidade a sair (entrada mais antiga com saldo, na ordem de consumo), ou da ultima unidade consumida se a peca estiver vendida. Calculado por `financeiro-utils.calcularCustoReferenciaPeca`. Sem custo medio.
+- Margem: margem prevista sobre o preco cadastrado, `(preco − custo) / preco`, por `financeiro-utils.calcularMargemPreco`. Sem preco ou sem custo: "—". Lucro e resultado financeiro continuam fora de Produtos.
+- Situacao: Em estoque (success), Vendida (neutral), Parada ha N dias (warning, pela regra de `alertas-regras.js`), Sem entrada (neutral).
+- Acoes: `Vender` (secundario) quando ha saldo; `Ver venda` quando vendida. Menu "⋯": Ver detalhes, Lançar custo, Ver origem, Trocar imagem e, separado, Excluir peça (a exclusao acontece em `detalhes-produto.html`).
+- Edicao dos dados da peca continua em `detalhes-produto.html`.
 
 ## Padrao da tela Cadastro de peca
 
