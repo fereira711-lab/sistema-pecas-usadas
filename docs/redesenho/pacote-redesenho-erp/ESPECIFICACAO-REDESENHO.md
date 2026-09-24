@@ -257,3 +257,6 @@ Fase 6 (Registrar venda):
 32. **Canal obrigatório** por botões (Mercado Livre, WhatsApp, Balcão, Outro); **valor unitário** já preenchido com o preço cadastrado; **busca** também por compatibilidade e origem.
 33. **Saíram:** botão "+ Novo tipo" de custo (fica em Tipos de custo), observação por custo da venda e o modo sem Supabase (`localStorage`).
 34. **Depois de registrar** a tela fica limpa para a próxima venda, com o link "Ver venda".
+35. **Venda e custos na mesma função** (aprovado por Rafael, `sql/16`): `registrar_venda_fifo` ganhou `p_custos` (lista de tipo + valor) e `p_observacoes`, opcionais; venda, baixa FIFO, custos e observação gravados juntos. Custo negativo e tipo inexistente, inativo ou fora da categoria de venda são recusados sem gravar a venda.
+36. **Tipo de custo "Tarifa Mercado Livre"** (categoria venda) criado pela tela Tipos de custo e usado nas vendas de Mercado Livre da demonstração.
+37. **Ideia futura (não implementada):** com canal Mercado Livre, sugerir a linha da tarifa com percentual configurável pela loja.

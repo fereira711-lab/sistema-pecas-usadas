@@ -9,13 +9,15 @@
 --
 -- As datas são relativas ao dia da carga (current_date), para que "parada há mais de 90 dias"
 -- e "recém-comprada" continuem valendo em qualquer dia.
--- As vendas passam pela função oficial registrar_venda_fifo (mesmo caminho da tela), então
--- o consumo de estoque e o custo da peça são calculados pela regra real, sem atalho.
+-- As vendas passam pela função oficial registrar_venda_fifo com os custos em p_custos (sql/16),
+-- o mesmo caminho da tela: venda, baixa FIFO e custos na mesma transação.
+-- Tipos de custo usados (precisam existir e estar ativos): Frete, Embalagem e Tarifa Mercado Livre.
 --
 -- Resultado esperado (conferido à mão):
---   Onix  (R$ 3.200, já se pagou): receita R$ 5.120, custos da venda R$ 282, recuperado R$ 4.838.
---   Gol   (R$ 2.600, pela metade): receita R$ 1.225, custos da venda R$ 95,  recuperado R$ 1.130.
+--   Onix  (R$ 3.200, já se pagou): receita R$ 5.120, custos da venda R$ 569, recuperado R$ 4.551.
+--   Gol   (R$ 2.600, pela metade): receita R$ 1.225, custos da venda R$ 178, recuperado R$ 1.047.
 --   Lote  (R$ 1.800, recém-comprado): R$ 1.100 distribuídos, R$ 700 a distribuir; 1 venda.
+--   Tarifa Mercado Livre (~11%) nas 5 vendas de Mercado Livre: R$ 403 no total.
 --   Paradas +90 dias: 6 peças. Venda com prejuízo: bomba de combustível (−R$ 20).
 --   Preço abaixo do custo: radiador (preço R$ 120, custo R$ 150).
 
@@ -29,6 +31,7 @@ declare
   v_lote bigint;
   v_frete_id bigint;
   v_embalagem_id bigint;
+  v_tarifa_ml_id bigint;
   v_venda record;
   v_venda_id bigint;
 begin
@@ -40,8 +43,9 @@ begin
 
   select id into v_frete_id from public.tipos_custo where lower(nome) = 'frete' and ativo;
   select id into v_embalagem_id from public.tipos_custo where lower(nome) = 'embalagem' and ativo;
-  if v_frete_id is null or v_embalagem_id is null then
-    raise exception 'Os tipos de custo ativos "Frete" e "Embalagem" são necessários para a demonstração.';
+  select id into v_tarifa_ml_id from public.tipos_custo where lower(nome) = 'tarifa mercado livre' and ativo;
+  if v_frete_id is null or v_embalagem_id is null or v_tarifa_ml_id is null then
+    raise exception 'Os tipos de custo ativos "Frete", "Embalagem" e "Tarifa Mercado Livre" são necessários para a demonstração.';
   end if;
 
   -- ---- Origens ----
@@ -113,39 +117,37 @@ begin
   join public.pecas p on p.sku = d.sku;
 
   -- ---- Vendas (pela função oficial, na ordem das datas) ----
-  -- (sku, quantidade, valor unitário, canal, dias atrás, frete, embalagem)
+  -- (sku, quantidade, valor unitário, canal, dias atrás, frete, embalagem, tarifa Mercado Livre)
   for v_venda in
     select * from (values
-      ('DM-ONX-01', 1, 520::numeric,  'Mercado Livre', 120, 35::numeric,  12::numeric),
-      ('DM-ONX-02', 1, 600,           'Balcão',        110, 0,            0),
-      ('DM-ONX-03', 1, 580,           'WhatsApp',      95,  25,           0),
-      ('DM-ONX-04', 1, 850,           'Balcão',        80,  0,            0),
-      ('DM-GOL-01', 1, 750,           'Mercado Livre', 70,  45,           20),
-      ('DM-ONX-05', 1, 1750,          'Mercado Livre', 60,  120,          30),
-      ('DM-ONX-07', 2, 170,           'Mercado Livre', 40,  40,           0),
-      ('DM-GOL-08', 1, 45,            'Balcão',        35,  0,            0),
-      ('DM-ONX-08', 1, 480,           'WhatsApp',      30,  20,           0),
-      ('DM-GOL-03', 1, 240,           'Outro',         15,  0,            0),
-      ('DM-GOL-06', 1, 190,           'WhatsApp',      10,  30,           0),
-      ('DM-LOT-01', 1, 300,           'Mercado Livre', 1,   25,           10)
-    ) as v(sku, quantidade, valor_unitario, canal, dias, frete, embalagem)
+      ('DM-ONX-01', 1, 520::numeric,  'Mercado Livre', 120, 35::numeric,  12::numeric, 57::numeric),
+      ('DM-ONX-02', 1, 600,           'Balcão',        110, 0,            0,           0),
+      ('DM-ONX-03', 1, 580,           'WhatsApp',      95,  25,           0,           0),
+      ('DM-ONX-04', 1, 850,           'Balcão',        80,  0,            0,           0),
+      ('DM-GOL-01', 1, 750,           'Mercado Livre', 70,  45,           20,          83),
+      ('DM-ONX-05', 1, 1750,          'Mercado Livre', 60,  120,          30,          193),
+      ('DM-ONX-07', 2, 170,           'Mercado Livre', 40,  40,           0,           37),
+      ('DM-GOL-08', 1, 45,            'Balcão',        35,  0,            0,           0),
+      ('DM-ONX-08', 1, 480,           'WhatsApp',      30,  20,           0,           0),
+      ('DM-GOL-03', 1, 240,           'Outro',         15,  0,            0,           0),
+      ('DM-GOL-06', 1, 190,           'WhatsApp',      10,  30,           0,           0),
+      ('DM-LOT-01', 1, 300,           'Mercado Livre', 1,   25,           10,          33)
+    ) as v(sku, quantidade, valor_unitario, canal, dias, frete, embalagem, tarifa)
     order by dias desc
   loop
+    -- Mesmo formato que a tela manda: [{tipo_custo_id, valor}]; valor 0 é ignorado pela função.
     select public.registrar_venda_fifo(
-      (select id from public.pecas where sku = v_venda.sku),
-      v_venda.quantidade, v_venda.valor_unitario, v_venda.canal, v_hoje - v_venda.dias, 0, 0, 0, 0
+      p_peca_id => (select id from public.pecas where sku = v_venda.sku),
+      p_quantidade => v_venda.quantidade,
+      p_valor_unitario => v_venda.valor_unitario,
+      p_canal_venda => v_venda.canal,
+      p_data_venda => v_hoje - v_venda.dias,
+      p_custos => jsonb_build_array(
+        jsonb_build_object('tipo_custo_id', v_frete_id, 'valor', v_venda.frete),
+        jsonb_build_object('tipo_custo_id', v_embalagem_id, 'valor', v_venda.embalagem),
+        jsonb_build_object('tipo_custo_id', v_tarifa_ml_id, 'valor', v_venda.tarifa)
+      )
     ) into v_venda_id;
-
-    -- Custos da venda no mesmo formato que a tela grava (nome + id do tipo de custo).
-    if v_venda.frete > 0 then
-      insert into public.custos_venda (venda_id, tipo_custo, tipo_custo_id, valor, data_custo)
-      values (v_venda_id, 'Frete', v_frete_id, v_venda.frete, v_hoje - v_venda.dias);
-    end if;
-
-    if v_venda.embalagem > 0 then
-      insert into public.custos_venda (venda_id, tipo_custo, tipo_custo_id, valor, data_custo)
-      values (v_venda_id, 'Embalagem', v_embalagem_id, v_venda.embalagem, v_hoje - v_venda.dias);
-    end if;
   end loop;
 end $$;
 
@@ -155,6 +157,7 @@ select
   (select count(*) from public.pecas where sku like 'DM-%') as pecas,
   (select count(*) from public.entradas_estoque e join public.pecas p on p.id = e.peca_id where p.sku like 'DM-%') as entradas,
   (select count(*) from public.vendas v join public.pecas p on p.id = v.peca_id where p.sku like 'DM-%') as vendas,
-  (select count(*) from public.custos_venda c join public.vendas v on v.id = c.venda_id join public.pecas p on p.id = v.peca_id where p.sku like 'DM-%') as custos_venda;
+  (select count(*) from public.custos_venda c join public.vendas v on v.id = c.venda_id join public.pecas p on p.id = v.peca_id where p.sku like 'DM-%') as custos_venda,
+  (select sum(c.valor) from public.custos_venda c join public.vendas v on v.id = c.venda_id join public.pecas p on p.id = v.peca_id where p.sku like 'DM-%') as total_custos_venda;
 
 commit;

@@ -116,14 +116,16 @@ Decisoes de 2026-09-24:
 
 ## Ideias futuras (nao implementar sem pedido)
 
+- Registrar venda com canal Mercado Livre: sugerir automaticamente a linha "Tarifa Mercado Livre" com um percentual configuravel pela loja (ideia de 2026-09-24, registrada tambem no `_base-ia`).
 - Botao "Sugerir custo" na Nova peça: ratear o valor da origem entre as pecas proporcionalmente ao preco de venda de cada uma (ideia de 2026-09-24, registrada tambem no `_base-ia`).
 
 ## Dados de demonstracao
 
 - Conjunto fixo para as conferencias do redesenho: `sql/90_demo_carregar.sql` e `sql/91_demo_apagar.sql`, ou `scripts\demo-carregar.bat` e `scripts\demo-apagar.bat` (usam a senha salva do backup; o apagar pede `APAGAR DEMO`).
-- Conteudo: 3 origens (Onix que ja se pagou, Gol pela metade, lote recem-comprado com R$ 700 a distribuir), 27 pecas com compatibilidade, entradas com datas variadas (6 pecas paradas ha mais de 90 dias), 12 vendas em Mercado Livre, WhatsApp, Balcao e Outro com fretes/embalagem, 1 venda com prejuizo (bomba de combustivel) e 1 peca com preco abaixo do custo (radiador). Datas relativas ao dia da carga.
+- Conteudo: 3 origens (Onix que ja se pagou, Gol pela metade, lote recem-comprado com R$ 700 a distribuir), 27 pecas com compatibilidade, entradas com datas variadas (6 pecas paradas ha mais de 90 dias), 12 vendas em Mercado Livre, WhatsApp, Balcao e Outro com frete, embalagem e tarifa do Mercado Livre (~11%) nas vendas desse canal, 1 venda com prejuizo (bomba de combustivel) e 1 peca com preco abaixo do custo (radiador). Datas relativas ao dia da carga.
+- Precisa dos tipos de custo ativos Frete, Embalagem e Tarifa Mercado Livre (criado pela tela Tipos de custo em 2026-09-24; a tela gravou o nome como "Tarifa mercado livre").
 - Marcacao: origens com `observacoes` comecando com `[DEMO]` e pecas com SKU `DM-`. O apagar remove so esses registros (e o que estiver ligado as pecas deles) e para sem apagar nada se a marcacao nao bater.
-- As vendas passam por `registrar_venda_fifo`, o mesmo caminho da tela.
+- As vendas passam por `registrar_venda_fifo` com `p_custos`, o mesmo caminho da tela.
 - Usar esse conjunto em todas as conferencias das proximas fases, em vez de criar dados avulsos.
 
 ## Banco de dados e Supabase
@@ -379,7 +381,7 @@ Implementacao atual confirmada:
 - Aceita `?pecaId=` (botao `Vender` de Produtos e do detalhe da peca). Peca sem estoque aparece desabilitada na busca.
 - Resumo lateral "Resultado da venda" ANTES de registrar: receita, custo da peca, custos da venda, lucro e margem. O custo da peca e estimado por `financeiro-utils.estimarCustoVendaPeca`: as N proximas unidades na mesma ordem de consumo do banco (data da entrada e depois id); com 1 unidade e o mesmo valor de `calcularCustoReferenciaPeca`. Sem estoque suficiente: `Custo não calculado` e "Falta N un. em estoque", sem inventar lucro/margem. Texto de apoio: "O custo vem da entrada mais antiga desta peça e é confirmado ao registrar."
 - `Registrar venda` e a acao principal, no resumo; `Cancelar` volta para Vendas. Depois de registrar: fica na tela, limpa o formulario e mostra "Venda de X registrada · Ver venda".
-- O registro continua pela funcao oficial `registrar_venda_fifo` (FIFO no banco); custos da venda gravados em seguida (`supabaseService.salvarVenda`, como antes). O custo real vem de `venda_consumos_estoque`; `financeiro-utils.js` continua sendo a fonte oficial.
+- O registro continua pela funcao oficial `registrar_venda_fifo` (FIFO no banco). Desde `sql/16`, venda, baixa FIFO, custos da venda (`p_custos`, lista `[{tipo_custo_id, valor}]`) e observacao (`p_observacoes`) vao na mesma chamada: ou grava tudo, ou nada. A funcao recusa custo negativo e tipo inexistente, inativo ou fora da categoria de venda. O custo real vem de `venda_consumos_estoque`; `financeiro-utils.js` continua sendo a fonte oficial.
 - Sairam no redesenho: botao "+ Novo tipo" (tipos ficam na tela Tipos de custo), campo de observacao por custo da venda e o fallback em `localStorage` sem Supabase.
 
 ## Padrao da tela Detalhes da venda

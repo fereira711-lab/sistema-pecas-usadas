@@ -1331,6 +1331,46 @@
     return mapearVendaDoBanco(data);
   }
 
+  // Custos da venda no formato de p_custos (sql/16): só os com valor > 0; o tipo vai pelo id,
+  // e a função confere se está ativo e se é da categoria de venda.
+  function montarCustosParaFuncaoVenda(custosVenda) {
+    const custos = (custosVenda || []).filter(custo => Number(custo.valor || 0) > 0);
+
+    if (custos.length === 0) {
+      return null;
+    }
+
+    return custos.map(custo => {
+      const tipoCustoId = Number(custo.tipoCustoId || 0);
+
+      if (!Number.isFinite(tipoCustoId) || tipoCustoId <= 0) {
+        throw new Error(`Escolha um tipo de custo cadastrado para "${custo.tipoCusto || custo.tipo || "custo da venda"}".`);
+      }
+
+      return { tipo_custo_id: tipoCustoId, valor: Number(custo.valor) };
+    });
+  }
+
+  async function listarCustosDaVenda(vendaId) {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return [];
+    }
+
+    const { data, error } = await cliente
+      .from("custos_venda")
+      .select("*, tipos_custo:tipo_custo_id(nome)")
+      .eq("venda_id", vendaId)
+      .order("id", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return (data || []).map(mapearCustoVendaDoBanco);
+  }
+
   async function salvarVenda(venda) {
     const cliente = obterCliente();
 
@@ -1345,6 +1385,7 @@
     }
 
     const vendaParaBanco = mapearVendaParaBanco(venda);
+    const observacoesVenda = String(venda.observacoes || "").trim();
     const { data: vendaId, error } = await cliente.rpc("registrar_venda_fifo", {
       p_peca_id: vendaParaBanco.peca_id,
       p_quantidade: vendaParaBanco.quantidade_vendida,
@@ -1354,7 +1395,10 @@
       p_custo_embalagem: 0,
       p_custo_comissao: 0,
       p_custo_frete: 0,
-      p_custo_outros: 0
+      p_custo_outros: 0,
+      // sql/16: custos e observação vão na mesma função da venda e da baixa FIFO (tudo ou nada).
+      p_custos: montarCustosParaFuncaoVenda(venda.custosVenda),
+      p_observacoes: observacoesVenda || null
     });
 
     if (error) {
@@ -1362,22 +1406,10 @@
       throw error;
     }
 
-    const observacoesVenda = String(venda.observacoes || "").trim();
-
-    if (observacoesVenda) {
-      const { error: errorObservacoes } = await cliente
-        .from("vendas")
-        .update({ observacoes: observacoesVenda })
-        .eq("id", vendaId);
-
-      if (errorObservacoes) {
-        console.error(errorObservacoes);
-        throw errorObservacoes;
-      }
-    }
-
-    const pecaAtualizada = await buscarPecaPorId(venda.pecaId);
-    const custosDaVenda = await salvarCustosVenda(vendaId, venda.custosVenda || []);
+    const [pecaAtualizada, custosDaVenda] = await Promise.all([
+      buscarPecaPorId(venda.pecaId),
+      listarCustosDaVenda(vendaId)
+    ]);
 
     return {
       venda: {
@@ -1444,6 +1476,7 @@
     excluirCustoPeca,
     salvarCustosVenda,
     substituirCustosVenda,
+    montarCustosParaFuncaoVenda,
     atualizarVendaBasica,
     salvarVenda
   };
