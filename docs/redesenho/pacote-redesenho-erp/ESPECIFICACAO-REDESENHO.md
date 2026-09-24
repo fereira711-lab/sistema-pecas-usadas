@@ -240,7 +240,7 @@ Aprovadas por Rafael depois da Fase 4:
 Fase 5 (Nova peça):
 
 23. **SKU automático** `P-000123` só quando o campo fica em branco, sequencial a partir do maior `P-` número já usado; calculado no front, sem mudança no banco.
-24. **Preço de venda e compatibilidade** gravados logo depois da função `criar_peca_com_entrada` (que grava preço 0 e não conhece a compatibilidade), sem mudar a função.
-25. **Data da entrada** mostrada como a data da compra da origem, que é a que a função do banco usa. Tornar a data editável exigiria mudar a função (fica para decisão).
+24. **Função `criar_peca_com_entrada` com 3 parâmetros opcionais** (aprovado por Rafael, `sql/15`): data da entrada, preço de venda e compatibilidade, gravados junto com a peça e a entrada (ou salva tudo, ou nada). Sem eles, o comportamento antigo: data da compra da origem, preço 0, compatibilidade nula.
+25. **Data da entrada editável** na tela Nova peça, com hoje como padrão.
 26. **"Observação da entrada"** saiu da tela: nunca foi gravada (a tabela de entradas não tem essa coluna).
 27. **Salvar peça** abre o detalhe da peça salva; **Salvar e cadastrar outra** fica na tela com a origem mantida (substitui a regra antiga de nunca redirecionar).

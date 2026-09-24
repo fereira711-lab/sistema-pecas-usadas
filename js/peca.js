@@ -1,7 +1,8 @@
 // Nova peça (redesenho, seção 7 da especificação): origem com a barra de distribuição, dados da peça
 // (com compatibilidade e SKU automático quando em branco), estoque e custo, foto e resumo lateral
 // com margem e lucro previstos e quanto a origem fica a distribuir depois.
-// A peça continua nascendo pela função criar_peca_com_entrada (peça + entrada de estoque juntas).
+// A peça nasce pela função criar_peca_com_entrada: peça, entrada de estoque, data, preço e
+// compatibilidade gravados juntos (sql/15) — ou salva tudo, ou nada.
 const formNovaPeca = document.getElementById("formNovaPeca");
 const mensagemPeca = document.getElementById("mensagemPeca");
 const selectOrigem = document.getElementById("origemId");
@@ -54,9 +55,9 @@ function formatarPercentualInteiro(valor) {
   return `${Math.round(Number(valor || 0))}%`;
 }
 
-function formatarData(valor) {
-  const [ano, mes, dia] = String(valor || "").slice(0, 10).split("-");
-  return ano && mes && dia ? `${dia}/${mes}/${ano}` : "—";
+function obterDataLocalHoje() {
+  const hoje = new Date();
+  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 }
 
 function escaparHtml(valor) {
@@ -169,7 +170,6 @@ function atualizarDistribuicao() {
 
   if (!origem) {
     distribuicaoOrigem.hidden = true;
-    campoDataEntrada.value = "—";
     return null;
   }
 
@@ -194,8 +194,6 @@ function atualizarDistribuicao() {
   distribuicaoPreenchimento.style.width = `${Math.round(percentual * 100)}%`;
   distribuicaoBarra.setAttribute("aria-valuenow", String(Math.round(percentual * 100)));
   distribuicaoOrigem.hidden = false;
-  // A função do banco usa a data da compra da origem como data da entrada.
-  campoDataEntrada.value = formatarData(origem.dataCompra);
 
   return distribuicao;
 }
@@ -287,7 +285,8 @@ function lerFormulario() {
     precoVenda: lerMoeda(campoPreco),
     observacoes: campoObservacoes.value.trim(),
     quantidade: lerQuantidade(),
-    custoUnitario: lerMoeda(campoCustoUnitario)
+    custoUnitario: lerMoeda(campoCustoUnitario),
+    dataEntrada: campoDataEntrada.value
   };
 }
 
@@ -303,6 +302,9 @@ function validarFormulario(dados) {
   if (dados.custoUnitario === null || !Number.isFinite(dados.custoUnitario) || dados.custoUnitario < 0) {
     return { campo: campoCustoUnitario, mensagem: "Informe o custo por unidade (pode ser R$ 0,00)." };
   }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dados.dataEntrada || "")) {
+    return { campo: campoDataEntrada, mensagem: "Informe a data da entrada." };
+  }
   return null;
 }
 
@@ -317,6 +319,7 @@ function limparCamposDaPeca() {
     campo.value = "";
   });
   campoQuantidade.value = "1";
+  // A data fica: quem cadastra várias peças da mesma chegada costuma usar a mesma data.
   campoImagem.value = "";
   definirImagem(null);
 }
@@ -356,6 +359,7 @@ async function salvarPeca(continuarCadastrando) {
       observacoes: dados.observacoes,
       quantidade: dados.quantidade,
       valorAtribuidoEntrada: dados.quantidade * dados.custoUnitario,
+      dataEntrada: dados.dataEntrada,
       imagemUrl: ""
     };
 
@@ -389,6 +393,7 @@ async function salvarPeca(continuarCadastrando) {
 // ---- Início ----
 
 async function iniciarNovaPeca() {
+  campoDataEntrada.value = obterDataLocalHoje();
   window.moedaUtils?.registrarCampoMoeda?.(campoCustoUnitario);
   window.moedaUtils?.registrarCampoMoeda?.(campoPreco);
 

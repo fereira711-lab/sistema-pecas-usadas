@@ -1151,7 +1151,11 @@
       p_quantidade: Number(peca.quantidade),
       p_valor_atribuido: Number(peca.valorAtribuidoEntrada || 0),
       p_imagem_url: peca.imagemUrl || null,
-      p_observacoes: peca.observacoes || null
+      p_observacoes: peca.observacoes || null,
+      // Opcionais (sql/15): sem eles a função usa a data da compra da origem, preço 0 e compatibilidade nula.
+      p_data_entrada: peca.dataEntrada || null,
+      p_preco_venda: peca.precoVenda === undefined || peca.precoVenda === null ? null : Number(peca.precoVenda),
+      p_compatibilidade: String(peca.compatibilidade || "").trim() || null
     });
 
     if (error) {
@@ -1164,22 +1168,6 @@
 
     if (!pecaId || !entradaId) {
       throw new Error("A funcao criar_peca_com_entrada nao retornou os IDs esperados.");
-    }
-
-    // A função do banco grava a peça com preço 0 e não conhece a compatibilidade:
-    // os dois entram logo depois, na mesma peça recém-criada.
-    const precoVenda = Number(peca.precoVenda || 0);
-    const compatibilidade = String(peca.compatibilidade || "").trim();
-
-    if (precoVenda > 0 || compatibilidade) {
-      const { error: erroComplemento } = await cliente
-        .from("pecas")
-        .update({ preco_sugerido: precoVenda, compatibilidade: compatibilidade || null })
-        .eq("id", pecaId);
-
-      if (erroComplemento) {
-        throw new Error(`A peça foi criada, mas o preço e a compatibilidade não foram gravados: ${erroComplemento.message}. Confira em Detalhes do produto.`);
-      }
     }
 
     const [pecaSalva, entradaSalva] = await Promise.all([
