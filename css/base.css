@@ -700,6 +700,25 @@ body.ui-v2 a.btn:hover {
   padding: 0 var(--space-6);
 }
 
+/* Card que é só uma tabela (listas): a tabela encosta no topo e os cantos do cabeçalho
+   acompanham o raio do card. Sem overflow: hidden, para não cortar menus "⋯". */
+.card--table {
+  padding: 0;
+  gap: 0;
+}
+
+.card--table .data-table thead th:first-child {
+  border-top-left-radius: var(--radius-lg);
+}
+
+.card--table .data-table thead th:last-child {
+  border-top-right-radius: var(--radius-lg);
+}
+
+.card--table .pager[hidden] {
+  display: none;
+}
+
 /* ============ KPI ============ */
 
 .kpi-grid {
@@ -966,6 +985,10 @@ textarea.input {
 
 .data-table .cell-strong {
   font-weight: 600;
+}
+
+.data-table .cell-nowrap {
+  white-space: nowrap;
 }
 
 /* Célula de item clicável (SKU + nome): texto normal, sublinha só o nome ao passar o mouse. */

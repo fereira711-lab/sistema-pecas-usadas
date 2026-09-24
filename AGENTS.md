@@ -254,32 +254,15 @@ Implementacao atual confirmada:
 
 ## Padrao da tela Origens cadastradas
 
-- `paginas/listar-origens.html` e a tela real de Origens cadastradas.
-- Funciona como listagem operacional de origens/lotes.
-- Serve para localizar rapidamente lotes, compras avulsas e outras origens.
-- Nao transformar em analise financeira pesada.
-- Estrutura UX: cabecalho `Origens cadastradas`, botao `Nova origem`, busca por codigo/descricao/tipo, seletor `Mostrar`, botao `Filtros`, filtros laterais, cards de resumo simples e lista compacta.
-- Cards de resumo: Total de origens, Origens pendentes, Valor total comprado e Valor nao distribuido.
-- Lista: codigo da origem, tipo, descricao curta, data da compra, valor pago, valor distribuido, valor nao distribuido, pecas vinculadas, situacao da distribuicao e acao `Ver detalhes`.
-- Situacoes: `Falta distribuir`, `Distribuida`, `Acima do previsto` e `Sem valor pago`.
-- Linguagem: usar `Valor distribuido`, `Valor nao distribuido` e `Situacao da distribuicao`.
-- Evitar termos tecnicos internos desnecessarios.
-- Origens cadastradas e listagem operacional.
-- Detalhes da origem e a central completa da origem/lote.
-- Analises financeiras mais profundas ficam nas telas de analise.
-- Origem nao e peca.
-- Origem e agrupador operacional e financeiro.
-- Peca nasce depois da origem.
-- Entrada de estoque continua obrigatoria.
-
-Implementacao atual confirmada:
-
-- `js/listar-origens.js` tenta carregar origens, entradas e pecas via Supabase e usa fallback local com aviso quando necessario.
-- A listagem atual suporta busca por codigo/descricao/tipo, seletor `Mostrar` e filtros por tipo, situacao da distribuicao e periodo.
-- Os cards atuais mostram total de origens, origens pendentes, valor total comprado e valor nao distribuido.
-- A lista atual exibe codigo, tipo, descricao, data, valor pago, valor distribuido, valor nao distribuido, pecas vinculadas, situacao e `Ver detalhes`.
-- A situacao atual segue `Falta distribuir`, `Distribuida`, `Acima do previsto` e `Sem valor pago`.
-- Origens somente locais ainda podem ser removidas do armazenamento local.
+- `paginas/listar-origens.html` ("Origens") e a listagem operacional das origens/lotes. Tela ja migrada para o redesenho (`ui-v2`, `css/origens.css`, `js/listar-origens.js`).
+- Cabecalho: titulo "Origens", subtitulo "N origens cadastradas · M com valor a distribuir" e acao principal `Nova origem`.
+- KPIs: Origens (com o total de pecas vinculadas), Valor comprado, Distribuido nas pecas e A distribuir (nota em atencao quando ha origem pendente e em perigo quando ha origem acima do pago).
+- Filtros: busca por codigo, descricao ou tipo (cada palavra, sem acento), tipo da origem, periodo da compra ("Compra de ... até ...") e controle segmentado da situacao da distribuicao com contagem: Todas, Falta distribuir, Distribuída, Acima do pago, Sem valor pago.
+- Tabela: Origem (descricao com link para `detalhes-origem.html?origemId=` + codigo), Tipo, Compra, Valor pago, Distribuido, A distribuir, Pecas e Situacao (pilula). Mais recente primeiro; 20 por pagina.
+- Valor distribuido = soma de quantidade x custo unitario das entradas da origem (a mesma conta de Alertas e da Nova peca).
+- Sem analise financeira: o retorno da origem fica em Detalhes da origem.
+- Sairam no redesenho: seletor `Mostrar`, painel lateral de filtros e o modo sem Supabase (cache/remocao em `localStorage`). "Acima do previsto" virou "Acima do pago", como em Alertas.
+- Origem nao e peca. Origem e agrupador operacional e financeiro. Peca nasce depois da origem. Entrada de estoque continua obrigatoria.
 
 ## Padrao da tela Cadastro de origem
 

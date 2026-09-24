@@ -337,7 +337,7 @@ function renderizarPecas() {
 
   tabelaPecasOrigem.innerHTML = visiveis.length
     ? visiveis.map(renderizarLinha).join("")
-    : `<tr><td colspan="5" class="data-table__empty">${linhasPecas.length ? "Nenhuma peça nesta situação." : "Nenhuma peça cadastrada nesta origem."}</td></tr>`;
+    : `<tr class="data-table__empty"><td colspan="5">${linhasPecas.length ? "Nenhuma peça nesta situação." : "Nenhuma peça cadastrada nesta origem."}</td></tr>`;
 
   // "Ver todas" abre Produtos filtrado por esta origem (e pela mesma situação, quando houver).
   if (filtradas.length > PECAS_VISIVEIS) {

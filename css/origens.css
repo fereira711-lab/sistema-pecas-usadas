@@ -1,0 +1,18 @@
+/* Origens (redesenho). Só o que é específico desta tela; componentes vêm do base.css. */
+
+/* Período da compra na barra de filtros: "Compra de [data] até [data]". */
+.origens-periodo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.origens-periodo__rotulo {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.origens-periodo__data {
+  width: auto;
+}
