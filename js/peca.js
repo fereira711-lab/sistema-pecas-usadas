@@ -1,569 +1,428 @@
+// Nova peça (redesenho, seção 7 da especificação): origem com a barra de distribuição, dados da peça
+// (com compatibilidade e SKU automático quando em branco), estoque e custo, foto e resumo lateral
+// com margem e lucro previstos e quanto a origem fica a distribuir depois.
+// A peça continua nascendo pela função criar_peca_com_entrada (peça + entrada de estoque juntas).
+const formNovaPeca = document.getElementById("formNovaPeca");
 const mensagemPeca = document.getElementById("mensagemPeca");
 const selectOrigem = document.getElementById("origemId");
-const resumoOrigemCadastro = document.getElementById("resumoOrigemCadastro");
-const resumoOrigemValorTotal = document.getElementById("resumoOrigemValorTotal");
-const resumoOrigemValorDistribuido = document.getElementById("resumoOrigemValorDistribuido");
-const resumoOrigemValorRestante = document.getElementById("resumoOrigemValorRestante");
-const resumoOrigemPecasVinculadas = document.getElementById("resumoOrigemPecasVinculadas");
-const resumoOrigemSituacao = document.getElementById("resumoOrigemSituacao");
-const linkDetalhesOrigem = document.getElementById("linkDetalhesOrigem");
+const campoNome = document.getElementById("nome");
+const campoSku = document.getElementById("sku");
+const campoCompatibilidade = document.getElementById("compatibilidade");
+const campoPreco = document.getElementById("precoVenda");
+const campoObservacoes = document.getElementById("observacoesPeca");
+const campoQuantidade = document.getElementById("quantidade");
+const campoCustoUnitario = document.getElementById("custoUnitarioEntrada");
+const campoValorAtribuido = document.getElementById("custoTotalEntrada");
 const campoDataEntrada = document.getElementById("dataEntrada");
+const campoImagem = document.getElementById("imagemPeca");
+const areaFoto = document.getElementById("areaFoto");
 const previewImagemPeca = document.getElementById("previewImagemPeca");
-const resumoSalvarOrigem = document.getElementById("resumoSalvarOrigem");
-const resumoSalvarNome = document.getElementById("resumoSalvarNome");
-const resumoSalvarSku = document.getElementById("resumoSalvarSku");
-const resumoSalvarQuantidade = document.getElementById("resumoSalvarQuantidade");
-const resumoSalvarCustoUnitario = document.getElementById("resumoSalvarCustoUnitario");
-const resumoSalvarValorAtribuido = document.getElementById("resumoSalvarValorAtribuido");
+const fotoTitulo = document.getElementById("fotoTitulo");
+const botaoSalvar = document.getElementById("btnSalvarPeca");
+const botaoSalvarOutra = document.getElementById("btnSalvarOutraPeca");
+
+const distribuicaoOrigem = document.getElementById("distribuicaoOrigem");
+const distribuicaoTexto = document.getElementById("distribuicaoTexto");
+const distribuicaoFalta = document.getElementById("distribuicaoFalta");
+const distribuicaoBarra = document.getElementById("distribuicaoBarra");
+const distribuicaoPreenchimento = document.getElementById("distribuicaoPreenchimento");
+
+const resumoOrigem = document.getElementById("resumoOrigem");
+const resumoQuantidade = document.getElementById("resumoQuantidade");
+const resumoCusto = document.getElementById("resumoCusto");
+const resumoPreco = document.getElementById("resumoPreco");
+const resumoMargemLinha = document.getElementById("resumoMargemLinha");
+const resumoMargem = document.getElementById("resumoMargem");
+const resumoLucroRotulo = document.getElementById("resumoLucroRotulo");
+const resumoLucro = document.getElementById("resumoLucro");
+const resumoRestanteOrigem = document.getElementById("resumoRestanteOrigem");
 
 let origensCadastro = [];
-let pecasCadastro = [];
+let entradasCadastro = [];
+let arquivoImagemSelecionado = null;
+let salvando = false;
 
-function buscarOrigensLocais() {
-  return JSON.parse(localStorage.getItem("origens")) || [];
-}
-
-function salvarOrigensNoCache(origens) {
-  localStorage.setItem("origens", JSON.stringify(origens));
-}
-
-function buscarPecasLocais() {
-  return JSON.parse(localStorage.getItem("produtos")) || [];
-}
-
-function salvarPecasLocais(pecas) {
-  localStorage.setItem("produtos", JSON.stringify(pecas));
-}
-
-function salvarPecaNoCache(peca) {
-  const pecas = buscarPecasLocais().filter(item => Number(item.id) !== Number(peca.id));
-  pecas.push(peca);
-  salvarPecasLocais(pecas);
-}
-
-function buscarEntradasLocais() {
-  return JSON.parse(localStorage.getItem("entradasEstoque")) || [];
-}
-
-function salvarEntradasLocais(entradas) {
-  localStorage.setItem("entradasEstoque", JSON.stringify(entradas));
-}
-
-function salvarEntradaNoCache(entrada) {
-  const entradas = buscarEntradasLocais().filter(item => Number(item.id) !== Number(entrada.id));
-  entradas.push(entrada);
-  salvarEntradasLocais(entradas);
-}
-
-function mostrarMensagem(texto, tipo) {
-  mensagemPeca.textContent = texto;
-  mensagemPeca.className = `form-message form-message--${tipo}`;
-}
+// ---- Formatação ----
 
 function formatarMoeda(valor) {
-  if (window.moedaUtils?.formatarMoedaBR) {
-    return window.moedaUtils.formatarMoedaBR(valor);
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(Number(valor || 0));
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatarPercentualInteiro(valor) {
+  if (window.moedaUtils?.formatarPercentualBR) return window.moedaUtils.formatarPercentualBR(valor, 0);
+  return `${Math.round(Number(valor || 0))}%`;
+}
+
+function formatarData(valor) {
+  const [ano, mes, dia] = String(valor || "").slice(0, 10).split("-");
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : "—";
+}
+
+function escaparHtml(valor) {
+  return String(valor ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function lerMoeda(campo) {
+  const texto = String(campo?.value || "").trim();
+  if (!texto) return null;
+  const valor = window.moedaUtils?.parseMoedaBR ? window.moedaUtils.parseMoedaBR(texto) : Number(texto.replace(",", "."));
+  return Number.isFinite(valor) ? valor : NaN;
+}
+
+function lerQuantidade() {
+  const texto = String(campoQuantidade.value || "").trim();
+  return texto === "" ? null : Number(texto);
+}
+
+function mostrarMensagem(texto, tipo = "warning") {
+  mensagemPeca.textContent = texto;
+  mensagemPeca.classList.toggle("page-message--success", tipo === "success");
+}
+
+// ---- Cálculos da prévia (sem tocar no DOM, para poder testar) ----
+
+// Distribuição da origem: quanto do valor pago já virou custo de peças (entradas de estoque).
+function calcularDistribuicaoOrigem(origem, entradas) {
+  const valorPago = Number(origem?.valorPago || origem?.custoTotal || 0);
+  const valorDistribuido = (entradas || [])
+    .filter(entrada => Number(entrada.origemId || 0) === Number(origem?.id))
+    .reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0), 0);
+
+  return { valorPago, valorDistribuido, restante: valorPago - valorDistribuido };
+}
+
+// Prévia do resumo lateral: valor atribuído, margem e lucro previstos pelo preço cadastrado
+// e quanto a origem fica a distribuir depois desta peça. Margem pela mesma regra de Produtos.
+function calcularPreviaPeca({ quantidade, custoUnitario, preco, distribuicao }) {
+  const qtd = Number.isFinite(quantidade) && quantidade > 0 ? quantidade : 0;
+  const custo = Number.isFinite(custoUnitario) && custoUnitario >= 0 ? custoUnitario : null;
+  const precoValido = Number.isFinite(preco) && preco > 0 ? preco : null;
+  const valorAtribuido = custo === null ? 0 : qtd * custo;
+  const margem = precoValido !== null && custo !== null
+    ? (window.financeiroUtils?.calcularMargemPreco
+      ? window.financeiroUtils.calcularMargemPreco(precoValido, custo)
+      : ((precoValido - custo) / precoValido) * 100)
+    : null;
+
+  return {
+    valorAtribuido,
+    margem,
+    lucro: margem === null ? null : (precoValido - custo) * qtd,
+    restanteDepois: distribuicao ? distribuicao.restante - valorAtribuido : null
+  };
+}
+
+// ---- Carga ----
+
+function obterOrigemSelecionada() {
+  return origensCadastro.find(origem => Number(origem.id) === Number(selectOrigem.value || 0)) || null;
+}
+
+function textoOrigem(origem) {
+  return `${origem.descricao || `Origem ${origem.id}`} · ${origem.codigoOrigem || `ORI-${String(origem.id).padStart(6, "0")}`}`;
+}
+
+async function carregarDados() {
+  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
+    mostrarMensagem("Configure o Supabase para cadastrar peças.");
+    return false;
   }
 
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
-}
+  try {
+    const [origens, entradas] = await Promise.all([
+      window.supabaseService.listarOrigens(),
+      window.supabaseService.listarEntradasEstoque()
+    ]);
 
-function obterMensagemErroSupabase(erro) {
-  return erro?.message || erro?.details || erro?.hint || "erro desconhecido";
-}
-
-function obterDataLocalHoje() {
-  const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-  const dia = String(hoje.getDate()).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
-}
-
-function obterOrigemIdDaUrl() {
-  const parametros = new URLSearchParams(window.location.search);
-  return Number(parametros.get("origemId") || 0);
-}
-
-async function carregarOrigens() {
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    try {
-      const origens = await window.supabaseService.listarOrigens();
-      salvarOrigensNoCache(origens);
-      return origens;
-    } catch (erro) {
-      console.error("Erro ao carregar origens do Supabase:", erro);
-      return buscarOrigensLocais();
-    }
+    // Mais recentes primeiro: quem está cadastrando costuma usar a origem que acabou de chegar.
+    origensCadastro = (origens || []).slice().sort((a, b) =>
+      String(b.dataCompra || "").localeCompare(String(a.dataCompra || "")) || Number(b.id) - Number(a.id));
+    entradasCadastro = entradas || [];
+    return true;
+  } catch (erro) {
+    console.error("Erro ao carregar origens:", erro);
+    mostrarMensagem("Não foi possível carregar as origens do Supabase.");
+    return false;
   }
-
-  return buscarOrigensLocais();
 }
 
-async function carregarEntradasEstoque() {
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    try {
-      return await window.supabaseService.listarEntradasEstoque();
-    } catch (erro) {
-      console.error("Erro ao carregar entradas de estoque:", erro);
-      return buscarEntradasLocais();
-    }
-  }
+function preencherOrigens() {
+  const preSelecionada = Number(new URLSearchParams(window.location.search).get("origemId") || 0);
 
-  return buscarEntradasLocais();
+  selectOrigem.innerHTML = '<option value="">Selecione a origem</option>' + origensCadastro
+    .map(origem => `<option value="${origem.id}">${escaparHtml(textoOrigem(origem))}</option>`)
+    .join("");
+
+  if (preSelecionada) selectOrigem.value = String(preSelecionada);
 }
 
-async function carregarPecas() {
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    try {
-      const pecas = await window.supabaseService.listarPecas();
-      salvarPecasLocais(pecas);
-      return pecas;
-    } catch (erro) {
-      console.error("Erro ao carregar pecas:", erro);
-      return buscarPecasLocais();
-    }
-  }
+// ---- Tela ----
 
-  return buscarPecasLocais();
-}
+function atualizarDistribuicao() {
+  const origem = obterOrigemSelecionada();
 
-function formatarCodigoOrigem(origem) {
-  return origem?.codigoOrigem || `ORI-${String(origem?.id || "").padStart(6, "0")}`;
-}
-
-function obterTextoOrigem(origem) {
   if (!origem) {
-    return "Não selecionada";
-  }
-
-  return `${formatarCodigoOrigem(origem)} - ${origem.descricao || `Origem ${origem.id}`}`;
-}
-
-async function preencherSelectOrigens() {
-  origensCadastro = await carregarOrigens();
-  const origemPreselecionada = obterOrigemIdDaUrl();
-
-  selectOrigem.innerHTML = '<option value="">Selecione a origem</option>';
-
-  origensCadastro.forEach(origem => {
-    const opcao = document.createElement("option");
-    opcao.value = origem.id;
-    opcao.textContent = `${formatarCodigoOrigem(origem)} - ${origem.descricao || `Origem ${origem.id}`}`;
-    selectOrigem.appendChild(opcao);
-  });
-
-  if (origemPreselecionada) {
-    selectOrigem.value = String(origemPreselecionada);
-  }
-
-  await atualizarResumoOrigemSelecionada();
-}
-
-function lerNumeroDoCampo(id) {
-  const valor = document.getElementById(id).value.trim();
-  return valor === "" ? null : Number(valor);
-}
-
-function lerValorMonetarioDoCampo(id) {
-  const valor = document.getElementById(id).value.trim();
-
-  if (valor === "") {
+    distribuicaoOrigem.hidden = true;
+    campoDataEntrada.value = "—";
     return null;
   }
 
-  return window.moedaUtils?.parseMoedaBR
-    ? window.moedaUtils.parseMoedaBR(valor)
-    : Number(valor);
-}
+  const distribuicao = calcularDistribuicaoOrigem(origem, entradasCadastro);
+  const percentual = distribuicao.valorPago > 0 ? Math.min(distribuicao.valorDistribuido / distribuicao.valorPago, 1) : 0;
 
-function calcularCustoTotalEntrada() {
-  const quantidade = lerNumeroDoCampo("quantidade");
-  const custoUnitario = lerValorMonetarioDoCampo("custoUnitarioEntrada");
-  const campoCustoTotal = document.getElementById("custoTotalEntrada");
+  distribuicaoTexto.textContent = `${formatarMoeda(distribuicao.valorDistribuido)} distribuídos de ${formatarMoeda(distribuicao.valorPago)}`;
+  distribuicaoFalta.classList.remove("nova-peca__distribuicao-falta--acima", "nova-peca__distribuicao-falta--ok");
 
-  if (quantidade === null || custoUnitario === null || !Number.isFinite(quantidade) || !Number.isFinite(custoUnitario)) {
-    campoCustoTotal.value = "";
-    return 0;
+  if (distribuicao.valorPago <= 0) {
+    distribuicaoFalta.textContent = "Origem sem valor pago";
+  } else if (distribuicao.restante > 0.009) {
+    distribuicaoFalta.textContent = `Falta distribuir ${formatarMoeda(distribuicao.restante)}`;
+  } else if (distribuicao.restante < -0.009) {
+    distribuicaoFalta.textContent = `${formatarMoeda(Math.abs(distribuicao.restante))} acima do pago`;
+    distribuicaoFalta.classList.add("nova-peca__distribuicao-falta--acima");
+  } else {
+    distribuicaoFalta.textContent = "Totalmente distribuída";
+    distribuicaoFalta.classList.add("nova-peca__distribuicao-falta--ok");
   }
 
-  const custoTotal = quantidade * custoUnitario;
-  campoCustoTotal.value = formatarMoeda(custoTotal);
-  atualizarResumoSalvarPeca();
-  return custoTotal;
+  distribuicaoPreenchimento.style.width = `${Math.round(percentual * 100)}%`;
+  distribuicaoBarra.setAttribute("aria-valuenow", String(Math.round(percentual * 100)));
+  distribuicaoOrigem.hidden = false;
+  // A função do banco usa a data da compra da origem como data da entrada.
+  campoDataEntrada.value = formatarData(origem.dataCompra);
+
+  return distribuicao;
 }
 
-function calcularValorEntrada(entrada) {
-  return Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0);
-}
+function atualizarResumo() {
+  const origem = obterOrigemSelecionada();
+  const distribuicao = origem ? calcularDistribuicaoOrigem(origem, entradasCadastro) : null;
+  const quantidade = lerQuantidade();
+  const custoUnitario = lerMoeda(campoCustoUnitario);
+  const preco = lerMoeda(campoPreco);
+  const previa = calcularPreviaPeca({ quantidade, custoUnitario, preco, distribuicao });
+  const qtd = Number.isFinite(quantidade) && quantidade > 0 ? quantidade : 0;
 
-function origemTemQuantidadeTotalDefinida(origem) {
-  const valor = origem?.quantidadeTotal;
-  return valor !== undefined && valor !== null && valor !== "" && Number.isFinite(Number(valor)) && Number(valor) > 0;
-}
+  campoValorAtribuido.value = formatarMoeda(previa.valorAtribuido);
 
-function montarMensagemPrevisaoOrigem(resumoOrigem) {
-  if (!resumoOrigem?.temQuantidadeTotal || Number(resumoOrigem.quantidadeTotal || 0) <= 0) {
-    return "";
+  resumoOrigem.textContent = origem ? origem.descricao || `Origem ${origem.id}` : "—";
+  resumoQuantidade.textContent = `${qtd} un.`;
+  resumoCusto.textContent = Number.isFinite(custoUnitario) && custoUnitario !== null
+    ? `${formatarMoeda(custoUnitario)}${qtd > 1 ? " /un." : ""}`
+    : "—";
+  resumoPreco.textContent = Number.isFinite(preco) && preco > 0 ? `${formatarMoeda(preco)}${qtd > 1 ? " /un." : ""}` : "Sem preço";
+
+  resumoMargemLinha.classList.remove("summary-side__result--success", "summary-side__result--danger", "summary-side__result--neutral");
+  const lucroLinha = resumoLucro.closest(".summary-side__row");
+  lucroLinha.classList.remove("nova-peca__lucro--success", "nova-peca__lucro--danger");
+
+  if (previa.margem === null) {
+    resumoMargem.textContent = "—";
+    resumoLucro.textContent = "—";
+    resumoMargemLinha.classList.add("summary-side__result--neutral");
+  } else {
+    const estado = previa.margem < 0 ? "danger" : "success";
+    resumoMargem.textContent = formatarPercentualInteiro(previa.margem);
+    resumoLucro.textContent = formatarMoeda(previa.lucro);
+    resumoMargemLinha.classList.add(`summary-side__result--${estado}`);
+    lucroLinha.classList.add(`nova-peca__lucro--${estado}`);
   }
 
-  const quantidadeDistribuida = Number(resumoOrigem.quantidadeDistribuida || 0);
-  const quantidadeTotal = Number(resumoOrigem.quantidadeTotal || 0);
+  resumoLucroRotulo.textContent = qtd > 1 ? `Lucro previsto (${qtd} un.)` : "Lucro previsto";
 
-  if (Number(resumoOrigem.quantidadeRestante || 0) < 0) {
-    return `Previsao da origem excedida: cadastradas ${quantidadeDistribuida} pecas de ${quantidadeTotal} previstas.`;
+  resumoRestanteOrigem.classList.remove("nova-peca__resumo-origem--danger");
+  if (!distribuicao) {
+    resumoRestanteOrigem.textContent = "Escolha a origem para ver quanto fica a distribuir.";
+  } else if (distribuicao.valorPago <= 0) {
+    resumoRestanteOrigem.textContent = "Origem sem valor pago: não há valor a distribuir.";
+  } else if (previa.restanteDepois > 0.009) {
+    resumoRestanteOrigem.innerHTML = `Depois desta peça, a origem fica com <strong>${escaparHtml(formatarMoeda(previa.restanteDepois))}</strong> a distribuir.`;
+  } else if (previa.restanteDepois < -0.009) {
+    resumoRestanteOrigem.innerHTML = `Com esta peça, a distribuição passa do valor pago em <strong>${escaparHtml(formatarMoeda(Math.abs(previa.restanteDepois)))}</strong>.`;
+    resumoRestanteOrigem.classList.add("nova-peca__resumo-origem--danger");
+  } else {
+    resumoRestanteOrigem.textContent = "Com esta peça, a origem fica totalmente distribuída.";
   }
-
-  return `Previsao da origem: ${quantidadeDistribuida} de ${quantidadeTotal} pecas cadastradas.`;
 }
 
-function atualizarVisualQuantidadeRestante(quantidadeRestante, temQuantidadeTotal) {
-  resumoOrigemSituacao.classList.remove(
-    "summary-value--neutral",
-    "summary-value--attention"
-  );
+function atualizarTela() {
+  atualizarDistribuicao();
+  atualizarResumo();
+}
 
-  if (!temQuantidadeTotal) {
-    resumoOrigemSituacao.classList.add("summary-value--neutral");
+// ---- Foto ----
+
+function definirImagem(arquivo) {
+  if (arquivo && !arquivo.type.startsWith("image/")) {
+    mostrarMensagem("Selecione um arquivo de imagem (JPG ou PNG).");
     return;
   }
 
-  if (quantidadeRestante < 0) {
-    resumoOrigemSituacao.classList.add("summary-value--attention");
+  arquivoImagemSelecionado = arquivo || null;
+
+  if (!arquivoImagemSelecionado) {
+    previewImagemPeca.innerHTML = '<i class="ri-image-line" aria-hidden="true"></i>';
+    fotoTitulo.textContent = "Arraste a foto aqui";
+    return;
   }
+
+  previewImagemPeca.innerHTML = `<img src="${URL.createObjectURL(arquivoImagemSelecionado)}" alt="">`;
+  fotoTitulo.textContent = arquivoImagemSelecionado.name;
 }
 
-function obterSituacaoDistribuicao(valorTotal, valorDistribuido) {
-  if (valorTotal <= 0) {
-    return "Sem valor pago";
-  }
+// ---- Salvar ----
 
-  if (valorDistribuido > valorTotal) {
-    return "Distribuição acima do previsto";
-  }
-
-  if (valorDistribuido >= valorTotal) {
-    return "Distribuída";
-  }
-
-  return "Falta distribuir";
-}
-
-async function atualizarResumoOrigemSelecionada() {
-  const origemId = Number(selectOrigem.value || 0);
-  const origem = origensCadastro.find(item => Number(item.id) === origemId);
-
-  if (!origem) {
-    resumoOrigemCadastro.hidden = true;
-    linkDetalhesOrigem.href = "cadastro-origem.html";
-    atualizarResumoSalvarPeca();
-    return null;
-  }
-
-  const [entradas, pecas] = await Promise.all([
-    carregarEntradasEstoque(),
-    carregarPecas()
-  ]);
-  const entradasValidas = Array.isArray(entradas) ? entradas : [];
-  const pecasValidas = Array.isArray(pecas) ? pecas : [];
-  const entradasDaOrigem = entradasValidas.filter(entrada => Number(entrada.origemId || 0) === origemId);
-  const pecasDaOrigem = pecasValidas.filter(peca => Number(peca.origemId || 0) === origemId);
-  const valorTotal = Number(origem.custoTotal || origem.valorPago || 0);
-  const temQuantidadeTotal = origemTemQuantidadeTotalDefinida(origem);
-  const quantidadeTotal = Number(origem.quantidadeTotal || 0);
-  const valorDistribuido = entradasDaOrigem.reduce((total, entrada) => total + calcularValorEntrada(entrada), 0);
-  const quantidadeDistribuida = entradasDaOrigem.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
-  const valorRestante = valorTotal - valorDistribuido;
-  const quantidadeRestante = quantidadeTotal - quantidadeDistribuida;
-  const situacaoDistribuicao = obterSituacaoDistribuicao(valorTotal, valorDistribuido);
-
-  resumoOrigemValorTotal.textContent = formatarMoeda(valorTotal);
-  resumoOrigemValorDistribuido.textContent = formatarMoeda(valorDistribuido);
-  resumoOrigemValorRestante.textContent = formatarMoeda(valorRestante);
-  resumoOrigemPecasVinculadas.textContent = String(pecasDaOrigem.length);
-  resumoOrigemSituacao.textContent = situacaoDistribuicao;
-  atualizarVisualQuantidadeRestante(quantidadeRestante, temQuantidadeTotal);
-  resumoOrigemCadastro.hidden = false;
-  linkDetalhesOrigem.href = `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}`;
-  atualizarResumoSalvarPeca();
-
+function lerFormulario() {
   return {
-    valorTotal,
-    valorDistribuido,
-    valorRestante,
-    quantidadeTotal,
-    quantidadeDistribuida,
-    quantidadeRestante,
-    temQuantidadeTotal,
-    situacaoDistribuicao
+    origemId: Number(selectOrigem.value || 0),
+    nome: campoNome.value.trim(),
+    sku: campoSku.value.trim().toUpperCase(),
+    compatibilidade: campoCompatibilidade.value.trim(),
+    precoVenda: lerMoeda(campoPreco),
+    observacoes: campoObservacoes.value.trim(),
+    quantidade: lerQuantidade(),
+    custoUnitario: lerMoeda(campoCustoUnitario)
   };
 }
 
-function lerPecaDoFormulario() {
-  const quantidade = lerNumeroDoCampo("quantidade");
-  const custoUnitario = lerValorMonetarioDoCampo("custoUnitarioEntrada");
-  const valorAtribuidoEntrada = Number(quantidade || 0) * Number(custoUnitario || 0);
-
-  return {
-    id: Date.now(),
-    nome: document.getElementById("nome").value.trim(),
-    sku: document.getElementById("sku").value.trim().toUpperCase(),
-    quantidade,
-    custoUnitarioEntrada: custoUnitario,
-    valorAtribuidoEntrada,
-    quantidadeVendida: 0,
-    custo: 0,
-    custoTotal: 0,
-    tipoCusto: "rateado",
-    precoVenda: 0,
-    origemId: Number(document.getElementById("origemId").value),
-    imagemUrl: "",
-    status: "em_estoque",
-    observacoes: document.getElementById("observacoesPeca").value.trim()
-  };
+function validarFormulario(dados) {
+  if (!dados.origemId) return { campo: selectOrigem, mensagem: "Selecione a origem da peça." };
+  if (!dados.nome) return { campo: campoNome, mensagem: "Informe o nome da peça." };
+  if (Number.isNaN(dados.precoVenda) || (dados.precoVenda !== null && dados.precoVenda < 0)) {
+    return { campo: campoPreco, mensagem: "Informe um preço de venda válido." };
+  }
+  if (!Number.isInteger(dados.quantidade) || dados.quantidade < 1) {
+    return { campo: campoQuantidade, mensagem: "A quantidade deve ser um número inteiro maior ou igual a 1." };
+  }
+  if (dados.custoUnitario === null || !Number.isFinite(dados.custoUnitario) || dados.custoUnitario < 0) {
+    return { campo: campoCustoUnitario, mensagem: "Informe o custo por unidade (pode ser R$ 0,00)." };
+  }
+  return null;
 }
 
-function obterArquivoImagemPeca() {
-  return document.getElementById("imagemPeca")?.files?.[0] || null;
-}
-
-function validarArquivoImagem(arquivo) {
-  if (!arquivo) {
-    return "";
-  }
-
-  if (!arquivo.type.startsWith("image/")) {
-    return "Selecione um arquivo de imagem valido.";
-  }
-
-  if (!(window.supabaseService && window.supabaseService.estaConfigurado())) {
-    return "Configure o Supabase antes de enviar imagem da peca.";
-  }
-
-  return "";
-}
-
-function validarPeca(peca) {
-  if (!peca.origemId) {
-    return "Selecione a origem da peca.";
-  }
-
-  if (!peca.nome) {
-    return "Informe o nome da peca.";
-  }
-
-  if (!peca.sku) {
-    return "Informe o SKU da peca.";
-  }
-
-  if (!Number.isFinite(peca.quantidade) || peca.quantidade < 1) {
-    return "A quantidade deve ser maior ou igual a 1.";
-  }
-
-  if (!Number.isInteger(peca.quantidade)) {
-    return "A quantidade deve ser um numero inteiro.";
-  }
-
-  if (!Number.isFinite(peca.custoUnitarioEntrada) || peca.custoUnitarioEntrada < 0) {
-    return "Informe um custo unitario maior ou igual a zero.";
-  }
-
-  if (!Number.isFinite(peca.valorAtribuidoEntrada) || peca.valorAtribuidoEntrada < 0) {
-    return "O custo total calculado deve ser maior ou igual a zero.";
-  }
-
-  return "";
-}
-
-function montarEntradaEstoque(peca, origem, quantidade, custoUnitario) {
-  return {
-    id: Date.now(),
-    pecaId: Number(peca.id),
-    origemId: Number(origem.id),
-    quantidadeTotal: quantidade,
-    quantidadeConsumida: 0,
-    custoUnitario,
-    dataEntrada: campoDataEntrada?.value || obterDataLocalHoje(),
-    sku: peca.sku,
-    nomePeca: peca.nome,
-    origemDescricao: origem.descricao || "",
-    observacoes: document.getElementById("observacoesEntrada")?.value.trim() || ""
-  };
+function definirSalvando(ativo) {
+  salvando = ativo;
+  botaoSalvar.disabled = ativo;
+  botaoSalvarOutra.disabled = ativo;
 }
 
 function limparCamposDaPeca() {
-  document.getElementById("nome").value = "";
-  document.getElementById("sku").value = "";
-  document.getElementById("imagemPeca").value = "";
-  document.getElementById("quantidade").value = "";
-  document.getElementById("custoUnitarioEntrada").value = "";
-  document.getElementById("custoTotalEntrada").value = "";
-  document.getElementById("observacoesPeca").value = "";
-  document.getElementById("observacoesEntrada").value = "";
-  preencherDataEntradaPadrao();
-  atualizarPreviewImagemPeca();
-  atualizarResumoSalvarPeca();
-  document.getElementById("sku").focus();
-}
-
-function preencherDataEntradaPadrao() {
-  if (campoDataEntrada) {
-    campoDataEntrada.value = obterDataLocalHoje();
-  }
-}
-
-function atualizarPreviewImagemPeca() {
-  const arquivo = obterArquivoImagemPeca();
-
-  if (!previewImagemPeca) {
-    return;
-  }
-
-  if (!arquivo) {
-    previewImagemPeca.innerHTML = "<span>Prévia</span><strong>Imagem da peça</strong>";
-    return;
-  }
-
-  const urlImagem = URL.createObjectURL(arquivo);
-  previewImagemPeca.innerHTML = `<img src="${urlImagem}" alt="Prévia da imagem selecionada">`;
-}
-
-function atualizarResumoSalvarPeca() {
-  const origemId = Number(selectOrigem.value || 0);
-  const origem = origensCadastro.find(item => Number(item.id) === origemId);
-  const nome = document.getElementById("nome").value.trim();
-  const sku = document.getElementById("sku").value.trim().toUpperCase();
-  const quantidade = lerNumeroDoCampo("quantidade") || 0;
-  const custoUnitario = lerValorMonetarioDoCampo("custoUnitarioEntrada") || 0;
-  const valorAtribuido = Number(quantidade || 0) * Number(custoUnitario || 0);
-
-  resumoSalvarOrigem.textContent = obterTextoOrigem(origem);
-  resumoSalvarNome.textContent = nome || "Não informado";
-  resumoSalvarSku.textContent = sku || "Não informado";
-  resumoSalvarQuantidade.textContent = String(quantidade || 0);
-  resumoSalvarCustoUnitario.textContent = formatarMoeda(custoUnitario);
-  resumoSalvarValorAtribuido.textContent = formatarMoeda(valorAtribuido);
-}
-
-function definirBotoesSalvando(salvando) {
-  [
-    document.getElementById("btnSalvarPeca"),
-    document.getElementById("btnSalvarOutraPeca")
-  ].forEach(botao => {
-    if (botao) {
-      botao.disabled = salvando;
-    }
+  [campoNome, campoSku, campoCompatibilidade, campoPreco, campoObservacoes, campoCustoUnitario].forEach(campo => {
+    campo.value = "";
   });
+  campoQuantidade.value = "1";
+  campoImagem.value = "";
+  definirImagem(null);
 }
 
-async function salvarPeca() {
-  const peca = lerPecaDoFormulario();
-  const erroValidacao = validarPeca(peca);
-  const arquivoImagem = obterArquivoImagemPeca();
+async function salvarPeca(continuarCadastrando) {
+  if (salvando) return;
 
-  if (erroValidacao) {
-    mostrarMensagem(erroValidacao, "warning");
+  const dados = lerFormulario();
+  const erro = validarFormulario(dados);
+
+  if (erro) {
+    mostrarMensagem(erro.mensagem);
+    erro.campo.focus();
     return;
   }
 
-  const erroImagem = validarArquivoImagem(arquivoImagem);
-
-  if (erroImagem) {
-    mostrarMensagem(erroImagem, "warning");
+  if (!window.supabaseService?.estaConfigurado()) {
+    mostrarMensagem("Configure o Supabase para cadastrar peças.");
     return;
   }
 
-  if (origensCadastro.length === 0) {
-    origensCadastro = await carregarOrigens();
-  }
-
-  const origemSelecionada = origensCadastro.find(origem => Number(origem.id) === Number(peca.origemId));
-
-  if (!origemSelecionada) {
-    mostrarMensagem("A origem selecionada nao foi encontrada.", "warning");
-    return;
-  }
-
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    try {
-      await window.supabaseService.validarSkuDisponivel(peca.sku);
-    } catch (erro) {
-      mostrarMensagem(obterMensagemErroSupabase(erro), "warning");
-      return;
-    }
-  }
-
-  definirBotoesSalvando(true);
-  mostrarMensagem("Salvando peca...", "success");
+  definirSalvando(true);
+  mostrarMensagem("Salvando peça…", "success");
 
   try {
-    const quantidadeEntrada = Number(peca.quantidade || 0);
-    const valorAtribuidoEntrada = Number(peca.valorAtribuidoEntrada || 0);
-    const custoUnitario = Number(peca.custoUnitarioEntrada || 0);
-    let pecaSalva = {
-      ...peca,
-      quantidade: 0,
-      custo: custoUnitario,
-      custoTotal: custoUnitario
+    // SKU livre: só gera o automático quando o campo ficou em branco.
+    const skuGerado = !dados.sku;
+    const sku = dados.sku || await window.supabaseService.gerarSkuAutomatico();
+    await window.supabaseService.validarSkuDisponivel(sku);
+
+    const peca = {
+      origemId: dados.origemId,
+      nome: dados.nome,
+      sku,
+      compatibilidade: dados.compatibilidade,
+      precoVenda: dados.precoVenda || 0,
+      observacoes: dados.observacoes,
+      quantidade: dados.quantidade,
+      valorAtribuidoEntrada: dados.quantidade * dados.custoUnitario,
+      imagemUrl: ""
     };
 
-    if (arquivoImagem && window.supabaseService && window.supabaseService.estaConfigurado()) {
-      pecaSalva.imagemUrl = await window.supabaseService.uploadImagemPeca(arquivoImagem, peca);
+    if (arquivoImagemSelecionado) {
+      peca.imagemUrl = await window.supabaseService.uploadImagemPeca(arquivoImagemSelecionado, peca);
     }
 
-    if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-      const resultado = await window.supabaseService.criarPecaComEntrada({
-        ...pecaSalva,
-        quantidade: quantidadeEntrada,
-        valorAtribuidoEntrada,
-        tipoCusto: "rateado",
-        status: "em_estoque"
-      });
-      const pecaAtualizada = resultado.peca;
-      const entradaSalva = resultado.entrada;
+    const { peca: pecaSalva, entrada } = await window.supabaseService.criarPecaComEntrada(peca);
 
-      salvarEntradaNoCache(entradaSalva);
-      salvarPecaNoCache(pecaAtualizada);
-    } else {
-      const pecaLocal = {
-        ...peca,
-        custo: custoUnitario,
-        custoTotal: custoUnitario
-      };
-      const entradaLocal = montarEntradaEstoque(pecaLocal, origemSelecionada, quantidadeEntrada, custoUnitario);
-
-      salvarPecaNoCache(pecaLocal);
-      salvarEntradaNoCache(entradaLocal);
+    if (!continuarCadastrando) {
+      window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaSalva.id)}`;
+      return;
     }
 
-    pecasCadastro = await carregarPecas();
+    entradasCadastro = [...entradasCadastro, entrada];
     limparCamposDaPeca();
-    const resumoAtualizado = await atualizarResumoOrigemSelecionada();
-    const mensagemPrevisaoOrigem = montarMensagemPrevisaoOrigem(resumoAtualizado);
-
+    atualizarTela();
     mostrarMensagem(
-      ["Peca cadastrada com sucesso.", mensagemPrevisaoOrigem].filter(Boolean).join(" "),
+      `${pecaSalva.nome} salva${skuGerado ? ` com o SKU ${pecaSalva.sku}` : ""}. Pode cadastrar a próxima peça desta origem.`,
       "success"
     );
-  } catch (erro) {
-    console.error("Erro ao cadastrar peca:", erro);
-    mostrarMensagem(`Nao foi possivel salvar a peca: ${obterMensagemErroSupabase(erro)}`, "warning");
+    campoNome.focus();
+  } catch (erroSalvar) {
+    console.error("Erro ao cadastrar peça:", erroSalvar);
+    mostrarMensagem(`Não foi possível salvar a peça: ${erroSalvar?.message || "erro desconhecido"}`);
   } finally {
-    definirBotoesSalvando(false);
+    definirSalvando(false);
   }
 }
 
-preencherDataEntradaPadrao();
-preencherSelectOrigens();
-window.moedaUtils?.registrarCampoMoeda?.(document.getElementById("custoUnitarioEntrada"));
-selectOrigem.addEventListener("change", atualizarResumoOrigemSelecionada);
-document.getElementById("quantidade").addEventListener("input", calcularCustoTotalEntrada);
-document.getElementById("custoUnitarioEntrada").addEventListener("input", calcularCustoTotalEntrada);
-["nome", "sku", "observacoesPeca", "observacoesEntrada"].forEach(id => {
-  document.getElementById(id)?.addEventListener("input", atualizarResumoSalvarPeca);
+// ---- Início ----
+
+async function iniciarNovaPeca() {
+  window.moedaUtils?.registrarCampoMoeda?.(campoCustoUnitario);
+  window.moedaUtils?.registrarCampoMoeda?.(campoPreco);
+
+  if (await carregarDados()) {
+    preencherOrigens();
+  }
+
+  atualizarTela();
+}
+
+selectOrigem?.addEventListener("change", atualizarTela);
+[campoQuantidade, campoCustoUnitario, campoPreco].forEach(campo => campo?.addEventListener("input", atualizarResumo));
+[campoCustoUnitario, campoPreco].forEach(campo => campo?.addEventListener("blur", atualizarResumo));
+
+campoImagem?.addEventListener("change", () => definirImagem(campoImagem.files?.[0] || null));
+
+areaFoto?.addEventListener("dragover", evento => {
+  evento.preventDefault();
+  areaFoto.classList.add("dropzone--ativa");
 });
-document.getElementById("imagemPeca")?.addEventListener("change", atualizarPreviewImagemPeca);
+
+areaFoto?.addEventListener("dragleave", () => areaFoto.classList.remove("dropzone--ativa"));
+
+areaFoto?.addEventListener("drop", evento => {
+  evento.preventDefault();
+  areaFoto.classList.remove("dropzone--ativa");
+  definirImagem(evento.dataTransfer?.files?.[0] || null);
+});
+
+formNovaPeca?.addEventListener("submit", evento => {
+  evento.preventDefault();
+  salvarPeca(false);
+});
+
+botaoSalvarOutra?.addEventListener("click", () => salvarPeca(true));
+
+document.addEventListener("DOMContentLoaded", iniciarNovaPeca);

@@ -219,6 +219,11 @@ body.ui-v2 p {
   display: none;
 }
 
+.page-message--success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
 .empty-state {
   padding: var(--space-6) 0;
   color: var(--text-muted);
@@ -818,6 +823,87 @@ textarea.input {
   border-color: var(--border);
   background: var(--surface-readonly);
   font-weight: 600;
+}
+
+/* Grade de campos dos formulários: 2 ou 3 colunas, uma só no celular. */
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.field-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 760px) {
+  .field-grid,
+  .field-grid--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Área de foto: arrastar ou escolher arquivo. */
+.dropzone {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.dropzone--ativa {
+  border-color: var(--accent);
+  background: var(--surface-readonly);
+}
+
+.dropzone__preview {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--surface-readonly);
+  color: var(--text-faint);
+  font-size: var(--icon-size-lg);
+}
+
+.dropzone__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dropzone__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.dropzone__title {
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.dropzone__hint {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+
+/* Rodapé de formulário: Cancelar · secundário · principal, alinhados à direita. */
+.form-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-2-5);
 }
 
 /* ============ Tabela ============ */

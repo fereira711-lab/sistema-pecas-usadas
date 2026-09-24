@@ -3,233 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro de peça</title>
+  <title>Nova peça</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/base.css?v=8">
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/base.css?v=9">
+  <link rel="stylesheet" href="../css/nova-peca.css?v=1">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark piece-cadastro-page">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Produtos</p>
-      <h1>Cadastro de peça</h1>
-      <p class="hero__description">
-        Cadastre a peça vinculada a uma origem e gere a entrada de estoque.
-      </p>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <a class="page-head__back" href="produtos.html"><i class="ri-arrow-left-s-line" aria-hidden="true"></i>Produtos</a>
+        <h1 class="page-head__title">Nova peça</h1>
+        <p class="page-head__subtitle">A peça entra no estoque com o custo atribuído da origem.</p>
+      </div>
+    </header>
+
+    <p id="mensagemPeca" class="page-message" role="status" aria-live="polite"></p>
+
+    <div class="form-layout">
+      <form id="formNovaPeca" class="nova-peca__blocos" novalidate>
+        <section class="card" aria-labelledby="tituloOrigem">
+          <div class="card__head">
+            <h2 class="card__title" id="tituloOrigem">Origem</h2>
+            <a class="card__link" href="cadastro-origem.html">Nova origem</a>
+          </div>
+          <div class="field">
+            <label class="field__label" for="origemId">Origem</label>
+            <select id="origemId" class="select nova-peca__origem" required>
+              <option value="">Selecione a origem</option>
+            </select>
+          </div>
+          <div id="distribuicaoOrigem" class="nova-peca__distribuicao" hidden>
+            <div class="nova-peca__distribuicao-linha">
+              <span id="distribuicaoTexto"></span>
+              <span id="distribuicaoFalta" class="nova-peca__distribuicao-falta"></span>
+            </div>
+            <div class="progress progress--thin" role="progressbar" aria-label="Valor da origem já distribuído" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="distribuicaoBarra">
+              <div class="progress__bar progress__bar--info" id="distribuicaoPreenchimento"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="tituloPeca">
+          <h2 class="card__title" id="tituloPeca">Peça</h2>
+          <div class="field-grid">
+            <div class="field">
+              <label class="field__label" for="nome">Nome da peça</label>
+              <input id="nome" class="input" type="text" placeholder="Ex.: Farol dianteiro esquerdo" autocomplete="off" required>
+            </div>
+            <div class="field">
+              <label class="field__label" for="sku">SKU</label>
+              <input id="sku" class="input" type="text" placeholder="Ex.: FAR-0232" autocomplete="off">
+              <span class="field__hint">Deixe em branco para gerar automaticamente</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="compatibilidade">Compatibilidade <span class="field__optional">(opcional)</span></label>
+            <input id="compatibilidade" class="input" type="text" placeholder="Ex.: Onix 2012–2019, Prisma 2013–2019" autocomplete="off">
+            <span class="field__hint">Aparece na busca e ajuda a evitar venda de peça errada</span>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label class="field__label" for="precoVenda">Preço de venda</label>
+              <input id="precoVenda" class="input" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="observacoesPeca">Observação <span class="field__optional">(opcional)</span></label>
+              <input id="observacoesPeca" class="input" type="text" placeholder="Estado, avarias, detalhes" autocomplete="off">
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="tituloEstoque">
+          <h2 class="card__title" id="tituloEstoque">Estoque e custo</h2>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label class="field__label" for="quantidade">Quantidade</label>
+              <input id="quantidade" class="input" type="number" min="1" step="1" value="1" required>
+            </div>
+            <div class="field">
+              <label class="field__label" for="custoUnitarioEntrada">Custo por unidade</label>
+              <input id="custoUnitarioEntrada" class="input" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" required>
+              <span class="field__hint">Parte do valor da origem atribuída a esta peça</span>
+            </div>
+            <div class="field">
+              <label class="field__label" for="custoTotalEntrada">Valor atribuído</label>
+              <input id="custoTotalEntrada" class="input" type="text" value="R$ 0,00" readonly tabindex="-1">
+            </div>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label class="field__label" for="dataEntrada">Data da entrada</label>
+              <input id="dataEntrada" class="input" type="text" value="—" readonly tabindex="-1">
+              <span class="field__hint">Data da compra da origem</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="tituloFoto">
+          <h2 class="card__title" id="tituloFoto">Foto</h2>
+          <div class="dropzone" id="areaFoto">
+            <div class="dropzone__preview" id="previewImagemPeca"><i class="ri-image-line" aria-hidden="true"></i></div>
+            <div class="dropzone__text">
+              <span class="dropzone__title" id="fotoTitulo">Arraste a foto aqui</span>
+              <span class="dropzone__hint">JPG ou PNG</span>
+            </div>
+            <label class="btn btn--secondary" for="imagemPeca">Escolher arquivo</label>
+            <input id="imagemPeca" class="sr-only" type="file" accept="image/*">
+          </div>
+        </section>
+
+        <div class="form-actions-bar">
+          <a class="btn btn--quiet" href="produtos.html">Cancelar</a>
+          <button id="btnSalvarOutraPeca" type="button" class="btn btn--secondary">Salvar e cadastrar outra</button>
+          <button id="btnSalvarPeca" type="submit" class="btn btn--primary">Salvar peça</button>
+        </div>
+      </form>
+
+      <aside class="card summary-side" aria-labelledby="tituloResumo">
+        <h2 class="card__title" id="tituloResumo">Resumo</h2>
+        <div class="summary-side__rows">
+          <div class="summary-side__row"><span class="summary-side__label">Origem</span><span class="summary-side__value" id="resumoOrigem">—</span></div>
+          <div class="summary-side__row"><span class="summary-side__label">Quantidade</span><span class="summary-side__value" id="resumoQuantidade">1 un.</span></div>
+          <div class="summary-side__row"><span class="summary-side__label">Custo da peça</span><span class="summary-side__value" id="resumoCusto">—</span></div>
+          <div class="summary-side__row"><span class="summary-side__label">Preço de venda</span><span class="summary-side__value" id="resumoPreco">—</span></div>
+        </div>
+        <div class="summary-side__result summary-side__result--neutral" id="resumoMargemLinha">
+          <span>Margem prevista</span><span id="resumoMargem">—</span>
+        </div>
+        <div class="summary-side__row nova-peca__lucro">
+          <span class="summary-side__label" id="resumoLucroRotulo">Lucro previsto</span><span class="summary-side__value" id="resumoLucro">—</span>
+        </div>
+        <p class="nova-peca__resumo-origem" id="resumoRestanteOrigem">Escolha a origem para ver quanto fica a distribuir.</p>
+      </aside>
     </div>
-    <div class="piece-page-actions">
-      <span class="piece-status-chip">Origem obrigatória</span>
-      <a class="button-secondary button-compact" href="produtos.html">Voltar para produtos</a>
-    </div>
-  </header>
-
-  <main class="container form-layout piece-form-layout">
-    <section class="form-card piece-form-shell">
-      <div class="piece-form-top">
-        <div>
-          <span class="piece-form-eyebrow">Cadastro operacional</span>
-          <h2>Nova peça com entrada</h2>
-        </div>
-        <span class="piece-status-chip">Operacional ativo</span>
-      </div>
-
-      <div class="piece-form-sections">
-        <section class="form-section">
-          <div class="form-section__header">
-            <div>
-              <span class="piece-form-eyebrow">Etapa 1</span>
-              <h3>Origem vinculada</h3>
-            </div>
-            <div class="section-actions">
-              <span class="required-marker">Obrigatório</span>
-              <a class="button-secondary button-compact" href="cadastro-origem.html">+ Nova origem</a>
-            </div>
-          </div>
-
-          <div class="form-fields">
-            <div class="form-group field-span-12">
-              <label for="origemId">Origem</label>
-              <select id="origemId">
-                <option value="">Selecione a origem</option>
-              </select>
-            </div>
-          </div>
-
-          <div id="resumoOrigemCadastro" class="summary-grid summary-grid--compact origin-summary" hidden>
-            <div class="summary-card">
-              <span>Valor pago</span>
-              <strong id="resumoOrigemValorTotal">R$ 0,00</strong>
-            </div>
-            <div class="summary-card">
-              <span>Valor distribuído</span>
-              <strong id="resumoOrigemValorDistribuido">R$ 0,00</strong>
-            </div>
-            <div class="summary-card">
-              <span>Valor não distribuído</span>
-              <strong id="resumoOrigemValorRestante">R$ 0,00</strong>
-            </div>
-            <div class="summary-card">
-              <span>Peças vinculadas</span>
-              <strong id="resumoOrigemPecasVinculadas">0</strong>
-            </div>
-            <div class="summary-card">
-              <span>Situação da distribuição</span>
-              <strong id="resumoOrigemSituacao">Selecione a origem</strong>
-            </div>
-          </div>
-        </section>
-
-        <section class="form-section">
-          <div class="form-section__header">
-            <div>
-              <span class="piece-form-eyebrow">Etapa 2</span>
-              <h3>Dados da peça</h3>
-            </div>
-            <span class="required-marker">Obrigatório</span>
-          </div>
-
-          <div class="form-fields">
-            <div class="form-group field-span-8">
-              <label for="nome">Nome da peça</label>
-              <input id="nome" placeholder="Nome da peça">
-            </div>
-
-            <div class="form-group field-span-4">
-              <label for="sku">SKU / código da peça</label>
-              <input id="sku" placeholder="SKU / Código da peça">
-            </div>
-
-            <div class="form-group field-span-12">
-              <label for="observacoesPeca">Observação curta</label>
-              <input id="observacoesPeca" placeholder="Observações da peça">
-            </div>
-          </div>
-        </section>
-
-        <section class="form-section">
-          <div class="form-section__header">
-            <div>
-              <span class="piece-form-eyebrow">Etapa 3</span>
-              <h3>Entrada de estoque</h3>
-            </div>
-            <span class="required-marker">Obrigatória</span>
-          </div>
-
-          <div class="form-fields">
-            <div class="form-group field-span-4">
-              <label for="quantidade">Quantidade</label>
-              <input id="quantidade" type="number" min="1" step="1" placeholder="Quantidade">
-            </div>
-
-            <div class="form-group field-span-4">
-              <label for="custoUnitarioEntrada">Custo unitário</label>
-              <input id="custoUnitarioEntrada" type="text" inputmode="decimal" placeholder="0,00">
-            </div>
-
-            <div class="form-group field-span-4">
-              <label for="custoTotalEntrada">Valor atribuído</label>
-              <input id="custoTotalEntrada" class="calculated-input" type="text" inputmode="decimal" placeholder="0,00" readonly>
-              <p class="field-hint field-hint--calculated">Quantidade × custo unitário.</p>
-            </div>
-
-            <div class="form-group field-span-4">
-              <label for="dataEntrada">Data da entrada</label>
-              <input id="dataEntrada" type="date" readonly>
-            </div>
-
-            <div class="form-group field-span-8">
-              <label for="observacoesEntrada">Observação da entrada</label>
-              <input id="observacoesEntrada" placeholder="Entrada inicial da origem selecionada">
-            </div>
-          </div>
-
-          <p class="piece-info-note">A entrada de estoque é obrigatória para saldo e custo.</p>
-        </section>
-
-        <section class="form-section">
-          <div class="form-section__header">
-            <div>
-              <span class="piece-form-eyebrow">Etapa 4</span>
-              <h3>Imagem</h3>
-            </div>
-            <span class="piece-status-chip piece-status-chip--muted">Visual</span>
-          </div>
-
-          <div class="photo-upload-block">
-            <div id="previewImagemPeca" class="photo-preview-box">
-              <span>Prévia</span>
-              <strong>Imagem da peça</strong>
-            </div>
-            <div class="form-group">
-              <label for="imagemPeca">Imagem da peça</label>
-              <input id="imagemPeca" type="file" accept="image/*">
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <p id="mensagemPeca" class="form-message" aria-live="polite"></p>
-
-      <div class="form-actions">
-        <button id="btnSalvarPeca" type="button" class="button-primary" onclick="salvarPeca()">Salvar peça</button>
-        <button id="btnSalvarOutraPeca" type="button" class="button-secondary" onclick="salvarPeca()">Salvar e cadastrar outra da mesma origem</button>
-        <button type="button" class="button-secondary" onclick="limparCamposDaPeca()">Limpar campos da peça</button>
-        <a class="button-secondary" href="produtos.html">Voltar para produtos</a>
-        <a id="linkDetalhesOrigem" class="button-secondary" href="cadastro-origem.html">Detalhes da origem</a>
-      </div>
-    </section>
-
-    <aside class="form-card piece-save-summary">
-      <div class="form-section__header">
-        <div>
-          <span class="piece-form-eyebrow">Conferência</span>
-          <h3>Resumo antes de salvar</h3>
-        </div>
-      </div>
-
-      <div class="piece-summary-list">
-        <div>
-          <span>Origem selecionada</span>
-          <strong id="resumoSalvarOrigem">Não selecionada</strong>
-        </div>
-        <div>
-          <span>Nome da peça</span>
-          <strong id="resumoSalvarNome">Não informado</strong>
-        </div>
-        <div>
-          <span>SKU</span>
-          <strong id="resumoSalvarSku">Não informado</strong>
-        </div>
-        <div>
-          <span>Quantidade</span>
-          <strong id="resumoSalvarQuantidade">0</strong>
-        </div>
-        <div>
-          <span>Custo unitário</span>
-          <strong id="resumoSalvarCustoUnitario">R$ 0,00</strong>
-        </div>
-        <div>
-          <span>Valor atribuído</span>
-          <strong id="resumoSalvarValorAtribuido">R$ 0,00</strong>
-        </div>
-      </div>
-
-      <div class="piece-save-badges">
-        <span class="piece-status-chip piece-status-chip--muted">Mantém origem após salvar</span>
-        <span class="piece-status-chip piece-status-chip--muted">Limpa somente dados da peça</span>
-        <span class="piece-status-chip piece-status-chip--muted">Sem redirecionamento</span>
-      </div>
-    </aside>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../js/supabase-config.js?v=4"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/moeda-utils.js?v=2"></script>
-  <script src="../js/supabase-service.js?v=31"></script>
-  <script src="../js/peca.js?v=14"></script>
+  <script src="../js/supabase-service.js?v=32"></script>
+  <script src="../js/financeiro-utils.js?v=3"></script>
+  <script src="../js/peca.js?v=15"></script>
   <script src="../js/sidebar.js?v=8"></script>
 </body>
 </html>

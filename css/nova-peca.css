@@ -1,0 +1,77 @@
+/* Nova peça (redesenho). Só o que é específico desta tela; campos, resumo e foto vêm do base.css. */
+
+.nova-peca__blocos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.nova-peca__origem {
+  width: 100%;
+}
+
+/* Quanto da origem já foi distribuído nas peças, com barra na cor de informação. */
+.nova-peca__distribuicao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3-5) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-readonly);
+}
+
+.nova-peca__distribuicao[hidden] {
+  display: none;
+}
+
+.nova-peca__distribuicao-linha {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--fs-label);
+  color: var(--text-2);
+}
+
+.nova-peca__distribuicao-falta {
+  font-weight: 600;
+  color: var(--info);
+}
+
+.nova-peca__distribuicao-falta--acima {
+  color: var(--danger);
+}
+
+.nova-peca__distribuicao-falta--ok {
+  color: var(--success);
+}
+
+.nova-peca__lucro {
+  border-bottom: 0;
+}
+
+.nova-peca__lucro--success .summary-side__value { color: var(--success); }
+.nova-peca__lucro--danger .summary-side__value { color: var(--danger); }
+
+.nova-peca__resumo-origem {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--divider);
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.nova-peca__resumo-origem strong {
+  color: var(--text);
+}
+
+.nova-peca__resumo-origem--danger strong {
+  color: var(--danger);
+}
+
+@media (max-width: 760px) {
+  .dropzone {
+    flex-wrap: wrap;
+  }
+}

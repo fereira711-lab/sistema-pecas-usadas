@@ -236,3 +236,11 @@ Aprovadas por Rafael depois da Fase 4:
 20. **Produtos:** prioridade da pílula de situação: Preço abaixo do custo > Parada > Em estoque.
 21. **Painel:** card de estoque com o número grande em unidades ("22 unidades" / "em 17 peças · 27 cadastradas"); "Últimas vendas" com subtítulo "Independente do período".
 22. **Mercado Livre** (anunciar peça, inclusive a partir do alerta de peça parada) fica para depois de o sistema de controle estar concluído e em uso.
+
+Fase 5 (Nova peça):
+
+23. **SKU automático** `P-000123` só quando o campo fica em branco, sequencial a partir do maior `P-` número já usado; calculado no front, sem mudança no banco.
+24. **Preço de venda e compatibilidade** gravados logo depois da função `criar_peca_com_entrada` (que grava preço 0 e não conhece a compatibilidade), sem mudar a função.
+25. **Data da entrada** mostrada como a data da compra da origem, que é a que a função do banco usa. Tornar a data editável exigiria mudar a função (fica para decisão).
+26. **"Observação da entrada"** saiu da tela: nunca foi gravada (a tabela de entradas não tem essa coluna).
+27. **Salvar peça** abre o detalhe da peça salva; **Salvar e cadastrar outra** fica na tela com a origem mantida (substitui a regra antiga de nunca redirecionar).

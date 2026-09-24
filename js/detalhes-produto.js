@@ -23,6 +23,7 @@ const editarProdutoNome = document.getElementById("editarProdutoNome");
 const editarProdutoSku = document.getElementById("editarProdutoSku");
 const editarProdutoPreco = document.getElementById("editarProdutoPreco");
 const editarProdutoObservacoes = document.getElementById("editarProdutoObservacoes");
+const editarProdutoCompatibilidade = document.getElementById("editarProdutoCompatibilidade");
 const cancelarEdicaoProduto = document.getElementById("cancelarEdicaoProduto");
 const formEditarCustoProduto = document.getElementById("formEditarCustoProduto");
 const editarCustoId = document.getElementById("editarCustoId");
@@ -515,6 +516,7 @@ function abrirFormularioEdicaoProduto() {
   editarProdutoSku.value = formatarSku(contextoProduto.produto) === "-" ? "" : formatarSku(contextoProduto.produto);
   editarProdutoPreco.value = Number(contextoProduto.produto.precoVenda || 0);
   editarProdutoObservacoes.value = contextoProduto.produto.observacoes || "";
+  if (editarProdutoCompatibilidade) editarProdutoCompatibilidade.value = contextoProduto.produto.compatibilidade || "";
   window.moedaUtils?.registrarCampoMoeda?.(editarProdutoPreco);
   formEditarProduto.hidden = false;
   // Vindo de "Definir preço" (Produtos), o foco já cai no campo de preço.
@@ -567,7 +569,8 @@ async function salvarEdicaoProduto(evento) {
       nome,
       sku,
       precoVenda,
-      observacoes: editarProdutoObservacoes.value.trim()
+      observacoes: editarProdutoObservacoes.value.trim(),
+      compatibilidade: editarProdutoCompatibilidade ? editarProdutoCompatibilidade.value.trim() : undefined
     });
 
     const contextoAtualizado = await recarregarContextoProduto(contextoProduto.produto.id);
@@ -1230,6 +1233,7 @@ function renderizarDadosProduto(produto) {
   const custoCompra = custoMedioEntradas ?? Number(produto.custo || produto.custoTotal || 0);
   const rotuloCusto = custoMedioEntradas !== null ? "Custo médio" : "Custo de compra";
   const observacoes = String(produto.observacoes || "").trim();
+  const compatibilidade = String(produto.compatibilidade || "").trim();
 
   tituloProduto.textContent = nomePeca;
   subtituloProduto.textContent = `ID ${produto.id} - ${produto.categoria || "Sem categoria"}`;
@@ -1251,6 +1255,7 @@ function renderizarDadosProduto(produto) {
       <div class="product-detail-main-info">
         <span class="product-detail-eyebrow">${escaparHtml(formatarSku(produto))}</span>
         <h3>${escaparHtml(nomeBase)}</h3>
+        ${compatibilidade ? `<p><strong>Compatível com:</strong> ${escaparHtml(compatibilidade)}</p>` : ""}
         <p>${escaparHtml(observacoes || "Sem observações cadastradas.")}</p>
         <div class="product-detail-badges">
         <span class="status-badge ${obterClasseStatusProduto(statusProduto, quantidadeDisponivel)}">${escaparHtml(formatarStatusProduto(statusProduto))}</span>

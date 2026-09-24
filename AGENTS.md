@@ -210,23 +210,16 @@ Scripts criticos:
 
 ## Padrao da tela Cadastro de peca
 
-- `paginas/cadastro-peca.html` e a tela para cadastrar uma peca vinculada a uma origem.
-- Toda peca cadastrada deve gerar uma entrada de estoque.
-- Fluxo correto: origem selecionada -> dados da peca -> entrada de estoque -> imagem/observacoes -> salvar e continuar cadastrando.
-- Estrutura UX: cabecalho `Cadastro de peca`, Etapa 1 Origem vinculada, Etapa 2 Dados da peca, Etapa 3 Entrada de estoque, Etapa 4 Imagem, Resumo antes de salvar e Acoes finais.
-- Origem e obrigatoria e deve permanecer selecionada apos salvar.
-- Resumo da origem: valor pago, valor distribuido, valor nao distribuido, pecas vinculadas e situacao da distribuicao.
-- Dados da peca: nome, SKU/codigo, preco de venda quando existir, status inicial quando existir e observacao curta.
-- Entrada de estoque: quantidade, custo unitario, valor atribuido calculado por quantidade x custo_unitario, data local da entrada e observacao da entrada.
-- Imagem e operacional/comercial e ajuda na conferencia interna e futura apresentacao comercial.
-- Apos salvar: nao redirecionar automaticamente, manter origem selecionada, limpar somente campos da peca, entrada e imagem.
-- Permitir cadastrar varias pecas da mesma origem em sequencia.
-- Acoes: `Salvar peca`, `Salvar e cadastrar outra da mesma origem`, `Limpar campos da peca` e `Voltar para produtos`.
-- Origem nao e peca; peca nasce depois da origem.
-- Entrada de estoque e obrigatoria.
-- Custo da venda continua vindo do consumo de estoque.
-- Nao criar calculo financeiro paralelo nessa tela.
-- Analises financeiras pesadas ficam nas telas de analise.
+- `paginas/cadastro-peca.html` ("Nova peça") cadastra uma peca vinculada a uma origem. Tela ja migrada para o redesenho (`ui-v2`, `css/nova-peca.css`, `js/peca.js`).
+- Toda peca cadastrada gera uma entrada de estoque: a peca nasce pela funcao `criar_peca_com_entrada` (peca + entrada juntas).
+- Blocos: Origem (select, link `Nova origem` e barra "R$ X distribuídos de R$ Y · Falta distribuir R$ Z"), Peça (nome, SKU, compatibilidade, preco de venda, observacao), Estoque e custo (quantidade, custo por unidade, valor atribuido calculado, data da entrada), Foto (arrastar ou escolher arquivo).
+- SKU livre: cada loja usa o padrao que quiser. So quando fica em branco o sistema gera o proximo `P-000123` (sequencial a partir do maior `P-` numero ja usado, `supabaseService.gerarSkuAutomatico`). A checagem de duplicidade continua valendo (sem diferenciar maiusculas).
+- Compatibilidade (opcional, texto livre) e preco de venda: a funcao do banco grava a peca com preco 0 e nao conhece a compatibilidade; o servico grava os dois logo depois, na peca recem-criada (`criarPecaComEntrada`). Se esse passo falhar, a mensagem avisa que a peca foi criada sem eles.
+- Data da entrada: a funcao do banco usa a data da compra da origem; a tela mostra essa data (somente leitura). O antigo campo "Observação da entrada" saiu porque nao era gravado (a tabela de entradas nao tem essa coluna).
+- Resumo lateral: origem, quantidade, custo da peca, preco de venda, margem prevista (`financeiro-utils.calcularMargemPreco`, verde/vermelho), lucro previsto ((preco - custo) x quantidade) e quanto a origem fica a distribuir depois (ou quanto passa do valor pago).
+- Rodape: `Cancelar` (volta a Produtos) · `Salvar e cadastrar outra` (fica na tela, mantem a origem, limpa os campos da peca e mostra o SKU gerado) · `Salvar peça` (principal; abre o detalhe da peca salva).
+- Origem nao e peca; peca nasce depois da origem. Custo da venda continua vindo do consumo de estoque. Nao criar calculo financeiro paralelo nessa tela.
+- Edicao da peca (inclusive compatibilidade) continua em `detalhes-produto.html`, que tambem mostra "Compatível com".
 
 ## Padrao da tela Detalhes do produto
 

@@ -570,6 +570,38 @@
     return pecaEncontrada ? mapearPecaDoBanco(pecaEncontrada) : null;
   }
 
+  // SKU livre: só quando o campo fica em branco o sistema gera o próximo "P-000123" (sequencial,
+  // a partir do maior P-número já usado). A checagem de duplicidade continua valendo depois.
+  const PREFIXO_SKU_AUTOMATICO = "P-";
+
+  function calcularProximoSkuAutomatico(skus) {
+    const maior = (skus || []).reduce((atual, sku) => {
+      const encontrado = /^P-(\d+)$/.exec(normalizarSku(sku));
+      return encontrado ? Math.max(atual, Number(encontrado[1])) : atual;
+    }, 0);
+
+    return `${PREFIXO_SKU_AUTOMATICO}${String(maior + 1).padStart(6, "0")}`;
+  }
+
+  async function gerarSkuAutomatico() {
+    const cliente = obterCliente();
+
+    if (!cliente) {
+      return calcularProximoSkuAutomatico([]);
+    }
+
+    const { data, error } = await cliente
+      .from("pecas")
+      .select("sku")
+      .ilike("sku", `${PREFIXO_SKU_AUTOMATICO}%`);
+
+    if (error) {
+      throw error;
+    }
+
+    return calcularProximoSkuAutomatico((data || []).map(item => item.sku));
+  }
+
   async function validarSkuDisponivel(sku, pecaIdIgnorado = null) {
     const pecaExistente = await buscarPecaPorSku(sku, pecaIdIgnorado);
 
@@ -961,17 +993,23 @@
     const sku = normalizarSku(peca?.sku);
     const precoVenda = Number(peca?.precoVenda || 0);
     const observacoes = String(peca?.observacoes || "").trim();
+    const dados = {
+      nome_peca: nome,
+      sku: sku || null,
+      preco_sugerido: precoVenda,
+      observacoes: observacoes || null
+    };
+
+    // Compatibilidade só é gravada quando a tela manda o campo (as telas antigas não mandam).
+    if (peca?.compatibilidade !== undefined) {
+      dados.compatibilidade = String(peca.compatibilidade || "").trim() || null;
+    }
 
     await validarSkuDisponivel(sku, id);
 
     const { data, error } = await cliente
       .from("pecas")
-      .update({
-        nome_peca: nome,
-        sku: sku || null,
-        preco_sugerido: precoVenda,
-        observacoes: observacoes || null
-      })
+      .update(dados)
       .eq("id", id)
       .select("*, origens(descricao)")
       .single();
@@ -1126,6 +1164,22 @@
 
     if (!pecaId || !entradaId) {
       throw new Error("A funcao criar_peca_com_entrada nao retornou os IDs esperados.");
+    }
+
+    // A função do banco grava a peça com preço 0 e não conhece a compatibilidade:
+    // os dois entram logo depois, na mesma peça recém-criada.
+    const precoVenda = Number(peca.precoVenda || 0);
+    const compatibilidade = String(peca.compatibilidade || "").trim();
+
+    if (precoVenda > 0 || compatibilidade) {
+      const { error: erroComplemento } = await cliente
+        .from("pecas")
+        .update({ preco_sugerido: precoVenda, compatibilidade: compatibilidade || null })
+        .eq("id", pecaId);
+
+      if (erroComplemento) {
+        throw new Error(`A peça foi criada, mas o preço e a compatibilidade não foram gravados: ${erroComplemento.message}. Confira em Detalhes do produto.`);
+      }
     }
 
     const [pecaSalva, entradaSalva] = await Promise.all([
@@ -1369,6 +1423,8 @@
     buscarPecaPorId,
     buscarPecaPorSku,
     validarSkuDisponivel,
+    calcularProximoSkuAutomatico,
+    gerarSkuAutomatico,
     listarVendas,
     listarCustosPeca,
     listarCustosVenda,
