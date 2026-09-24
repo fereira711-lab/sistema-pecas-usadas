@@ -231,26 +231,19 @@ Scripts criticos:
 
 ## Padrao da tela Detalhes do produto
 
-- `paginas/detalhes-produto.html` funciona como central operacional/comercial da peca.
-- A tela deve mostrar dados principais da peca, origem vinculada, estoque, custos da peca, vendas relacionadas e resumo operacional.
-- Nao transformar Detalhes do produto em analise financeira pesada.
-- Estrutura UX: cabecalho com acoes principais, bloco principal da peca, origem vinculada, resumo operacional, entradas de estoque, custos da peca, vendas relacionadas e area futura de marketplace.
-- Acoes principais: `Vender`, `Lancar custo`, `Editar dados`, `Trocar imagem` e `Voltar ao estoque`.
-- O bloco principal deve mostrar imagem, SKU, nome da peca, preco de venda, quantidade disponivel, total vendido, status e observacao curta.
-- O resumo operacional pode mostrar estoque atual, total vendido, preco de venda, receita relacionada e custo consumido/custo da peca com linguagem simples.
-- Evitar destaque exagerado para lucro e margem nessa tela; analise financeira pesada fica nas telas de Analises.
-- A area de marketplace pode reservar espaco visual para titulo do anuncio, preco marketplace, status do anuncio e link do anuncio.
-- Marketplace futuro nao deve conectar ao banco nem integrar Mercado Livre ate ser planejado.
-- FIFO continua sendo regra tecnica interna; a interface deve usar linguagem simples para custo.
-
-Implementacao atual confirmada:
-
-- `js/detalhes-produto.js` carrega produto, origem, entradas, custos da peca, vendas relacionadas e consumos de estoque para compor a central da peca.
-- As acoes principais atuais levam para venda, lancamento de custo, edicao inline da peca e upload de imagem.
-- O resumo operacional final ficou enxuto: estoque atual, total vendido, receita relacionada, custo consumido e estado `Custo calculado` ou `Custo nao calculado`.
-- Vendas relacionadas permanecem operacionais e levam ao extrato `detalhes-venda.html?vendaId=...`.
-- Nesta rodada foi removido um bloco legado duplicado do script, mantendo apenas a implementacao final usada em runtime.
-- A area de marketplace continua visual apenas, sem integracao real.
+- `paginas/detalhes-produto.html` ("Detalhes da peça") e a central operacional/comercial da peca. Tela ja migrada para o redesenho (`ui-v2`, `css/detalhes-produto.css`, `js/detalhes-produto.js`).
+- Cabecalho: link `Produtos`, titulo com o nome da peca, subtitulo "SKU · origem". Acoes: `Editar dados` (secundario, abre o formulario na tela), menu "⋯" (Lançar custo, Nova entrada de estoque, Trocar imagem e, separado, Excluir peça) e `Vender` (principal; desabilitado sem estoque).
+- Bloco principal: foto, pilula de situacao (mesmas regras e prioridade de Produtos: Vendida; Preço abaixo do custo > Parada ha N dias > Em estoque), "Compatível com", observacao e a lista Preco de venda, Custo da peca, Margem prevista e Origem (link).
+- Custo da peca = custo da proxima unidade a sair (ou da ultima vendida), por `financeiro-utils.calcularCustoReferenciaPeca`, como em Produtos. O antigo "Custo medio" saiu (regra do projeto: sem custo medio).
+- KPIs: Em estoque (unidades e numero de entradas), Vendidas (unidades e data da ultima venda), Receita das vendas e Custo consumido (`Custo não calculado` quando alguma venda nao tem consumo).
+- Entradas de estoque: `Nova entrada` abre o formulario dentro do card (origem, quantidade, custo unitario, data padrao hoje); tabela com Data, Origem (link), Qtd., Consumida, Saldo, Custo unitario, Valor atribuido, `Editar` e `Excluir` (travados quando a entrada ja foi consumida por venda).
+- Custos da peca: link `Lançar custo` (abre `cadastro-custo.html?pecaId=`); tabela com Data, Tipo, Descricao (e observacao), Valor, `Editar` (formulario no card) e `Excluir`.
+- Vendas: Data, Canal, Qtd., Valor, Lucro da venda (`financeiro-utils.calcularLucroVenda`; `Custo não calculado` sem consumo) e `Ver venda`.
+- Anuncio no marketplace: so um aviso de que a integracao com o Mercado Livre vem depois (sem conexao, sem botao).
+- Aceita `?editar=1` (abre a edicao; com `&campo=preco` o foco vai para o preco) e `#excluir` (usado pelo menu de Produtos: inicia a exclusao, com as mesmas travas e a confirmacao).
+- Exclusao da peca: so sem venda, custo ou consumo; se ainda houver entrada sem consumo, pede para excluir as entradas antes.
+- Registros sao ligados a peca so pelo id (o vinculo antigo por nome/SKU misturava pecas com o mesmo nome). Sairam o modo `localStorage`, a lista local de tipos de custo e o campo "Observação" da nova entrada (nao era gravado).
+- Nao transformar Detalhes do produto em analise financeira pesada; lucro detalhado fica no extrato da venda e nas Analises. FIFO continua regra tecnica interna.
 
 ## Padrao da tela Origens cadastradas
 

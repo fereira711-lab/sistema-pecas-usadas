@@ -14,7 +14,8 @@ const botaoImagemProduto = document.getElementById("botaoImagemProduto");
 const botaoVenderProduto = document.getElementById("botaoVenderProduto");
 const botaoAdicionarEstoqueProduto = document.getElementById("botaoAdicionarEstoqueProduto");
 const botaoLancamentoCustoProduto = document.getElementById("botaoLancamentoCustoProduto");
-const origemVinculadaProduto = document.getElementById("origemVinculadaProduto");
+const acoesProduto = document.getElementById("acoesProduto");
+const linkLancarCustoProduto = document.getElementById("linkLancarCustoProduto");
 const campoImagemProdutoDetalhe = document.getElementById("imagemProdutoDetalhe");
 const botaoEditarProduto = document.getElementById("botaoEditarProduto");
 const botaoExcluirProduto = document.getElementById("botaoExcluirProduto");
@@ -39,7 +40,6 @@ const entradaProdutoOrigemId = document.getElementById("entradaProdutoOrigemId")
 const entradaProdutoQuantidade = document.getElementById("entradaProdutoQuantidade");
 const entradaProdutoCustoUnitario = document.getElementById("entradaProdutoCustoUnitario");
 const entradaProdutoData = document.getElementById("entradaProdutoData");
-const entradaProdutoObservacoes = document.getElementById("entradaProdutoObservacoes");
 const cancelarEntradaProduto = document.getElementById("cancelarEntradaProduto");
 const mensagemAdicionarEstoqueProduto = document.getElementById("mensagemAdicionarEstoqueProduto");
 const formEditarEntradaProduto = document.getElementById("formEditarEntradaProduto");
@@ -62,23 +62,6 @@ let contextoProduto = {
   origens: []
 };
 let tiposCustoProduto = [];
-const tiposCustoPadraoProduto = ["Limpeza", "Solda", "Pintura", "Conserto", "Preparo"];
-
-function buscarProdutosLocais() {
-  return JSON.parse(localStorage.getItem("produtos")) || [];
-}
-
-function buscarOrigensLocais() {
-  return JSON.parse(localStorage.getItem("origens")) || [];
-}
-
-function buscarCustosLocais() {
-  return JSON.parse(localStorage.getItem("custosDiversos")) || [];
-}
-
-function buscarVendasLocais() {
-  return JSON.parse(localStorage.getItem("vendas")) || [];
-}
 
 function escaparHtml(valor) {
   return String(valor ?? "")
@@ -117,15 +100,6 @@ function converterNumero(valor) {
 
 function normalizarNomeTipoCusto(nome) {
   return String(nome || "").trim().toLowerCase();
-}
-
-function buscarTiposCustoLocais() {
-  return tiposCustoPadraoProduto.map((nome, indice) => ({
-    id: `local-${indice + 1}`,
-    nome,
-    categoria: "peca",
-    ativo: true
-  }));
 }
 
 function garantirTipoCustoDisponivel(nome) {
@@ -182,7 +156,7 @@ async function carregarTiposCustoProduto() {
     }
   }
 
-  tiposCustoProduto = buscarTiposCustoLocais();
+  tiposCustoProduto = [];
   renderizarTiposCustoProduto();
 }
 
@@ -224,26 +198,10 @@ function normalizarTextoChave(valor) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function obterNomeChavePeca(peca) {
-  return normalizarTextoChave(peca?.nome || peca?.nome_peca || peca?.nomeProduto || peca?.produtoNome || peca?.descricao);
-}
-
+// Vínculo pelo id da peça (os dados vêm do Supabase). O vínculo antigo por nome/SKU saiu junto com o
+// modo localStorage: duas peças com o mesmo nome misturavam vendas e custos uma da outra.
 function pertenceAPeca(registro, produto, pecaId) {
-  if (Number(registro?.pecaId || registro?.peca_id || 0) === Number(pecaId)) {
-    return true;
-  }
-
-  const skuProduto = normalizarTextoChave(formatarSku(produto));
-  const skuRegistro = normalizarTextoChave(registro?.sku || registro?.codigo || registro?.codigo_peca);
-
-  if (skuProduto && skuProduto !== "-" && skuProduto === skuRegistro) {
-    return true;
-  }
-
-  const nomeProduto = obterNomeChavePeca(produto);
-  const nomeRegistro = normalizarTextoChave(registro?.produtoNome || registro?.nomeProduto || registro?.nome || registro?.descricao);
-
-  return Boolean(nomeProduto && nomeProduto === nomeRegistro);
+  return Number(registro?.pecaId || registro?.peca_id || 0) === Number(pecaId);
 }
 
 function obterImagemUrlProduto(produto) {
@@ -283,22 +241,6 @@ function obterValorUnitarioVenda(venda) {
   }
 
   return quantidade > 0 ? valorVenda(venda) / quantidade : 0;
-}
-
-function obterStatusEntrada(entrada) {
-  const total = Number(entrada.quantidadeTotal || 0);
-  const consumida = Number(entrada.quantidadeConsumida || 0);
-  const saldo = Math.max(total - consumida, 0);
-
-  if (saldo <= 0 && total > 0) {
-    return "esgotada";
-  }
-
-  if (consumida > 0) {
-    return "parcial";
-  }
-
-  return "disponível";
 }
 
 function ordenarVendasPorData(vendas) {
@@ -378,14 +320,6 @@ function formatarValorOuNaoCalculado(valor) {
   return formatarMoeda(Number(valor || 0));
 }
 
-function alternarTabelaVazia(tabela, vazia) {
-  const wrapper = tabela?.closest(".table-wrapper");
-
-  if (wrapper) {
-    wrapper.hidden = vazia;
-  }
-}
-
 function obterQuantidadeTotal(produto) {
   const totalEntradas = contextoProduto.entradas.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
   return totalEntradas > 0 ? totalEntradas : Number(produto.quantidade || 0);
@@ -405,50 +339,6 @@ function obterQuantidadeDisponivel(produto) {
   const quantidadeTotal = obterQuantidadeTotal(produto);
   const quantidadeVendidaTotal = obterQuantidadeVendida(produto);
   return Math.max(quantidadeTotal - quantidadeVendidaTotal, 0);
-}
-
-function obterStatusProduto(produto) {
-  if (produto.status) {
-    return produto.status;
-  }
-
-  return obterQuantidadeDisponivel(produto) > 0 ? "em_estoque" : "vendida";
-}
-
-function formatarStatusProduto(status) {
-  const texto = String(status || "").replaceAll("_", " ").trim();
-
-  if (!texto) {
-    return "-";
-  }
-
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
-}
-
-function obterClasseStatusProduto(status, quantidadeDisponivel = 0) {
-  const statusNormalizado = normalizarTextoChave(status);
-
-  if (quantidadeDisponivel <= 0 || statusNormalizado.includes("vendida") || statusNormalizado.includes("sem estoque")) {
-    return "status-badge--empty";
-  }
-
-  if (quantidadeDisponivel <= 1 || statusNormalizado.includes("baixo")) {
-    return "status-badge--warning";
-  }
-
-  return "status-badge--stock";
-}
-
-function obterClasseStatusEntrada(status) {
-  if (status === "esgotada") {
-    return "status-badge--empty";
-  }
-
-  if (status === "parcial") {
-    return "status-badge--warning";
-  }
-
-  return "status-badge--stock";
 }
 
 function obterOrigemPrincipal(produto) {
@@ -514,7 +404,7 @@ function abrirFormularioEdicaoProduto() {
 
   editarProdutoNome.value = contextoProduto.produto.nome || contextoProduto.produto.nomePeca || "";
   editarProdutoSku.value = formatarSku(contextoProduto.produto) === "-" ? "" : formatarSku(contextoProduto.produto);
-  editarProdutoPreco.value = Number(contextoProduto.produto.precoVenda || 0);
+  editarProdutoPreco.value = Number(contextoProduto.produto.precoVenda || 0) > 0 ? formatarMoeda(contextoProduto.produto.precoVenda) : "";
   editarProdutoObservacoes.value = contextoProduto.produto.observacoes || "";
   if (editarProdutoCompatibilidade) editarProdutoCompatibilidade.value = contextoProduto.produto.compatibilidade || "";
   window.moedaUtils?.registrarCampoMoeda?.(editarProdutoPreco);
@@ -582,7 +472,7 @@ async function salvarEdicaoProduto(evento) {
     contextoProduto = contextoAtualizado;
     fecharFormularioEdicaoProduto();
     renderizarTela();
-    mensagemProdutoNaoEncontrado.textContent = "Dados da peça atualizados com sucesso.";
+    mostrarMensagemPeca("Dados da peça atualizados.", "success");
   } catch (erro) {
     console.error("Erro ao editar peça:", erro);
     mensagemProdutoNaoEncontrado.textContent = erro?.message || "Não foi possível atualizar os dados da peça.";
@@ -601,7 +491,7 @@ function abrirFormularioEdicaoCusto(custoId) {
   editarCustoId.value = custo.id;
   garantirTipoCustoDisponivel(custo.tipoCusto || custo.tipo);
   renderizarTiposCustoProduto(custo.tipoCusto || custo.tipo || "");
-  editarCustoValor.value = Number(custo.valor || 0);
+  editarCustoValor.value = formatarMoeda(Number(custo.valor || 0));
   editarCustoDescricao.value = custo.descricao || "";
   editarCustoData.value = String(custo.dataCusto || custo.data || "").slice(0, 10);
   editarCustoObservacoes.value = custo.observacoes || custo.observacao || "";
@@ -678,7 +568,7 @@ function validarArquivoImagem(arquivo) {
   }
 
   if (!arquivo.type.startsWith("image/")) {
-    return "Selecione um arquivo de imagem valido.";
+    return "Selecione um arquivo de imagem válido.";
   }
 
   if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
@@ -690,7 +580,7 @@ function validarArquivoImagem(arquivo) {
 
 function abrirSeletorImagemProduto() {
   if (!contextoProduto.produto) {
-    alert("Produto nao encontrado para atualizar imagem.");
+    mostrarMensagemPeca("Peça não encontrada para atualizar a imagem.");
     return;
   }
 
@@ -706,7 +596,7 @@ async function salvarImagemProdutoDetalhe(arquivo) {
     return;
   }
 
-  mensagemProdutoNaoEncontrado.textContent = "Enviando imagem da peca...";
+  mostrarMensagemPeca("Enviando imagem da peça…");
 
   if (botaoImagemProduto) {
     botaoImagemProduto.disabled = true;
@@ -720,11 +610,11 @@ async function salvarImagemProdutoDetalhe(arquivo) {
     });
 
     contextoProduto.produto = produtoAtualizado;
-    mensagemProdutoNaoEncontrado.textContent = "Imagem da peca atualizada com sucesso.";
+    mostrarMensagemPeca("Imagem da peça atualizada.", "success");
     renderizarDadosProduto(contextoProduto.produto);
   } catch (erro) {
     console.error("Erro ao atualizar imagem da peca:", erro);
-    mensagemProdutoNaoEncontrado.textContent = "Nao foi possivel atualizar a imagem da peca.";
+    mostrarMensagemPeca("Não foi possível atualizar a imagem da peça.");
   } finally {
     if (botaoImagemProduto) {
       botaoImagemProduto.disabled = false;
@@ -796,79 +686,6 @@ async function carregarContextoSupabase(pecaId) {
   };
 }
 
-function carregarContextoLocal(pecaId) {
-  const produto = buscarProdutosLocais().find(item => Number(item.id) === Number(pecaId));
-
-  if (!produto) {
-    return { produto: null };
-  }
-
-  const vendas = buscarVendasLocais().filter(venda => pertenceAPeca(venda, produto, pecaId));
-  const vendaIds = new Set(vendas.map(venda => Number(venda.id)));
-  const custosPeca = buscarCustosLocais().filter(custo => pertenceAPeca(custo, produto, pecaId));
-  const origens = buscarOrigensLocais();
-  const origemPrincipal = origens.find(origem => Number(origem.id) === Number(produto.origemId || produto.origem_id))?.descricao || produto.origem || "";
-
-  return {
-    produto,
-    entradas: [],
-    custosPeca,
-    vendas,
-    custosVenda: vendas.flatMap(venda => {
-      if (!Array.isArray(venda.custosVenda)) {
-        return [];
-      }
-
-      return venda.custosVenda.map(custo => ({
-        ...custo,
-        vendaId: venda.id
-      }));
-    }).filter(custo => !custo.vendaId || vendaIds.has(Number(custo.vendaId))),
-    consumosEstoque: [],
-    origemPrincipal,
-    origens
-  };
-}
-
-function mesclarPorIdOuAssinatura(principal, complemento, criarAssinatura) {
-  const mapa = new Map();
-
-  [...(principal || []), ...(complemento || [])].forEach(item => {
-    const chave = item?.id ? `id:${item.id}` : criarAssinatura(item);
-
-    if (chave && !mapa.has(chave)) {
-      mapa.set(chave, item);
-    }
-  });
-
-  return Array.from(mapa.values());
-}
-
-function mesclarContextoComDadosLocais(contexto, pecaId) {
-  const contextoLocal = carregarContextoLocal(pecaId);
-
-  if (!contexto?.produto || !contextoLocal?.produto) {
-    return contexto;
-  }
-
-  const vendas = mesclarPorIdOuAssinatura(contexto.vendas, contextoLocal.vendas, venda => (
-    `venda:${obterDataVenda(venda)}:${quantidadeVendida(venda)}:${valorVenda(venda)}:${venda.canalVenda || venda.cliente || ""}`
-  ));
-  const vendaIds = new Set(vendas.map(venda => Number(venda.id)));
-  const custosVendaLocais = contextoLocal.custosVenda.filter(custo => !custo.vendaId || vendaIds.has(Number(custo.vendaId)));
-
-  return {
-    ...contexto,
-    custosPeca: mesclarPorIdOuAssinatura(contexto.custosPeca, contextoLocal.custosPeca, custo => (
-      `custo-peca:${custo.tipoCusto || custo.tipo}:${custo.descricao || ""}:${custo.valor || 0}:${custo.dataCusto || custo.data || ""}`
-    )),
-    vendas,
-    custosVenda: mesclarPorIdOuAssinatura(contexto.custosVenda, custosVendaLocais, custo => (
-      `custo-venda:${custo.vendaId || ""}:${custo.tipoCusto || custo.tipo}:${custo.valor || 0}:${custo.descricao || ""}`
-    ))
-  };
-}
-
 function preencherDataEntradaPadraoProduto() {
   if (!entradaProdutoData) {
     return;
@@ -930,7 +747,7 @@ function mostrarMensagemEntradaProduto(texto, tipo = "success") {
   }
 
   mensagemAdicionarEstoqueProduto.textContent = texto;
-  mensagemAdicionarEstoqueProduto.className = texto ? `form-message form-message--${tipo}` : "form-message";
+  mensagemAdicionarEstoqueProduto.className = `page-message${texto && tipo === "success" ? " page-message--success" : ""}`;
 }
 
 function mostrarMensagemEdicaoEntradaProduto(texto, tipo = "success") {
@@ -939,7 +756,7 @@ function mostrarMensagemEdicaoEntradaProduto(texto, tipo = "success") {
   }
 
   mensagemEditarEntradaProduto.textContent = texto;
-  mensagemEditarEntradaProduto.className = texto ? `form-message form-message--${tipo}` : "form-message";
+  mensagemEditarEntradaProduto.className = `page-message${texto && tipo === "success" ? " page-message--success" : ""}`;
 }
 
 function limparFormularioEntradaProduto() {
@@ -949,10 +766,6 @@ function limparFormularioEntradaProduto() {
 
   if (entradaProdutoCustoUnitario) {
     entradaProdutoCustoUnitario.value = "";
-  }
-
-  if (entradaProdutoObservacoes) {
-    entradaProdutoObservacoes.value = "";
   }
 
   preencherDataEntradaPadraoProduto();
@@ -1003,7 +816,7 @@ function abrirFormularioEdicaoEntradaProduto(entradaId) {
   editarEntradaProdutoId.value = entrada.id;
   editarEntradaProdutoOrigemId.value = String(entrada.origemId || "");
   editarEntradaProdutoQuantidade.value = Number(entrada.quantidadeTotal || 0);
-  editarEntradaProdutoCustoUnitario.value = Number(entrada.custoUnitario || 0);
+  editarEntradaProdutoCustoUnitario.value = formatarMoeda(Number(entrada.custoUnitario || 0));
   editarEntradaProdutoData.value = String(entrada.dataEntrada || "").slice(0, 10);
   window.moedaUtils?.registrarCampoMoeda?.(editarEntradaProdutoCustoUnitario);
   formEditarEntradaProduto.hidden = false;
@@ -1055,8 +868,7 @@ async function salvarEntradaProduto(evento) {
       quantidadeTotal,
       quantidadeConsumida: 0,
       custoUnitario,
-      dataEntrada,
-      observacoes: entradaProdutoObservacoes?.value.trim() || ""
+      dataEntrada
     });
 
     const contextoAtualizado = await recarregarContextoProduto(contextoProduto.produto.id);
@@ -1162,20 +974,19 @@ async function salvarEdicaoEntradaProduto(evento) {
 
 async function recarregarContextoProduto(pecaId) {
   const contextoSupabase = await carregarContextoSupabase(pecaId);
+  return contextoSupabase?.produto ? contextoSupabase : null;
+}
 
-  if (!contextoSupabase?.produto) {
-    return null;
-  }
-
-  return mesclarContextoComDadosLocais(contextoSupabase, pecaId);
+function mostrarMensagemPeca(texto, tipo = "") {
+  mensagemProdutoNaoEncontrado.textContent = texto;
+  mensagemProdutoNaoEncontrado.className = `page-message${tipo === "success" ? " page-message--success" : ""}`;
 }
 
 function renderizarTela() {
   const produto = contextoProduto.produto;
 
-  mensagemProdutoNaoEncontrado.textContent = "";
+  mostrarMensagemPeca("");
   renderizarDadosProduto(produto);
-  renderizarOrigemVinculada(produto);
   renderizarEntradas();
   renderizarCustos();
   renderizarVendas();
@@ -1184,11 +995,11 @@ function renderizarTela() {
 
 function renderizarNaoEncontrado(mensagem) {
   mensagemProdutoNaoEncontrado.textContent = mensagem;
+  subtituloProduto.textContent = "";
+  dadosProduto.hidden = true;
   dadosProduto.innerHTML = "";
   resumoFinanceiro.innerHTML = "";
-  if (origemVinculadaProduto) {
-    origemVinculadaProduto.innerHTML = "";
-  }
+  acoesProduto.hidden = true;
   tabelaEntradasProduto.innerHTML = "";
   tabelaCustosProduto.innerHTML = "";
   tabelaVendasProduto.innerHTML = "";
@@ -1208,7 +1019,7 @@ function mostrarOrientacaoExclusaoProduto(mensagem, opcoes = {}) {
 
   const botao = document.createElement("button");
   botao.type = "button";
-  botao.className = "button-secondary";
+  botao.className = "btn btn--secondary btn--compact";
   botao.textContent = "Ir para entradas";
   botao.addEventListener("click", () => {
     secaoEntradasProduto?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1218,189 +1029,167 @@ function mostrarOrientacaoExclusaoProduto(mensagem, opcoes = {}) {
   mensagemProdutoNaoEncontrado.appendChild(botao);
 }
 
-function renderizarDadosProduto(produto) {
-  const nomePeca = formatarNomePeca(produto);
-  const nomeBase = produto.nome || produto.nome_peca || produto.nomeProduto || produto.produtoNome || produto.descricao || nomePeca;
-  const resultado = calcularResultado();
-  const quantidadeVendidaTotal = resultado.quantidadeTotalVendida;
-  const quantidadeDisponivel = obterQuantidadeDisponivel(produto);
-  const imagemUrl = obterImagemUrlProduto(produto);
-  const statusProduto = obterStatusProduto(produto);
-  const totalEntradas = contextoProduto.entradas.reduce((total, entrada) => total + Number(entrada.quantidadeTotal || 0), 0);
-  const custoMedioEntradas = totalEntradas > 0
-    ? contextoProduto.entradas.reduce((total, entrada) => total + (Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0)), 0) / totalEntradas
-    : null;
-  const custoCompra = custoMedioEntradas ?? Number(produto.custo || produto.custoTotal || 0);
-  const rotuloCusto = custoMedioEntradas !== null ? "Custo médio" : "Custo de compra";
-  const observacoes = String(produto.observacoes || "").trim();
-  const compatibilidade = String(produto.compatibilidade || "").trim();
-
-  tituloProduto.textContent = nomePeca;
-  subtituloProduto.textContent = `ID ${produto.id} - ${produto.categoria || "Sem categoria"}`;
-
-  if (botaoImagemProduto) {
-    botaoImagemProduto.textContent = imagemUrl ? "Trocar imagem" : "Adicionar imagem";
+// Situação com as mesmas regras e prioridade de Produtos: Vendida; Preço abaixo do custo > Parada > Em estoque.
+function calcularSituacaoProduto(produto, quantidadeDisponivel, margem) {
+  if (quantidadeDisponivel <= 0) {
+    return contextoProduto.vendas.length ? { texto: "Vendida", pilula: "pill--neutral" } : { texto: "Sem estoque", pilula: "pill--neutral" };
   }
 
-  dadosProduto.innerHTML = `
-    <section class="product-detail-main-card" aria-label="Dados principais da peça">
-      <div class="product-detail-photo">
-        ${
-          imagemUrl
-            ? `<img src="${escaparHtml(imagemUrl)}" alt="Imagem de ${escaparHtml(nomePeca)}">`
-            : `<span>Sem imagem cadastrada</span>`
-        }
-      </div>
+  if (margem !== null && margem < 0) return { texto: "Preço abaixo do custo", pilula: "pill--warning" };
 
-      <div class="product-detail-main-info">
-        <span class="product-detail-eyebrow">${escaparHtml(formatarSku(produto))}</span>
-        <h3>${escaparHtml(nomeBase)}</h3>
-        ${compatibilidade ? `<p><strong>Compatível com:</strong> ${escaparHtml(compatibilidade)}</p>` : ""}
-        <p>${escaparHtml(observacoes || "Sem observações cadastradas.")}</p>
-        <div class="product-detail-badges">
-        <span class="status-badge ${obterClasseStatusProduto(statusProduto, quantidadeDisponivel)}">${escaparHtml(formatarStatusProduto(statusProduto))}</span>
-          <span class="status-badge status-badge--info">ID ${escaparHtml(produto.id)}</span>
-        </div>
-      </div>
+  const parada = window.alertasRegras?.calcularPecasParadas({
+    pecas: [produto],
+    vendas: contextoProduto.vendas,
+    entradasEstoque: contextoProduto.entradas
+  })?.[0];
 
-      <aside class="product-detail-main-metrics" aria-label="Resumo operacional do produto">
-        <article class="detail-card">
-          <span>${rotuloCusto}</span>
-          <strong>${custoCompra > 0 ? formatarMoeda(custoCompra) : "Sem custo"}</strong>
-        </article>
-        <article class="detail-card">
-          <span>Disponível</span>
-          <strong>${formatarNumero(quantidadeDisponivel)}</strong>
-        </article>
-        <article class="detail-card">
-          <span>Total vendido</span>
-          <strong>${formatarNumero(quantidadeVendidaTotal)}</strong>
-        </article>
-      </aside>
-    </section>
-  `;
+  if (parada) return { texto: `Parada há ${formatarNumero(parada.dias)} dias`, pilula: "pill--warning" };
+  return { texto: "Em estoque", pilula: "pill--success" };
 }
 
-function renderizarOrigemVinculada(produto) {
-  if (!origemVinculadaProduto) {
-    return;
-  }
+function formatarPercentual(valor) {
+  if (window.moedaUtils?.formatarPercentualBR) return window.moedaUtils.formatarPercentualBR(valor, 1);
+  return `${Number(valor || 0).toFixed(1).replace(".", ",")}%`;
+}
 
-  const origemId = obterOrigemIdPrincipal(produto);
-  const descricaoOrigem = obterOrigemPrincipal(produto);
-  const primeiraEntrada = contextoProduto.entradas[0] || {};
-  const tipoOrigem = produto.origemTipo || produto.tipoOrigem || produto.tipo_origem || primeiraEntrada.origemTipo || primeiraEntrada.tipoOrigem || primeiraEntrada.tipo_origem || "Origem vinculada";
+function renderizarDadosProduto(produto) {
+  const financeiro = window.financeiroUtils;
+  const nome = produto.nome || `Peça ${produto.id}`;
+  const sku = formatarSku(produto) === "-" ? "" : formatarSku(produto);
+  const imagemUrl = obterImagemUrlProduto(produto);
+  const quantidadeDisponivel = obterQuantidadeDisponivel(produto);
+  const precoVenda = Number(produto.precoVenda || 0);
+  // Custo da próxima unidade a sair (ou da última vendida), a mesma regra de Produtos. Sem custo médio.
+  const custo = financeiro
+    ? financeiro.calcularCustoReferenciaPeca(produto.id, contextoProduto.entradas, contextoProduto.consumosEstoque)
+    : { calculado: false, valor: null };
+  const margem = financeiro && custo.calculado ? financeiro.calcularMargemPreco(precoVenda, custo.valor) : null;
+  const situacao = calcularSituacaoProduto(produto, quantidadeDisponivel, margem);
   const origensUtilizadas = obterOrigensUtilizadas(produto);
-  const listaOrigens = origensUtilizadas.length > 0
+  const compatibilidade = String(produto.compatibilidade || "").trim();
+  const observacoes = String(produto.observacoes || "").trim();
+  const linkOrigens = origensUtilizadas.length
     ? origensUtilizadas.map(origem => (
       origem.id
-        ? `<a class="table-link" href="detalhes-origem.html?origemId=${encodeURIComponent(origem.id)}">${escaparHtml(origem.descricao)}</a>`
-        : `<span>${escaparHtml(origem.descricao)}</span>`
-    )).join("<br>")
-    : "-";
+        ? `<a href="detalhes-origem.html?origemId=${encodeURIComponent(origem.id)}">${escaparHtml(origem.descricao)}</a>`
+        : escaparHtml(origem.descricao)
+    )).join(", ")
+    : "—";
 
-  origemVinculadaProduto.innerHTML = `
-    <div class="stock-header product-detail-section__header">
-      <div>
-        <span class="product-detail-eyebrow">Origem vinculada</span>
-        <h2>Origem vinculada</h2>
-        <p>Rastreio operacional da peça.</p>
-      </div>
-      <div class="form-actions">
-        <a class="button-secondary${origemId ? "" : " is-disabled"}" href="${origemId ? `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}` : "#"}" ${origemId ? "" : "aria-disabled=\"true\""}>Ver origem</a>
-      </div>
+  document.title = `${nome} · Detalhes da peça`;
+  tituloProduto.textContent = nome;
+  subtituloProduto.innerHTML = [
+    sku ? `<span class="mono">${escaparHtml(sku)}</span>` : "",
+    origensUtilizadas[0]?.descricao ? escaparHtml(origensUtilizadas[0].descricao) : ""
+  ].filter(Boolean).join(" · ") || "Peça sem SKU";
+
+  acoesProduto.hidden = false;
+  botaoVenderProduto.disabled = quantidadeDisponivel <= 0;
+  botaoVenderProduto.title = quantidadeDisponivel <= 0 ? "Peça sem estoque" : "";
+  if (linkLancarCustoProduto) linkLancarCustoProduto.href = `cadastro-custo.html?pecaId=${encodeURIComponent(produto.id)}`;
+  if (botaoImagemProduto) botaoImagemProduto.textContent = imagemUrl ? "Trocar imagem" : "Adicionar imagem";
+
+  dadosProduto.hidden = false;
+  dadosProduto.innerHTML = `
+    <div class="peca-principal__foto">
+      ${imagemUrl
+        ? `<img src="${escaparHtml(imagemUrl)}" alt="Foto de ${escaparHtml(nome)}">`
+        : '<i class="ri-image-line" aria-hidden="true"></i>'}
     </div>
-    <div class="detail-grid">
-      <article class="detail-card">
-        <span>Código/nome</span>
-        <strong>${escaparHtml(descricaoOrigem)}</strong>
-      </article>
-      <article class="detail-card">
-        <span>Tipo</span>
-        <strong>${escaparHtml(tipoOrigem)}</strong>
-      </article>
-      <article class="detail-card detail-card--wide">
-        <span>Descrição</span>
-        <strong>${escaparHtml(descricaoOrigem || "-")}</strong>
-      </article>
-      <article class="detail-card">
-        <span>ID</span>
-        <strong>${origemId || "-"}</strong>
-      </article>
-      <article class="detail-card detail-card--wide">
-        <span>Origens utilizadas</span>
-        <strong>${listaOrigens}</strong>
-      </article>
+    <div class="peca-principal__info">
+      <span class="pill ${situacao.pilula}">${escaparHtml(situacao.texto)}</span>
+      ${compatibilidade ? `<p class="peca-principal__compat"><span class="peca-principal__rotulo">Compatível com</span> ${escaparHtml(compatibilidade)}</p>` : ""}
+      ${observacoes ? `<p class="peca-principal__obs">${escaparHtml(observacoes)}</p>` : ""}
     </div>
+    <dl class="peca-principal__dados">
+      <div><dt>Preço de venda</dt><dd class="${precoVenda > 0 ? "" : "text-warning"}">${precoVenda > 0 ? formatarMoeda(precoVenda) : "Sem preço"}</dd></div>
+      <div><dt>Custo da peça</dt><dd>${custo.calculado ? formatarMoeda(custo.valor) : "Custo não calculado"}</dd></div>
+      <div><dt>Margem prevista</dt><dd class="${margem === null ? "" : margem < 0 ? "text-danger" : "text-success"}">${margem === null ? "—" : formatarPercentual(margem)}</dd></div>
+      <div><dt>${origensUtilizadas.length > 1 ? "Origens" : "Origem"}</dt><dd>${linkOrigens}</dd></div>
+    </dl>
   `;
 }
 
+function criarKpi({ rotulo, valor, nota = "", classeValor = "" }) {
+  return `
+    <article class="kpi">
+      <span class="kpi__label">${escaparHtml(rotulo)}</span>
+      <span class="kpi__value kpi__value--tight ${classeValor}">${escaparHtml(valor)}</span>
+      <span class="kpi__note">${escaparHtml(nota)}</span>
+    </article>
+  `;
+}
+
+function pluralizar(quantidade, singular, plural) {
+  return `${formatarNumero(quantidade)} ${quantidade === 1 ? singular : plural}`;
+}
+
+// Resumo operacional: estoque, vendidas, receita e custo consumido. Lucro detalhado fica no extrato e nas Análises.
 function renderizarResumo() {
   const resultado = calcularResultado();
   const produto = contextoProduto.produto || {};
+  const disponivel = obterQuantidadeDisponivel(produto);
 
-  resumoFinanceiro.innerHTML = `
-    <article class="summary-card">
-      <span>Estoque atual</span>
-      <strong>${formatarNumero(obterQuantidadeDisponivel(produto))}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Total vendido</span>
-      <strong>${formatarNumero(resultado.quantidadeTotalVendida)}</strong>
-    </article>
-    <article class="summary-card summary-card--muted">
-      <span>Receita relacionada</span>
-      <strong>${formatarMoeda(resultado.receitaTotal)}</strong>
-    </article>
-    <article class="summary-card summary-card--muted">
-      <span>Custo consumido</span>
-      <strong>${formatarValorOuNaoCalculado(resultado.custoEntradasConsumidas)}</strong>
-    </article>
-    <article class="summary-card summary-card--muted">
-      <span>Custo da peça</span>
-      <strong>${resultado.custoCalculado ? "Custo calculado" : "Custo não calculado"}</strong>
-    </article>
-  `;
+  resumoFinanceiro.innerHTML = [
+    criarKpi({
+      rotulo: "Em estoque",
+      valor: pluralizar(disponivel, "unidade", "unidades"),
+      nota: `${pluralizar(contextoProduto.entradas.length, "entrada", "entradas")} de estoque`
+    }),
+    criarKpi({
+      rotulo: "Vendidas",
+      valor: pluralizar(resultado.quantidadeTotalVendida, "unidade", "unidades"),
+      nota: resultado.ultimaVenda ? `Última em ${formatarData(resultado.ultimaVenda)}` : "Nenhuma venda ainda"
+    }),
+    criarKpi({
+      rotulo: "Receita das vendas",
+      valor: formatarMoeda(resultado.receitaTotal),
+      nota: pluralizar(contextoProduto.vendas.length, "venda", "vendas")
+    }),
+    criarKpi({
+      rotulo: "Custo consumido",
+      valor: resultado.custoCalculado ? formatarMoeda(resultado.custoEntradasConsumidas || 0) : "Custo não calculado",
+      classeValor: resultado.custoCalculado ? "" : "kpi__value--muted",
+      nota: resultado.custoCalculado
+        ? "Entradas baixadas pelas vendas"
+        : `${pluralizar(resultado.vendasSemCusto, "venda", "vendas")} sem consumo registrado`
+    })
+  ].join("");
 }
 
 function renderizarEntradas() {
-  tabelaEntradasProduto.innerHTML = "";
-
   if (contextoProduto.entradas.length === 0) {
-    mensagemEntradasProduto.textContent = "Nenhuma entrada de estoque encontrada para esta peça.";
-    alternarTabelaVazia(tabelaEntradasProduto, true);
+    tabelaEntradasProduto.innerHTML = '<tr class="data-table__empty"><td colspan="8">Nenhuma entrada de estoque para esta peça.</td></tr>';
     return;
   }
 
-  mensagemEntradasProduto.textContent = "";
-  alternarTabelaVazia(tabelaEntradasProduto, false);
-
-  contextoProduto.entradas.forEach(entrada => {
+  tabelaEntradasProduto.innerHTML = contextoProduto.entradas.map(entrada => {
     const saldo = Math.max(Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0), 0);
-    const valorAtribuido = Number(
-      entrada.valorAtribuido ?? entrada.valor_atribuido ?? entrada.valorAtribuidoEntrada ?? entrada.valor_atribuido_entrada ?? 0
-    ) || Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0);
+    const valorAtribuido = Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0);
+    // Entrada com consumo não pode ser editada nem excluída (ela sustenta o custo de uma venda).
     const bloqueada = entradaPossuiConsumo(entrada);
-    const linha = document.createElement("tr");
+    const travada = bloqueada ? 'disabled title="Entrada já consumida por venda"' : "";
+    const origemId = Number(entrada.origemId || 0);
+    const origem = escaparHtml(obterDescricaoOrigem(entrada));
 
-    linha.innerHTML = `
-      <td data-label="Data">${formatarData(entrada.dataEntrada)}</td>
-      <td data-label="Origem">${escaparHtml(obterDescricaoOrigem(entrada))}</td>
-      <td data-label="Quantidade total">${formatarNumero(entrada.quantidadeTotal)}</td>
-      <td data-label="Consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
-      <td data-label="Saldo">${formatarNumero(saldo)}</td>
-      <td data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
-      <td data-label="Valor atribuído">${formatarMoeda(valorAtribuido)}</td>
-      <td data-label="Ações">
-        <div class="table-actions">
-          <button type="button" data-acao="editar-entrada" data-entrada-id="${escaparHtml(entrada.id)}">Editar</button>
-          <button type="button" class="button-danger-soft" data-acao="excluir-entrada" data-entrada-id="${escaparHtml(entrada.id)}" ${bloqueada ? "disabled" : ""}>Excluir</button>
-        </div>
-      </td>
+    return `
+      <tr>
+        <td class="cell-nowrap" data-label="Data">${formatarData(entrada.dataEntrada)}</td>
+        <td data-label="Origem">${origemId ? `<a href="detalhes-origem.html?origemId=${encodeURIComponent(origemId)}">${origem}</a>` : origem}</td>
+        <td class="num" data-label="Qtd.">${formatarNumero(entrada.quantidadeTotal)}</td>
+        <td class="num cell-muted" data-label="Consumida">${formatarNumero(entrada.quantidadeConsumida)}</td>
+        <td class="num cell-strong" data-label="Saldo">${formatarNumero(saldo)}</td>
+        <td class="num" data-label="Custo unitário">${formatarMoeda(entrada.custoUnitario)}</td>
+        <td class="num" data-label="Valor atribuído">${formatarMoeda(valorAtribuido)}</td>
+        <td class="cell-acoes">
+          <div class="row-actions">
+            <button type="button" class="btn btn--secondary btn--compact" data-acao="editar-entrada" data-entrada-id="${escaparHtml(entrada.id)}" ${travada}>Editar</button>
+            <button type="button" class="btn btn--quiet btn--compact text-danger" data-acao="excluir-entrada" data-entrada-id="${escaparHtml(entrada.id)}" ${travada}>Excluir</button>
+          </div>
+        </td>
+      </tr>
     `;
-
-    tabelaEntradasProduto.appendChild(linha);
-  });
+  }).join("");
 }
 
 async function excluirEntradaProduto(entradaId) {
@@ -1450,67 +1239,60 @@ async function excluirEntradaProduto(entradaId) {
 }
 
 function renderizarCustos() {
-  tabelaCustosProduto.innerHTML = "";
-
   if (contextoProduto.custosPeca.length === 0) {
-    mensagemCustosProduto.textContent = "Nenhum custo cadastrado para esta peça.";
-    alternarTabelaVazia(tabelaCustosProduto, true);
+    tabelaCustosProduto.innerHTML = '<tr class="data-table__empty"><td colspan="5">Nenhum custo lançado para esta peça.</td></tr>';
     return;
   }
 
-  mensagemCustosProduto.textContent = "";
-  alternarTabelaVazia(tabelaCustosProduto, false);
+  tabelaCustosProduto.innerHTML = contextoProduto.custosPeca.map(custo => {
+    const observacao = String(custo.observacoes || custo.observacao || "").trim();
 
-  contextoProduto.custosPeca.forEach(custo => {
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td data-label="Data">${formatarData(custo.dataCusto || custo.data)}</td>
-      <td data-label="Tipo">${escaparHtml(custo.tipoCusto || custo.tipo || "-")}</td>
-      <td data-label="Descrição">${escaparHtml(custo.descricao || "-")}</td>
-      <td data-label="Valor">${formatarMoeda(custo.valor)}</td>
-      <td data-label="Observações">${escaparHtml(custo.observacoes || custo.observacao || "-")}</td>
-      <td data-label="Ações">
-        <div class="table-actions">
-          <button type="button" data-acao="editar-custo" data-custo-id="${escaparHtml(custo.id)}">Editar</button>
-          <button type="button" class="button-danger-soft" data-acao="excluir-custo" data-custo-id="${escaparHtml(custo.id)}">Excluir</button>
-        </div>
-      </td>
+    return `
+      <tr>
+        <td class="cell-nowrap" data-label="Data">${formatarData(custo.dataCusto || custo.data)}</td>
+        <td data-label="Tipo">${escaparHtml(custo.tipoCusto || custo.tipo || "—")}</td>
+        <td data-label="Descrição">
+          <div class="item-cell__text">
+            <span>${escaparHtml(custo.descricao || "—")}</span>
+            ${observacao ? `<span class="item-cell__meta">${escaparHtml(observacao)}</span>` : ""}
+          </div>
+        </td>
+        <td class="num cell-strong" data-label="Valor">${formatarMoeda(custo.valor)}</td>
+        <td class="cell-acoes">
+          <div class="row-actions">
+            <button type="button" class="btn btn--secondary btn--compact" data-acao="editar-custo" data-custo-id="${escaparHtml(custo.id)}">Editar</button>
+            <button type="button" class="btn btn--quiet btn--compact text-danger" data-acao="excluir-custo" data-custo-id="${escaparHtml(custo.id)}">Excluir</button>
+          </div>
+        </td>
+      </tr>
     `;
-
-    tabelaCustosProduto.appendChild(linha);
-  });
+  }).join("");
 }
 
 function renderizarVendas() {
-  tabelaVendasProduto.innerHTML = "";
-
   if (contextoProduto.vendas.length === 0) {
-    mensagemVendasProduto.textContent = "Nenhuma venda registrada para esta peça.";
-    alternarTabelaVazia(tabelaVendasProduto, true);
+    tabelaVendasProduto.innerHTML = '<tr class="data-table__empty"><td colspan="6">Nenhuma venda registrada para esta peça.</td></tr>';
     return;
   }
 
-  mensagemVendasProduto.textContent = "";
-  alternarTabelaVazia(tabelaVendasProduto, false);
+  tabelaVendasProduto.innerHTML = ordenarVendasPorData(contextoProduto.vendas).map(venda => {
+    const href = `detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}`;
+    const resultado = window.financeiroUtils?.calcularLucroVenda(venda, contextoProduto.consumosEstoque, contextoProduto.custosVenda);
+    const lucro = resultado?.calculado
+      ? `<td class="num cell-strong ${resultado.lucro < 0 ? "text-danger" : "text-success"}" data-label="Lucro">${formatarMoeda(resultado.lucro)}</td>`
+      : '<td class="num cell-muted" data-label="Lucro">Custo não calculado</td>';
 
-  ordenarVendasPorData(contextoProduto.vendas).forEach(venda => {
-    const linha = document.createElement("tr");
-
-    linha.innerHTML = `
-      <td data-label="Data">${formatarData(obterDataVenda(venda))}</td>
-      <td data-label="Canal">${escaparHtml(venda.canalVenda || "-")}</td>
-      <td data-label="Quantidade">${formatarNumero(quantidadeVendida(venda))}</td>
-      <td data-label="Valor vendido">${formatarMoeda(valorVenda(venda))}</td>
-      <td data-label="Ações">
-        <div class="table-actions table-actions--single">
-          <a class="table-link" href="detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}">Ver detalhes da venda</a>
-        </div>
-      </td>
+    return `
+      <tr>
+        <td class="cell-nowrap" data-label="Data">${formatarData(obterDataVenda(venda))}</td>
+        <td class="cell-muted" data-label="Canal">${escaparHtml(venda.canalVenda || "—")}</td>
+        <td class="num" data-label="Qtd.">${formatarNumero(quantidadeVendida(venda))}</td>
+        <td class="num cell-strong" data-label="Valor">${formatarMoeda(valorVenda(venda))}</td>
+        ${lucro}
+        <td class="cell-acoes"><a class="btn btn--secondary btn--compact" href="${href}">Ver venda</a></td>
+      </tr>
     `;
-
-    tabelaVendasProduto.appendChild(linha);
-  });
+  }).join("");
 }
 
 async function excluirCustoProduto(custoId) {
@@ -1589,15 +1371,15 @@ async function iniciarDetalhes() {
   const pecaId = obterPecaIdDaUrl();
 
   if (!pecaId) {
-    renderizarNaoEncontrado("Selecione uma peca pela tela Produtos para abrir os detalhes.");
+    renderizarNaoEncontrado("Abra uma peça pela tela Produtos.");
     return;
   }
 
   try {
-    contextoProduto = await recarregarContextoProduto(pecaId) || carregarContextoLocal(pecaId);
+    contextoProduto = await recarregarContextoProduto(pecaId) || { produto: null };
 
     if (!contextoProduto.produto) {
-      renderizarNaoEncontrado("Produto não encontrado.");
+      renderizarNaoEncontrado("Peça não encontrada.");
       return;
     }
 
@@ -1606,9 +1388,15 @@ async function iniciarDetalhes() {
     if (deveAbrirEdicaoProduto()) {
       abrirFormularioEdicaoProduto();
     }
+
+    // "Excluir peça" no menu de Produtos abre esta tela com #excluir: começa a exclusão (com as travas e a confirmação).
+    if (window.location.hash === "#excluir") {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+      excluirProdutoAtual();
+    }
   } catch (erro) {
     console.error(erro);
-    renderizarNaoEncontrado("Não foi possível carregar os detalhes da peça pelo Supabase.");
+    renderizarNaoEncontrado("Não foi possível carregar a peça.");
   }
 }
 
@@ -1683,6 +1471,10 @@ tabelaEntradasProduto?.addEventListener("click", evento => {
   if (botao.dataset.acao === "excluir-entrada") {
     excluirEntradaProduto(botao.dataset.entradaId);
   }
+});
+
+document.querySelector(".page-head .action-menu")?.addEventListener("click", evento => {
+  if (evento.target.closest(".action-menu__item")) evento.currentTarget.removeAttribute("open");
 });
 
 iniciarDetalhes();

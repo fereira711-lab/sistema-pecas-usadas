@@ -1,0 +1,145 @@
+/* Detalhes da peça (redesenho). Só o que é específico desta tela; KPIs, cards e tabelas vêm do base.css. */
+
+/* ---- Bloco principal: foto · situação e texto · dados de preço e custo ---- */
+
+.peca-principal {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) minmax(240px, 320px);
+  align-items: start;
+  gap: var(--space-6);
+}
+
+.peca-principal__foto {
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--text-faint);
+  font-size: var(--fs-title);
+}
+
+.peca-principal__foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.peca-principal__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.peca-principal__compat,
+.peca-principal__obs {
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.peca-principal__rotulo {
+  display: block;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.peca-principal__obs {
+  color: var(--text-muted);
+}
+
+.peca-principal__dados {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.peca-principal__dados > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2-5) 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: var(--fs-body);
+}
+
+.peca-principal__dados > div:last-child {
+  border-bottom: 0;
+}
+
+.peca-principal__dados dt {
+  color: var(--text-muted);
+}
+
+.peca-principal__dados dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (max-width: 1080px) {
+  .peca-principal {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+
+  .peca-principal__foto {
+    width: 120px;
+    height: 120px;
+  }
+
+  .peca-principal__dados {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .peca-principal {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Seções com tabela (entradas, custos, vendas) ---- */
+
+.peca-secao__mensagem {
+  margin: 0 var(--space-6);
+}
+
+/* Formulário que abre dentro do card (nova entrada, editar entrada, editar custo). */
+.peca-subform {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0 var(--space-6);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-readonly);
+}
+
+.peca-subform__campos {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1080px) {
+  .peca-subform__campos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .peca-subform__campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Marketplace (só visual, integração depois) ---- */
+
+.peca-marketplace__texto {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}

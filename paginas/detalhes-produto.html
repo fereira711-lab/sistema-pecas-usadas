@@ -3,197 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalhes do produto</title>
+  <title>Detalhes da peça</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/base.css?v=15">
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/base.css?v=16">
+  <link rel="stylesheet" href="../css/detalhes-produto.css?v=1">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark product-detail-page">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Central da peça</p>
-      <h1>Detalhes do produto</h1>
-      <p class="hero__description">Central operacional da peça no estoque.</p>
-    </div>
-  </header>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <a class="page-head__back" href="produtos.html"><i class="ri-arrow-left-s-line" aria-hidden="true"></i>Produtos</a>
+        <h1 class="page-head__title" id="tituloProduto">Peça</h1>
+        <p class="page-head__subtitle" id="subtituloProduto">Carregando peça…</p>
+      </div>
+      <div class="page-head__actions" id="acoesProduto" hidden>
+        <button type="button" id="botaoEditarProduto" class="btn btn--secondary">Editar dados</button>
+        <details class="action-menu">
+          <summary class="btn btn--icon" aria-label="Mais ações da peça"><i class="ri-more-2-fill" aria-hidden="true"></i></summary>
+          <div class="action-menu__list">
+            <button type="button" class="action-menu__item" id="botaoLancamentoCustoProduto">Lançar custo</button>
+            <button type="button" class="action-menu__item" id="botaoAdicionarEstoqueProduto">Nova entrada de estoque</button>
+            <button type="button" class="action-menu__item" id="botaoImagemProduto">Trocar imagem</button>
+            <div class="action-menu__divider"></div>
+            <button type="button" class="action-menu__item action-menu__item--danger" id="botaoExcluirProduto">Excluir peça</button>
+          </div>
+        </details>
+        <button type="button" id="botaoVenderProduto" class="btn btn--primary">Vender</button>
+      </div>
+    </header>
 
-  <main class="container stock-layout product-detail-layout">
-    <section class="stock-card product-detail-shell">
-      <div class="stock-header product-detail-header">
-        <div>
-          <h2 id="tituloProduto">Produto</h2>
-          <p id="subtituloProduto">Dados principais do item selecionado.</p>
+    <div id="mensagemProdutoNaoEncontrado" class="page-message" role="status"></div>
+    <input id="imagemProdutoDetalhe" class="sr-only" type="file" accept="image/*" tabindex="-1" aria-hidden="true">
+
+    <form id="formEditarProduto" class="card" aria-labelledby="tituloEditarProduto" hidden>
+      <h2 class="card__title" id="tituloEditarProduto">Editar dados da peça</h2>
+      <div class="field-grid field-grid--3">
+        <div class="field">
+          <label class="field__label" for="editarProdutoNome">Nome da peça</label>
+          <input id="editarProdutoNome" class="input" type="text" required>
         </div>
-        <div class="form-actions">
-          <button type="button" id="botaoVenderProduto" class="button-primary">Vender</button>
-          <button type="button" id="botaoAdicionarEstoqueProduto" class="button-secondary">Adicionar estoque</button>
-          <button type="button" id="botaoLancamentoCustoProduto" class="button-secondary">Lançar custo</button>
-          <button type="button" id="botaoEditarProduto" class="button-secondary">Editar dados</button>
-          <button type="button" id="botaoImagemProduto" class="button-secondary">Adicionar imagem</button>
-          <button type="button" id="botaoExcluirProduto" class="button-danger-soft">Excluir peça</button>
-          <a class="button-secondary" href="produtos.html">Voltar ao estoque</a>
+        <div class="field">
+          <label class="field__label" for="editarProdutoSku">SKU</label>
+          <input id="editarProdutoSku" class="input" type="text" required>
+        </div>
+        <div class="field">
+          <label class="field__label" for="editarProdutoPreco">Preço de venda</label>
+          <input id="editarProdutoPreco" class="input" type="text" inputmode="decimal" autocomplete="off">
         </div>
       </div>
+      <div class="field">
+        <label class="field__label" for="editarProdutoCompatibilidade">Compatibilidade <span class="field__optional">(opcional)</span></label>
+        <input id="editarProdutoCompatibilidade" class="input" type="text" placeholder="Ex.: Onix 2012–2019, Prisma 2013–2019">
+      </div>
+      <div class="field">
+        <label class="field__label" for="editarProdutoObservacoes">Observação <span class="field__optional">(opcional)</span></label>
+        <textarea id="editarProdutoObservacoes" class="input" rows="2"></textarea>
+      </div>
+      <div class="form-actions-bar">
+        <button type="button" id="cancelarEdicaoProduto" class="btn btn--quiet">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Salvar dados</button>
+      </div>
+    </form>
 
-      <div id="mensagemProdutoNaoEncontrado" class="empty-message"></div>
-      <input id="imagemProdutoDetalhe" class="file-input-hidden" type="file" accept="image/*">
-      <div id="dadosProduto" class="product-detail-overview"></div>
+    <section class="card peca-principal" id="dadosProduto" aria-label="Dados da peça" hidden></section>
 
-      <form id="formEditarProduto" class="edit-panel" hidden>
-        <div class="product-detail-form-title">Editar dados da peça</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editarProdutoNome">Nome da peça</label>
-            <input id="editarProdutoNome" type="text">
-          </div>
+    <section id="resumoFinanceiro" class="kpi-grid" aria-label="Resumo da peça"></section>
 
-          <div class="form-group">
-            <label for="editarProdutoSku">SKU</label>
-            <input id="editarProdutoSku" type="text">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="editarProdutoCompatibilidade">Compatibilidade (opcional)</label>
-          <input id="editarProdutoCompatibilidade" type="text" placeholder="Ex.: Onix 2012–2019, Prisma 2013–2019">
-        </div>
-
-        <div class="form-group">
-          <label for="editarProdutoPreco">Preço de venda</label>
-          <input id="editarProdutoPreco" type="text" inputmode="decimal">
-        </div>
-
-        <div class="form-group">
-          <label for="editarProdutoObservacoes">Observações</label>
-          <textarea id="editarProdutoObservacoes" rows="3"></textarea>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Salvar edição</button>
-          <button type="button" id="cancelarEdicaoProduto" class="button-secondary">Cancelar</button>
-        </div>
-      </form>
-    </section>
-
-    <section class="product-detail-content-grid">
-      <section class="stock-card section-spaced product-detail-section" id="origemVinculadaProduto"></section>
-
-      <section class="stock-card section-spaced product-detail-section" aria-labelledby="tituloResumoFinanceiro">
-        <div class="stock-header product-detail-section__header">
-          <div>
-            <span class="product-detail-eyebrow">Resumo operacional</span>
-            <h2 id="tituloResumoFinanceiro">Situação atual</h2>
-          </div>
-        </div>
-
-        <div class="summary-grid" id="resumoFinanceiro" aria-label="Resumo operacional"></div>
-      </section>
-
-    <section id="secaoEntradasProduto" class="stock-card section-spaced product-detail-section product-detail-section--wide">
-      <div class="stock-header product-detail-section__header">
-        <div>
-          <h2>Entradas de estoque</h2>
-          <p>Lotes vinculados à peça.</p>
-        </div>
-        <div class="form-actions">
-          <button type="button" id="botaoAbrirEntradaProduto" class="button-secondary">Nova entrada</button>
-        </div>
+    <section id="secaoEntradasProduto" class="card card--flush" aria-labelledby="tituloEntradasProduto">
+      <div class="card__head">
+        <h2 class="card__title" id="tituloEntradasProduto">Entradas de estoque</h2>
+        <button type="button" id="botaoAbrirEntradaProduto" class="btn btn--secondary btn--compact">Nova entrada</button>
       </div>
 
-      <p id="mensagemEntradasProduto" class="empty-message"></p>
+      <p id="mensagemEntradasProduto" class="page-message peca-secao__mensagem" role="status"></p>
 
-      <form id="formAdicionarEstoqueProduto" class="edit-panel" hidden>
-        <div class="product-detail-form-title">Adicionar estoque da peça</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="entradaProdutoOrigemId">Origem</label>
-            <select id="entradaProdutoOrigemId">
+      <form id="formAdicionarEstoqueProduto" class="peca-subform" aria-label="Nova entrada de estoque" hidden>
+        <div class="field-grid peca-subform__campos">
+          <div class="field">
+            <label class="field__label" for="entradaProdutoOrigemId">Origem</label>
+            <select id="entradaProdutoOrigemId" class="select">
               <option value="">Selecione a origem</option>
             </select>
           </div>
-
-          <div class="form-group">
-            <label for="entradaProdutoQuantidade">Quantidade</label>
-            <input id="entradaProdutoQuantidade" type="number" min="1" step="1">
+          <div class="field">
+            <label class="field__label" for="entradaProdutoQuantidade">Quantidade</label>
+            <input id="entradaProdutoQuantidade" class="input" type="number" min="1" step="1">
+          </div>
+          <div class="field">
+            <label class="field__label" for="entradaProdutoCustoUnitario">Custo unitário</label>
+            <input id="entradaProdutoCustoUnitario" class="input" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+          </div>
+          <div class="field">
+            <label class="field__label" for="entradaProdutoData">Data da entrada</label>
+            <input id="entradaProdutoData" class="input" type="date">
           </div>
         </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="entradaProdutoCustoUnitario">Custo unitário</label>
-            <input id="entradaProdutoCustoUnitario" type="text" inputmode="decimal" placeholder="0,00">
-          </div>
-
-          <div class="form-group">
-            <label for="entradaProdutoData">Data</label>
-            <input id="entradaProdutoData" type="date">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="entradaProdutoObservacoes">Observação</label>
-          <textarea id="entradaProdutoObservacoes" rows="2"></textarea>
-        </div>
-
-        <p id="mensagemAdicionarEstoqueProduto" class="form-message" aria-live="polite"></p>
-
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Salvar entrada</button>
-          <button type="button" id="cancelarEntradaProduto" class="button-secondary">Cancelar</button>
+        <p id="mensagemAdicionarEstoqueProduto" class="page-message" role="status"></p>
+        <div class="form-actions-bar">
+          <button type="button" id="cancelarEntradaProduto" class="btn btn--quiet">Cancelar</button>
+          <button type="submit" class="btn btn--primary">Salvar entrada</button>
         </div>
       </form>
 
-      <form id="formEditarEntradaProduto" class="edit-panel" hidden>
-        <div class="product-detail-form-title">Editar entrada de estoque</div>
+      <form id="formEditarEntradaProduto" class="peca-subform" aria-label="Editar entrada de estoque" hidden>
         <input id="editarEntradaProdutoId" type="hidden">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editarEntradaProdutoOrigemId">Origem</label>
-            <select id="editarEntradaProdutoOrigemId">
+        <div class="field-grid peca-subform__campos">
+          <div class="field">
+            <label class="field__label" for="editarEntradaProdutoOrigemId">Origem</label>
+            <select id="editarEntradaProdutoOrigemId" class="select">
               <option value="">Selecione a origem</option>
             </select>
           </div>
-
-          <div class="form-group">
-            <label for="editarEntradaProdutoQuantidade">Quantidade</label>
-            <input id="editarEntradaProdutoQuantidade" type="number" min="1" step="1">
+          <div class="field">
+            <label class="field__label" for="editarEntradaProdutoQuantidade">Quantidade</label>
+            <input id="editarEntradaProdutoQuantidade" class="input" type="number" min="1" step="1">
+          </div>
+          <div class="field">
+            <label class="field__label" for="editarEntradaProdutoCustoUnitario">Custo unitário</label>
+            <input id="editarEntradaProdutoCustoUnitario" class="input" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+          </div>
+          <div class="field">
+            <label class="field__label" for="editarEntradaProdutoData">Data da entrada</label>
+            <input id="editarEntradaProdutoData" class="input" type="date">
           </div>
         </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editarEntradaProdutoCustoUnitario">Custo unitário</label>
-            <input id="editarEntradaProdutoCustoUnitario" type="text" inputmode="decimal" placeholder="0,00">
-          </div>
-
-          <div class="form-group">
-            <label for="editarEntradaProdutoData">Data</label>
-            <input id="editarEntradaProdutoData" type="date">
-          </div>
-        </div>
-
-        <p id="mensagemEditarEntradaProduto" class="form-message" aria-live="polite"></p>
-
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Salvar edição</button>
-          <button type="button" id="cancelarEdicaoEntradaProduto" class="button-secondary">Cancelar</button>
+        <p id="mensagemEditarEntradaProduto" class="page-message" role="status"></p>
+        <div class="form-actions-bar">
+          <button type="button" id="cancelarEdicaoEntradaProduto" class="btn btn--quiet">Cancelar</button>
+          <button type="submit" class="btn btn--primary">Salvar entrada</button>
         </div>
       </form>
 
-      <div class="table-wrapper">
-        <table class="stock-table product-detail-table">
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive">
           <thead>
             <tr>
-              <th>Data</th>
-              <th>Origem</th>
-              <th>Quantidade total</th>
-              <th>Consumida</th>
-              <th>Saldo</th>
-              <th>Custo unitário</th>
-              <th>Valor atribuído</th>
-              <th>Ações</th>
+              <th scope="col">Data</th>
+              <th scope="col">Origem</th>
+              <th scope="col" class="num">Qtd.</th>
+              <th scope="col" class="num">Consumida</th>
+              <th scope="col" class="num">Saldo</th>
+              <th scope="col" class="num">Custo unitário</th>
+              <th scope="col" class="num">Valor atribuído</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody id="tabelaEntradasProduto"></tbody>
@@ -201,64 +155,53 @@
       </div>
     </section>
 
-    <section class="stock-card section-spaced product-detail-section">
-      <div class="stock-header product-detail-section__header">
-        <div>
-          <h2>Custos da peça</h2>
-          <p>Custos operacionais cadastrados diretamente para esta peça.</p>
-        </div>
+    <section class="card card--flush" aria-labelledby="tituloCustosProduto">
+      <div class="card__head">
+        <h2 class="card__title" id="tituloCustosProduto">Custos da peça</h2>
+        <a class="card__link" id="linkLancarCustoProduto" href="cadastro-custo.html">Lançar custo</a>
       </div>
 
-      <p id="mensagemCustosProduto" class="empty-message"></p>
+      <p id="mensagemCustosProduto" class="page-message peca-secao__mensagem" role="status"></p>
 
-      <form id="formEditarCustoProduto" class="edit-panel" hidden>
-        <div class="product-detail-form-title">Editar custo da peça</div>
+      <form id="formEditarCustoProduto" class="peca-subform" aria-label="Editar custo da peça" hidden>
         <input id="editarCustoId" type="hidden">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editarCustoTipo">Tipo</label>
-            <select id="editarCustoTipo"></select>
+        <div class="field-grid peca-subform__campos">
+          <div class="field">
+            <label class="field__label" for="editarCustoTipo">Tipo</label>
+            <select id="editarCustoTipo" class="select"></select>
           </div>
-
-          <div class="form-group">
-            <label for="editarCustoValor">Valor</label>
-            <input id="editarCustoValor" type="text" inputmode="decimal">
+          <div class="field">
+            <label class="field__label" for="editarCustoValor">Valor</label>
+            <input id="editarCustoValor" class="input" type="text" inputmode="decimal" autocomplete="off">
           </div>
-        </div>
-
-        <div class="form-group">
-          <label for="editarCustoDescricao">Descrição</label>
-          <input id="editarCustoDescricao" type="text">
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editarCustoData">Data</label>
-            <input id="editarCustoData" type="date">
+          <div class="field">
+            <label class="field__label" for="editarCustoDescricao">Descrição</label>
+            <input id="editarCustoDescricao" class="input" type="text">
           </div>
-
-          <div class="form-group">
-            <label for="editarCustoObservacoes">Observações</label>
-            <textarea id="editarCustoObservacoes" rows="2"></textarea>
+          <div class="field">
+            <label class="field__label" for="editarCustoData">Data</label>
+            <input id="editarCustoData" class="input" type="date">
           </div>
         </div>
-
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Salvar custo</button>
-          <button type="button" id="cancelarEdicaoCusto" class="button-secondary">Cancelar</button>
+        <div class="field">
+          <label class="field__label" for="editarCustoObservacoes">Observação <span class="field__optional">(opcional)</span></label>
+          <input id="editarCustoObservacoes" class="input" type="text">
+        </div>
+        <div class="form-actions-bar">
+          <button type="button" id="cancelarEdicaoCusto" class="btn btn--quiet">Cancelar</button>
+          <button type="submit" class="btn btn--primary">Salvar custo</button>
         </div>
       </form>
 
-      <div class="table-wrapper">
-        <table class="stock-table product-detail-table">
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive">
           <thead>
             <tr>
-              <th>Data</th>
-              <th>Tipo</th>
-              <th>Descrição</th>
-              <th>Valor</th>
-              <th>Observações</th>
-              <th>Ações</th>
+              <th scope="col">Data</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Descrição</th>
+              <th scope="col" class="num">Valor</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody id="tabelaCustosProduto"></tbody>
@@ -266,25 +209,23 @@
       </div>
     </section>
 
-    <section class="stock-card section-spaced product-detail-section">
-      <div class="stock-header product-detail-section__header">
-        <div>
-          <h2>Vendas relacionadas</h2>
-          <p>Vendas registradas para esta peça.</p>
-        </div>
+    <section class="card card--flush" aria-labelledby="tituloVendasProduto">
+      <div class="card__head">
+        <h2 class="card__title" id="tituloVendasProduto">Vendas</h2>
       </div>
 
-      <p id="mensagemVendasProduto" class="empty-message"></p>
+      <p id="mensagemVendasProduto" class="page-message peca-secao__mensagem" role="status"></p>
 
-      <div class="table-wrapper">
-        <table class="stock-table product-detail-table">
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive">
           <thead>
             <tr>
-              <th>Data</th>
-              <th>Canal</th>
-              <th>Quantidade</th>
-              <th>Valor vendido</th>
-              <th>Ações</th>
+              <th scope="col">Data</th>
+              <th scope="col">Canal</th>
+              <th scope="col" class="num">Qtd.</th>
+              <th scope="col" class="num">Valor</th>
+              <th scope="col" class="num">Lucro</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody id="tabelaVendasProduto"></tbody>
@@ -292,35 +233,9 @@
       </div>
     </section>
 
-      <section class="stock-card section-spaced product-detail-section product-detail-section--wide product-detail-marketplace" aria-labelledby="tituloMarketplaceProduto">
-      <div class="stock-header product-detail-section__header">
-        <div>
-          <span class="product-detail-eyebrow">Futuro marketplace</span>
-          <h2 id="tituloMarketplaceProduto">Informações comerciais</h2>
-          <p>Área visual em desenvolvimento, sem integração com banco ou anúncios.</p>
-        </div>
-        <span class="status-badge status-badge--info">Em desenvolvimento</span>
-      </div>
-
-      <div class="product-detail-marketplace-grid" aria-label="Marketplace futuro">
-        <article class="detail-card">
-          <span>Título do anúncio</span>
-          <strong>Aguardando definição</strong>
-        </article>
-        <article class="detail-card">
-          <span>Preço marketplace</span>
-          <strong>Não conectado</strong>
-        </article>
-        <article class="detail-card">
-          <span>Status do anúncio</span>
-          <strong>Em desenvolvimento</strong>
-        </article>
-        <article class="detail-card">
-          <span>Link do anúncio</span>
-          <strong>Aguardando integração</strong>
-        </article>
-      </div>
-      </section>
+    <section class="card peca-marketplace" aria-labelledby="tituloMarketplaceProduto">
+      <h2 class="card__title" id="tituloMarketplaceProduto">Anúncio no marketplace</h2>
+      <p class="peca-marketplace__texto">A integração com o Mercado Livre (anunciar esta peça direto daqui) vem depois que o sistema de controle estiver em uso.</p>
     </section>
   </main>
 
@@ -330,7 +245,8 @@
   <script src="../js/moeda-utils.js?v=2"></script>
   <script src="../js/supabase-service.js?v=36"></script>
   <script src="../js/financeiro-utils.js?v=6"></script>
-  <script src="../js/detalhes-produto.js?v=19"></script>
+  <script src="../js/alertas-regras.js?v=3"></script>
+  <script src="../js/detalhes-produto.js?v=21"></script>
   <script src="../js/sidebar.js?v=9"></script>
 </body>
 </html>

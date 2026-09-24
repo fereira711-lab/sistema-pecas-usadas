@@ -207,6 +207,11 @@ body.ui-v2 p {
   border: 0;
 }
 
+/* O atributo hidden sempre esconde, mesmo em componentes com display próprio (card, form-stack, pager...). */
+body.ui-v2 [hidden] {
+  display: none !important;
+}
+
 .page-message {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
