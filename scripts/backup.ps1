@@ -1,10 +1,12 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$OutputDirectory,
     [string]$ProjectRef = 'dallfhhzoibxwcpgagsl',
     [string]$DatabaseHost = 'db.dallfhhzoibxwcpgagsl.supabase.co',
     [string]$DatabaseName = 'postgres',
-    [string]$DatabaseUser = 'postgres'
+    [string]$DatabaseUser = 'postgres',
+    # Em execucao agendada nao ha ninguem para digitar a senha: falha com mensagem clara em vez de travar.
+    [switch]$NaoInterativo
 )
 
 $ErrorActionPreference = 'Stop'
@@ -20,13 +22,28 @@ function Resolve-DatabaseTool([string]$Name) {
     throw "$Name não encontrado. Consulte docs/INFRAESTRUTURA.md."
 }
 
+function ConvertFrom-SecurePassword([securestring]$Secure) {
+    $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Secure)
+    try { return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer) }
+    finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer) }
+}
+
+# Arquivo criado por scripts/salvar-senha-backup.ps1, criptografado com DPAPI
+# (so o mesmo usuario do Windows, nesta mesma maquina, consegue ler).
+$credentialFile = Join-Path $env:APPDATA 'ERP-Pecas-Usadas\supabase-db-senha.xml'
+
 function Read-DatabasePassword {
     if ($env:SUPABASE_DB_PASSWORD) { return $env:SUPABASE_DB_PASSWORD }
 
-    $secure = Read-Host 'Senha do banco Supabase (não será salva)' -AsSecureString
-    $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
-    try { return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer) }
-    finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer) }
+    if (Test-Path -LiteralPath $credentialFile) {
+        return ConvertFrom-SecurePassword (Import-Clixml -LiteralPath $credentialFile)
+    }
+
+    if ($NaoInterativo) {
+        throw "Senha do banco nao configurada para execucao automatica. Rode uma vez: .\scripts\salvar-senha-backup.bat"
+    }
+
+    return ConvertFrom-SecurePassword (Read-Host 'Senha do banco Supabase (não será salva)' -AsSecureString)
 }
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
