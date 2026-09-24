@@ -114,6 +114,10 @@ Decisoes de 2026-09-24:
 
 - Mercado Livre (anunciar peca direto do ERP, inclusive a partir do alerta de peca parada) fica para DEPOIS de o sistema de controle estar concluido e em uso real. Nao implementar agora: nem conexao, nem botao "Anunciar". A area de marketplace em Detalhes do produto continua so visual (decisao de 2026-09-24, registrada tambem em `_base-ia/05-projetos/sistema-pecas-usadas.md`).
 
+## Ideias futuras (nao implementar sem pedido)
+
+- Botao "Sugerir custo" na Nova peça: ratear o valor da origem entre as pecas proporcionalmente ao preco de venda de cada uma (ideia de 2026-09-24, registrada tambem no `_base-ia`).
+
 ## Dados de demonstracao
 
 - Conjunto fixo para as conferencias do redesenho: `sql/90_demo_carregar.sql` e `sql/91_demo_apagar.sql`, ou `scripts\demo-carregar.bat` e `scripts\demo-apagar.bat` (usam a senha salva do backup; o apagar pede `APAGAR DEMO`).
