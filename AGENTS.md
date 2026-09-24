@@ -373,29 +373,14 @@ Implementacao atual confirmada:
 
 ## Padrao da tela Cadastro de venda
 
-- `paginas/cadastro-venda.html` usa fluxo operacional organizado em blocos.
-- Ordem da tela: Produto vendido, Dados da venda, Custos da venda e Resumo antes de salvar.
-- A tela e focada em registrar venda, custos opcionais da venda e baixa de estoque via FIFO.
-- Nao transformar Cadastro de venda em tela de analise financeira pesada.
-- Ao selecionar uma peca, mostrar SKU, nome, preco de venda, estoque disponivel e alerta de estoque baixo/sem estoque quando aplicavel.
-- Custos da venda sao opcionais, podem ser adicionados/removidos antes de salvar e devem aparecer em lista compacta.
-- A venda deve poder ser salva sem custo adicional.
-- O resumo antes de salvar deve mostrar quantidade vendida, receita prevista, custos da venda e aviso de que o custo da peca sera calculado automaticamente ao salvar.
-- Ao limpar o formulario, peca, campos, custos e resumo devem voltar ao estado vazio/zero.
-- Venda deve respeitar estoque disponivel.
-- Nao alterar FIFO manualmente; o custo real da venda vem de `venda_consumos_estoque`.
-- `financeiro-utils.js` continua sendo a fonte oficial de calculo financeiro.
-- FIFO continua sendo a regra tecnica interna de custo, mas a interface deve preferir termos simples para o usuario: `custo da peca`, `custo consumido` e `entrada consumida`.
-
-Implementacao atual confirmada:
-
-- `js/venda.js` registra `pecaId`, quantidade, valor unitario, canal, observacoes, data e custos opcionais da venda.
-- A validacao atual bloqueia quantidade maior que o estoque disponivel.
-- Com Supabase configurado, a persistencia usa `window.supabaseService.salvarVenda(...)`.
-- A persistencia no Supabase agora inclui `observacoes` da venda, e a leitura de `vendas` devolve esse campo para o extrato.
-- O resultado financeiro salvo usa `window.financeiroUtils.calcularLucroVenda(...)` com consumos reais; sem consumo registrado, permanece `Custo nao calculado`.
-- Sem Supabase configurado, ainda existe fallback temporario em `localStorage`, com mensagem de aviso ao usuario.
-- O resumo continua operacional: quantidade, valor unitario, total e custos da venda.
+- `paginas/cadastro-venda.html` ("Registrar venda") registra uma venda. Tela ja migrada para o redesenho (`ui-v2`, `css/registrar-venda.css`, `js/venda.js`).
+- Blocos: Peça vendida (busca por SKU, nome, compatibilidade ou origem, cada palavra sem acento; a peca escolhida vira cartao com foto, nome, SKU · origem, compatibilidade, estoque e `Trocar peça`), Dados da venda (quantidade, valor unitario ja preenchido com o preco cadastrado, data, canal, observacao) e Custos da venda (linhas tipo + valor + remover, `Adicionar custo`; tipos ativos de categoria Venda ou Ambos).
+- Canal por botoes com opcoes fixas: Mercado Livre, WhatsApp, Balcão, Outro (obrigatorio). Valores antigos em texto livre continuam exibidos como estao nas outras telas.
+- Aceita `?pecaId=` (botao `Vender` de Produtos e do detalhe da peca). Peca sem estoque aparece desabilitada na busca.
+- Resumo lateral "Resultado da venda" ANTES de registrar: receita, custo da peca, custos da venda, lucro e margem. O custo da peca e estimado por `financeiro-utils.estimarCustoVendaPeca`: as N proximas unidades na mesma ordem de consumo do banco (data da entrada e depois id); com 1 unidade e o mesmo valor de `calcularCustoReferenciaPeca`. Sem estoque suficiente: `Custo não calculado` e "Falta N un. em estoque", sem inventar lucro/margem. Texto de apoio: "O custo vem da entrada mais antiga desta peça e é confirmado ao registrar."
+- `Registrar venda` e a acao principal, no resumo; `Cancelar` volta para Vendas. Depois de registrar: fica na tela, limpa o formulario e mostra "Venda de X registrada · Ver venda".
+- O registro continua pela funcao oficial `registrar_venda_fifo` (FIFO no banco); custos da venda gravados em seguida (`supabaseService.salvarVenda`, como antes). O custo real vem de `venda_consumos_estoque`; `financeiro-utils.js` continua sendo a fonte oficial.
+- Sairam no redesenho: botao "+ Novo tipo" (tipos ficam na tela Tipos de custo), campo de observacao por custo da venda e o fallback em `localStorage` sem Supabase.
 
 ## Padrao da tela Detalhes da venda
 

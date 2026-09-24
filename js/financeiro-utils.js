@@ -215,6 +215,36 @@
     return { calculado: false, valor: null, fonte: null };
   }
 
+  // Prévia do custo de uma venda antes de registrar: percorre as entradas com saldo na mesma ordem
+  // de consumo (compararOrdemConsumo) e soma o custo das N próximas unidades. Com quantidade 1 é o
+  // mesmo valor de calcularCustoReferenciaPeca. O custo oficial continua vindo do banco ao registrar.
+  function estimarCustoVendaPeca(pecaId, quantidade, entradas) {
+    let restante = Math.max(0, Math.floor(Number(quantidade || 0)));
+    const pedida = restante;
+    let valor = 0;
+    const partes = [];
+
+    filtrarPorId(entradas, "pecaId", pecaId)
+      .map(entrada => ({ entrada, saldo: Number(entrada?.quantidadeTotal || 0) - Number(entrada?.quantidadeConsumida || 0) }))
+      .filter(item => item.saldo > 0)
+      .sort((a, b) => compararOrdemConsumo(a.entrada, b.entrada))
+      .forEach(({ entrada, saldo }) => {
+        if (restante <= 0) return;
+        const usar = Math.min(saldo, restante);
+        const custoUnitario = Number(entrada.custoUnitario || 0);
+        valor += usar * custoUnitario;
+        partes.push({ entradaId: obterId(entrada.id), quantidade: usar, custoUnitario });
+        restante -= usar;
+      });
+
+    return {
+      calculado: pedida > 0 && restante === 0,
+      valor: pedida > 0 && restante === 0 ? valor : null,
+      quantidadeSemEstoque: restante,
+      partes
+    };
+  }
+
   // Margem prevista sobre o preço de venda cadastrado: (preço − custo) / preço.
   function calcularMargemPreco(preco, custo) {
     const precoNumero = Number(preco || 0);
@@ -228,6 +258,7 @@
 
   window.financeiroUtils = {
     calcularCustoReferenciaPeca,
+    estimarCustoVendaPeca,
     calcularMargemPreco,
     calcularReceitaVenda,
     calcularCustoConsumidoVenda,

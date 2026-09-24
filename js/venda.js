@@ -1,1040 +1,531 @@
-function buscarPecas() {
-  return JSON.parse(localStorage.getItem("produtos")) || [];
-}
+// Registrar venda (redesenho, seção 7 da especificação): peça escolhida como cartão, canal por botões
+// (Mercado Livre, WhatsApp, Balcão, Outro), custos da venda em linhas e resumo lateral com o resultado
+// ANTES de registrar. A prévia do custo usa financeiro-utils.estimarCustoVendaPeca (mesma ordem de
+// consumo do banco); o registro continua pela função oficial registrar_venda_fifo, que calcula o custo real.
+const MAXIMO_SUGESTOES = 8;
 
-function salvarPecas(pecas) {
-  localStorage.setItem("produtos", JSON.stringify(pecas));
-}
-
-function buscarVendas() {
-  return JSON.parse(localStorage.getItem("vendas")) || [];
-}
-
-function buscarEntradasLocais() {
-  return JSON.parse(localStorage.getItem("entradasEstoque")) || [];
-}
-
+const formVenda = document.getElementById("formVenda");
+const mensagemVenda = document.getElementById("mensagemVenda");
 const campoBuscaPecaVenda = document.getElementById("buscaPecaVenda");
+const campoBuscaPeca = document.getElementById("campoBuscaPeca");
 const sugestoesPecaVenda = document.getElementById("sugestoesPecaVenda");
+const cartaoPecaVenda = document.getElementById("cartaoPecaVenda");
+const campoQuantidade = document.getElementById("quantidadeVendidaNaVenda");
+const campoValor = document.getElementById("valorVenda");
+const dicaPrecoCadastrado = document.getElementById("dicaPrecoCadastrado");
 const campoDataVenda = document.getElementById("dataVenda");
+const canaisVenda = document.getElementById("canaisVenda");
+const campoObservacoes = document.getElementById("observacoesVenda");
 const listaCustosVenda = document.getElementById("listaCustosVenda");
 const botaoAdicionarCustoVenda = document.getElementById("botaoAdicionarCustoVenda");
-const botaoNovoTipoCustoVenda = document.getElementById("botaoNovoTipoCustoVenda");
-const mensagemVenda = document.getElementById("mensagemVenda");
-const resumoVendaValorUnitario = document.getElementById("resumoVendaValorUnitario");
-const resumoVendaQuantidade = document.getElementById("resumoVendaQuantidade");
-const resumoVendaTotal = document.getElementById("resumoVendaTotal");
-const resumoVendaCustos = document.getElementById("resumoVendaCustos");
-const resumoPecaVenda = document.getElementById("resumoPecaVenda");
-let pecasVendaCarregadas = [];
-let entradasVendaCarregadas = [];
-let tiposCustoVendaCarregados = [];
-let sugestoesVendaAtuais = [];
-let indiceSugestaoVenda = -1;
-const tiposCustoVendaPadrao = ["Embalagem", "Frete", "Comissão", "Taxa marketplace", "Taxa cartão", "Coleta", "Etiqueta", "Outros"];
+const botaoRegistrarVenda = document.getElementById("botaoRegistrarVenda");
 
-function salvarVendas(vendas) {
-  localStorage.setItem("vendas", JSON.stringify(vendas));
+const resumoReceita = document.getElementById("resumoReceita");
+const resumoCustoPeca = document.getElementById("resumoCustoPeca");
+const resumoCustosVenda = document.getElementById("resumoCustosVenda");
+const resumoLucroLinha = document.getElementById("resumoLucroLinha");
+const resumoLucro = document.getElementById("resumoLucro");
+const resumoMargem = document.getElementById("resumoMargem");
+const notaCustoVenda = document.getElementById("notaCustoVenda");
+
+let pecasVenda = [];
+let origensVenda = [];
+let entradasVenda = [];
+let tiposCustoVenda = [];
+let pecaSelecionada = null;
+let canalSelecionado = "";
+let sugestoesAtuais = [];
+let indiceSugestao = -1;
+let registrando = false;
+
+// ---- Formatação ----
+
+function escaparHtml(valor) {
+  return String(valor ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-function normalizarPeca(peca) {
-  const quantidade = Number(peca.quantidade || 1);
-  const quantidadeVendida = Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
-  const quantidadeDisponivel = Math.max(quantidade - quantidadeVendida, 0);
-
-  return {
-    ...peca,
-    id: Number(peca.id),
-    nome: peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`,
-    sku: peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "",
-    quantidade,
-    quantidadeVendida,
-    origemId: Number(peca.origemId || peca.origem_id || 0),
-    status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque"
-  };
+function normalizarTexto(valor) {
+  return String(valor || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
 }
 
-function formatarNomePeca(peca) {
-  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
-  const sku = String(peca.sku || "").trim();
-
-  return sku ? `${sku} - ${nome}` : nome;
+function formatarMoeda(valor) {
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(Number(valor || 0));
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function escaparHtml(texto) {
-  return String(texto || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+function formatarPercentual(valor) {
+  if (window.moedaUtils?.formatarPercentualBR) return window.moedaUtils.formatarPercentualBR(valor, 1);
+  return `${Number(valor || 0).toFixed(1).replace(".", ",")}%`;
 }
 
-function escaparRegex(texto) {
-  return String(texto || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function formatarNegativo(valor) {
+  // Custos no resumo aparecem como saída: "− R$ 190,00".
+  return Number(valor || 0) > 0 ? `− ${formatarMoeda(valor)}` : formatarMoeda(0);
 }
 
-function formatarMoedaVenda(valor) {
-  if (window.moedaUtils?.formatarMoedaBR) {
-    return window.moedaUtils.formatarMoedaBR(valor);
-  }
-
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
-}
-
-function obterPrecoVendaPeca(peca) {
-  return Number(peca.precoVenda || peca.preco_venda || peca.valorVenda || peca.valor_venda || peca.preco_sugerido || 0);
-}
-
-function obterImagemPecaVenda(peca) {
-  return String(peca.imagemUrl || peca.imagem_url || "").trim();
-}
-
-function renderizarImagemPecaVenda(peca) {
-  const imagemUrl = obterImagemPecaVenda(peca);
-  const nome = peca.nome || peca.nome_peca || "peca";
-
-  if (imagemUrl) {
-    return `<img src="${escaparHtml(imagemUrl)}" alt="Imagem de ${escaparHtml(nome)}" loading="lazy">`;
-  }
-
-  return "<span>IMG</span>";
-}
-
-function obterStatusEstoqueVenda(quantidadeDisponivel) {
-  if (quantidadeDisponivel <= 0) {
-    return {
-      texto: "Sem estoque",
-      classe: "sale-stock-badge sale-stock-badge--empty"
-    };
-  }
-
-  if (quantidadeDisponivel <= 2) {
-    return {
-      texto: "Estoque baixo",
-      classe: "sale-stock-badge sale-stock-badge--low"
-    };
-  }
-
-  return {
-    texto: "Em estoque",
-    classe: "sale-stock-badge sale-stock-badge--ok"
-  };
-}
-
-function destacarBusca(texto) {
-  const termo = String(campoBuscaPecaVenda?.value || "").trim();
-  const textoSeguro = escaparHtml(texto);
-
-  if (!termo) {
-    return textoSeguro;
-  }
-
-  return textoSeguro.replace(new RegExp(`(${escaparRegex(termo)})`, "gi"), "<mark>$1</mark>");
-}
-
-function padronizarNomeTipoCusto(nome) {
-  const texto = String(nome || "").trim().replace(/\s+/g, " ").toLowerCase();
-
-  if (!texto) {
-    return "";
-  }
-
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
-}
-
-function normalizarNomeTipoCusto(nome) {
-  return String(nome || "").trim().toLowerCase();
-}
-
-function buscarTiposCustoVendaLocais() {
-  const tipos = JSON.parse(localStorage.getItem("tiposCusto")) || [];
-
-  if (tipos.length > 0) {
-    return tipos;
-  }
-
-  return tiposCustoVendaPadrao.map((nome, indice) => ({
-    id: `local-venda-${indice + 1}`,
-    nome,
-    categoria: "venda",
-    ativo: true
-  }));
-}
-
-function salvarTiposCustoVendaLocais(tipos) {
-  localStorage.setItem("tiposCusto", JSON.stringify(tipos));
-}
-
-function criarOpcoesTiposCustoVenda(tipoSelecionado = "") {
-  return [
-    '<option value="">Tipo de custo</option>',
-    ...tiposCustoVendaCarregados
-      .filter(tipo => tipo.ativo !== false && ["venda", "ambos"].includes(tipo.categoria || "ambos"))
-      .sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"))
-      .map(tipo => {
-        const selecionado = tipo.nome === tipoSelecionado ? " selected" : "";
-        return `<option value="${escaparHtml(tipo.nome)}" data-tipo-id="${escaparHtml(tipo.id)}"${selecionado}>${escaparHtml(tipo.nome)}</option>`;
-      })
-  ].join("");
-}
-
-function atualizarSelectsTiposCustoVenda() {
-  listaCustosVenda?.querySelectorAll("[data-campo='tipo']").forEach(select => {
-    const valorAtual = select.value;
-    select.innerHTML = criarOpcoesTiposCustoVenda(valorAtual);
-    select.value = valorAtual;
-  });
-}
-
-function renderizarEstadoCustosVenda() {
-  if (!listaCustosVenda) {
-    return;
-  }
-
-  const temCustos = listaCustosVenda.querySelector(".cost-line");
-  const estadoVazio = listaCustosVenda.querySelector(".sale-costs-empty");
-
-  if (temCustos) {
-    estadoVazio?.remove();
-    return;
-  }
-
-  if (!estadoVazio) {
-    listaCustosVenda.innerHTML = `
-      <div class="sale-costs-empty">
-        Nenhum custo da venda adicionado.
-      </div>
-    `;
-  }
-}
-
-function limparCustosVenda() {
-  if (!listaCustosVenda) {
-    return;
-  }
-
-  listaCustosVenda.innerHTML = "";
-  renderizarEstadoCustosVenda();
-}
-
-async function carregarTiposCustoVenda() {
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    try {
-      tiposCustoVendaCarregados = await window.supabaseService.listarTiposCusto("venda") || [];
-      salvarTiposCustoVendaLocais(tiposCustoVendaCarregados);
-      atualizarSelectsTiposCustoVenda();
-      return;
-    } catch (erro) {
-      console.error("Erro ao carregar tipos de custo da venda:", erro);
-    }
-  }
-
-  tiposCustoVendaCarregados = buscarTiposCustoVendaLocais();
-  atualizarSelectsTiposCustoVenda();
-}
-
-function adicionarLinhaCustoVenda(custo = {}) {
-  if (!listaCustosVenda) {
-    return;
-  }
-
-  listaCustosVenda.querySelector(".sale-costs-empty")?.remove();
-
-  const linha = document.createElement("div");
-  linha.className = "cost-line";
-  linha.innerHTML = `
-    <select data-campo="tipo" aria-label="Tipo de custo da venda">
-      ${criarOpcoesTiposCustoVenda(custo.tipoCusto || custo.tipo || "")}
-    </select>
-    <input data-campo="valor" type="text" inputmode="decimal" placeholder="Valor" value="${custo.valor || ""}">
-    <input data-campo="descricao" type="text" placeholder="Observacao" value="${escaparHtml(custo.descricao || "")}">
-    <button type="button" class="button-secondary" data-acao="remover-custo">Remover</button>
-  `;
-
-  listaCustosVenda.appendChild(linha);
-  window.moedaUtils?.registrarCampoMoeda?.(linha.querySelector("[data-campo='valor']"));
-  atualizarResumoVenda();
-  renderizarEstadoCustosVenda();
-}
-
-async function criarNovoTipoCustoVenda() {
-  const nomeDigitado = prompt("Nome do novo tipo de custo da venda:");
-  const nomePadronizado = padronizarNomeTipoCusto(nomeDigitado);
-
-  if (!nomeDigitado) {
-    return;
-  }
-
-  if (!nomePadronizado) {
-    alert("Informe um nome valido para o tipo de custo.");
-    return;
-  }
-
-  const tipoExistente = tiposCustoVendaCarregados.find(tipo => (
-    normalizarNomeTipoCusto(tipo.nome) === normalizarNomeTipoCusto(nomePadronizado)
-  ));
-
-  if (tipoExistente) {
-    atualizarSelectsTiposCustoVenda();
-    alert(`Tipo "${tipoExistente.nome}" ja existe.`);
-    return;
-  }
-
-  const categoriaDigitada = prompt("Categoria do tipo: peca, venda ou ambos", "venda");
-  const categoria = normalizarNomeTipoCusto(categoriaDigitada || "venda");
-
-  if (!["peca", "venda", "ambos"].includes(categoria)) {
-    alert("Categoria invalida. Use peca, venda ou ambos.");
-    return;
-  }
-
-  try {
-    const novoTipo = window.supabaseService && window.supabaseService.estaConfigurado()
-      ? await window.supabaseService.criarTipoCusto(nomePadronizado, categoria)
-      : {
-          id: `local-venda-${Date.now()}`,
-          nome: nomePadronizado,
-          categoria,
-          ativo: true
-        };
-
-    tiposCustoVendaCarregados.push(novoTipo);
-    salvarTiposCustoVendaLocais(tiposCustoVendaCarregados);
-    atualizarSelectsTiposCustoVenda();
-    adicionarLinhaCustoVenda({ tipoCusto: novoTipo.nome });
-  } catch (erro) {
-    console.error("Erro ao criar tipo de custo da venda:", erro);
-    alert("Nao foi possivel criar o tipo de custo.");
-  }
-}
-
-function formatarNomePecaDestacado(peca) {
-  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
-  const sku = String(peca.sku || "").trim();
-
-  return sku
-    ? `${destacarBusca(sku)} - ${destacarBusca(nome)}`
-    : destacarBusca(nome);
-}
-
-function filtrarPecasPorBusca(pecas) {
-  const termo = String(campoBuscaPecaVenda?.value || "").trim().toLowerCase();
-
-  if (!termo) {
-    return pecas;
-  }
-
-  return pecas.filter(peca => {
-    const nome = String(peca.nome || peca.nome_peca || peca.nomeProduto || "").toLowerCase();
-    const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").toLowerCase();
-
-    return nome.includes(termo) || sku.includes(termo);
-  });
-}
-
-function calcularQuantidadeDisponivel(peca) {
-  if (window.supabaseService?.estaConfigurado?.() && window.supabaseService?.calcularSaldoPeca) {
-    return window.supabaseService.calcularSaldoPeca(peca, entradasVendaCarregadas || []).quantidadeDisponivel;
-  }
-
-  return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
-}
-
-function renderizarResumoPecaVenda(peca) {
-  if (!resumoPecaVenda) {
-    return;
-  }
-
-  if (!peca) {
-    resumoPecaVenda.innerHTML = "";
-    return;
-  }
-
-  const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-  const precoVenda = obterPrecoVendaPeca(peca);
-  const statusEstoque = obterStatusEstoqueVenda(quantidadeDisponivel);
-
-  resumoPecaVenda.innerHTML = `
-    <article class="sale-selected-product">
-      <div class="sale-selected-product__image">${renderizarImagemPecaVenda(peca)}</div>
-      <div class="sale-selected-product__info">
-        <span>SKU ${escaparHtml(peca.sku || "-")}</span>
-        <strong>${escaparHtml(peca.nome || "-")}</strong>
-        <small>Preco de venda: ${precoVenda > 0 ? formatarMoedaVenda(precoVenda) : "Nao informado"}</small>
-      </div>
-      <div class="sale-selected-product__stock">
-        <span>Estoque disponivel</span>
-        <strong>${quantidadeDisponivel}</strong>
-      </div>
-      <span class="${statusEstoque.classe}">${statusEstoque.texto}</span>
-    </article>
-  `;
-}
-
-function obterCampoPeca() {
-  return document.getElementById("pecaId");
-}
-
-function salvarPecaNoCache(pecaAtualizada) {
-  const pecas = buscarPecas().map(normalizarPeca);
-  const indice = pecas.findIndex(peca => Number(peca.id) === Number(pecaAtualizada.id));
-
-  if (indice >= 0) {
-    pecas[indice] = normalizarPeca(pecaAtualizada);
-  } else {
-    pecas.push(normalizarPeca(pecaAtualizada));
-  }
-
-  salvarPecas(pecas);
-}
-
-function salvarVendaNoCache(venda) {
-  const vendas = buscarVendas().filter(item => Number(item.id) !== Number(venda.id));
-  vendas.push(venda);
-  salvarVendas(vendas);
-}
-
-function lerValorCampo(id) {
-  const campo = document.getElementById(id);
-
-  if (!campo || campo.value === "") {
-    return 0;
-  }
-
-  return Number(campo.value);
+function lerMoeda(texto) {
+  const valor = String(texto || "").trim();
+  if (!valor) return null;
+  const numero = window.moedaUtils?.parseMoedaBR ? window.moedaUtils.parseMoedaBR(valor) : Number(valor.replace(",", "."));
+  return Number.isFinite(numero) ? numero : NaN;
 }
 
 function obterDataLocalHoje() {
   const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-  const dia = String(hoje.getDate()).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
+  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 }
 
-function preencherDataVendaPadrao() {
-  if (campoDataVenda && !campoDataVenda.value) {
-    campoDataVenda.value = obterDataLocalHoje();
+function mostrarMensagem(html, tipo = "warning") {
+  mensagemVenda.innerHTML = html;
+  mensagemVenda.classList.toggle("page-message--success", tipo === "success");
+}
+
+// ---- Dados da peça ----
+
+function obterPreco(peca) {
+  return Number(peca?.precoVenda || peca?.preco_venda || peca?.preco_sugerido || 0);
+}
+
+function calcularSaldo(pecaId) {
+  return entradasVenda
+    .filter(entrada => Number(entrada.pecaId) === Number(pecaId))
+    .reduce((total, entrada) => total + Math.max(0, Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0)), 0);
+}
+
+function obterOrigem(peca) {
+  return origensVenda.find(origem => Number(origem.id) === Number(peca?.origemId)) || null;
+}
+
+// ---- Prévia do resultado (sem DOM, para poder testar) ----
+
+// Receita, custo da peça estimado pela ordem de consumo, custos da venda, lucro e margem.
+// Sem estoque suficiente ou sem entrada: custo não calculado, sem inventar lucro/margem.
+function calcularPreviaVenda({ pecaId, quantidade, valorUnitario, custosVenda, entradas }) {
+  const qtd = Number.isInteger(quantidade) && quantidade > 0 ? quantidade : 0;
+  const unitario = Number.isFinite(valorUnitario) && valorUnitario >= 0 ? valorUnitario : 0;
+  const receita = qtd * unitario;
+  const totalCustosVenda = (custosVenda || []).reduce((total, custo) => total + Number(custo.valor || 0), 0);
+  const custo = pecaId && qtd > 0 && window.financeiroUtils?.estimarCustoVendaPeca
+    ? window.financeiroUtils.estimarCustoVendaPeca(pecaId, qtd, entradas)
+    : { calculado: false, valor: null, quantidadeSemEstoque: 0 };
+
+  if (!custo.calculado) {
+    return { receita, custoPeca: null, custosVenda: totalCustosVenda, lucro: null, margem: null, quantidadeSemEstoque: custo.quantidadeSemEstoque };
   }
-}
 
-function criarCustoVenda(tipo, descricao, valor) {
+  const lucro = receita - custo.valor - totalCustosVenda;
   return {
-    tipo,
-    tipoCusto: tipo,
-    descricao,
-    valor,
-    data: obterDataLocalHoje(),
-    dataCusto: obterDataLocalHoje()
+    receita,
+    custoPeca: custo.valor,
+    custosVenda: totalCustosVenda,
+    lucro,
+    margem: receita > 0 ? (lucro / receita) * 100 : null,
+    quantidadeSemEstoque: 0
   };
 }
 
-function lerCustosVendaDoFormulario() {
-  if (!listaCustosVenda) {
-    return [];
-  }
+// ---- Busca e cartão da peça ----
 
-  return Array.from(listaCustosVenda.querySelectorAll(".cost-line"))
-    .map(linha => {
-      const selectTipo = linha.querySelector("[data-campo='tipo']");
-      const tipo = selectTipo?.value || "";
-      const tipoCustoId = selectTipo?.selectedOptions[0]?.dataset?.tipoId || null;
-      const valorDigitado = linha.querySelector("[data-campo='valor']")?.value || 0;
-      const valor = window.moedaUtils?.parseMoedaBR
-        ? window.moedaUtils.parseMoedaBR(valorDigitado)
-        : Number(valorDigitado);
-      const descricao = linha.querySelector("[data-campo='descricao']")?.value.trim() || tipo;
-
-      return {
-        ...criarCustoVenda(tipo, descricao, valor),
-        tipoCustoId
-      };
-    })
-    .filter(custo => custo.tipo && Number(custo.valor || 0) > 0);
+function textoBuscaPeca(peca) {
+  return normalizarTexto([peca.sku, peca.nome, peca.compatibilidade, obterOrigem(peca)?.descricao].join(" "));
 }
 
-function somarCustosVenda(custosVenda) {
-  return custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0);
+function buscarPecas(termo) {
+  const palavras = normalizarTexto(termo).split(/\s+/).filter(Boolean);
+  if (!palavras.length) return [];
+
+  return pecasVenda
+    .filter(peca => palavras.every(palavra => textoBuscaPeca(peca).includes(palavra)))
+    .sort((a, b) => Number(calcularSaldo(b.id) > 0) - Number(calcularSaldo(a.id) > 0))
+    .slice(0, MAXIMO_SUGESTOES);
 }
 
-function zerarResumoVenda() {
-  if (resumoVendaValorUnitario) {
-    resumoVendaValorUnitario.textContent = formatarMoedaVenda(0);
-  }
-
-  if (resumoVendaQuantidade) {
-    resumoVendaQuantidade.textContent = "0";
-  }
-
-  if (resumoVendaTotal) {
-    resumoVendaTotal.textContent = formatarMoedaVenda(0);
-  }
-
-  if (resumoVendaCustos) {
-    resumoVendaCustos.textContent = formatarMoedaVenda(0);
-  }
+function fecharSugestoes() {
+  sugestoesPecaVenda.hidden = true;
+  sugestoesPecaVenda.innerHTML = "";
+  campoBuscaPecaVenda.setAttribute("aria-expanded", "false");
+  campoBuscaPecaVenda.removeAttribute("aria-activedescendant");
+  sugestoesAtuais = [];
+  indiceSugestao = -1;
 }
 
-function limparCamposOperacionaisVenda() {
-  document.getElementById("pecaId").value = "";
-  document.getElementById("valorVenda").value = "";
-  document.getElementById("quantidadeVendidaNaVenda").value = "";
-  document.getElementById("canalVenda").value = "";
-  document.getElementById("observacoesVenda").value = "";
+function renderizarSugestoes() {
+  sugestoesAtuais = buscarPecas(campoBuscaPecaVenda.value);
 
-  if (campoBuscaPecaVenda) {
-    campoBuscaPecaVenda.value = "";
-  }
-
-  if (campoDataVenda) {
-    campoDataVenda.value = obterDataLocalHoje();
-  }
-}
-
-function atualizarResumoVenda() {
-  const pecaId = Number(obterCampoPeca()?.value || 0);
-
-  if (!pecaId) {
-    zerarResumoVenda();
+  if (!String(campoBuscaPecaVenda.value || "").trim()) {
+    fecharSugestoes();
     return;
   }
 
-  const quantidade = Number(document.getElementById("quantidadeVendidaNaVenda")?.value || 0);
-  const valorUnitario = window.moedaUtils?.parseMoedaBR
-    ? window.moedaUtils.parseMoedaBR(document.getElementById("valorVenda")?.value || 0)
-    : Number(document.getElementById("valorVenda")?.value || 0);
-  const custosVenda = lerCustosVendaDoFormulario();
-  const totalVenda = quantidade * valorUnitario;
+  indiceSugestao = sugestoesAtuais.findIndex(peca => calcularSaldo(peca.id) > 0);
+  sugestoesPecaVenda.innerHTML = sugestoesAtuais.length
+    ? sugestoesAtuais.map((peca, indice) => {
+      const saldo = calcularSaldo(peca.id);
+      const origem = obterOrigem(peca);
+      return `
+        <button type="button" role="option" id="sugestao-${peca.id}" class="venda-busca__opcao${indice === indiceSugestao ? " is-active" : ""}"
+          data-indice="${indice}" aria-selected="${indice === indiceSugestao}" ${saldo > 0 ? "" : "disabled"}>
+          <span class="venda-busca__nome">${escaparHtml(peca.nome)} <span class="mono">${escaparHtml(peca.sku || "")}</span></span>
+          <span class="venda-busca__meta">${escaparHtml(origem?.descricao || "")}${origem ? " · " : ""}${saldo > 0 ? `${saldo} un.` : "Sem estoque"}</span>
+        </button>`;
+    }).join("")
+    : '<p class="venda-busca__vazio">Nenhuma peça encontrada.</p>';
 
-  if (resumoVendaValorUnitario) {
-    resumoVendaValorUnitario.textContent = formatarMoedaVenda(valorUnitario);
-  }
-
-  if (resumoVendaQuantidade) {
-    resumoVendaQuantidade.textContent = String(quantidade || 0);
-  }
-
-  if (resumoVendaTotal) {
-    resumoVendaTotal.textContent = formatarMoedaVenda(totalVenda);
-  }
-
-  if (resumoVendaCustos) {
-    resumoVendaCustos.textContent = formatarMoedaVenda(somarCustosVenda(custosVenda));
-  }
+  sugestoesPecaVenda.hidden = false;
+  campoBuscaPecaVenda.setAttribute("aria-expanded", "true");
+  atualizarDestaqueSugestao();
 }
 
-function existeCustoVendaNegativo() {
-  if (!listaCustosVenda) {
-    return false;
-  }
-
-  return Array.from(listaCustosVenda.querySelectorAll("[data-campo='valor']"))
-    .some(campo => {
-      const valor = window.moedaUtils?.parseMoedaBR
-        ? window.moedaUtils.parseMoedaBR(campo.value || 0)
-        : Number(campo.value || 0);
-      return valor < 0;
-    });
+function atualizarDestaqueSugestao() {
+  sugestoesPecaVenda.querySelectorAll(".venda-busca__opcao").forEach(opcao => {
+    const ativa = Number(opcao.dataset.indice) === indiceSugestao;
+    opcao.classList.toggle("is-active", ativa);
+    opcao.setAttribute("aria-selected", String(ativa));
+    if (ativa) campoBuscaPecaVenda.setAttribute("aria-activedescendant", opcao.id);
+  });
 }
 
-function existeCustoVendaIncompleto() {
-  if (!listaCustosVenda) {
-    return false;
-  }
-
-  return Array.from(listaCustosVenda.querySelectorAll(".cost-line"))
-    .some(linha => {
-      const tipo = linha.querySelector("[data-campo='tipo']")?.value || "";
-      const valorDigitado = linha.querySelector("[data-campo='valor']")?.value || 0;
-      const valor = window.moedaUtils?.parseMoedaBR
-        ? window.moedaUtils.parseMoedaBR(valorDigitado)
-        : Number(valorDigitado);
-      return valor > 0 && !tipo;
-    });
+function moverDestaque(direcao) {
+  const disponiveis = sugestoesAtuais.map((peca, indice) => (calcularSaldo(peca.id) > 0 ? indice : -1)).filter(indice => indice >= 0);
+  if (!disponiveis.length) return;
+  const posicao = disponiveis.indexOf(indiceSugestao);
+  indiceSugestao = disponiveis[posicao < 0 ? 0 : (posicao + direcao + disponiveis.length) % disponiveis.length];
+  atualizarDestaqueSugestao();
 }
 
-function calcularResultadoFinanceiroVenda(venda, consumosEstoque, custosVenda = venda?.custosVenda || []) {
-  if (window.financeiroUtils?.calcularLucroVenda) {
-    return window.financeiroUtils.calcularLucroVenda(
-      {
-        ...venda,
-        custosVenda
-      },
-      consumosEstoque || [],
-      custosVenda || []
-    );
+function renderizarCartaoPeca() {
+  if (!pecaSelecionada) {
+    cartaoPecaVenda.hidden = true;
+    cartaoPecaVenda.innerHTML = "";
+    campoBuscaPeca.hidden = false;
+    return;
   }
 
-  return {
-    calculado: false,
-    motivo: "financeiro indisponivel",
-    receita: Number(venda?.valorTotal || venda?.valorVenda || 0),
-    custoConsumido: null,
-    custosVenda: somarCustosVenda(custosVenda || []),
-    lucro: null,
-    margem: null
-  };
-}
+  const peca = pecaSelecionada;
+  const saldo = calcularSaldo(peca.id);
+  const origem = obterOrigem(peca);
+  const imagem = String(peca.imagemUrl || "").trim();
 
-async function buscarPecaParaVenda(pecaId) {
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    const peca = await window.supabaseService.buscarPecaPorId(pecaId);
-
-    if (peca) {
-      salvarPecaNoCache(peca);
-    }
-
-    return peca;
-  }
-
-  return buscarPecas()
-    .map(normalizarPeca)
-    .find(item => Number(item.id) === Number(pecaId));
-}
-
-async function carregarPecasParaVenda() {
-  if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-    const pecas = await window.supabaseService.listarPecas();
-    salvarPecas(pecas.map(normalizarPeca));
-    return pecas.map(normalizarPeca);
-  }
-
-  return [];
+  cartaoPecaVenda.innerHTML = `
+    <span class="thumb venda-peca__foto">${imagem ? `<img src="${escaparHtml(imagem)}" alt="">` : '<i class="ri-image-line" aria-hidden="true"></i>'}</span>
+    <div class="venda-peca__texto">
+      <span class="venda-peca__nome">${escaparHtml(peca.nome)}</span>
+      <span class="venda-peca__meta"><span class="mono">${escaparHtml(peca.sku || "")}</span>${origem ? ` · ${escaparHtml(origem.descricao || origem.codigoOrigem)}` : ""}</span>
+      ${peca.compatibilidade ? `<span class="venda-peca__compat">Compatível com: ${escaparHtml(peca.compatibilidade)}</span>` : ""}
+    </div>
+    <div class="venda-peca__estoque">
+      <span class="pill ${saldo > 0 ? "pill--success" : "pill--danger"}">${saldo > 0 ? "Em estoque" : "Sem estoque"}</span>
+      <span class="venda-peca__quantidade">${saldo} un.</span>
+    </div>
+    <button type="button" class="btn btn--quiet btn--compact" id="botaoTrocarPeca">Trocar peça</button>
+  `;
+  cartaoPecaVenda.hidden = false;
+  campoBuscaPeca.hidden = true;
 }
 
 function selecionarPeca(peca) {
-  const campoPeca = obterCampoPeca();
-  const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
+  pecaSelecionada = peca;
+  fecharSugestoes();
+  campoBuscaPecaVenda.value = "";
 
-  if (!campoPeca) {
-    return;
-  }
+  const saldo = calcularSaldo(peca.id);
+  const preco = obterPreco(peca);
+  campoQuantidade.max = String(Math.max(saldo, 1));
+  if (Number(campoQuantidade.value || 0) > saldo) campoQuantidade.value = String(Math.max(saldo, 1));
+  // Valor unitário começa no preço cadastrado; quem vende ajusta se negociou outro valor.
+  campoValor.value = preco > 0 ? formatarMoeda(preco) : "";
+  dicaPrecoCadastrado.textContent = preco > 0 ? `Preço cadastrado: ${formatarMoeda(preco)}` : "Peça sem preço cadastrado";
 
-  campoBuscaPecaVenda.value = formatarNomePeca(peca);
-  fecharSugestoesVenda();
-  renderizarResumoPecaVenda(peca);
-
-  if (quantidadeDisponivel <= 0) {
-    document.getElementById("quantidadeVendidaNaVenda")?.removeAttribute("max");
-    campoPeca.value = "";
-    return;
-  }
-
-  campoPeca.value = String(peca.id);
-  atualizarLimiteQuantidadeSelecionada();
+  renderizarCartaoPeca();
+  atualizarResumo();
+  (preco > 0 ? campoQuantidade : campoValor).focus();
 }
 
-function fecharSugestoesVenda() {
-  sugestoesPecaVenda.innerHTML = "";
-  sugestoesPecaVenda.classList.remove("is-open");
-  indiceSugestaoVenda = -1;
+function trocarPeca() {
+  pecaSelecionada = null;
+  dicaPrecoCadastrado.textContent = "";
+  campoQuantidade.removeAttribute("max");
+  renderizarCartaoPeca();
+  atualizarResumo();
+  campoBuscaPecaVenda.focus();
 }
 
-function mostrarMensagemVenda(texto, tipo = "success") {
-  if (!mensagemVenda) {
-    return;
-  }
+// ---- Canal ----
 
-  mensagemVenda.textContent = texto;
-  mensagemVenda.className = texto ? `form-message form-message--${tipo}` : "form-message";
-}
-
-function obterPrimeiroIndiceDisponivel(pecas) {
-  return pecas.findIndex(peca => calcularQuantidadeDisponivel(peca) > 0);
-}
-
-function renderizarSugestoesVenda(pecas) {
-  if (!String(campoBuscaPecaVenda?.value || "").trim()) {
-    fecharSugestoesVenda();
-    return;
-  }
-
-  sugestoesVendaAtuais = pecas;
-  sugestoesPecaVenda.innerHTML = "";
-  indiceSugestaoVenda = obterPrimeiroIndiceDisponivel(pecas);
-
-  if (pecas.length === 0) {
-    const item = document.createElement("div");
-    item.className = "autocomplete-option";
-    item.textContent = "Nenhuma peça encontrada";
-    sugestoesPecaVenda.appendChild(item);
-    sugestoesPecaVenda.classList.add("is-open");
-    return;
-  }
-
-  pecas.forEach((peca, indice) => {
-    const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-    const botao = document.createElement("button");
-    const textoQuantidade = quantidadeDisponivel > 0
-      ? `${quantidadeDisponivel} disponível${quantidadeDisponivel === 1 ? "" : "s"}`
-      : "SEM ESTOQUE";
-
-    botao.type = "button";
-    botao.className = `autocomplete-option${indice === indiceSugestaoVenda ? " is-active" : ""}${quantidadeDisponivel <= 0 ? " autocomplete-option--unavailable" : ""}`;
-    botao.disabled = quantidadeDisponivel <= 0;
-    botao.innerHTML = `
-      <span>${formatarNomePecaDestacado(peca)}</span>
-      <span class="autocomplete-option__meta">${textoQuantidade}</span>
-    `;
-    botao.addEventListener("click", () => selecionarPeca(peca));
-
-    sugestoesPecaVenda.appendChild(botao);
-  });
-
-  sugestoesPecaVenda.classList.add("is-open");
-}
-
-function atualizarDestaqueSugestoesVenda() {
-  Array.from(sugestoesPecaVenda.querySelectorAll(".autocomplete-option")).forEach((item, indice) => {
-    item.classList.toggle("is-active", indice === indiceSugestaoVenda);
+function selecionarCanal(canal) {
+  canalSelecionado = canal;
+  canaisVenda.querySelectorAll("[data-canal]").forEach(botao => {
+    botao.setAttribute("aria-pressed", String(botao.dataset.canal === canal));
   });
 }
 
-function moverDestaqueSugestoesVenda(direcao) {
-  const indicesDisponiveis = sugestoesVendaAtuais
-    .map((peca, indice) => calcularQuantidadeDisponivel(peca) > 0 ? indice : -1)
-    .filter(indice => indice >= 0);
+// ---- Custos da venda ----
 
-  if (indicesDisponiveis.length === 0) {
-    indiceSugestaoVenda = -1;
-    atualizarDestaqueSugestoesVenda();
-    return;
-  }
-
-  const posicaoAtual = indicesDisponiveis.indexOf(indiceSugestaoVenda);
-  const proximaPosicao = posicaoAtual < 0
-    ? 0
-    : (posicaoAtual + direcao + indicesDisponiveis.length) % indicesDisponiveis.length;
-
-  indiceSugestaoVenda = indicesDisponiveis[proximaPosicao];
-  atualizarDestaqueSugestoesVenda();
+function criarOpcoesTipos(tipoSelecionado = "") {
+  return tiposCustoVenda
+    .map(tipo => `<option value="${escaparHtml(tipo.nome)}" data-tipo-id="${escaparHtml(tipo.id)}"${tipo.nome === tipoSelecionado ? " selected" : ""}>${escaparHtml(tipo.nome)}</option>`)
+    .join("");
 }
 
-function atualizarSugestoesVenda() {
-  const campoPeca = obterCampoPeca();
-
-  if (campoPeca) {
-    campoPeca.value = "";
-  }
-
-  renderizarResumoPecaVenda(null);
-  renderizarSugestoesVenda(filtrarPecasPorBusca(pecasVendaCarregadas));
-  atualizarLimiteQuantidadeSelecionada();
-  atualizarResumoVenda();
+function adicionarLinhaCusto(custo = {}) {
+  const numero = listaCustosVenda.querySelectorAll(".venda-custo").length + 1;
+  const linha = document.createElement("div");
+  linha.className = "venda-custo";
+  linha.innerHTML = `
+    <div class="field">
+      <label class="field__label" for="tipoCusto${numero}">Tipo</label>
+      <select id="tipoCusto${numero}" class="select venda-custo__tipo" data-campo="tipo">${criarOpcoesTipos(custo.tipo)}</select>
+    </div>
+    <div class="field">
+      <label class="field__label" for="valorCusto${numero}">Valor</label>
+      <input id="valorCusto${numero}" class="input" data-campo="valor" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+    </div>
+    <button type="button" class="btn btn--icon venda-custo__remover" data-acao="remover-custo" aria-label="Remover custo">
+      <i class="ri-delete-bin-line" aria-hidden="true"></i>
+    </button>
+  `;
+  listaCustosVenda.appendChild(linha);
+  window.moedaUtils?.registrarCampoMoeda?.(linha.querySelector("[data-campo='valor']"));
+  linha.querySelector("[data-campo='valor']").focus();
+  atualizarResumo();
 }
 
-function atualizarLimiteQuantidadeSelecionada() {
-  const campoPeca = obterCampoPeca();
-  const campoQuantidade = document.getElementById("quantidadeVendidaNaVenda");
-
-  if (!campoPeca || !campoQuantidade) {
-    return;
-  }
-
-  const peca = pecasVendaCarregadas.find(item => Number(item.id) === Number(campoPeca.value));
-
-  if (!peca) {
-    campoQuantidade.removeAttribute("max");
-    renderizarResumoPecaVenda(null);
-    atualizarResumoVenda();
-    return;
-  }
-
-  campoQuantidade.max = calcularQuantidadeDisponivel(peca);
-  renderizarResumoPecaVenda(peca);
-}
-
-function obterPecaIdDaUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const pecaIdUrl = Number(params.get("pecaId"));
-
-  return pecaIdUrl || null;
-}
-
-function selecionarPecaDaUrl() {
-  const pecaIdUrl = obterPecaIdDaUrl();
-  const campoPeca = obterCampoPeca();
-
-  if (!campoPeca) {
-    return;
-  }
-
-  if (!pecaIdUrl) {
-    campoPeca.value = "";
-    renderizarResumoPecaVenda(null);
-    atualizarResumoVenda();
-    return;
-  }
-
-  const pecaEncontrada = pecasVendaCarregadas.find(peca => Number(peca.id) === pecaIdUrl);
-
-  if (!pecaEncontrada) {
-    console.warn(`Peca com id ${pecaIdUrl} nao foi encontrada no dropdown de venda.`);
-    return;
-  }
-
-  selecionarPeca(pecaEncontrada);
-}
-
-async function inicializarFormularioVenda() {
-  const campoPeca = obterCampoPeca();
-
-  preencherDataVendaPadrao();
-  await carregarTiposCustoVenda();
-  renderizarEstadoCustosVenda();
-
-  if (!campoPeca) {
-    return;
-  }
-
-  try {
-    const [pecas, entradas] = await Promise.all([
-      carregarPecasParaVenda(),
-      window.supabaseService && window.supabaseService.estaConfigurado()
-        ? window.supabaseService.listarEntradasEstoque()
-        : Promise.resolve(buscarEntradasLocais())
-    ]);
-
-    pecasVendaCarregadas = pecas;
-    entradasVendaCarregadas = entradas || [];
-    selecionarPecaDaUrl();
-    atualizarLimiteQuantidadeSelecionada();
-  } catch (erro) {
-    console.error("Erro ao carregar peças para venda:", erro);
-    pecasVendaCarregadas = [];
-    entradasVendaCarregadas = [];
-    selecionarPecaDaUrl();
-    atualizarLimiteQuantidadeSelecionada();
-    mostrarMensagemVenda("Não foi possível carregar as peças do Supabase. Nenhum produto foi disponibilizado para venda.", "warning");
-  }
-
-  campoBuscaPecaVenda?.addEventListener("input", atualizarSugestoesVenda);
-  window.moedaUtils?.registrarCampoMoeda?.(document.getElementById("valorVenda"));
-  document.getElementById("valorVenda")?.addEventListener("input", atualizarResumoVenda);
-  document.getElementById("quantidadeVendidaNaVenda")?.addEventListener("input", atualizarResumoVenda);
-  listaCustosVenda?.addEventListener("input", atualizarResumoVenda);
-  atualizarResumoVenda();
-
-  campoBuscaPecaVenda?.addEventListener("focus", () => {
-    if (!campoPeca.value && String(campoBuscaPecaVenda.value || "").trim()) {
-      renderizarSugestoesVenda(filtrarPecasPorBusca(pecasVendaCarregadas));
-    }
-  });
-
-  campoBuscaPecaVenda?.addEventListener("keydown", evento => {
-    if (evento.key === "ArrowDown") {
-      evento.preventDefault();
-      moverDestaqueSugestoesVenda(1);
-      return;
-    }
-
-    if (evento.key === "ArrowUp") {
-      evento.preventDefault();
-      moverDestaqueSugestoesVenda(-1);
-      return;
-    }
-
-    if (evento.key === "Escape") {
-      fecharSugestoesVenda();
-      return;
-    }
-
-    if (evento.key !== "Enter") {
-      return;
-    }
-
-    evento.preventDefault();
-    const peca = sugestoesVendaAtuais[indiceSugestaoVenda] || sugestoesVendaAtuais[0];
-
-    if (peca) {
-      selecionarPeca(peca);
-    }
-  });
-
-  botaoAdicionarCustoVenda?.addEventListener("click", () => adicionarLinhaCustoVenda());
-  botaoNovoTipoCustoVenda?.addEventListener("click", criarNovoTipoCustoVenda);
-  listaCustosVenda?.addEventListener("click", evento => {
-    const botao = evento.target.closest("[data-acao='remover-custo']");
-
-    if (botao) {
-      botao.closest(".cost-line")?.remove();
-      atualizarResumoVenda();
-      renderizarEstadoCustosVenda();
-    }
+function lerCustosVenda() {
+  return Array.from(listaCustosVenda.querySelectorAll(".venda-custo")).map(linha => {
+    const select = linha.querySelector("[data-campo='tipo']");
+    const tipo = select?.value || "";
+    return {
+      tipo,
+      tipoCusto: tipo,
+      tipoCustoId: select?.selectedOptions[0]?.dataset?.tipoId || null,
+      descricao: tipo,
+      valor: lerMoeda(linha.querySelector("[data-campo='valor']")?.value),
+      data: campoDataVenda.value || obterDataLocalHoje(),
+      dataCusto: campoDataVenda.value || obterDataLocalHoje()
+    };
   });
 }
 
-function lerVendaDoFormulario() {
-  const quantidadeVendida = Number(document.getElementById("quantidadeVendidaNaVenda").value);
-  const valorUnitario = window.moedaUtils?.parseMoedaBR
-    ? window.moedaUtils.parseMoedaBR(document.getElementById("valorVenda").value)
-    : Number(document.getElementById("valorVenda").value);
-  const custosVenda = lerCustosVendaDoFormulario();
-  const totalCustosVenda = somarCustosVenda(custosVenda);
+// ---- Resumo ----
 
-  return {
-    id: Date.now(),
-    pecaId: Number(document.getElementById("pecaId").value),
-    quantidadeVendida,
-    quantidadeVendidaNaVenda: quantidadeVendida,
+function lerQuantidade() {
+  const texto = String(campoQuantidade.value || "").trim();
+  return texto === "" ? null : Number(texto);
+}
+
+function atualizarResumo() {
+  const custos = lerCustosVenda().filter(custo => Number.isFinite(custo.valor) && custo.valor > 0);
+  const previa = calcularPreviaVenda({
+    pecaId: pecaSelecionada?.id,
+    quantidade: lerQuantidade(),
+    valorUnitario: lerMoeda(campoValor.value),
+    custosVenda: custos,
+    entradas: entradasVenda
+  });
+
+  resumoReceita.textContent = formatarMoeda(previa.receita);
+  resumoCustosVenda.textContent = formatarNegativo(previa.custosVenda);
+  resumoLucroLinha.classList.remove("summary-side__result--success", "summary-side__result--danger", "summary-side__result--neutral");
+
+  if (previa.custoPeca === null) {
+    resumoCustoPeca.textContent = pecaSelecionada ? "Custo não calculado" : "—";
+    resumoLucro.textContent = "—";
+    resumoMargem.textContent = "—";
+    resumoLucroLinha.classList.add("summary-side__result--neutral");
+    notaCustoVenda.textContent = pecaSelecionada && previa.quantidadeSemEstoque > 0
+      ? `${previa.quantidadeSemEstoque === 1 ? "Falta" : "Faltam"} ${previa.quantidadeSemEstoque} un. em estoque para esta quantidade.`
+      : "O custo vem da entrada mais antiga desta peça e é confirmado ao registrar.";
+    return;
+  }
+
+  resumoCustoPeca.textContent = formatarNegativo(previa.custoPeca);
+  resumoLucro.textContent = formatarMoeda(previa.lucro);
+  resumoMargem.textContent = previa.margem === null ? "—" : formatarPercentual(previa.margem);
+  resumoLucroLinha.classList.add(previa.lucro < 0 ? "summary-side__result--danger" : "summary-side__result--success");
+  notaCustoVenda.textContent = "O custo vem da entrada mais antiga desta peça e é confirmado ao registrar.";
+}
+
+// ---- Registrar ----
+
+function validarVenda() {
+  const quantidade = lerQuantidade();
+  const valorUnitario = lerMoeda(campoValor.value);
+  const custos = lerCustosVenda();
+
+  if (!pecaSelecionada) return { campo: campoBuscaPecaVenda, mensagem: "Escolha a peça vendida." };
+  if (!Number.isInteger(quantidade) || quantidade < 1) return { campo: campoQuantidade, mensagem: "A quantidade deve ser um número inteiro maior ou igual a 1." };
+  if (quantidade > calcularSaldo(pecaSelecionada.id)) return { campo: campoQuantidade, mensagem: "Quantidade maior que o estoque disponível." };
+  if (valorUnitario === null || !Number.isFinite(valorUnitario) || valorUnitario < 0) return { campo: campoValor, mensagem: "Informe o valor unitário da venda." };
+  if (!campoDataVenda.value) return { campo: campoDataVenda, mensagem: "Informe a data da venda." };
+  if (!canalSelecionado) return { campo: canaisVenda.querySelector("[data-canal]"), mensagem: "Escolha o canal da venda." };
+
+  const custoInvalido = custos.findIndex(custo => custo.valor !== null && (!Number.isFinite(custo.valor) || custo.valor < 0));
+  if (custoInvalido >= 0) {
+    return { campo: listaCustosVenda.querySelectorAll("[data-campo='valor']")[custoInvalido], mensagem: "Os custos da venda devem ser valores maiores ou iguais a zero." };
+  }
+  const custoSemTipo = custos.findIndex(custo => custo.valor > 0 && !custo.tipo);
+  if (custoSemTipo >= 0) {
+    return { campo: listaCustosVenda.querySelectorAll("[data-campo='tipo']")[custoSemTipo], mensagem: "Escolha o tipo em todos os custos com valor." };
+  }
+
+  return null;
+}
+
+function limparFormulario() {
+  pecaSelecionada = null;
+  campoQuantidade.value = "1";
+  campoQuantidade.removeAttribute("max");
+  campoValor.value = "";
+  dicaPrecoCadastrado.textContent = "";
+  campoObservacoes.value = "";
+  selecionarCanal("");
+  listaCustosVenda.innerHTML = "";
+  renderizarCartaoPeca();
+  atualizarResumo();
+  if (window.location.search) window.history.replaceState({}, "", window.location.pathname);
+}
+
+async function registrarVenda() {
+  if (registrando) return;
+
+  const erro = validarVenda();
+  if (erro) {
+    mostrarMensagem(escaparHtml(erro.mensagem));
+    erro.campo?.focus();
+    return;
+  }
+
+  const quantidade = lerQuantidade();
+  const valorUnitario = lerMoeda(campoValor.value);
+  const venda = {
+    pecaId: pecaSelecionada.id,
+    quantidadeVendida: quantidade,
+    quantidadeVendidaNaVenda: quantidade,
     valorUnitario,
     valorVendaUnitario: valorUnitario,
-    valorVenda: quantidadeVendida * valorUnitario,
-    valorTotal: quantidadeVendida * valorUnitario,
-    canalVenda: document.getElementById("canalVenda").value.trim(),
-    observacoes: document.getElementById("observacoesVenda")?.value.trim() || "",
-    dataVenda: campoDataVenda?.value || obterDataLocalHoje(),
-    custosVenda,
-    totalCustosVenda
+    valorVenda: quantidade * valorUnitario,
+    valorTotal: quantidade * valorUnitario,
+    canalVenda: canalSelecionado,
+    observacoes: campoObservacoes.value.trim(),
+    dataVenda: campoDataVenda.value,
+    custosVenda: lerCustosVenda().filter(custo => custo.tipo && custo.valor > 0)
   };
-}
 
-function validarVenda(venda) {
-  if (!venda.pecaId) {
-    return "Selecione uma peça.";
-  }
-
-  if (!venda.quantidadeVendida || venda.quantidadeVendida <= 0) {
-    return "Informe uma quantidade vendida maior que zero.";
-  }
-
-  if (!Number.isFinite(venda.valorUnitario) || venda.valorUnitario < 0) {
-    return "Informe um valor unitario valido para a venda.";
-  }
-
-  if (!venda.dataVenda) {
-    return "Informe a data da venda.";
-  }
-
-  if (existeCustoVendaNegativo()) {
-    return "Os custos da venda devem ser maiores ou iguais a zero.";
-  }
-
-  if (existeCustoVendaIncompleto()) {
-    return "Selecione o tipo de custo em todas as linhas com valor.";
-  }
-
-  return "";
-}
-
-function atualizarPecaVendidaLocalmente(peca, quantidadeVendida) {
-  const pecaAtualizada = normalizarPeca({
-    ...peca,
-    quantidadeVendida: Number(peca.quantidadeVendida || 0) + quantidadeVendida
-  });
-
-  pecaAtualizada.status = pecaAtualizada.quantidadeVendida >= Number(pecaAtualizada.quantidade || 1)
-    ? "vendida"
-    : "em_estoque";
-
-  salvarPecaNoCache(pecaAtualizada);
-  return pecaAtualizada;
-}
-
-function atualizarPecaNaListaVenda(pecaAtualizada) {
-  const pecaNormalizada = normalizarPeca(pecaAtualizada);
-  const indice = pecasVendaCarregadas.findIndex(peca => Number(peca.id) === Number(pecaNormalizada.id));
-
-  if (indice >= 0) {
-    pecasVendaCarregadas[indice] = pecaNormalizada;
-    return;
-  }
-
-  pecasVendaCarregadas.push(pecaNormalizada);
-}
-
-function limparFormularioVenda(opcoes = {}) {
-  limparCamposOperacionaisVenda();
-  limparCustosVenda();
-  renderizarResumoPecaVenda(null);
-  fecharSugestoesVenda();
-  zerarResumoVenda();
-
-  if (!opcoes.manterMensagem) {
-    mostrarMensagemVenda("");
-  }
-  campoBuscaPecaVenda?.focus();
-
-  if (window.location.search) {
-    window.history.replaceState({}, "", window.location.pathname);
-  }
-}
-
-async function salvarVenda() {
-  const venda = lerVendaDoFormulario();
-  const erroValidacao = validarVenda(venda);
-  const botaoSalvar = document.querySelector("button[onclick='salvarVenda()']");
-
-  if (erroValidacao) {
-    alert(erroValidacao);
-    return;
-  }
-
-  botaoSalvar.disabled = true;
+  registrando = true;
+  botaoRegistrarVenda.disabled = true;
+  mostrarMensagem("Registrando venda…", "success");
 
   try {
-    const peca = await buscarPecaParaVenda(venda.pecaId);
-
-    if (!peca) {
-      alert("Peca nao encontrada.");
-      return;
-    }
-
-    const quantidadeDisponivel = calcularQuantidadeDisponivel(peca);
-
-    if (venda.quantidadeVendida > quantidadeDisponivel) {
-      alert("Quantidade vendida maior que o estoque disponivel.");
-      return;
-    }
-
-    if (window.supabaseService && window.supabaseService.estaConfigurado()) {
-      const resultado = await window.supabaseService.salvarVenda(venda);
-      const [consumosEstoque, entradasAtualizadas] = await Promise.all([
-        window.supabaseService.listarConsumosEstoque(),
-        window.supabaseService.listarEntradasEstoque()
-      ]);
-      const resultadoFinanceiro = calcularResultadoFinanceiroVenda(
-        resultado.venda,
-        consumosEstoque,
-        resultado.venda.custosVenda || []
-      );
-      const vendaComLucro = {
-        ...resultado.venda,
-        resultadoFinanceiro,
-        lucroVenda: resultadoFinanceiro.calculado ? resultadoFinanceiro.lucro : null
-      };
-
-      salvarVendaNoCache(vendaComLucro);
-      salvarPecaNoCache(resultado.peca);
-      entradasVendaCarregadas = entradasAtualizadas || [];
-      atualizarPecaNaListaVenda(resultado.peca);
-      mostrarMensagemVenda("Venda e custos da venda cadastrados com sucesso.", "success");
-    } else {
-      const pecaAtualizada = atualizarPecaVendidaLocalmente(peca, venda.quantidadeVendida);
-      const resultadoFinanceiro = calcularResultadoFinanceiroVenda(venda, [], venda.custosVenda || []);
-      salvarVendaNoCache({
-        ...venda,
-        produtoNome: pecaAtualizada.nome,
-        sku: pecaAtualizada.sku || "",
-        resultadoFinanceiro,
-        lucroVenda: resultadoFinanceiro.calculado ? resultadoFinanceiro.lucro : null
-      });
-      atualizarPecaNaListaVenda(pecaAtualizada);
-      mostrarMensagemVenda("Venda cadastrada no armazenamento temporario. Configure o Supabase para salvar no banco.", "warning");
-    }
-
-    limparFormularioVenda({ manterMensagem: true });
-  } catch (erro) {
-    console.error("Erro ao cadastrar venda:", erro);
-    mostrarMensagemVenda(`Nao foi possivel salvar a venda: ${erro.message || "erro desconhecido"}`, "warning");
+    const resultado = await window.supabaseService.salvarVenda(venda);
+    entradasVenda = await window.supabaseService.listarEntradasEstoque() || entradasVenda;
+    const nome = pecaSelecionada.nome;
+    limparFormulario();
+    mostrarMensagem(
+      `Venda de ${escaparHtml(nome)} registrada. <a href="detalhes-venda.html?vendaId=${encodeURIComponent(resultado.venda.id)}">Ver venda</a>`,
+      "success"
+    );
+    campoBuscaPecaVenda.focus();
+  } catch (erroRegistro) {
+    console.error("Erro ao registrar venda:", erroRegistro);
+    mostrarMensagem(`Não foi possível registrar a venda: ${escaparHtml(erroRegistro?.message || "erro desconhecido")}`);
   } finally {
-    botaoSalvar.disabled = false;
+    registrando = false;
+    botaoRegistrarVenda.disabled = false;
   }
 }
 
-document.addEventListener("DOMContentLoaded", inicializarFormularioVenda);
+// ---- Início ----
+
+async function iniciarRegistrarVenda() {
+  campoDataVenda.value = obterDataLocalHoje();
+  window.moedaUtils?.registrarCampoMoeda?.(campoValor);
+
+  if (!window.supabaseService?.estaConfigurado()) {
+    mostrarMensagem("Configure o Supabase para registrar vendas.");
+    return;
+  }
+
+  try {
+    const [pecas, origens, entradas, tipos] = await Promise.all([
+      window.supabaseService.listarPecas(),
+      window.supabaseService.listarOrigens(),
+      window.supabaseService.listarEntradasEstoque(),
+      window.supabaseService.listarTiposCusto("venda")
+    ]);
+    pecasVenda = pecas || [];
+    origensVenda = origens || [];
+    entradasVenda = entradas || [];
+    tiposCustoVenda = tipos || [];
+  } catch (erro) {
+    console.error("Erro ao carregar dados da venda:", erro);
+    mostrarMensagem("Não foi possível carregar as peças do Supabase.");
+    return;
+  }
+
+  // Vindo de "Vender" em Produtos ou no detalhe da peça.
+  const pecaIdUrl = Number(new URLSearchParams(window.location.search).get("pecaId") || 0);
+  const pecaUrl = pecasVenda.find(peca => Number(peca.id) === pecaIdUrl);
+  if (pecaUrl) selecionarPeca(pecaUrl);
+
+  atualizarResumo();
+}
+
+campoBuscaPecaVenda?.addEventListener("input", renderizarSugestoes);
+campoBuscaPecaVenda?.addEventListener("keydown", evento => {
+  if (evento.key === "ArrowDown") { evento.preventDefault(); moverDestaque(1); return; }
+  if (evento.key === "ArrowUp") { evento.preventDefault(); moverDestaque(-1); return; }
+  if (evento.key === "Escape") { fecharSugestoes(); return; }
+  if (evento.key === "Enter") {
+    evento.preventDefault();
+    const peca = sugestoesAtuais[indiceSugestao];
+    if (peca) selecionarPeca(peca);
+  }
+});
+
+sugestoesPecaVenda?.addEventListener("click", evento => {
+  const opcao = evento.target.closest(".venda-busca__opcao");
+  if (opcao && !opcao.disabled) selecionarPeca(sugestoesAtuais[Number(opcao.dataset.indice)]);
+});
+
+document.addEventListener("click", evento => {
+  if (!evento.target.closest("#campoBuscaPeca")) fecharSugestoes();
+});
+
+cartaoPecaVenda?.addEventListener("click", evento => {
+  if (evento.target.closest("#botaoTrocarPeca")) trocarPeca();
+});
+
+canaisVenda?.addEventListener("click", evento => {
+  const botao = evento.target.closest("[data-canal]");
+  if (botao) selecionarCanal(botao.dataset.canal);
+});
+
+[campoQuantidade, campoValor].forEach(campo => campo?.addEventListener("input", atualizarResumo));
+campoValor?.addEventListener("blur", atualizarResumo);
+listaCustosVenda?.addEventListener("input", atualizarResumo);
+listaCustosVenda?.addEventListener("change", atualizarResumo);
+listaCustosVenda?.addEventListener("click", evento => {
+  const botao = evento.target.closest("[data-acao='remover-custo']");
+  if (botao) {
+    botao.closest(".venda-custo")?.remove();
+    atualizarResumo();
+  }
+});
+
+botaoAdicionarCustoVenda?.addEventListener("click", () => adicionarLinhaCusto());
+
+formVenda?.addEventListener("submit", evento => {
+  evento.preventDefault();
+  registrarVenda();
+});
+
+document.addEventListener("DOMContentLoaded", iniciarRegistrarVenda);

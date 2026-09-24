@@ -1,0 +1,192 @@
+/* Registrar venda (redesenho). Só o que é específico desta tela; campos, segmentado e resumo vêm do base.css. */
+
+.venda__blocos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* ---- Busca da peça com lista de sugestões ---- */
+
+.venda-busca {
+  position: relative;
+}
+
+.venda-busca[hidden] {
+  display: none;
+}
+
+.venda-busca__campo {
+  max-width: none;
+}
+
+.venda-busca__lista {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-menu);
+}
+
+.venda-busca__lista[hidden] {
+  display: none;
+}
+
+.venda-busca__opcao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.venda-busca__opcao.is-active,
+.venda-busca__opcao:hover:not(:disabled) {
+  background: var(--surface-readonly);
+}
+
+.venda-busca__opcao:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.venda-busca__nome {
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.venda-busca__meta,
+.venda-busca__vazio {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+
+.venda-busca__vazio {
+  padding: var(--space-2) var(--space-3);
+}
+
+/* ---- Peça escolhida como cartão ---- */
+
+.venda-peca {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3-5) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-readonly);
+}
+
+.venda-peca[hidden] {
+  display: none;
+}
+
+.venda-peca__foto {
+  width: 56px;
+  height: 56px;
+}
+
+.venda-peca__texto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.venda-peca__nome {
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+}
+
+.venda-peca__meta,
+.venda-peca__compat {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+
+.venda-peca__estoque {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+.venda-peca__quantidade {
+  font-size: var(--fs-label);
+  font-weight: 600;
+}
+
+/* ---- Canal ---- */
+
+.venda-canais {
+  align-self: flex-start;
+}
+
+/* ---- Custos da venda em linhas: tipo + valor + remover ---- */
+
+.venda-custos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.venda-custos:empty {
+  display: none;
+}
+
+.venda-custo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.venda-custo__tipo {
+  width: 100%;
+}
+
+/* ---- Resumo ---- */
+
+.venda__margem {
+  border-bottom: 0;
+}
+
+.venda__nota {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--divider);
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.venda__acao {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 760px) {
+  .venda-peca {
+    flex-wrap: wrap;
+  }
+
+  .venda-peca__estoque {
+    flex-direction: row;
+    align-items: center;
+  }
+}

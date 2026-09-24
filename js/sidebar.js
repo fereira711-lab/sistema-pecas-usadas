@@ -203,7 +203,7 @@
     if (!servico || !servico.estaConfigurado?.()) return;
 
     try {
-      if (!window.financeiroUtils) await carregarScript("js/financeiro-utils.js?v=3");
+      if (!window.financeiroUtils) await carregarScript("js/financeiro-utils.js?v=4");
       if (!window.alertasRegras) await carregarScript("js/alertas-regras.js?v=3");
 
       const [origens, pecas, vendas, consumosEstoque, entradasEstoque, custosVenda] = await Promise.all([

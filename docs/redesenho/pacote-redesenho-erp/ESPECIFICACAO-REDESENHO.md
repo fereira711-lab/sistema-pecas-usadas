@@ -244,3 +244,16 @@ Fase 5 (Nova peça):
 25. **Data da entrada editável** na tela Nova peça, com hoje como padrão.
 26. **"Observação da entrada"** saiu da tela: nunca foi gravada (a tabela de entradas não tem essa coluna).
 27. **Salvar peça** abre o detalhe da peça salva; **Salvar e cadastrar outra** fica na tela com a origem mantida (substitui a regra antiga de nunca redirecionar).
+
+Aprovadas depois da Fase 5 e aplicadas antes da Fase 6:
+
+28. **Resumo lateral fixo na rolagem** (`position: sticky` no componente do `base.css`, só com duas colunas).
+29. **Nova peça:** o rótulo "Origem" do campo fica só para leitor de tela (o título do bloco já diz).
+30. **Ideia futura (não implementada):** botão "Sugerir custo" rateando o valor da origem pelo preço de venda das peças.
+
+Fase 6 (Registrar venda):
+
+31. **Prévia do custo** com `financeiro-utils.estimarCustoVendaPeca`: soma as N próximas unidades na mesma ordem de consumo do banco; com 1 unidade é igual a `calcularCustoReferenciaPeca`. Sem estoque suficiente, "Custo não calculado".
+32. **Canal obrigatório** por botões (Mercado Livre, WhatsApp, Balcão, Outro); **valor unitário** já preenchido com o preço cadastrado; **busca** também por compatibilidade e origem.
+33. **Saíram:** botão "+ Novo tipo" de custo (fica em Tipos de custo), observação por custo da venda e o modo sem Supabase (`localStorage`).
+34. **Depois de registrar** a tela fica limpa para a próxima venda, com o link "Ver venda".
