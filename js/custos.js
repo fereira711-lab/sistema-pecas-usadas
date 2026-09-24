@@ -80,18 +80,17 @@ function destacarBusca(texto) {
   return textoSeguro.replace(new RegExp(`(${escaparRegex(termo)})`, "gi"), "<mark>$1</mark>");
 }
 
+// Mantém o nome como foi digitado: só tira espaços das pontas e duplicados.
 function padronizarNomeTipoCusto(nome) {
-  const texto = String(nome || "").trim().replace(/\s+/g, " ").toLowerCase();
-
-  if (!texto) {
-    return "";
-  }
-
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
+  return String(nome || "").trim().replace(/\s+/g, " ");
 }
 
+// Comparação sem diferenciar maiúsculas, acentos e espaços extras.
 function normalizarNomeTipoCusto(nome) {
-  return String(nome || "").trim().toLowerCase();
+  return padronizarNomeTipoCusto(nome)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 function obterDataLocalHoje() {

@@ -88,9 +88,13 @@ function formatarNomeTipoCusto(valor) {
     return "Sem tipo";
   }
 
-  return texto
-    .toLocaleLowerCase("pt-BR")
-    .replace(/(^|\s)\S/g, letra => letra.toLocaleUpperCase("pt-BR"));
+  // Nome cadastrado aparece como foi digitado. Só os tipos antigos gravados em minúsculas
+  // ("frete", "embalagem") ganham a primeira letra maiúscula.
+  if (texto !== texto.toLocaleLowerCase("pt-BR")) {
+    return texto;
+  }
+
+  return texto.charAt(0).toLocaleUpperCase("pt-BR") + texto.slice(1);
 }
 
 function obterChaveTipoCusto(valor) {

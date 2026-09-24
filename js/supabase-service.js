@@ -385,14 +385,17 @@
     };
   }
 
+  // Mantém o nome como foi digitado (ex.: "Tarifa Mercado Livre"): só tira espaços das pontas e duplicados.
   function padronizarNomeTipoCusto(nome) {
-    const texto = String(nome || "").trim().replace(/\s+/g, " ").toLowerCase();
+    return String(nome || "").trim().replace(/\s+/g, " ");
+  }
 
-    if (!texto) {
-      return "";
-    }
-
-    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  // Chave para achar duplicado: sem diferenciar maiúsculas, acentos e espaços extras.
+  function chaveNomeTipoCusto(nome) {
+    return padronizarNomeTipoCusto(nome)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
   }
 
   function mapearTipoCustoDoBanco(tipo) {
@@ -763,7 +766,7 @@
     const tipos = await listarTodosTiposCusto();
     const duplicado = (tipos || []).find(item => (
       Number(item.id) !== Number(tipo.id) &&
-      String(item.nome || "").trim().toLowerCase() === nomePadronizado.toLowerCase()
+      chaveNomeTipoCusto(item.nome) === chaveNomeTipoCusto(nomePadronizado)
     ));
 
     if (duplicado) {
@@ -836,7 +839,7 @@
 
     const tipos = await listarTodosTiposCusto();
     const tipoExistente = (tipos || []).find(tipo => (
-      String(tipo.nome || "").trim().toLowerCase() === nomePadronizado.toLowerCase()
+      chaveNomeTipoCusto(tipo.nome) === chaveNomeTipoCusto(nomePadronizado)
     ));
 
     if (tipoExistente) {
@@ -1451,6 +1454,8 @@
     listarTiposCusto,
     listarTodosTiposCusto,
     criarTipoCusto,
+    padronizarNomeTipoCusto,
+    chaveNomeTipoCusto,
     contarUsoTipoCusto,
     atualizarTipoCusto,
     desativarTipoCusto,

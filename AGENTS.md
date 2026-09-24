@@ -123,7 +123,7 @@ Decisoes de 2026-09-24:
 
 - Conjunto fixo para as conferencias do redesenho: `sql/90_demo_carregar.sql` e `sql/91_demo_apagar.sql`, ou `scripts\demo-carregar.bat` e `scripts\demo-apagar.bat` (usam a senha salva do backup; o apagar pede `APAGAR DEMO`).
 - Conteudo: 3 origens (Onix que ja se pagou, Gol pela metade, lote recem-comprado com R$ 700 a distribuir), 27 pecas com compatibilidade, entradas com datas variadas (6 pecas paradas ha mais de 90 dias), 12 vendas em Mercado Livre, WhatsApp, Balcao e Outro com frete, embalagem e tarifa do Mercado Livre (~11%) nas vendas desse canal, 1 venda com prejuizo (bomba de combustivel) e 1 peca com preco abaixo do custo (radiador). Datas relativas ao dia da carga.
-- Precisa dos tipos de custo ativos Frete, Embalagem e Tarifa Mercado Livre (criado pela tela Tipos de custo em 2026-09-24; a tela gravou o nome como "Tarifa mercado livre").
+- Precisa dos tipos de custo ativos Frete, Embalagem e Tarifa Mercado Livre (criado pela tela Tipos de custo em 2026-09-24).
 - Marcacao: origens com `observacoes` comecando com `[DEMO]` e pecas com SKU `DM-`. O apagar remove so esses registros (e o que estiver ligado as pecas deles) e para sem apagar nada se a marcacao nao bater.
 - As vendas passam por `registrar_venda_fifo` com `p_custos`, o mesmo caminho da tela.
 - Usar esse conjunto em todas as conferencias das proximas fases, em vez de criar dados avulsos.
@@ -464,6 +464,7 @@ Implementacao atual confirmada:
 - Categorias oficiais: `Peca`, `Venda` e `Ambos`.
 - Status oficiais: `Ativo` e `Inativo`.
 - Impedir duplicidade por diferenca de maiusculas/minusculas e espacos extras.
+- O nome fica como foi digitado (ex.: "Tarifa Mercado Livre"): so tira espacos das pontas e espacos duplicados, sem mudar maiusculas (decisao de 2026-09-24; vale tambem para o novo tipo criado em Custo de peca). A Analise de custos mostra o nome como cadastrado; so tipos antigos gravados todo em minusculas ("frete") ganham a primeira letra maiuscula.
 
 Implementacao atual confirmada:
 
@@ -473,7 +474,7 @@ Implementacao atual confirmada:
 - A duplicidade atual e barrada por normalizacao de acento, espacos e caixa.
 - O fluxo atual permite `Editar` e `Ativar/Inativar`, sem exclusao fisica pela interface.
 - O uso do tipo e consultado antes da renderizacao, reforcando a regra de inativar em vez de duplicar.
-- `Limpeza`, `limpeza` e `LIMPEZA` devem ser tratados como o mesmo tipo.
+- `Limpeza`, `limpeza` e `LIMPEZA` devem ser tratados como o mesmo tipo (tambem sem diferenciar acentos: `Comissao` = `Comissão`).
 - Normalizar o nome para comparacao antes de salvar.
 - Evitar tipos parecidos que baguncam relatorios e analises.
 - UX padrao: busca no topo, seletor `Mostrar`, botao `Filtros`, formulario Novo/editar tipo, painel de uso recomendado e lista compacta.
