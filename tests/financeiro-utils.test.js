@@ -202,16 +202,19 @@ function montarOrigemRetorno() {
   };
 }
 
-test("calcularRetornoOrigem: recuperado, resultado contra o valor pago e estoque a preço de venda", () => {
+test("calcularRetornoOrigem: resultado = recuperado − valor pago − custos das peças; estoque a preço de venda", () => {
   const { origem, dados } = montarOrigemRetorno();
   const retorno = financeiro.calcularRetornoOrigem(origem, dados);
 
+  // Recuperado 900 = (700 − 50) + 250. Investido 1.030 = 1.000 pagos + 30 de limpeza na peça A.
   assert.equal(retorno.valorPago, 1000);
+  assert.equal(retorno.custosPeca, 30);
+  assert.equal(retorno.investido, 1030);
   assert.equal(retorno.recuperado, 900);
-  assert.equal(retorno.resultado, -100);
-  assert.equal(retorno.percentualRecuperado, 90);
+  assert.equal(retorno.resultado, -130);
+  assert.equal(arredondar(retorno.percentualRecuperado), 87.38);
   assert.equal(retorno.jaSePagou, false);
-  assert.equal(retorno.faltaParaSePagar, 100);
+  assert.equal(retorno.faltaParaSePagar, 130);
   assert.equal(retorno.valorDistribuido, 1000);
   assert.deepEqual({ ...retorno.estoque }, { unidades: 3, pecas: 3, valorPrecoVenda: 760, pecasSemPreco: 1 });
   assert.equal(retorno.pecasVendidas, 1);
@@ -243,10 +246,28 @@ test("calcularRetornoOrigem: origem que já se pagou e origem sem valor pago", (
   const paga = financeiro.calcularRetornoOrigem({ id: 7, valorPago: 600 }, dados);
   const semValor = financeiro.calcularRetornoOrigem({ id: 7, valorPago: 0 }, dados);
 
+  // Pago 600 + 30 de custo da peça = 630; recuperado 900.
   assert.equal(paga.jaSePagou, true);
-  assert.equal(paga.resultado, 300);
+  assert.equal(paga.resultado, 270);
   assert.equal(paga.faltaParaSePagar, 0);
-  assert.equal(arredondar(paga.percentualRecuperado), 150);
+  assert.equal(arredondar(paga.percentualRecuperado), 142.86);
   assert.equal(semValor.percentualRecuperado, null);
   assert.equal(semValor.jaSePagou, false);
+  assert.equal(semValor.faltaParaSePagar, 0);
+  assert.equal(semValor.resultado, 870);
+});
+
+test("calcularRetornoOrigem: custo de peça decide se a origem já se pagou; peça com duas origens fica fora", () => {
+  const { dados } = montarOrigemRetorno();
+  // Pago 880: sem custo de peça estaria paga (900 ≥ 880); com os 30 de limpeza faltam 10.
+  const comCusto = financeiro.calcularRetornoOrigem({ id: 7, valorPago: 880 }, dados);
+  assert.equal(comCusto.jaSePagou, false);
+  assert.equal(comCusto.faltaParaSePagar, 10);
+
+  // A peça A ganha uma entrada de outra origem: o custo dela não é atribuído a esta origem.
+  dados.entradas.push({ id: 15, origemId: 8, pecaId: 1, quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 10 });
+  const semAtribuir = financeiro.calcularRetornoOrigem({ id: 7, valorPago: 880 }, dados);
+  assert.equal(semAtribuir.custosPeca, 0);
+  assert.equal(semAtribuir.jaSePagou, true);
+  assert.equal(semAtribuir.resultado, 20);
 });

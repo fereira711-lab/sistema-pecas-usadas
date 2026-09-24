@@ -94,17 +94,6 @@
   display: none;
 }
 
-.origem-pecas__alternar {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--link);
-  font-family: var(--font-sans);
-  font-size: inherit;
+.origem-pecas__ver-todas {
   font-weight: 600;
-  cursor: pointer;
-}
-
-.origem-pecas__alternar:hover {
-  text-decoration: underline;
 }

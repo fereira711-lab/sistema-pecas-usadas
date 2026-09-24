@@ -33,7 +33,6 @@ let origemId = 0;
 let dadosOrigem = null;
 let linhasPecas = [];
 let filtroAtual = "todas";
-let mostrarTodas = false;
 
 // ---- Formatação ----
 
@@ -231,13 +230,15 @@ function renderizarKpis(retorno) {
     custosVenda > 0 ? `descontados ${formatarMoeda(custosVenda)} de custos da venda` : ""
   ].filter(Boolean).join(" · ");
 
+  // Resultado = recuperado − valor pago − custos lançados nas peças da origem.
+  const custosNasPecas = retorno.custosPeca > 0 ? ` · descontados ${formatarMoeda(retorno.custosPeca)} de custos nas peças` : "";
   let kpiResultado;
   if (retorno.valorPago <= 0) {
     kpiResultado = criarKpi({ rotulo: "Resultado da origem", valor: "—", classeValor: "kpi__value--muted", nota: "Sem valor pago" });
   } else if (retorno.jaSePagou) {
-    kpiResultado = criarKpi({ rotulo: "Resultado da origem", valor: formatarMoeda(retorno.resultado), classeValor: "text-success", nota: "Já se pagou", classeNota: "kpi__note--success" });
+    kpiResultado = criarKpi({ rotulo: "Resultado da origem", valor: formatarMoeda(retorno.resultado), classeValor: "text-success", nota: `Já se pagou${custosNasPecas}`, classeNota: "kpi__note--success" });
   } else {
-    kpiResultado = criarKpi({ rotulo: "Resultado da origem", valor: formatarMoeda(retorno.resultado), nota: `Faltam ${formatarMoeda(retorno.faltaParaSePagar)} para se pagar`, classeNota: "kpi__note--warning" });
+    kpiResultado = criarKpi({ rotulo: "Resultado da origem", valor: formatarMoeda(retorno.resultado), nota: `Faltam ${formatarMoeda(retorno.faltaParaSePagar)} para se pagar${custosNasPecas}`, classeNota: "kpi__note--warning" });
   }
 
   const { estoque } = retorno;
@@ -258,12 +259,17 @@ function renderizarRetorno(retorno) {
   const percentual = retorno.percentualRecuperado;
   const largura = percentual === null ? 0 : Math.min(100, Math.max(0, percentual));
 
-  percentualRetornoOrigem.textContent = percentual === null ? "Sem valor pago" : `${formatarPercentualInteiro(percentual)} do valor pago já recuperado`;
+  const comCustosNasPecas = retorno.custosPeca > 0;
+  percentualRetornoOrigem.textContent = percentual === null
+    ? "Sem valor pago"
+    : `${formatarPercentualInteiro(percentual)} do ${comCustosNasPecas ? "valor pago e dos custos nas peças" : "valor pago"} já recuperado`;
   percentualRetornoOrigem.classList.toggle("origem-retorno__percentual--pago", retorno.jaSePagou);
   preenchimentoRetornoOrigem.className = `progress__bar ${retorno.jaSePagou ? "progress__bar--complete" : "progress__bar--partial"}`;
   preenchimentoRetornoOrigem.style.width = `${Math.round(largura)}%`;
   barraRetornoOrigem.setAttribute("aria-valuenow", String(Math.round(largura)));
-  legendaPagoOrigem.textContent = `Pago: ${formatarMoeda(retorno.valorPago)}`;
+  legendaPagoOrigem.textContent = comCustosNasPecas
+    ? `Pago ${formatarMoeda(retorno.valorPago)} + custos nas peças ${formatarMoeda(retorno.custosPeca)} = ${formatarMoeda(retorno.investido)}`
+    : `Pago: ${formatarMoeda(retorno.valorPago)}`;
   fraseRetornoOrigem.innerHTML = montarFraseRetorno(retorno);
   blocoRetornoOrigem.hidden = false;
 }
@@ -320,7 +326,7 @@ function renderizarLinha(linha) {
 
 function renderizarPecas() {
   const filtradas = linhasPecas.filter(linha => linhaCombinaComFiltro(linha, filtroAtual));
-  const visiveis = mostrarTodas ? filtradas : filtradas.slice(0, PECAS_VISIVEIS);
+  const visiveis = filtradas.slice(0, PECAS_VISIVEIS);
 
   filtroPecasOrigem.querySelectorAll("[data-filtro]").forEach(botao => {
     botao.setAttribute("aria-pressed", String(botao.dataset.filtro === filtroAtual));
@@ -333,8 +339,11 @@ function renderizarPecas() {
     ? visiveis.map(renderizarLinha).join("")
     : `<tr><td colspan="5" class="data-table__empty">${linhasPecas.length ? "Nenhuma peça nesta situação." : "Nenhuma peça cadastrada nesta origem."}</td></tr>`;
 
+  // "Ver todas" abre Produtos filtrado por esta origem (e pela mesma situação, quando houver).
   if (filtradas.length > PECAS_VISIVEIS) {
-    rodapePecasOrigem.innerHTML = `Mostrando ${formatarNumero(visiveis.length)} de ${formatarNumero(filtradas.length)} · <button type="button" class="origem-pecas__alternar" data-acao="alternar-todas">${mostrarTodas ? "Mostrar menos" : "Ver todas"}</button>`;
+    const situacaoProdutos = { vendidas: "vendidas", estoque: "estoque" }[filtroAtual];
+    const href = `produtos.html?origemId=${encodeURIComponent(dadosOrigem.origem.id)}${situacaoProdutos ? `&situacao=${situacaoProdutos}` : ""}`;
+    rodapePecasOrigem.innerHTML = `Mostrando ${formatarNumero(visiveis.length)} de ${formatarNumero(filtradas.length)} · <a class="origem-pecas__ver-todas" href="${href}">Ver todas</a>`;
     rodapePecasOrigem.hidden = false;
   } else {
     rodapePecasOrigem.innerHTML = "";
@@ -475,13 +484,6 @@ if (tabelaPecasOrigem) {
     const botao = evento.target.closest("[data-filtro]");
     if (!botao) return;
     filtroAtual = botao.dataset.filtro;
-    mostrarTodas = false;
-    renderizarPecas();
-  });
-
-  rodapePecasOrigem.addEventListener("click", evento => {
-    if (!evento.target.closest("[data-acao='alternar-todas']")) return;
-    mostrarTodas = !mostrarTodas;
     renderizarPecas();
   });
 

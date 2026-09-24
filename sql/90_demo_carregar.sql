@@ -11,11 +11,16 @@
 -- e "recém-comprada" continuem valendo em qualquer dia.
 -- As vendas passam pela função oficial registrar_venda_fifo com os custos em p_custos (sql/16),
 -- o mesmo caminho da tela: venda, baixa FIFO e custos na mesma transação.
--- Tipos de custo usados (precisam existir e estar ativos): Frete, Embalagem e Tarifa Mercado Livre.
+-- Custos de peça (limpeza, pintura) entram direto em custos_peca com os mesmos campos que a tela
+-- Custo de peça grava (tipo, id do tipo, descrição, valor e data).
+-- Tipos de custo usados (precisam existir e estar ativos): Frete, Embalagem e Tarifa Mercado Livre
+-- (categoria venda ou ambos) e Limpeza e Pintura (categoria peça ou ambos).
 --
 -- Resultado esperado (conferido à mão):
---   Onix  (R$ 3.200, já se pagou): receita R$ 5.120, custos da venda R$ 569, recuperado R$ 4.551.
---   Gol   (R$ 2.600, pela metade): receita R$ 1.225, custos da venda R$ 178, recuperado R$ 1.047.
+--   Onix  (R$ 3.200, já se pagou): receita R$ 5.120, custos da venda R$ 569, recuperado R$ 4.551;
+--         custos nas peças R$ 90 (limpeza do painel, pintura da porta); resultado R$ 4.551 − 3.200 − 90 = R$ 1.261.
+--   Gol   (R$ 2.600, pela metade): receita R$ 1.225, custos da venda R$ 178, recuperado R$ 1.047;
+--         custo na peça R$ 40 (limpeza do cabeçote); faltam R$ 2.600 + 40 − 1.047 = R$ 1.593.
 --   Lote  (R$ 1.800, recém-comprado): R$ 1.100 distribuídos, R$ 700 a distribuir; 1 venda.
 --   Tarifa Mercado Livre (~11%) nas 5 vendas de Mercado Livre: R$ 403 no total.
 --   Paradas +90 dias: 6 peças. Venda com prejuízo: bomba de combustível (−R$ 20).
@@ -32,6 +37,8 @@ declare
   v_frete_id bigint;
   v_embalagem_id bigint;
   v_tarifa_ml_id bigint;
+  v_limpeza_id bigint;
+  v_pintura_id bigint;
   v_venda record;
   v_venda_id bigint;
 begin
@@ -46,6 +53,12 @@ begin
   select id into v_tarifa_ml_id from public.tipos_custo where lower(nome) = 'tarifa mercado livre' and ativo;
   if v_frete_id is null or v_embalagem_id is null or v_tarifa_ml_id is null then
     raise exception 'Os tipos de custo ativos "Frete", "Embalagem" e "Tarifa Mercado Livre" são necessários para a demonstração.';
+  end if;
+
+  select id into v_limpeza_id from public.tipos_custo where lower(nome) = 'limpeza' and ativo and categoria in ('peca', 'ambos');
+  select id into v_pintura_id from public.tipos_custo where lower(nome) = 'pintura' and ativo and categoria in ('peca', 'ambos');
+  if v_limpeza_id is null or v_pintura_id is null then
+    raise exception 'Os tipos de custo ativos "Limpeza" e "Pintura" (categoria peça) são necessários para a demonstração.';
   end if;
 
   -- ---- Origens ----
@@ -149,6 +162,18 @@ begin
       )
     ) into v_venda_id;
   end loop;
+
+  -- ---- Custos de peça (mesmos campos que a tela Custo de peça grava) ----
+  -- (sku, tipo, descrição, valor, dias atrás)
+  insert into public.custos_peca (peca_id, tipo_custo, tipo_custo_id, descricao, valor, data_custo)
+  select p.id, t.nome, t.id, c.descricao, c.valor, v_hoje - c.dias
+  from (values
+    ('DM-ONX-06', v_limpeza_id, 'Limpeza e teste do painel', 30::numeric, 140),
+    ('DM-ONX-04', v_pintura_id, 'Retoque de pintura na borda', 60, 85),
+    ('DM-GOL-01', v_limpeza_id, 'Limpeza do cabeçote', 40, 75)
+  ) as c(sku, tipo_id, descricao, valor, dias)
+  join public.pecas p on p.sku = c.sku
+  join public.tipos_custo t on t.id = c.tipo_id;
 end $$;
 
 -- Conferência rápida do que foi carregado.
@@ -158,6 +183,8 @@ select
   (select count(*) from public.entradas_estoque e join public.pecas p on p.id = e.peca_id where p.sku like 'DM-%') as entradas,
   (select count(*) from public.vendas v join public.pecas p on p.id = v.peca_id where p.sku like 'DM-%') as vendas,
   (select count(*) from public.custos_venda c join public.vendas v on v.id = c.venda_id join public.pecas p on p.id = v.peca_id where p.sku like 'DM-%') as custos_venda,
-  (select sum(c.valor) from public.custos_venda c join public.vendas v on v.id = c.venda_id join public.pecas p on p.id = v.peca_id where p.sku like 'DM-%') as total_custos_venda;
+  (select sum(c.valor) from public.custos_venda c join public.vendas v on v.id = c.venda_id join public.pecas p on p.id = v.peca_id where p.sku like 'DM-%') as total_custos_venda,
+  (select count(*) from public.custos_peca c join public.pecas p on p.id = c.peca_id where p.sku like 'DM-%') as custos_peca,
+  (select sum(c.valor) from public.custos_peca c join public.pecas p on p.id = c.peca_id where p.sku like 'DM-%') as total_custos_peca;
 
 commit;

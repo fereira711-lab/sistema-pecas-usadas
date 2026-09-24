@@ -182,29 +182,33 @@ function renderizarKpis(dados, periodo) {
 
 // ---- Retorno por origem ----
 
-// Quanto a origem já devolveu: receita das vendas das peças dela (ligadas pelas entradas consumidas)
-// menos os custos dessas vendas, calculado pelo financeiro-utils.js, comparado com o valor pago.
+// Mesma conta de Detalhes da origem (financeiro-utils.calcularRetornoOrigem): o que já voltou em vendas
+// (receita menos custos da venda) contra o valor pago mais os custos lançados nas peças da origem.
 function calcularRetornoOrigem(origem, dados) {
   const financeiro = obterFinanceiro();
-  const resultado = financeiro
-    ? financeiro.calcularResultadoOrigem(origem, dados.entradasEstoque, dados.vendas, dados.consumosEstoque, dados.custosPeca, dados.custosVenda)
-    : { recuperado: 0 };
   const valorPago = Number(origem.valorPago || origem.custoTotal || 0);
-  const recuperado = Number(resultado.recuperado || 0);
+  const retorno = financeiro
+    ? financeiro.calcularRetornoOrigem(origem, {
+        pecas: dados.pecas,
+        entradas: dados.entradasEstoque,
+        vendas: dados.vendas,
+        consumos: dados.consumosEstoque,
+        custosPeca: dados.custosPeca,
+        custosVenda: dados.custosVenda
+      })
+    : { valorPago, investido: valorPago, recuperado: 0, resultado: -valorPago, percentualRecuperado: null, jaSePagou: false, faltaParaSePagar: valorPago };
 
   return {
     origem,
-    valorPago,
-    recuperado,
-    percentual: valorPago > 0 ? Math.min(recuperado / valorPago, 1) : 0,
-    pago: valorPago > 0 && recuperado >= valorPago
+    retorno,
+    percentual: retorno.percentualRecuperado === null ? 0 : Math.min(retorno.percentualRecuperado / 100, 1)
   };
 }
 
 function renderizarRetornoOrigens(dados) {
   const retornos = dados.origens
     .map(origem => calcularRetornoOrigem(origem, dados))
-    .sort((a, b) => b.percentual - a.percentual || b.valorPago - a.valorPago);
+    .sort((a, b) => b.percentual - a.percentual || b.retorno.valorPago - a.retorno.valorPago);
 
   if (retornos.length === 0) {
     retornoOrigens.innerHTML = `<p class="empty-state">Nenhuma origem cadastrada ainda.</p>`;
@@ -212,18 +216,19 @@ function renderizarRetornoOrigens(dados) {
   }
 
   retornoOrigens.innerHTML = retornos.slice(0, MAXIMO_ORIGENS).map(item => {
-    const { origem, valorPago, recuperado, percentual, pago } = item;
+    const { origem, retorno, percentual } = item;
+    const pago = retorno.jaSePagou;
     let status;
     let classeBarra;
 
-    if (valorPago <= 0) {
+    if (retorno.valorPago <= 0) {
       status = "Sem valor pago registrado";
       classeBarra = "progress__bar--info";
     } else if (pago) {
-      status = `Já se pagou · lucro de ${formatarMoeda(recuperado - valorPago)}`;
+      status = `Já se pagou · lucro de ${formatarMoeda(retorno.resultado)}`;
       classeBarra = "progress__bar--complete";
     } else {
-      status = `Faltam ${formatarMoeda(valorPago - recuperado)} para se pagar`;
+      status = `Faltam ${formatarMoeda(retorno.faltaParaSePagar)} para se pagar`;
       classeBarra = "progress__bar--partial";
     }
 
@@ -237,7 +242,7 @@ function renderizarRetornoOrigens(dados) {
             <span class="retorno-item__titulo">${escaparHtml(origem.descricao || "Origem sem descrição")}</span>
             <span class="mono">${escaparHtml(origem.codigoOrigem || "")}</span>
           </a>
-          <span class="retorno-item__valores">${formatarMoeda(recuperado)} de ${formatarMoeda(valorPago)}</span>
+          <span class="retorno-item__valores">${formatarMoeda(retorno.recuperado)} de ${formatarMoeda(retorno.investido)}</span>
         </div>
         <div class="progress" role="progressbar" aria-label="Retorno de ${escaparHtml(origem.descricao || "origem")}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(percentual * 100)}">
           <div class="progress__bar ${classeBarra}" style="width: ${largura}"></div>

@@ -397,8 +397,27 @@ async function inicializarProdutos() {
   dadosProdutos = dados;
   linhasProdutos = montarLinhas();
   renderizarFiltroOrigens();
+  aplicarFiltrosDaUrl();
   renderizarResumo();
   renderizarProdutos();
+}
+
+// Links de outras telas podem abrir a lista já filtrada: ?origemId=21&situacao=estoque (ex.: "Ver todas" em Detalhes da origem).
+function aplicarFiltrosDaUrl() {
+  const parametros = new URLSearchParams(window.location.search);
+  const origemId = parametros.get("origemId");
+  const situacao = parametros.get("situacao");
+
+  if (origemId && filtroOrigemProdutos.querySelector(`option[value="${CSS.escape(origemId)}"]`)) {
+    filtroOrigemProdutos.value = origemId;
+  }
+
+  if (situacao && filtroSituacaoProdutos.querySelector(`[data-situacao="${CSS.escape(situacao)}"]`)) {
+    situacaoSelecionada = situacao;
+    filtroSituacaoProdutos.querySelectorAll("[data-situacao]").forEach(botao => {
+      botao.setAttribute("aria-pressed", String(botao.dataset.situacao === situacao));
+    });
+  }
 }
 
 campoBuscaProdutos?.addEventListener("input", () => {

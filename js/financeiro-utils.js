@@ -181,7 +181,9 @@
   // Retorno da origem (Detalhes da origem): quanto já voltou em dinheiro, o resultado contra o valor pago,
   // o que ainda está em estoque (a preço de venda) e a conta de cada peça. Usa calcularResultadoOrigem e
   // calcularLucroVenda; não cria regra de custo nova (custo vem das entradas e dos consumos registrados).
-  // resultado = recuperado − valor pago (mesma conta do "Retorno por origem" do Painel).
+  // resultado = recuperado − valor pago − custos lançados nas peças da origem (limpeza, pintura etc.),
+  // decisão de Rafael em 2026-09-24. É a mesma conta no Painel ("Retorno por origem") e em Detalhes da origem.
+  // Custo lançado numa peça que tem mais de uma origem não entra (mesma regra de calcularResultadoOrigem).
   function calcularRetornoOrigem(origem, dados = {}) {
     const origemId = obterId(origem?.id);
     const entradas = dados.entradas || [];
@@ -236,13 +238,19 @@
 
     const pecasEmEstoque = pecas.filter(item => item.saldo > 0);
 
+    const custosDasPecas = resultadoOrigem.custosPeca;
+    const investido = valorPago + custosDasPecas;
+
     return {
       valorPago,
+      custosPeca: custosDasPecas,
+      investido,
       recuperado,
-      resultado: recuperado - valorPago,
-      percentualRecuperado: valorPago > 0 ? (recuperado / valorPago) * 100 : null,
-      jaSePagou: valorPago > 0 && recuperado >= valorPago,
-      faltaParaSePagar: Math.max(0, valorPago - recuperado),
+      resultado: recuperado - investido,
+      // Sem valor pago (ex.: estoque inicial) não há o que "se pagar": percentual nulo e nada faltando.
+      percentualRecuperado: valorPago > 0 ? (recuperado / investido) * 100 : null,
+      jaSePagou: valorPago > 0 && recuperado >= investido,
+      faltaParaSePagar: valorPago > 0 ? Math.max(0, investido - recuperado) : 0,
       valorDistribuido: entradasDaOrigem.reduce((total, entrada) => (
         total + Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0)
       ), 0),
