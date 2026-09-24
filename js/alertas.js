@@ -134,7 +134,21 @@ function criarAlerta({ tipo, descricao, entidade, gravidade, acaoTexto, acaoHref
   };
 }
 
-function calcularAlertasPecas(dados) {
+function obterSaldoEntrada(entrada) {
+  return Math.max(0, Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0));
+}
+
+function descreverEntradasCobertas(quantidade, singular, plural) {
+  if (quantidade <= 0) {
+    return "";
+  }
+
+  return ` ${formatarNumero(quantidade)} ${quantidade === 1 ? `entrada ${singular}` : `entradas ${plural}`}.`;
+}
+
+// Registra em situacaoEstoquePorPeca as pecas ja alertadas como "sem-estoque" ou "estoque-baixo",
+// para que os alertas por entrada nao repitam o mesmo fato.
+function calcularAlertasPecas(dados, situacaoEstoquePorPeca = new Map()) {
   const vendasPorPeca = agruparPorId(dados.vendas, "pecaId");
   const entradasPorPeca = agruparPorId(dados.entradasEstoque, "pecaId");
 
@@ -155,9 +169,12 @@ function calcularAlertasPecas(dados) {
     const alertas = [];
 
     if (estoqueDisponivel <= 0) {
+      situacaoEstoquePorPeca.set(pecaId, "sem-estoque");
+      const entradasEsgotadas = entradasDaPeca.filter(entrada => obterSaldoEntrada(entrada) <= 0).length;
+
       alertas.push(criarAlerta({
         tipo: "Sem estoque",
-        descricao: "Produto sem quantidade disponível.",
+        descricao: `Produto sem quantidade disponível.${descreverEntradasCobertas(entradasEsgotadas, "esgotada", "esgotadas")}`,
         entidade,
         gravidade: "critico",
         acaoTexto: "Ver produto",
@@ -165,9 +182,12 @@ function calcularAlertasPecas(dados) {
         busca: entidade
       }));
     } else if (estoqueDisponivel <= 2) {
+      situacaoEstoquePorPeca.set(pecaId, "estoque-baixo");
+      const entradasSaldoBaixo = entradasDaPeca.filter(entrada => obterSaldoEntrada(entrada) > 0 && obterSaldoEntrada(entrada) <= 2).length;
+
       alertas.push(criarAlerta({
         tipo: "Estoque baixo",
-        descricao: `Restam ${formatarNumero(estoqueDisponivel)} unidades disponíveis.`,
+        descricao: `Restam ${formatarNumero(estoqueDisponivel)} unidades disponíveis.${descreverEntradasCobertas(entradasSaldoBaixo, "com saldo baixo", "com saldo baixo")}`,
         entidade,
         gravidade: "atencao",
         acaoTexto: "Ver produto",
@@ -214,15 +234,18 @@ function calcularAlertasPecas(dados) {
   });
 }
 
-function calcularAlertasLotes(entradasEstoque) {
+function calcularAlertasLotes(entradasEstoque, situacaoEstoquePorPeca = new Map()) {
   return entradasEstoque.flatMap(entrada => {
-    const quantidadeTotal = Number(entrada.quantidadeTotal || 0);
-    const quantidadeConsumida = Number(entrada.quantidadeConsumida || 0);
-    const saldo = Math.max(0, quantidadeTotal - quantidadeConsumida);
+    const saldo = obterSaldoEntrada(entrada);
+    const situacaoPeca = situacaoEstoquePorPeca.get(Number(entrada.pecaId));
     const entidade = `${entrada.sku ? `${entrada.sku} - ` : ""}${entrada.nomePeca || entrada.pecaNome || "Entrada de estoque"}`;
     const alertas = [];
 
     if (saldo <= 0) {
+      if (situacaoPeca === "sem-estoque") {
+        return [];
+      }
+
       alertas.push(criarAlerta({
         tipo: "Lote esgotado",
         descricao: "Entrada de estoque sem saldo disponível.",
@@ -233,6 +256,10 @@ function calcularAlertasLotes(entradasEstoque) {
         busca: `${entidade} ${entrada.origemDescricao || ""}`
       }));
     } else if (saldo <= 2) {
+      if (situacaoPeca === "estoque-baixo") {
+        return [];
+      }
+
       alertas.push(criarAlerta({
         tipo: "Saldo baixo",
         descricao: `Lote com ${formatarNumero(saldo)} unidades restantes.`,
@@ -481,9 +508,11 @@ async function iniciarAlertas() {
     return;
   }
 
+  const situacaoEstoquePorPeca = new Map();
+
   alertasCarregados = [
-    ...calcularAlertasPecas(dados),
-    ...calcularAlertasLotes(dados.entradasEstoque),
+    ...calcularAlertasPecas(dados, situacaoEstoquePorPeca),
+    ...calcularAlertasLotes(dados.entradasEstoque, situacaoEstoquePorPeca),
     ...calcularAlertasVendas(dados),
     ...calcularAlertasOrigens(dados)
   ];
