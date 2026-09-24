@@ -259,7 +259,7 @@ function renderizarAlertasPainel(dados) {
   `;
 }
 
-function obterUltimasVendas(vendas, limite = 8) {
+function obterUltimasVendas(vendas, limite = 7) {
   return [...vendas]
     .sort((a, b) => {
       const dataA = obterDataVenda(a);
@@ -279,7 +279,7 @@ function renderizarUltimasVendas(vendas) {
     return;
   }
 
-  const ultimasVendas = obterUltimasVendas(vendas);
+  const ultimasVendas = obterUltimasVendas(vendas, 7);
   listaUltimasVendas.innerHTML = "";
 
   if (ultimasVendas.length === 0) {
