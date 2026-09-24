@@ -483,6 +483,7 @@ Implementacao atual confirmada:
 - Cadastro de venda usa tipos com categoria Venda ou Ambos.
 - Analise de custos depende dos tipos padronizados para agrupar corretamente.
 - Preferir inativar tipos antigos em vez de apagar.
+- Exibicao: cada linha de custo guarda uma copia do nome do tipo do dia do lancamento (`tipo_custo`, e as vezes `descricao`). As telas mostram o nome ATUAL do tipo vinculado (`tipos_custo.nome` via `tipo_custo_id`, no mapeamento do `supabase-service.js`); a copia so aparece em registro antigo sem tipo vinculado. Nos custos da venda, uma `descricao` que so repete o nome copiado nao e observacao e fica vazia na tela (decisao de 2026-09-24, sem mudanca no banco).
 - Nao alterar calculos financeiros nessa tela.
 
 ## Entradas de estoque

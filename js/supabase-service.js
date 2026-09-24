@@ -304,8 +304,14 @@
     };
   }
 
+  // A linha de custo guarda uma cópia do nome do tipo (tipo_custo e, às vezes, descricao) do dia do lançamento.
+  // Na tela vale o nome ATUAL do tipo vinculado (tipos_custo.nome); a cópia só aparece em registro antigo sem tipo.
+  // Uma descricao que só repete o nome copiado não é observação e fica vazia (senão o nome antigo reaparece).
   function mapearCustoVendaDoBanco(custo) {
     const tipoCustoNome = custo.tipos_custo?.nome || custo.tipo_custo;
+    const descricao = String(custo.descricao || "").trim();
+    const descricaoCopiaDoNome = Boolean(custo.tipos_custo?.nome) &&
+      chaveNomeTipoCusto(descricao) === chaveNomeTipoCusto(custo.tipo_custo);
 
     return {
       id: Number(custo.id),
@@ -313,7 +319,7 @@
       tipo: tipoCustoNome,
       tipoCusto: tipoCustoNome,
       tipoCustoId: custo.tipo_custo_id ? Number(custo.tipo_custo_id) : null,
-      descricao: custo.descricao || "",
+      descricao: descricaoCopiaDoNome ? "" : descricao,
       observacoes: custo.observacoes || "",
       valor: Number(custo.valor || 0),
       data: custo.data_custo,

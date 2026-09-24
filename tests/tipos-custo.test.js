@@ -88,3 +88,36 @@ test("Analise de custos: nome cadastrado aparece como digitado; tipo antigo em m
   assert.equal(tela.formatarNomeTipoCusto("frete"), "Frete");
   assert.equal(tela.formatarNomeTipoCusto(""), "Sem tipo");
 });
+
+// Custos da venda na tela: nome ATUAL do tipo vinculado; nome copiado so em registro antigo sem tipo.
+function carregarServicoComCustosVenda(linhas) {
+  const contexto = carregarScript("js/supabase-service.js");
+  const builder = {
+    select: () => builder, order: () => builder, eq: () => builder,
+    then: (resolver, rejeitar) => Promise.resolve({ data: linhas, error: null }).then(resolver, rejeitar)
+  };
+
+  contexto.SUPABASE_CONFIG = { url: "https://exemplo-teste.supabase.co", anonKey: "chave-ficticia-de-teste" };
+  contexto.supabase = { createClient: () => ({ from: () => builder }) };
+
+  return contexto.supabaseService;
+}
+
+test("custos da venda: tipo renomeado aparece com o nome atual, inclusive onde a descricao so copiava o nome", async () => {
+  const servico = carregarServicoComCustosVenda([
+    // Lancado pela funcao do banco antes da correcao do nome (tipo 9).
+    { id: 1, venda_id: 10, tipo_custo: "Tarifa mercado livre", tipo_custo_id: 9, descricao: "Tarifa mercado livre", valor: 26.4, tipos_custo: { nome: "Tarifa Mercado Livre" } },
+    // Tipo vinculado com observacao de verdade: a observacao fica.
+    { id: 2, venda_id: 10, tipo_custo: "Frete", tipo_custo_id: 5, descricao: "Correios PAC", valor: 20, tipos_custo: { nome: "Frete" } },
+    // Registro antigo sem tipo vinculado: usa o nome copiado e a descricao antiga.
+    { id: 3, venda_id: 11, tipo_custo: "frete", tipo_custo_id: null, descricao: "Custo de frete", valor: 15, tipos_custo: null }
+  ]);
+
+  const custos = Array.from(await servico.listarCustosVenda());
+
+  assert.deepEqual(custos.map(custo => [custo.tipoCusto, custo.tipo, custo.descricao]), [
+    ["Tarifa Mercado Livre", "Tarifa Mercado Livre", ""],
+    ["Frete", "Frete", "Correios PAC"],
+    ["frete", "frete", "Custo de frete"]
+  ]);
+});
