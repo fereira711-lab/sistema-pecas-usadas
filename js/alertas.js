@@ -1,17 +1,23 @@
+// Alertas (redesenho, seção 8 da especificação): pontos de atenção pensados para desmanche.
+// As regras ficam em alertas-regras.js (as mesmas do Painel e do contador da sidebar);
+// esta tela só agrupa, filtra e mostra cada ocorrência com a ação para resolver.
 const mensagemAlertas = document.getElementById("mensagemAlertas");
 const resumoAlertas = document.getElementById("resumoAlertas");
-const tabelaAlertas = document.getElementById("tabelaAlertas");
-const buscaAlertas = document.getElementById("buscaAlertas");
-const alertasShell = document.getElementById("alertasShell");
-const botaoAbrirFiltrosAlertas = document.getElementById("botaoAbrirFiltrosAlertas");
-const botaoFecharFiltrosAlertas = document.getElementById("botaoFecharFiltrosAlertas");
-const botaoLimparFiltrosAlertas = document.getElementById("botaoLimparFiltrosAlertas");
-const botaoAplicarFiltrosAlertas = document.getElementById("botaoAplicarFiltrosAlertas");
-const filtroTipoAlertas = document.getElementById("filtroTipoAlertas");
+const campoBuscaAlertas = document.getElementById("buscaAlertas");
 const filtroGravidadeAlertas = document.getElementById("filtroGravidadeAlertas");
-const filtroStatusAlertas = document.getElementById("filtroStatusAlertas");
+const gruposAlertas = document.getElementById("gruposAlertas");
 
-let alertasCarregados = [];
+let gruposCarregados = [];
+let gravidadeSelecionada = "todas";
+
+const ICONES_ALERTA = {
+  "venda-prejuizo": "ri-line-chart-line",
+  "distribuicao-acima": "ri-error-warning-line",
+  "venda-sem-custo": "ri-question-line",
+  "preco-abaixo-custo": "ri-price-tag-3-line",
+  "peca-parada": "ri-time-line",
+  "origem-a-distribuir": "ri-stack-line"
+};
 
 function escaparHtml(valor) {
   return String(valor ?? "")
@@ -24,451 +30,293 @@ function escaparHtml(valor) {
 
 function normalizarTexto(valor) {
   return String(valor || "")
-    .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
+}
+
+function formatarMoeda(valor) {
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(Number(valor || 0));
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatarPercentual(valor) {
+  if (window.moedaUtils?.formatarPercentualBR) return window.moedaUtils.formatarPercentualBR(valor, 0);
+  return `${Math.round(Number(valor || 0))}%`;
 }
 
 function formatarNumero(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
+  return Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+}
+
+function formatarData(valor) {
+  const [ano, mes, dia] = String(valor || "").slice(0, 10).split("-");
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : "—";
+}
+
+function plural(quantidade, singular, pluralTexto) {
+  return `${formatarNumero(quantidade)} ${quantidade === 1 ? singular : pluralTexto}`;
+}
+
+// ---- Montagem dos grupos (dados prontos para a tela) ----
+
+function criarCelulaPeca(peca) {
+  const nome = peca?.nome || peca?.nome_peca || "Peça";
+  return {
+    html: `<div class="alertas-peca"><span class="alertas-peca__nome">${escaparHtml(nome)}</span>${peca?.sku ? `<span class="mono">${escaparHtml(peca.sku)}</span>` : ""}</div>`,
+    texto: `${peca?.sku || ""} ${nome}`
+  };
+}
+
+function criarCelulaOrigem(origem) {
+  const descricao = origem?.descricao || "Origem";
+  const codigo = origem?.codigoOrigem || "";
+  return {
+    html: `<div class="alertas-peca"><span class="alertas-peca__nome">${escaparHtml(descricao)}</span>${codigo ? `<span class="mono">${escaparHtml(codigo)}</span>` : ""}</div>`,
+    texto: `${codigo} ${descricao}`
+  };
+}
+
+function celula(texto, classe = "") {
+  return { html: escaparHtml(texto), texto, classe };
+}
+
+function linkPeca(pecaId) {
+  return `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}`;
+}
+
+function linkVenda(vendaId) {
+  return `detalhes-venda.html?vendaId=${encodeURIComponent(vendaId)}`;
+}
+
+function linkOrigem(origemId) {
+  return `detalhes-origem.html?origemId=${encodeURIComponent(origemId)}`;
+}
+
+// Cada tipo de alerta vira um grupo com título, resumo, colunas e uma linha por ocorrência.
+function descreverGrupo(grupo, dados) {
+  const pecaPorId = new Map((dados.pecas || []).map(peca => [Number(peca.id), peca]));
+  const origemPorId = new Map((dados.origens || []).map(origem => [Number(origem.id), origem]));
+  const itens = grupo.itens;
+  const quantidade = itens.length;
+
+  switch (grupo.tipo) {
+    case "venda-prejuizo": {
+      const prejuizo = itens.reduce((total, item) => total + Number(item.resultado.lucro || 0), 0);
+      return {
+        titulo: `${plural(quantidade, "venda", "vendas")} com prejuízo`,
+        resumo: `Prejuízo somado de ${formatarMoeda(Math.abs(prejuizo))}`,
+        colunas: [["Data"], ["Peça"], ["Canal"], ["Valor", "num"], ["Custos", "num"], ["Lucro", "num"]],
+        linhas: itens.map(({ venda, resultado }) => ({
+          celulas: [
+            celula(formatarData(venda.dataVenda), "cell-nowrap"),
+            criarCelulaPeca(pecaPorId.get(Number(venda.pecaId)) || { nome: venda.produtoNome, sku: venda.sku }),
+            celula(venda.canalVenda || "—", "cell-muted cell-nowrap"),
+            celula(formatarMoeda(resultado.receita), "num"),
+            celula(formatarMoeda(resultado.custoConsumido + resultado.custosVenda), "num cell-muted"),
+            celula(formatarMoeda(resultado.lucro), "num text-danger")
+          ],
+          acao: { texto: "Ver venda", href: linkVenda(venda.id) }
+        }))
+      };
+    }
+    case "distribuicao-acima":
+    case "origem-a-distribuir": {
+      const acima = grupo.tipo === "distribuicao-acima";
+      const total = itens.reduce((soma, item) => soma + Math.abs(item.diferenca), 0);
+      return {
+        titulo: acima
+          ? `${plural(quantidade, "origem", "origens")} com distribuição acima do valor pago`
+          : `${plural(quantidade, "origem", "origens")} com valor a distribuir`,
+        resumo: acima
+          ? `O custo lançado nas peças passa do valor pago em ${formatarMoeda(total)}`
+          : `${formatarMoeda(total)} ainda sem peça vinculada`,
+        colunas: [["Origem"], ["Valor pago", "num"], ["Distribuído", "num"], [acima ? "Acima do pago" : "A distribuir", "num"]],
+        linhas: itens.map(item => ({
+          celulas: [
+            criarCelulaOrigem(item.origem),
+            celula(formatarMoeda(item.valorPago), "num"),
+            celula(formatarMoeda(item.valorDistribuido), "num cell-muted"),
+            celula(formatarMoeda(Math.abs(item.diferenca)), `num cell-strong${acima ? " text-danger" : ""}`)
+          ],
+          acao: { texto: acima ? "Ver origem" : "Distribuir", href: linkOrigem(item.origem.id) }
+        }))
+      };
+    }
+    case "venda-sem-custo":
+      return {
+        titulo: `${plural(quantidade, "venda", "vendas")} sem custo calculado`,
+        resumo: "Lucro e margem ficam pendentes até o custo ser calculado",
+        colunas: [["Data"], ["Peça"], ["Canal"], ["Valor", "num"]],
+        linhas: itens.map(({ venda, resultado }) => ({
+          celulas: [
+            celula(formatarData(venda.dataVenda), "cell-nowrap"),
+            criarCelulaPeca(pecaPorId.get(Number(venda.pecaId)) || { nome: venda.produtoNome, sku: venda.sku }),
+            celula(venda.canalVenda || "—", "cell-muted cell-nowrap"),
+            celula(formatarMoeda(resultado.receita), "num")
+          ],
+          acao: { texto: "Ver venda", href: linkVenda(venda.id) }
+        }))
+      };
+    case "preco-abaixo-custo":
+      return {
+        titulo: `${plural(quantidade, "peça", "peças")} com preço abaixo do custo`,
+        resumo: "Vendendo pelo preço cadastrado, a peça dá prejuízo",
+        colunas: [["Peça"], ["Preço", "num"], ["Custo", "num"], ["Margem", "num"]],
+        linhas: itens.map(item => ({
+          celulas: [
+            criarCelulaPeca(item.peca),
+            celula(formatarMoeda(item.preco), "num"),
+            celula(formatarMoeda(item.custo), "num cell-muted"),
+            celula(formatarPercentual(item.margem), "num text-danger")
+          ],
+          acao: { texto: "Ajustar preço", href: `${linkPeca(item.peca.id)}&editar=1&campo=preco` }
+        }))
+      };
+    case "peca-parada": {
+      const valorParado = itens.reduce((total, item) => total + item.valorParado, 0);
+      const dias = window.alertasRegras?.DIAS_PARA_PECA_PARADA || 90;
+      return {
+        titulo: `${plural(quantidade, "peça parada", "peças paradas")} há mais de ${dias} dias`,
+        resumo: `${formatarMoeda(valorParado)} em estoque sem venda desde a entrada`,
+        colunas: [["Peça"], ["Origem"], ["Parada há", "num"], ["Estoque", "num"], ["Valor parado", "num"]],
+        linhas: [...itens]
+          .sort((a, b) => b.dias - a.dias)
+          .map(item => ({
+            celulas: [
+              criarCelulaPeca(item.peca),
+              celula(origemPorId.get(Number(item.peca.origemId || item.peca.origem_id))?.descricao || "—", "cell-muted"),
+              celula(`${formatarNumero(item.dias)} dias`, "num"),
+              celula(`${formatarNumero(item.quantidade)} un.`, "num"),
+              celula(formatarMoeda(item.valorParado), "num cell-strong")
+            ],
+            acao: { texto: "Ver peça", href: linkPeca(item.peca.id) }
+          }))
+      };
+    }
+    default:
+      return null;
+  }
+}
+
+function montarGruposAlertas(dados, opcoes = {}) {
+  return window.alertasRegras.calcularAtencao(dados, opcoes)
+    .map(grupo => {
+      const texto = descreverGrupo(grupo, dados);
+      if (!texto) return null;
+
+      return {
+        tipo: grupo.tipo,
+        gravidade: grupo.gravidade,
+        ...texto,
+        linhas: texto.linhas.map(linha => ({
+          ...linha,
+          busca: normalizarTexto(linha.celulas.map(item => item.texto).join(" "))
+        }))
+      };
+    })
+    .filter(Boolean);
+}
+
+// ---- Filtros ----
+
+function filtrarGrupos(grupos, termo, gravidade) {
+  const palavras = normalizarTexto(termo).split(/\s+/).filter(Boolean);
+
+  return grupos
+    .filter(grupo => gravidade === "todas" || grupo.gravidade === gravidade)
+    .map(grupo => ({
+      ...grupo,
+      linhas: grupo.linhas.filter(linha => palavras.every(palavra => linha.busca.includes(palavra)))
+    }))
+    .filter(grupo => grupo.linhas.length > 0);
+}
+
+function atualizarContagens(grupos) {
+  const termo = campoBuscaAlertas?.value || "";
+  const contar = gravidade => filtrarGrupos(grupos, termo, gravidade).reduce((total, grupo) => total + grupo.linhas.length, 0);
+
+  filtroGravidadeAlertas?.querySelectorAll("[data-contagem]").forEach(elemento => {
+    elemento.textContent = formatarNumero(contar(elemento.dataset.contagem));
   });
 }
 
-function formatarSku(peca) {
-  return String(peca?.sku || peca?.codigo || peca?.codigo_peca || peca?.cod || "").trim() || "-";
-}
+// ---- Renderização ----
 
-function formatarNomePeca(peca) {
-  return peca?.nome || peca?.nome_peca || peca?.produtoNome || peca?.descricao || `Peça ${peca?.id || peca?.pecaId || ""}`.trim();
-}
+function renderizarGrupo(grupo) {
+  const cabecalho = grupo.colunas
+    .map(([titulo, classe]) => `<th scope="col"${classe ? ` class="${classe}"` : ""}>${escaparHtml(titulo)}</th>`)
+    .join("");
 
-function obterDataVenda(venda) {
-  return String(venda.dataVenda || venda.data_venda || venda.createdAt || venda.created_at || "").slice(0, 10);
-}
-
-function agruparPorId(lista, campo) {
-  return lista.reduce((mapa, item) => {
-    const id = Number(item[campo] || 0);
-
-    if (!mapa[id]) {
-      mapa[id] = [];
-    }
-
-    mapa[id].push(item);
-    return mapa;
-  }, {});
-}
-
-function somar(lista, campo = "valor") {
-  return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
-}
-
-function somarQuantidadeVendida(vendas) {
-  return vendas.reduce((total, venda) => {
-    return total + Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0);
-  }, 0);
-}
-
-function calcularDiasDesde(dataIso) {
-  if (!dataIso) {
-    return null;
-  }
-
-  const hoje = new Date();
-  const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-  const partes = String(dataIso).slice(0, 10).split("-").map(Number);
-
-  if (partes.length !== 3 || partes.some(Number.isNaN)) {
-    return null;
-  }
-
-  const data = new Date(partes[0], partes[1] - 1, partes[2]);
-  return Math.max(0, Math.floor((inicioHoje - data) / 86400000));
-}
-
-function obterUltimaVenda(vendas) {
-  return vendas.reduce((ultimaData, venda) => {
-    const dataVenda = obterDataVenda(venda);
-
-    if (!dataVenda) {
-      return ultimaData;
-    }
-
-    return !ultimaData || dataVenda > ultimaData ? dataVenda : ultimaData;
-  }, "");
-}
-
-function obterDataEntradaOuCadastro(peca, entradasDaPeca) {
-  const datasEntrada = entradasDaPeca
-    .map(entrada => String(entrada.dataEntrada || entrada.createdAt || "").slice(0, 10))
-    .filter(Boolean)
-    .sort();
-
-  return String(peca.createdAt || peca.created_at || datasEntrada[0] || "").slice(0, 10);
-}
-
-function criarCard(titulo, valor, classe = "") {
-  const classeCard = classe ? `summary-card ${classe}` : "summary-card";
+  const linhas = grupo.linhas.map(linha => `
+    <tr>
+      ${linha.celulas.map((item, indice) => `<td data-label="${escaparHtml(grupo.colunas[indice][0])}"${item.classe ? ` class="${item.classe}"` : ""}>${item.html}</td>`).join("")}
+      <td class="alertas-tabela__acao"><a class="btn btn--secondary btn--compact" href="${escaparHtml(linha.acao.href)}">${escaparHtml(linha.acao.texto)}</a></td>
+    </tr>
+  `).join("");
 
   return `
-    <article class="${classeCard}">
-      <span>${titulo}</span>
-      <strong>${valor}</strong>
-    </article>
+    <section class="card card--flush alertas-grupo" id="${escaparHtml(grupo.tipo)}" aria-labelledby="titulo-${escaparHtml(grupo.tipo)}">
+      <div class="card__head alertas-grupo__head">
+        <span class="alert-item__icon alert-item__icon--${grupo.gravidade}" aria-hidden="true"><i class="${ICONES_ALERTA[grupo.tipo] || "ri-alert-line"}"></i></span>
+        <div class="card__head-text">
+          <h2 class="card__title" id="titulo-${escaparHtml(grupo.tipo)}">${escaparHtml(grupo.titulo)}</h2>
+          <p class="card__subtitle">${escaparHtml(grupo.resumo)}</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive alertas-tabela">
+          <thead><tr>${cabecalho}<th scope="col"><span class="sr-only">Ação</span></th></tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>
+    </section>
   `;
 }
 
-function criarAlerta({ tipo, descricao, entidade, gravidade, acaoTexto, acaoHref, busca }) {
-  return {
-    tipo,
-    descricao,
-    entidade,
-    gravidade,
-    status: "aberto",
-    acaoTexto,
-    acaoHref,
-    busca: normalizarTexto(`${tipo} ${descricao} ${entidade} ${busca || ""}`)
-  };
+function renderizarTudoCerto(texto) {
+  return `
+    <section class="card alertas-vazio">
+      <div class="alert-item alert-item--center">
+        <span class="alert-item__icon alert-item__icon--success" aria-hidden="true"><i class="ri-check-line"></i></span>
+        <span class="alert-item__title alert-item__title--plain">${escaparHtml(texto)}</span>
+      </div>
+    </section>
+  `;
 }
 
-function obterSaldoEntrada(entrada) {
-  return Math.max(0, Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0));
-}
+function renderizarResumo() {
+  const ocorrencias = gruposCarregados.reduce((total, grupo) => total + grupo.linhas.length, 0);
 
-function descreverEntradasCobertas(quantidade, singular, plural) {
-  if (quantidade <= 0) {
-    return "";
-  }
-
-  return ` ${formatarNumero(quantidade)} ${quantidade === 1 ? `entrada ${singular}` : `entradas ${plural}`}.`;
-}
-
-// Registra em situacaoEstoquePorPeca as pecas ja alertadas como "sem-estoque" ou "estoque-baixo",
-// para que os alertas por entrada nao repitam o mesmo fato.
-function calcularAlertasPecas(dados, situacaoEstoquePorPeca = new Map()) {
-  const vendasPorPeca = agruparPorId(dados.vendas, "pecaId");
-  const entradasPorPeca = agruparPorId(dados.entradasEstoque, "pecaId");
-
-  return dados.pecas.flatMap(peca => {
-    const pecaId = Number(peca.id);
-    const vendasDaPeca = vendasPorPeca[pecaId] || [];
-    const entradasDaPeca = entradasPorPeca[pecaId] || [];
-    const quantidadeVendidaPorVendas = somarQuantidadeVendida(vendasDaPeca);
-    const quantidadeVendida = quantidadeVendidaPorVendas || Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
-    const quantidadeTotalEntradas = somar(entradasDaPeca, "quantidadeTotal");
-    const quantidadeTotal = quantidadeTotalEntradas > 0 ? quantidadeTotalEntradas : Number(peca.quantidade || 0);
-    const estoqueDisponivel = Math.max(0, quantidadeTotal - quantidadeVendida);
-    const ultimaVenda = obterUltimaVenda(vendasDaPeca);
-    const dataBaseSemVenda = ultimaVenda || obterDataEntradaOuCadastro(peca, entradasDaPeca);
-    const diasSemVenda = calcularDiasDesde(dataBaseSemVenda);
-    const entidade = `${formatarSku(peca)} - ${formatarNomePeca(peca)}`;
-    const link = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}`;
-    const alertas = [];
-
-    if (estoqueDisponivel <= 0) {
-      situacaoEstoquePorPeca.set(pecaId, "sem-estoque");
-      const entradasEsgotadas = entradasDaPeca.filter(entrada => obterSaldoEntrada(entrada) <= 0).length;
-
-      alertas.push(criarAlerta({
-        tipo: "Sem estoque",
-        descricao: `Produto sem quantidade disponível.${descreverEntradasCobertas(entradasEsgotadas, "esgotada", "esgotadas")}`,
-        entidade,
-        gravidade: "critico",
-        acaoTexto: "Ver produto",
-        acaoHref: link,
-        busca: entidade
-      }));
-    } else if (estoqueDisponivel <= 2) {
-      situacaoEstoquePorPeca.set(pecaId, "estoque-baixo");
-      const entradasSaldoBaixo = entradasDaPeca.filter(entrada => obterSaldoEntrada(entrada) > 0 && obterSaldoEntrada(entrada) <= 2).length;
-
-      alertas.push(criarAlerta({
-        tipo: "Estoque baixo",
-        descricao: `Restam ${formatarNumero(estoqueDisponivel)} unidades disponíveis.${descreverEntradasCobertas(entradasSaldoBaixo, "com saldo baixo", "com saldo baixo")}`,
-        entidade,
-        gravidade: "atencao",
-        acaoTexto: "Ver produto",
-        acaoHref: link,
-        busca: entidade
-      }));
-    }
-
-    if (entradasDaPeca.length === 0) {
-      alertas.push(criarAlerta({
-        tipo: "Sem entrada",
-        descricao: "Produto sem entrada de estoque vinculada.",
-        entidade,
-        gravidade: "info",
-        acaoTexto: "Ver produto",
-        acaoHref: link,
-        busca: entidade
-      }));
-    }
-
-    if (quantidadeVendidaPorVendas <= 0) {
-      alertas.push(criarAlerta({
-        tipo: "Sem venda",
-        descricao: "Produto sem venda registrada.",
-        entidade,
-        gravidade: "atencao",
-        acaoTexto: "Ver produto",
-        acaoHref: link,
-        busca: entidade
-      }));
-    } else if (diasSemVenda !== null && diasSemVenda > 30) {
-      alertas.push(criarAlerta({
-        tipo: "Produto parado",
-        descricao: `${formatarNumero(diasSemVenda)} dias desde a última venda.`,
-        entidade,
-        gravidade: "atencao",
-        acaoTexto: "Ver produto",
-        acaoHref: link,
-        busca: entidade
-      }));
-    }
-
-    return alertas;
-  });
-}
-
-function calcularAlertasLotes(entradasEstoque, situacaoEstoquePorPeca = new Map()) {
-  return entradasEstoque.flatMap(entrada => {
-    const saldo = obterSaldoEntrada(entrada);
-    const situacaoPeca = situacaoEstoquePorPeca.get(Number(entrada.pecaId));
-    const entidade = `${entrada.sku ? `${entrada.sku} - ` : ""}${entrada.nomePeca || entrada.pecaNome || "Entrada de estoque"}`;
-    const alertas = [];
-
-    if (saldo <= 0) {
-      if (situacaoPeca === "sem-estoque") {
-        return [];
-      }
-
-      alertas.push(criarAlerta({
-        tipo: "Lote esgotado",
-        descricao: "Entrada de estoque sem saldo disponível.",
-        entidade,
-        gravidade: "critico",
-        acaoTexto: "Ver produto",
-        acaoHref: entrada.pecaId ? `detalhes-produto.html?pecaId=${encodeURIComponent(entrada.pecaId)}` : "",
-        busca: `${entidade} ${entrada.origemDescricao || ""}`
-      }));
-    } else if (saldo <= 2) {
-      if (situacaoPeca === "estoque-baixo") {
-        return [];
-      }
-
-      alertas.push(criarAlerta({
-        tipo: "Saldo baixo",
-        descricao: `Lote com ${formatarNumero(saldo)} unidades restantes.`,
-        entidade,
-        gravidade: "atencao",
-        acaoTexto: "Ver produto",
-        acaoHref: entrada.pecaId ? `detalhes-produto.html?pecaId=${encodeURIComponent(entrada.pecaId)}` : "",
-        busca: `${entidade} ${entrada.origemDescricao || ""}`
-      }));
-    }
-
-    return alertas;
-  });
-}
-
-function calcularAlertasVendas(dados) {
-  const consumosPorVenda = agruparPorId(dados.consumosEstoque, "vendaId");
-
-  return dados.vendas.flatMap(venda => {
-    const vendaId = Number(venda.id);
-    const consumosDaVenda = consumosPorVenda[vendaId] || [];
-
-    if (consumosDaVenda.length > 0) {
-      return [];
-    }
-
-    const entidade = venda.sku
-      ? `${venda.sku} - ${venda.produtoNome || venda.nome || `Venda ${vendaId}`}`
-      : venda.produtoNome || venda.nome || `Venda ${vendaId}`;
-
-    return [criarAlerta({
-      tipo: "Venda sem custo calculado",
-      descricao: "Venda sem consumo FIFO registrado.",
-      entidade,
-      gravidade: "atencao",
-      acaoTexto: "Ver venda",
-      acaoHref: `detalhes-venda.html?vendaId=${encodeURIComponent(vendaId)}`,
-      busca: entidade
-    })];
-  });
-}
-
-function calcularAlertasOrigens(dados) {
-  return (dados.origens || []).flatMap(origem => {
-    const entradasDaOrigem = (dados.entradasEstoque || []).filter(entrada => Number(entrada.origemId || 0) === Number(origem.id));
-    const valorTotal = Number(origem.valorPago || origem.valor_total || origem.custoTotal || 0);
-    const valorAtribuido = entradasDaOrigem.reduce((total, entrada) => (
-      total + (Number(entrada.valorAtribuidoEntrada || entrada.valor_atribuido_entrada || 0) || Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0))
-    ), 0);
-    const saldo = valorTotal - valorAtribuido;
-    const codigo = origem.codigoOrigem || origem.codigo_origem || `ORI-${String(origem.id || "").padStart(6, "0")}`;
-    const entidade = `${codigo} - ${origem.descricao || `Origem ${origem.id}`}`;
-
-    if (saldo > 0.009) {
-      return [criarAlerta({
-        tipo: "Distribuição pendente",
-        descricao: "Origem com valor ainda não distribuído nas entradas.",
-        entidade,
-        gravidade: "atencao",
-        acaoTexto: "Ver origem",
-        acaoHref: `detalhes-origem.html?origemId=${encodeURIComponent(origem.id)}`,
-        busca: entidade
-      })];
-    }
-
-    if (saldo < -0.009) {
-      return [criarAlerta({
-        tipo: "Distribuição acima do valor",
-        descricao: "Origem com valor distribuído acima do valor total.",
-        entidade,
-        gravidade: "critico",
-        acaoTexto: "Ver origem",
-        acaoHref: `detalhes-origem.html?origemId=${encodeURIComponent(origem.id)}`,
-        busca: entidade
-      })];
-    }
-
-    return [];
-  });
-}
-
-function preencherTipos(alertas) {
-  if (!filtroTipoAlertas) {
-    return;
-  }
-
-  const valorAtual = filtroTipoAlertas.value;
-  const tipos = Array.from(new Set(alertas.map(alerta => alerta.tipo))).sort((a, b) => a.localeCompare(b, "pt-BR"));
-
-  filtroTipoAlertas.innerHTML = '<option value="">Todos</option>';
-  tipos.forEach(tipo => {
-    const opcao = document.createElement("option");
-    opcao.value = tipo;
-    opcao.textContent = tipo;
-    filtroTipoAlertas.appendChild(opcao);
-  });
-
-  filtroTipoAlertas.value = tipos.includes(valorAtual) ? valorAtual : "";
-}
-
-function alertaDentroDosFiltros(alerta) {
-  const termo = normalizarTexto(buscaAlertas?.value || "");
-  const tipo = filtroTipoAlertas?.value || "";
-  const gravidade = filtroGravidadeAlertas?.value || "";
-  const status = filtroStatusAlertas?.value || "";
-
-  if (termo && !alerta.busca.includes(termo)) {
-    return false;
-  }
-
-  if (tipo && alerta.tipo !== tipo) {
-    return false;
-  }
-
-  if (gravidade && alerta.gravidade !== gravidade) {
-    return false;
-  }
-
-  if (status && alerta.status !== status) {
-    return false;
-  }
-
-  return true;
-}
-
-function obterClasseGravidade(gravidade) {
-  const classes = {
-    critico: "status-badge status-badge--empty",
-    atencao: "status-badge status-badge--warning",
-    info: "status-badge status-badge--stock",
-    ok: "status-badge status-badge--sold"
-  };
-
-  return classes[gravidade] || "status-badge";
-}
-
-function formatarGravidade(gravidade) {
-  const nomes = {
-    critico: "Crítico",
-    atencao: "Atenção",
-    info: "Informação",
-    ok: "OK"
-  };
-
-  return nomes[gravidade] || gravidade;
-}
-
-function renderizarResumo(alertas) {
-  const criticos = alertas.filter(alerta => alerta.gravidade === "critico").length;
-  const atencao = alertas.filter(alerta => alerta.gravidade === "atencao").length;
-  const info = alertas.filter(alerta => alerta.gravidade === "info").length;
-  const semEstoque = alertas.filter(alerta => alerta.tipo === "Sem estoque").length;
-  const vendasSemCusto = alertas.filter(alerta => alerta.tipo === "Venda sem custo calculado").length;
-
-  resumoAlertas.innerHTML =
-    criarCard("Alertas críticos", formatarNumero(criticos), criticos > 0 ? "summary-card--loss" : "") +
-    criarCard("Atenção", formatarNumero(atencao)) +
-    criarCard("Informação", formatarNumero(info)) +
-    criarCard("Sem estoque", formatarNumero(semEstoque), semEstoque > 0 ? "summary-card--loss" : "") +
-    criarCard("Vendas sem custo", formatarNumero(vendasSemCusto)) +
-    criarCard("Total", formatarNumero(alertas.length), alertas.length > 0 ? "" : "summary-card--profit");
-
-  mensagemAlertas.textContent = alertasCarregados.length > 0 ? "" : "Nenhum ponto de atenção encontrado no momento.";
-}
-
-function renderizarTabela(alertas) {
-  tabelaAlertas.innerHTML = "";
-
-  if (alertas.length === 0) {
-    mensagemAlertas.textContent = "Nenhum alerta encontrado para os filtros selecionados.";
-    return;
-  }
-
-  mensagemAlertas.textContent = "";
-
-  alertas.forEach(alerta => {
-    const linha = document.createElement("tr");
-    const acao = alerta.acaoHref
-      ? `<a class="table-link" href="${escaparHtml(alerta.acaoHref)}">${escaparHtml(alerta.acaoTexto)}</a>`
-      : "-";
-
-    linha.innerHTML = `
-      <td data-label="Tipo">${escaparHtml(alerta.tipo)}</td>
-      <td data-label="Descrição">${escaparHtml(alerta.descricao)}</td>
-      <td data-label="Entidade relacionada"><strong class="product-name">${escaparHtml(alerta.entidade)}</strong></td>
-      <td data-label="Gravidade"><span class="${obterClasseGravidade(alerta.gravidade)}">${escaparHtml(formatarGravidade(alerta.gravidade))}</span></td>
-      <td data-label="Ação">
-        <div class="table-actions table-actions--single">${acao}</div>
-      </td>
-    `;
-
-    tabelaAlertas.appendChild(linha);
-  });
+  resumoAlertas.textContent = gruposCarregados.length
+    ? `${plural(gruposCarregados.length, "tipo de problema", "tipos de problema")} · ${plural(ocorrencias, "ocorrência", "ocorrências")}`
+    : "Nada precisa de atenção agora";
 }
 
 function renderizarAlertas() {
-  preencherTipos(alertasCarregados);
-  const filtrados = alertasCarregados.filter(alertaDentroDosFiltros);
-  const prioridade = { critico: 1, atencao: 2, info: 3, ok: 4 };
+  atualizarContagens(gruposCarregados);
 
-  filtrados.sort((a, b) => prioridade[a.gravidade] - prioridade[b.gravidade] || a.tipo.localeCompare(b.tipo, "pt-BR"));
-  renderizarResumo(filtrados);
-  renderizarTabela(filtrados);
+  if (gruposCarregados.length === 0) {
+    gruposAlertas.innerHTML = renderizarTudoCerto("Nada precisa de atenção agora");
+    return;
+  }
+
+  const visiveis = filtrarGrupos(gruposCarregados, campoBuscaAlertas?.value || "", gravidadeSelecionada);
+  gruposAlertas.innerHTML = visiveis.length
+    ? visiveis.map(renderizarGrupo).join("")
+    : `<p class="empty-state">Nenhum alerta encontrado para esta busca ou filtro.</p>`;
 }
 
-function definirPainelFiltrosAberto(aberto) {
-  alertasShell?.classList.toggle("alerts-shell--filters-open", aberto);
-  botaoAbrirFiltrosAlertas?.setAttribute("aria-expanded", aberto ? "true" : "false");
+function selecionarGravidade(gravidade) {
+  gravidadeSelecionada = gravidade;
+  filtroGravidadeAlertas.querySelectorAll("[data-gravidade]").forEach(botao => {
+    botao.setAttribute("aria-pressed", String(botao.dataset.gravidade === gravidade));
+  });
+  renderizarAlertas();
 }
+
+// ---- Carga ----
 
 async function carregarDados() {
   if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
@@ -477,20 +325,22 @@ async function carregarDados() {
   }
 
   try {
-    const [pecas, vendas, entradasEstoque, consumosEstoque, origens] = await Promise.all([
+    const [origens, pecas, vendas, consumosEstoque, entradasEstoque, custosVenda] = await Promise.all([
+      window.supabaseService.listarOrigens(),
       window.supabaseService.listarPecas(),
       window.supabaseService.listarVendas(),
-      window.supabaseService.listarEntradasEstoque(),
       window.supabaseService.listarConsumosEstoque(),
-      window.supabaseService.listarOrigens()
+      window.supabaseService.listarEntradasEstoque(),
+      window.supabaseService.listarCustosVenda()
     ]);
 
     return {
+      origens: origens || [],
       pecas: pecas || [],
       vendas: vendas || [],
-      entradasEstoque: entradasEstoque || [],
       consumosEstoque: consumosEstoque || [],
-      origens: origens || []
+      entradasEstoque: entradasEstoque || [],
+      custosVenda: custosVenda || []
     };
   } catch (erro) {
     console.error("Erro ao carregar alertas:", erro);
@@ -499,63 +349,36 @@ async function carregarDados() {
   }
 }
 
-function calcularTodosAlertas(dados) {
-  const situacaoEstoquePorPeca = new Map();
-
-  return [
-    ...calcularAlertasPecas(dados, situacaoEstoquePorPeca),
-    ...calcularAlertasLotes(dados.entradasEstoque, situacaoEstoquePorPeca),
-    ...calcularAlertasVendas(dados),
-    ...calcularAlertasOrigens(dados)
-  ];
-}
-
 async function iniciarAlertas() {
-  const dados = await carregarDados();
-
-  if (!dados) {
-    resumoAlertas.innerHTML = "";
-    tabelaAlertas.innerHTML = "";
+  if (!window.alertasRegras || !window.financeiroUtils) {
+    mensagemAlertas.textContent = "Não foi possível calcular os alertas.";
     return;
   }
 
-  alertasCarregados = calcularTodosAlertas(dados);
+  const dados = await carregarDados();
+
+  if (!dados) {
+    resumoAlertas.textContent = "";
+    return;
+  }
+
+  gruposCarregados = montarGruposAlertas(dados);
+  // Esta tela já calcula tudo: informa o total para a sidebar não buscar de novo.
+  window.sidebarNavegacao?.atualizarContadorAtencao(gruposCarregados.length);
+  renderizarResumo();
   renderizarAlertas();
+
+  // Vindo do Painel com #peca-parada (por exemplo), rola até o grupo.
+  if (window.location.hash) {
+    document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: "start" });
+  }
 }
 
-buscaAlertas?.addEventListener("input", renderizarAlertas);
+campoBuscaAlertas?.addEventListener("input", renderizarAlertas);
 
-[filtroTipoAlertas, filtroGravidadeAlertas, filtroStatusAlertas].forEach(campo => {
-  campo?.addEventListener("change", renderizarAlertas);
-});
-
-botaoAbrirFiltrosAlertas?.addEventListener("click", () => {
-  definirPainelFiltrosAberto(!alertasShell?.classList.contains("alerts-shell--filters-open"));
-});
-
-botaoFecharFiltrosAlertas?.addEventListener("click", () => {
-  definirPainelFiltrosAberto(false);
-});
-
-botaoAplicarFiltrosAlertas?.addEventListener("click", () => {
-  renderizarAlertas();
-  definirPainelFiltrosAberto(false);
-});
-
-botaoLimparFiltrosAlertas?.addEventListener("click", () => {
-  if (buscaAlertas) {
-    buscaAlertas.value = "";
-  }
-  if (filtroTipoAlertas) {
-    filtroTipoAlertas.value = "";
-  }
-  if (filtroGravidadeAlertas) {
-    filtroGravidadeAlertas.value = "";
-  }
-  if (filtroStatusAlertas) {
-    filtroStatusAlertas.value = "";
-  }
-  renderizarAlertas();
+filtroGravidadeAlertas?.addEventListener("click", evento => {
+  const botao = evento.target.closest("[data-gravidade]");
+  if (botao) selecionarGravidade(botao.dataset.gravidade);
 });
 
 document.addEventListener("DOMContentLoaded", iniciarAlertas);

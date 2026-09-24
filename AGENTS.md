@@ -107,7 +107,7 @@ Decisoes de 2026-09-24:
 - Retorno por origem: `recuperado = receita das vendas das pecas da origem - custos dessas vendas`, calculado em `financeiro-utils.calcularResultadoOrigem` (campo `recuperado`). O lucro/resultado da origem continua `receita - custo consumido - custos da peca - custos da venda`.
 - Valores negativos de moeda e percentual usam o sinal de menos (U+2212), nao hifen. A formatacao centralizada fica em `js/moeda-utils.js` (`formatarMoedaBR`, `formatarPercentualBR`); `parseMoedaBR` aceita os dois sinais. Telas com formatacao local passam a usar o `moeda-utils` quando forem migradas.
 - Painel, "Ultimas vendas": coluna `Custos` = custo da peca + custos da venda, para que valor - custos = lucro na mesma linha.
-- Regras de atencao do redesenho (secao 8 da especificacao) ficam em `js/alertas-regras.js` (funcoes puras): peca parada ha mais de 90 dias sem venda desde a entrada, venda sem custo calculado, venda com prejuizo, origem com valor a distribuir e distribuicao acima do pago. Na Fase 4 entra tambem "preco abaixo do custo".
+- Regras de atencao do redesenho (secao 8 da especificacao) ficam em `js/alertas-regras.js` (funcoes puras): peca parada ha mais de 90 dias sem venda desde a entrada, venda sem custo calculado, venda com prejuizo, origem com valor a distribuir e distribuicao acima do pago. Na Fase 4 entrou tambem "preco abaixo do custo" (peca com saldo cujo preco cadastrado e menor que o custo da proxima unidade a sair; peca sem preco nao entra).
 - Compatibilidade da peca: coluna `pecas.compatibilidade` (texto livre, opcional), migration `sql/14_compatibilidade_pecas.sql`, adiantada da Fase 5 para o conjunto de demonstracao. Ja entra na busca de Produtos; o campo no cadastro/edicao vem na Fase 5. Quantidade 1 e peca recem-cadastrada sem venda nao sao alerta.
 
 ## Dados de demonstracao
@@ -519,14 +519,20 @@ Implementacao atual confirmada:
 
 ## Alertas
 
-- `paginas/alertas.html` centraliza pontos de atencao operacionais.
-- A tela deve mostrar busca textual, filtros por tipo/gravidade/status, resumo por criticidade e lista com acao operacional.
-
-Implementacao atual confirmada:
-
-- `js/alertas.js` consolida alertas de pecas, entradas/lotes, vendas e origens via Supabase.
-- Os alertas atuais cobrem sem estoque, estoque baixo, sem entrada, sem venda, venda sem custo calculado, saldo parado e distribuicao de origem fora do esperado.
-- Vendas sem consumo FIFO continuam aparecendo como `Venda sem custo calculado`.
+- `paginas/alertas.html` centraliza os pontos de atencao. Tela ja migrada para o redesenho (`ui-v2`, `css/alertas.css`).
+- As regras sao as mesmas do Painel e do contador da sidebar: `js/alertas-regras.js`. A tela so agrupa, filtra e mostra (`js/alertas.js`).
+- Cabecalho: titulo "Alertas" e subtitulo "N tipos de problema · M ocorrências" (ou "Nada precisa de atenção agora").
+- Filtros: busca por SKU, peca, origem ou canal (cada palavra, sem acento) e controle segmentado de gravidade com contagem: Todos, Críticos, Atenção, Informação.
+- Um card por tipo, na ordem de gravidade, com icone, titulo com a quantidade, resumo e tabela com uma linha por ocorrencia e a acao para resolver:
+  - Venda com prejuizo (critico): data, peca, canal, valor, custos, lucro; `Ver venda`.
+  - Distribuicao acima do pago (critico): origem, valor pago, distribuido, acima do pago; `Ver origem`.
+  - Venda sem custo calculado (atencao): data, peca, canal, valor; `Ver venda`.
+  - Preco abaixo do custo (atencao): peca, preco, custo, margem; `Ajustar preço` (abre a edicao com foco no preco).
+  - Peca parada ha mais de 90 dias (atencao): peca, origem, dias, estoque, valor parado; `Ver peça`.
+  - Origem com valor a distribuir (informacao): origem, valor pago, distribuido, a distribuir; `Distribuir`.
+- Cada card tem ancora com o tipo (ex.: `alertas.html#peca-parada`), usada pelos links do Painel.
+- Removidos no redesenho: Sem estoque, Estoque baixo, Lote esgotado, Saldo baixo, Sem entrada, Sem venda e Produto parado por 30 dias (nao fazem sentido em desmanche).
+- A tela informa o total de tipos ao contador da sidebar, como o Painel.
 
 ## Padrao do Painel
 

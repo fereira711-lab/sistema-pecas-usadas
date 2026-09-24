@@ -222,3 +222,9 @@ Aprovadas por Rafael depois da Fase 3 (Produtos):
 12. **Produtos, "Ver venda":** mesmo formato e posição de "Vender" (botão secundário compacto, alinhado à direita).
 13. **Produtos, ordem padrão:** mais recente primeiro (última entrada ou última venda).
 14. **Dados de demonstração fixos** (`sql/90_demo_carregar.sql`, `sql/91_demo_apagar.sql`, `scripts\demo-*.bat`) usados em todas as conferências das fases seguintes. A coluna de compatibilidade (seção 9, item 1) foi criada antes, em `sql/14_compatibilidade_pecas.sql`, para esse conjunto.
+
+Fase 4 (Alertas):
+
+15. **Tela Alertas** com um card por tipo de problema, na ordem de gravidade, e uma linha por ocorrência com a ação para resolver. Filtro por gravidade em controle segmentado e busca. O filtro "Status" (sempre "Aberto") saiu.
+16. **Regra nova "preço abaixo do custo"** em `alertas-regras.js`: peça com saldo cujo preço cadastrado é menor que o custo da próxima unidade a sair. Peça sem preço não entra (aparece como "Sem preço" em Produtos).
+17. **Painel:** os links de "Precisa de atenção" levam direto ao card do tipo em Alertas (`alertas.html#peca-parada`, por exemplo).

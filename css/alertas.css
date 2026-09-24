@@ -1,0 +1,57 @@
+/* Alertas (redesenho). Só o que é específico desta tela; componentes vêm do base.css. */
+
+.alertas-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Cabeçalho do grupo: ícone da gravidade ao lado do título, como no "Precisa de atenção" do Painel. */
+.alertas-grupo__head {
+  justify-content: flex-start;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.alertas-grupo {
+  scroll-margin-top: var(--space-6);
+}
+
+.alertas-peca {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-hair);
+  min-width: 0;
+}
+
+.alertas-peca__nome {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Datas, canais e valores não quebram no meio (ex.: "14/09/20 26"). */
+.alertas-tabela .cell-nowrap,
+.alertas-tabela td.num {
+  white-space: nowrap;
+}
+
+.alertas-tabela__acao {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .alertas-peca {
+    align-items: flex-end;
+  }
+
+  .alertas-tabela__acao {
+    width: 100%;
+    padding-top: var(--space-2);
+  }
+
+  .alertas-tabela__acao::before {
+    content: none;
+  }
+}

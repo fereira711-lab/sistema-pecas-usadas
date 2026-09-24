@@ -1,7 +1,8 @@
 // Regras de "precisa de atenção" do redesenho (seção 8 da especificação), pensadas para desmanche:
 // - quantidade 1 não é alerta e peça recém-cadastrada sem venda também não;
 // - peça parada há mais de 90 dias (sem venda desde a entrada), com o valor parado;
-// - venda sem custo calculado, venda com prejuízo, origem com valor a distribuir e distribuição acima do pago.
+// - venda sem custo calculado, venda com prejuízo, origem com valor a distribuir e distribuição acima do pago;
+// - peça em estoque com preço abaixo do custo (aprovada depois da Fase 3).
 // Funções puras: recebem os dados já carregados e não tocam no DOM. Lucro e prejuízo vêm do financeiro-utils.js.
 (function () {
   const DIAS_PARA_PECA_PARADA = 90;
@@ -72,6 +73,40 @@
     });
   }
 
+  function obterPrecoPeca(peca) {
+    return Number(peca.precoVenda || peca.preco_venda || peca.preco_sugerido || 0);
+  }
+
+  // Peça com saldo cujo preço cadastrado não cobre o custo da próxima unidade a sair.
+  // Peça sem preço não entra aqui (é "Sem preço" em Produtos, não prejuízo).
+  function calcularPrecosAbaixoDoCusto(dados, financeiro) {
+    const entradasPorPeca = agruparPor(dados.entradasEstoque, "pecaId");
+
+    return (dados.pecas || []).flatMap(peca => {
+      const preco = obterPrecoPeca(peca);
+      const entradas = entradasPorPeca[obterId(peca.id)] || [];
+      const saldo = entradas.reduce((total, entrada) => total + obterSaldoEntrada(entrada), 0);
+
+      if (preco <= 0 || saldo <= 0) {
+        return [];
+      }
+
+      const custo = financeiro.calcularCustoReferenciaPeca(peca.id, dados.entradasEstoque, dados.consumosEstoque);
+
+      if (!custo.calculado || preco >= custo.valor - TOLERANCIA) {
+        return [];
+      }
+
+      return [{
+        peca,
+        preco,
+        custo: custo.valor,
+        diferenca: custo.valor - preco,
+        margem: financeiro.calcularMargemPreco(preco, custo.valor)
+      }];
+    });
+  }
+
   function calcularResultadosVendas(dados, financeiro) {
     return (dados.vendas || []).map(venda => ({
       venda,
@@ -119,6 +154,11 @@
         itens: resultadosVendas.filter(item => !item.resultado.calculado)
       },
       {
+        tipo: "preco-abaixo-custo",
+        gravidade: "warning",
+        itens: calcularPrecosAbaixoDoCusto(dados, financeiro)
+      },
+      {
         tipo: "peca-parada",
         gravidade: "warning",
         itens: calcularPecasParadas(dados, hoje)
@@ -141,6 +181,7 @@
   window.alertasRegras = {
     DIAS_PARA_PECA_PARADA,
     calcularPecasParadas,
+    calcularPrecosAbaixoDoCusto,
     calcularAtencao,
     contarGruposDeAtencao
   };

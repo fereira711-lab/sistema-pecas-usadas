@@ -254,6 +254,7 @@ const ICONES_ATENCAO = {
   "venda-prejuizo": "ri-line-chart-line",
   "distribuicao-acima": "ri-error-warning-line",
   "venda-sem-custo": "ri-question-line",
+  "preco-abaixo-custo": "ri-price-tag-3-line",
   "peca-parada": "ri-time-line",
   "origem-a-distribuir": "ri-stack-line"
 };
@@ -295,16 +296,29 @@ function descreverGrupoAtencao(grupo, dados) {
       return {
         titulo: `${plural(quantidade, "venda", "vendas")} sem custo calculado`,
         detalhe: "Lucro e margem ficam pendentes até o custo ser calculado",
-        acao: "Ver alertas",
-        href: "paginas/alertas.html"
+        acao: "Ver vendas",
+        href: "paginas/alertas.html#venda-sem-custo"
       };
+    case "preco-abaixo-custo": {
+      const primeiro = itens[0];
+      return {
+        titulo: `${plural(quantidade, "peça", "peças")} com preço abaixo do custo`,
+        detalhe: quantidade === 1
+          ? `${nomePeca(primeiro.peca)} · preço ${formatarMoeda(primeiro.preco)}, custo ${formatarMoeda(primeiro.custo)}`
+          : "Vendendo pelo preço cadastrado, essas peças dão prejuízo",
+        acao: quantidade === 1 ? "Ajustar preço" : "Ver peças",
+        href: quantidade === 1
+          ? `paginas/detalhes-produto.html?pecaId=${encodeURIComponent(primeiro.peca.id)}&editar=1&campo=preco`
+          : "paginas/alertas.html#preco-abaixo-custo"
+      };
+    }
     case "peca-parada": {
       const valorParado = itens.reduce((total, item) => total + item.valorParado, 0);
       return {
         titulo: `${plural(quantidade, "peça parada", "peças paradas")} há mais de ${window.alertasRegras?.DIAS_PARA_PECA_PARADA || 90} dias`,
         detalhe: `${formatarMoeda(valorParado)} em estoque sem giro`,
         acao: "Ver peças",
-        href: "paginas/alertas.html"
+        href: "paginas/alertas.html#peca-parada"
       };
     }
     case "origem-a-distribuir": {

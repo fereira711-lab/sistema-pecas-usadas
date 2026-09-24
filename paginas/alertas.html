@@ -8,117 +8,46 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/base.css?v=8">
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/alertas.css?v=2">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark alerts-page">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Estoque</p>
-      <h1>Alertas</h1>
-      <p class="hero__description">Pontos de atenção operacional em estoque, vendas, peças paradas e distribuição de origem.</p>
-    </div>
-  </header>
+<body data-auth="protected" data-contador-pelo-painel="sim" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <h1 class="page-head__title">Alertas</h1>
+        <p class="page-head__subtitle" id="resumoAlertas">Carregando alertas…</p>
+      </div>
+    </header>
 
-  <main class="container stock-layout alerts-layout">
-    <section id="alertasShell" class="stock-card alerts-shell">
-      <div class="stock-header alerts-header">
-        <div>
-          <span class="piece-form-eyebrow">Atenção operacional</span>
-          <h2>Alertas do sistema</h2>
-          <p>Lista consolidada de itens que precisam de acompanhamento.</p>
-        </div>
-        <div class="form-actions">
-          <a class="button-secondary" href="../index.html">Voltar para o início</a>
-          <a class="button-secondary" href="produtos.html">Ver produtos</a>
+    <p id="mensagemAlertas" class="page-message" role="status"></p>
+
+    <div class="toolbar">
+      <div class="toolbar__group">
+        <div class="search-field">
+          <label class="sr-only" for="buscaAlertas">Buscar alertas</label>
+          <i class="ri-search-line search-field__icon" aria-hidden="true"></i>
+          <input id="buscaAlertas" class="input" type="search" placeholder="Buscar por SKU, peça, origem ou canal" autocomplete="off">
         </div>
       </div>
+      <div class="segmented" role="group" aria-label="Gravidade" id="filtroGravidadeAlertas">
+        <button type="button" class="segmented__item" data-gravidade="todas" aria-pressed="true">Todos <span class="segmented__count" data-contagem="todas">0</span></button>
+        <button type="button" class="segmented__item" data-gravidade="danger" aria-pressed="false">Críticos <span class="segmented__count" data-contagem="danger">0</span></button>
+        <button type="button" class="segmented__item" data-gravidade="warning" aria-pressed="false">Atenção <span class="segmented__count" data-contagem="warning">0</span></button>
+        <button type="button" class="segmented__item" data-gravidade="info" aria-pressed="false">Informação <span class="segmented__count" data-contagem="info">0</span></button>
+      </div>
+    </div>
 
-      <p id="mensagemAlertas" class="empty-message"></p>
-      <section id="resumoAlertas" class="summary-grid summary-grid--compact" aria-label="Resumo dos alertas"></section>
-
-      <section class="products-toolbar alerts-toolbar" aria-label="Busca e filtros de alertas">
-        <div class="products-main-controls operational-filter-main-controls">
-          <div class="form-group products-search-field">
-            <label for="buscaAlertas">Buscar alerta</label>
-            <input id="buscaAlertas" type="search" placeholder="Buscar por SKU, peça, origem ou venda">
-          </div>
-
-          <button id="botaoAbrirFiltrosAlertas" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosAlertas" aria-expanded="false">
-            Filtros
-          </button>
-        </div>
-      </section>
-
-      <section class="alerts-section" aria-labelledby="tituloListaAlertas">
-        <div class="stock-header alerts-section__header">
-          <div>
-            <h2 id="tituloListaAlertas">Lista de alertas</h2>
-            <p>Alertas operacionais com gravidade e ação relacionada.</p>
-          </div>
-        </div>
-
-        <div class="table-wrapper">
-          <table class="stock-table alerts-table">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Descrição</th>
-                <th>Entidade relacionada</th>
-                <th>Gravidade</th>
-                <th>Ação</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaAlertas"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <aside id="painelFiltrosAlertas" class="products-filter-panel alerts-filter-panel" aria-label="Filtros avançados de alertas">
-        <div class="products-filter-panel__header">
-          <h3>Filtros avançados</h3>
-          <button id="botaoFecharFiltrosAlertas" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
-        </div>
-
-        <div class="products-filters">
-          <div class="form-group">
-            <label for="filtroTipoAlertas">Tipo de alerta</label>
-            <select id="filtroTipoAlertas">
-              <option value="">Todos</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="filtroGravidadeAlertas">Gravidade</label>
-            <select id="filtroGravidadeAlertas">
-              <option value="">Todas</option>
-              <option value="critico">Crítico</option>
-              <option value="atencao">Atenção</option>
-              <option value="info">Informação</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="filtroStatusAlertas">Status</label>
-            <select id="filtroStatusAlertas">
-              <option value="">Todos</option>
-              <option value="aberto">Aberto</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="products-filter-panel__actions">
-          <button id="botaoLimparFiltrosAlertas" class="button-secondary" type="button">Limpar filtros</button>
-          <button id="botaoAplicarFiltrosAlertas" class="button-primary" type="button">Aplicar/Fechar</button>
-        </div>
-      </aside>
-    </section>
+    <div id="gruposAlertas" class="alertas-grupos" aria-live="polite"></div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=31"></script>
-  <script src="../js/alertas.js?v=4"></script>
-  <script src="../js/sidebar.js?v=7"></script>
+  <script src="../js/moeda-utils.js?v=2"></script>
+  <script src="../js/financeiro-utils.js?v=3"></script>
+  <script src="../js/alertas-regras.js?v=3"></script>
+  <script src="../js/alertas.js?v=6"></script>
+  <script src="../js/sidebar.js?v=8"></script>
 </body>
 </html>
