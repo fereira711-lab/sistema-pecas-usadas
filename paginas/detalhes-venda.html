@@ -8,140 +8,120 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/base.css?v=16">
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/detalhes-venda.css?v=1">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark sale-detail-page">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Extrato da venda</p>
-      <h1>Detalhes da venda</h1>
-      <p class="hero__description">
-        Consulte o extrato completo de uma venda registrada.
-      </p>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <a class="page-head__back" href="historico-vendas.html"><i class="ri-arrow-left-s-line" aria-hidden="true"></i>Vendas</a>
+        <h1 class="page-head__title" id="tituloVenda">Venda</h1>
+        <p class="page-head__subtitle" id="subtituloVenda">Carregando venda…</p>
+      </div>
+      <div class="page-head__actions" id="acoesVenda" hidden>
+        <a class="btn btn--secondary" id="linkVerPeca" href="produtos.html">Ver peça</a>
+        <button type="button" id="botaoEditarVenda" class="btn btn--secondary">Editar venda</button>
+      </div>
+    </header>
+
+    <p id="mensagemVenda" class="page-message" role="status"></p>
+
+    <form id="formEditarVenda" class="card" aria-labelledby="tituloEditarVenda" hidden>
+      <h2 class="card__title" id="tituloEditarVenda">Editar venda</h2>
+      <div class="field-grid">
+        <div class="field">
+          <label class="field__label" for="editarVendaData">Data da venda</label>
+          <input id="editarVendaData" class="input" type="date" required>
+        </div>
+        <div class="field">
+          <span class="field__label" id="rotuloEditarCanal">Canal</span>
+          <div class="choice-group" role="group" aria-labelledby="rotuloEditarCanal" id="editarVendaCanais">
+            <button type="button" class="choice" data-canal="Mercado Livre" aria-pressed="false">Mercado Livre</button>
+            <button type="button" class="choice" data-canal="WhatsApp" aria-pressed="false">WhatsApp</button>
+            <button type="button" class="choice" data-canal="Balcão" aria-pressed="false">Balcão</button>
+            <button type="button" class="choice" data-canal="Outro" aria-pressed="false">Outro</button>
+          </div>
+          <span class="field__hint" id="dicaCanalAntigo" hidden></span>
+        </div>
+      </div>
+      <p class="field__hint">Quantidade, valor e custo da peça ficam protegidos: vêm da baixa de estoque feita ao registrar.</p>
+      <div class="form-actions-bar">
+        <button type="button" id="cancelarEdicaoVenda" class="btn btn--quiet">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Salvar venda</button>
+      </div>
+    </form>
+
+    <div class="form-layout" id="conteudoVenda" hidden>
+      <div class="form-stack">
+        <section class="card" aria-labelledby="tituloPecaVendida">
+          <h2 class="card__title" id="tituloPecaVendida">Peça vendida</h2>
+          <div class="venda-peca" id="dadosProdutoVenda"></div>
+        </section>
+
+        <section class="card" aria-labelledby="tituloDadosVenda">
+          <h2 class="card__title" id="tituloDadosVenda">Dados da venda</h2>
+          <dl class="venda-dados" id="dadosVenda"></dl>
+        </section>
+
+        <section class="card card--flush" aria-labelledby="tituloCustosVenda">
+          <div class="card__head">
+            <h2 class="card__title" id="tituloCustosVenda">Custos da venda</h2>
+            <span class="venda-total" id="totalCustosVendaDetalhe"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table data-table--responsive">
+              <thead>
+                <tr>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Data</th>
+                  <th scope="col">Observação</th>
+                  <th scope="col" class="num">Valor</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaCustosVenda"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card card--flush" aria-labelledby="tituloEntradaConsumida">
+          <div class="card__head">
+            <h2 class="card__title" id="tituloEntradaConsumida">Entrada consumida</h2>
+            <span id="statusCustoVenda" class="pill pill--warning">Custo não calculado</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table data-table--responsive">
+              <thead>
+                <tr>
+                  <th scope="col">Entrada</th>
+                  <th scope="col">Origem</th>
+                  <th scope="col">Data da entrada</th>
+                  <th scope="col" class="num">Qtd.</th>
+                  <th scope="col" class="num">Custo unitário</th>
+                  <th scope="col" class="num">Custo total</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaCustoFifoVenda"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <aside class="card summary-side" aria-labelledby="tituloResultadoVenda">
+        <h2 class="card__title" id="tituloResultadoVenda">Resultado da venda</h2>
+        <div class="summary-side__rows">
+          <div class="summary-side__row"><span class="summary-side__label">Receita</span><span class="summary-side__value" id="resumoReceita">—</span></div>
+          <div class="summary-side__row"><span class="summary-side__label">Custo da peça</span><span class="summary-side__value" id="resumoCustoPeca">—</span></div>
+          <div class="summary-side__row"><span class="summary-side__label">Custos da venda</span><span class="summary-side__value" id="resumoCustosVenda">—</span></div>
+        </div>
+        <div class="summary-side__result summary-side__result--neutral" id="resumoLucroLinha">
+          <span>Lucro</span><span id="resumoLucro">—</span>
+        </div>
+        <div class="summary-side__row venda-margem">
+          <span class="summary-side__label">Margem</span><span class="summary-side__value" id="resumoMargem">—</span>
+        </div>
+        <p class="venda-nota" id="notaResultadoVenda"></p>
+      </aside>
     </div>
-  </header>
-
-  <main class="container stock-layout sale-detail-layout">
-    <section class="stock-card sale-detail-shell">
-      <div class="stock-header sale-detail-header">
-        <div>
-          <span class="piece-form-eyebrow">Extrato da venda</span>
-          <h2 id="tituloVenda">Detalhes da venda</h2>
-          <p id="subtituloVenda">Venda selecionada no historico.</p>
-        </div>
-        <div class="form-actions">
-          <button type="button" id="botaoEditarVenda" class="button-secondary">Editar venda</button>
-          <a class="button-secondary" href="historico-vendas.html">Voltar ao historico</a>
-        </div>
-      </div>
-
-      <p id="mensagemVendaNaoEncontrada" class="empty-message"></p>
-      <div id="resumoRapidoVenda" class="sale-detail-summary-strip" aria-label="Resumo financeiro da venda"></div>
-    </section>
-
-    <section class="stock-card section-spaced sale-detail-section">
-      <div class="stock-header sale-detail-section__header">
-        <div>
-          <span class="piece-form-eyebrow">Produto vendido</span>
-          <h2>Produto vendido</h2>
-        </div>
-        <div id="acaoDetalhesProduto" class="form-actions"></div>
-      </div>
-
-      <p id="mensagemProdutoVenda" class="empty-message"></p>
-      <div id="dadosProdutoVenda" class="sale-detail-product"></div>
-    </section>
-
-    <section class="sale-detail-content-grid" aria-label="Extrato completo da venda">
-      <section class="stock-card section-spaced sale-detail-section">
-        <div class="stock-header sale-detail-section__header">
-          <div>
-            <span class="piece-form-eyebrow">Dados</span>
-            <h2>Dados da venda</h2>
-          </div>
-          <span class="status-badge status-badge--stock">Registrada</span>
-        </div>
-
-        <div id="dadosVenda" class="detail-grid"></div>
-      </section>
-
-      <section class="stock-card section-spaced sale-detail-section">
-        <div class="stock-header sale-detail-section__header">
-          <div>
-            <span class="piece-form-eyebrow">Custos operacionais</span>
-            <h2>Custos da venda</h2>
-          </div>
-          <strong id="totalCustosVendaDetalhe" class="sale-detail-section-total">R$ 0,00</strong>
-        </div>
-
-        <p id="mensagemCustosVenda" class="empty-message"></p>
-        <div id="tabelaCustosVenda" class="sale-detail-cost-list" aria-label="Custos vinculados a venda"></div>
-      </section>
-
-      <section class="stock-card section-spaced sale-detail-section sale-detail-section--wide">
-        <div class="stock-header sale-detail-section__header">
-          <div>
-            <span class="piece-form-eyebrow">Custo da peça</span>
-            <h2>Entrada consumida</h2>
-          </div>
-          <span id="statusFifoVenda" class="status-badge status-badge--warning">Custo não calculado</span>
-        </div>
-
-        <p id="mensagemCustoFifoVenda" class="empty-message"></p>
-
-        <div class="sale-detail-fifo-head" aria-hidden="true">
-          <span>Entrada</span>
-          <span>Data</span>
-          <span>Qtd.</span>
-          <span>Custo unit.</span>
-          <span>Custo total</span>
-        </div>
-        <div id="tabelaCustoFifoVenda" class="sale-detail-fifo-list" aria-label="Entrada consumida na venda"></div>
-      </section>
-
-      <section class="stock-card section-spaced sale-detail-section sale-detail-section--wide">
-        <div class="stock-header sale-detail-section__header">
-          <div>
-            <span class="piece-form-eyebrow">Conferência</span>
-            <h2>Resultado da venda</h2>
-          </div>
-        </div>
-
-        <div id="resumoFinanceiroVenda" class="sale-detail-result-text" aria-label="Resultado da venda"></div>
-      </section>
-
-      <section class="stock-card section-spaced sale-detail-section sale-detail-section--wide">
-        <div class="stock-header sale-detail-section__header">
-          <div>
-            <span class="piece-form-eyebrow">Ajustes permitidos</span>
-            <h2>Edição e observações</h2>
-          </div>
-        </div>
-
-        <div id="dadosObservacoesVenda" class="detail-grid"></div>
-
-        <form id="formEditarVenda" class="edit-panel" hidden>
-          <p class="form-note">Quantidade vendida e custo consumido ficam protegidos neste extrato.</p>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="editarVendaData">Data da venda</label>
-              <input id="editarVendaData" type="date">
-            </div>
-
-            <div class="form-group">
-              <label for="editarVendaCanal">Canal de venda</label>
-              <input id="editarVendaCanal" type="text">
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="button-primary">Salvar edição</button>
-            <button type="button" id="cancelarEdicaoVenda" class="button-secondary">Cancelar</button>
-          </div>
-        </form>
-      </section>
-    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -150,7 +130,7 @@
   <script src="../js/moeda-utils.js?v=2"></script>
   <script src="../js/supabase-service.js?v=36"></script>
   <script src="../js/financeiro-utils.js?v=6"></script>
-  <script src="../js/detalhes-venda.js?v=17"></script>
+  <script src="../js/detalhes-venda.js?v=21"></script>
   <script src="../js/sidebar.js?v=9"></script>
 </body>
 </html>

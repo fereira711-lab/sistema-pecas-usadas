@@ -1,0 +1,84 @@
+/* Detalhes da venda (redesenho). Só o que é específico desta tela; resumo, tabelas e campos vêm do base.css. */
+
+/* ---- Peça vendida: foto · nome e SKU · quantidade, unitário e total ---- */
+
+.venda-peca {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.venda-peca__foto {
+  width: 56px;
+  height: 56px;
+}
+
+.venda-peca__texto {
+  flex-grow: 1;
+}
+
+.venda-peca__valores {
+  display: flex;
+  gap: var(--space-6);
+  margin: 0;
+}
+
+.venda-peca__valores dt,
+.venda-dados dt {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+
+.venda-peca__valores dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* ---- Dados da venda em linhas "rótulo … valor" ---- */
+
+.venda-dados {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.venda-dados > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2-5) 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.venda-dados > div:last-child {
+  border-bottom: 0;
+}
+
+.venda-dados dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Total dos custos no cabeçalho do card ---- */
+
+.venda-total {
+  font-weight: 600;
+}
+
+/* ---- Resumo ---- */
+
+.venda-margem {
+  border-bottom: 0;
+}
+
+.venda-nota {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--divider);
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  color: var(--text-muted);
+}

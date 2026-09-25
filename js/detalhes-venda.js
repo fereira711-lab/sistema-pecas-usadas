@@ -1,790 +1,342 @@
+// Detalhes da venda (redesenho): o extrato de uma venda. Peça vendida, dados, custos da venda,
+// entrada consumida (de onde veio o custo da peça) e o resultado, tudo pelo financeiro-utils.js.
+// Só data e canal podem ser editados; quantidade, valor e custo consumido ficam protegidos.
+const CANAIS_FIXOS = ["Mercado Livre", "WhatsApp", "Balcão", "Outro"];
+const TEXTO_CUSTO_NAO_CALCULADO = "Custo não calculado";
+
 const tituloVenda = document.getElementById("tituloVenda");
 const subtituloVenda = document.getElementById("subtituloVenda");
-const mensagemVendaNaoEncontrada = document.getElementById("mensagemVendaNaoEncontrada");
-const dadosVenda = document.getElementById("dadosVenda");
-const resumoRapidoVenda = document.getElementById("resumoRapidoVenda");
-const resumoFinanceiroVenda = document.getElementById("resumoFinanceiroVenda");
-const mensagemProdutoVenda = document.getElementById("mensagemProdutoVenda");
-const dadosProdutoVenda = document.getElementById("dadosProdutoVenda");
-const acaoDetalhesProduto = document.getElementById("acaoDetalhesProduto");
-const mensagemCustosVenda = document.getElementById("mensagemCustosVenda");
-const tabelaCustosVenda = document.getElementById("tabelaCustosVenda");
-const totalCustosVendaDetalhe = document.getElementById("totalCustosVendaDetalhe");
-const mensagemCustoFifoVenda = document.getElementById("mensagemCustoFifoVenda");
-const tabelaCustoFifoVenda = document.getElementById("tabelaCustoFifoVenda");
-const statusFifoVenda = document.getElementById("statusFifoVenda");
+const mensagemVenda = document.getElementById("mensagemVenda");
+const acoesVenda = document.getElementById("acoesVenda");
+const linkVerPeca = document.getElementById("linkVerPeca");
 const botaoEditarVenda = document.getElementById("botaoEditarVenda");
 const formEditarVenda = document.getElementById("formEditarVenda");
-const dadosObservacoesVenda = document.getElementById("dadosObservacoesVenda");
 const editarVendaData = document.getElementById("editarVendaData");
-const editarVendaCanal = document.getElementById("editarVendaCanal");
-const editarListaCustosVenda = document.getElementById("editarListaCustosVenda");
-const botaoEditarAdicionarCustoVenda = document.getElementById("botaoEditarAdicionarCustoVenda");
+const editarVendaCanais = document.getElementById("editarVendaCanais");
+const dicaCanalAntigo = document.getElementById("dicaCanalAntigo");
 const cancelarEdicaoVenda = document.getElementById("cancelarEdicaoVenda");
-let tiposCustoVendaDetalhes = [];
-const tiposCustoVendaPadraoDetalhes = ["Embalagem", "Frete", "Comissão", "Taxa marketplace", "Taxa cartão", "Coleta", "Etiqueta", "Outros"];
-const TEXTO_CUSTO_NAO_CALCULADO = "Custo não calculado";
-let vendaAtual = null;
-let contextoVenda = {
-  produto: null,
-  origens: [],
-  entradasEstoque: [],
-  custosVenda: [],
-  consumosFifo: []
+const conteudoVenda = document.getElementById("conteudoVenda");
+const dadosProdutoVenda = document.getElementById("dadosProdutoVenda");
+const dadosVenda = document.getElementById("dadosVenda");
+const totalCustosVendaDetalhe = document.getElementById("totalCustosVendaDetalhe");
+const tabelaCustosVenda = document.getElementById("tabelaCustosVenda");
+const statusCustoVenda = document.getElementById("statusCustoVenda");
+const tabelaCustoFifoVenda = document.getElementById("tabelaCustoFifoVenda");
+const resumo = {
+  receita: document.getElementById("resumoReceita"),
+  custoPeca: document.getElementById("resumoCustoPeca"),
+  custosVenda: document.getElementById("resumoCustosVenda"),
+  lucroLinha: document.getElementById("resumoLucroLinha"),
+  lucro: document.getElementById("resumoLucro"),
+  margem: document.getElementById("resumoMargem"),
+  nota: document.getElementById("notaResultadoVenda")
 };
 
-function buscarVendas() {
-  return JSON.parse(localStorage.getItem("vendas")) || [];
-}
+let vendaAtual = null;
+let contextoVenda = { produto: null, origens: [], entradas: [], custosVenda: [], consumos: [] };
+let canalEditado = "";
 
-function buscarProdutos() {
-  return JSON.parse(localStorage.getItem("produtos")) || [];
+// ---- Formatação ----
+
+function escaparHtml(valor) {
+  return String(valor ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function formatarMoeda(valor) {
-  if (window.moedaUtils?.formatarMoedaBR) {
-    return window.moedaUtils.formatarMoedaBR(valor);
-  }
-
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(Number(valor || 0));
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function converterNumero(valor) {
-  if (window.moedaUtils?.parseMoedaBR) {
-    return window.moedaUtils.parseMoedaBR(valor);
-  }
-
-  return Number(String(valor || "0").replace(",", "."));
+function formatarNegativo(valor) {
+  return Number(valor || 0) > 0 ? `− ${formatarMoeda(valor)}` : formatarMoeda(0);
 }
 
-function escaparHtml(texto) {
-  return String(texto || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+function formatarPercentual(valor) {
+  if (window.moedaUtils?.formatarPercentualBR) return window.moedaUtils.formatarPercentualBR(valor, 1);
+  return `${Number(valor || 0).toFixed(1).replace(".", ",")}%`;
 }
 
-function buscarTiposCustoVendaLocais() {
-  const tipos = JSON.parse(localStorage.getItem("tiposCusto")) || [];
-
-  if (tipos.length > 0) {
-    return tipos;
-  }
-
-  return tiposCustoVendaPadraoDetalhes.map((nome, indice) => ({
-    id: `local-venda-${indice + 1}`,
-    nome,
-    categoria: "venda",
-    ativo: true
-  }));
-}
-
-function criarOpcoesTiposCustoVenda(tipoSelecionado = "") {
-  return [
-    '<option value="">Tipo de custo</option>',
-    ...tiposCustoVendaDetalhes
-      .filter(tipo => tipo.ativo !== false && ["venda", "ambos"].includes(tipo.categoria || "ambos"))
-      .sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"))
-      .map(tipo => {
-        const selecionado = tipo.nome === tipoSelecionado ? " selected" : "";
-        return `<option value="${escaparHtml(tipo.nome)}" data-tipo-id="${escaparHtml(tipo.id)}"${selecionado}>${escaparHtml(tipo.nome)}</option>`;
-      })
-  ].join("");
-}
-
-async function carregarTiposCustoVendaDetalhes() {
-  if (window.supabaseService?.estaConfigurado()) {
-    try {
-      tiposCustoVendaDetalhes = await window.supabaseService.listarTiposCusto("venda") || [];
-      return;
-    } catch (erro) {
-      console.error("Erro ao carregar tipos de custo da venda:", erro);
-    }
-  }
-
-  tiposCustoVendaDetalhes = buscarTiposCustoVendaLocais();
-}
-
-function adicionarLinhaEdicaoCustoVenda(custo = {}) {
-  if (!editarListaCustosVenda) {
-    return;
-  }
-
-  const linha = document.createElement("div");
-  linha.className = "cost-line";
-  linha.innerHTML = `
-    <select data-campo="tipo" aria-label="Tipo de custo da venda">
-      ${criarOpcoesTiposCustoVenda(custo.tipoCusto || custo.tipo || "")}
-    </select>
-    <input data-campo="valor" type="text" inputmode="decimal" placeholder="Valor" value="${custo.valor || ""}">
-    <input data-campo="descricao" type="text" placeholder="Observacao" value="${escaparHtml(custo.descricao || "")}">
-    <button type="button" class="button-secondary" data-acao="remover-custo">Remover</button>
-  `;
-
-  editarListaCustosVenda.appendChild(linha);
-  window.moedaUtils?.registrarCampoMoeda?.(linha.querySelector("[data-campo='valor']"));
+function formatarNumero(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 }
 
 function formatarData(data) {
-  if (!data) {
-    return "-";
-  }
-
-  const dataIso = String(data).slice(0, 10);
-  const partes = dataIso.split("-");
-
-  if (partes.length !== 3) {
-    return dataIso;
-  }
-
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  const [ano, mes, dia] = String(data || "").slice(0, 10).split("-");
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : "—";
 }
 
 function obterDataVenda(venda) {
-  return String(venda.dataVenda || venda.data_venda || "").slice(0, 10);
+  return String(venda?.dataVenda || "").slice(0, 10);
 }
 
-function formatarNomePeca(peca) {
-  const nome = peca.nome || peca.nome_peca || peca.nomeProduto || peca.produtoNome || peca.descricao || `Peca ${peca.id || peca.pecaId}`;
-  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
+// ---- Renderização ----
 
-  return sku ? `${sku} - ${nome}` : nome;
+function renderizarCabecalho(venda) {
+  const produto = contextoVenda.produto;
+  const nome = produto?.nome || venda.produtoNome || `Peça ${venda.pecaId || ""}`.trim();
+
+  document.title = `Venda de ${nome} · Detalhes da venda`;
+  tituloVenda.textContent = `Venda de ${nome}`;
+  subtituloVenda.textContent = [`Venda nº ${venda.id}`, formatarData(obterDataVenda(venda)), venda.canalVenda].filter(Boolean).join(" · ");
+  linkVerPeca.href = venda.pecaId ? `detalhes-produto.html?pecaId=${encodeURIComponent(venda.pecaId)}` : "produtos.html";
+  acoesVenda.hidden = false;
 }
 
-function formatarSku(peca) {
-  return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
-}
+function renderizarProduto(venda) {
+  const produto = contextoVenda.produto;
+  const nome = produto?.nome || venda.produtoNome || "Peça";
+  const sku = produto?.sku || venda.sku || "";
+  const origem = contextoVenda.origens.find(item => Number(item.id) === Number(produto?.origemId));
+  const imagemUrl = String(produto?.imagemUrl || "").trim();
+  const quantidade = Number(venda.quantidadeVendida || 0);
+  const receita = window.financeiroUtils.calcularReceitaVenda(venda);
+  const unitario = Number(venda.valorUnitario || 0) || (quantidade > 0 ? receita / quantidade : 0);
+  const meta = [
+    sku ? `<span class="mono">${escaparHtml(sku)}</span>` : "",
+    origem ? `<a href="detalhes-origem.html?origemId=${encodeURIComponent(origem.id)}">${escaparHtml(origem.descricao)}</a>` : ""
+  ].filter(Boolean).join(" · ");
 
-function formatarPorcentagem(valor) {
-  if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
-    return "-";
-  }
-
-  return `${Number(valor || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })}%`;
-}
-
-function obterClasseLucro(valor) {
-  if (valor === null || valor === undefined || Number.isNaN(Number(valor))) {
-    return "profit-value profit-value--neutral";
-  }
-
-  return Number(valor) >= 0
-    ? "profit-value profit-value--positive"
-    : "profit-value profit-value--negative";
-}
-
-function obterQuantidadeVendida(venda) {
-  return Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || venda.quantidade_vendida || 0);
-}
-
-function obterValorUnitarioVenda(venda) {
-  const quantidade = obterQuantidadeVendida(venda);
-  const valorUnitario = Number(venda.valorUnitario || venda.valor_unitario || venda.precoUnitario || venda.valorVendaUnitario || 0);
-
-  if (valorUnitario > 0) {
-    return valorUnitario;
-  }
-
-  const receita = window.financeiroUtils?.calcularReceitaVenda
-    ? window.financeiroUtils.calcularReceitaVenda(venda)
-    : Number(venda.valorTotal || venda.valor_total || venda.valorVenda || 0);
-
-  return quantidade > 0 ? receita / quantidade : 0;
-}
-
-function obterObservacoesVenda(venda) {
-  return venda.observacoes || venda.observacao || venda.descricao || "-";
-}
-
-function encontrarVenda() {
-  const vendas = buscarVendas();
-  const parametros = new URLSearchParams(window.location.search);
-  const id = parametros.get("vendaId") || parametros.get("id");
-  const index = parametros.get("index");
-
-  if (id) {
-    const vendaPorId = vendas.find(venda => String(venda.id) === String(id));
-
-    if (vendaPorId) {
-      return vendaPorId;
-    }
-  }
-
-  if (index !== null) {
-    return vendas[Number(index)];
-  }
-
-  return null;
-}
-
-async function encontrarVendaSupabase() {
-  const parametros = new URLSearchParams(window.location.search);
-  const id = parametros.get("vendaId") || parametros.get("id");
-
-  if (!id || !window.supabaseService || !window.supabaseService.estaConfigurado()) {
-    return null;
-  }
-
-  const vendas = await window.supabaseService.listarVendas();
-  return vendas.find(venda => String(venda.id) === String(id)) || null;
-}
-
-function normalizarCustosVenda(custosVenda) {
-  if (!Array.isArray(custosVenda)) {
-    return [];
-  }
-
-  return custosVenda
-    .map(custo => ({
-      tipo: String(custo.tipo || "").trim(),
-      descricao: String(custo.descricao || "").trim(),
-      valor: Number(custo.valor || 0)
-    }))
-    .filter(custo => custo.tipo && custo.valor > 0);
-}
-
-function obterCustosVendaParaCalculo(venda) {
-  const custos = contextoVenda.custosVenda.length > 0
-    ? contextoVenda.custosVenda
-    : normalizarCustosVenda(venda.custosVenda);
-
-  return custos.map(custo => ({
-    ...custo,
-    vendaId: custo.vendaId || venda.id
-  }));
-}
-
-function recalcularVendaComCustoAtual(venda) {
-  const quantidade = Number(venda.quantidadeVendidaNaVenda || venda.quantidadeVendida || 0);
-  const resultado = window.financeiroUtils.calcularLucroVenda(venda, contextoVenda.consumosFifo, obterCustosVendaParaCalculo(venda));
-
-  return {
-    custoCalculado: resultado.calculado,
-    custoUnitario: resultado.calculado && quantidade > 0 ? resultado.custoConsumido / quantidade : null,
-    custoTotal: resultado.custoConsumido,
-    custosVenda: resultado.custosVenda,
-    lucroVenda: resultado.lucro,
-    receita: resultado.receita,
-    margem: resultado.margem
-  };
-}
-
-function calcularQuantidadeDisponivel(produto) {
-  return Math.max(Number(produto.quantidade || 1) - Number(produto.quantidadeVendida || 0), 0);
-}
-
-function obterStatusProduto(produto) {
-  return Number(produto.quantidadeVendida || 0) >= Number(produto.quantidade || 1)
-    ? "vendida"
-    : "em_estoque";
-}
-
-function renderizarDadosVendaLegado(venda) {
-  tituloVenda.textContent = venda.id || "Venda sem ID";
-  const produtoAtual = contextoVenda.produto || buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
-  const dataVenda = obterDataVenda(venda);
-  const nomeVenda = formatarNomePeca({
-    id: venda.pecaId,
-    nome: venda.produtoNome || produtoAtual?.nome,
-    sku: venda.sku || produtoAtual?.sku
-  });
-
-  subtituloVenda.textContent = `${nomeVenda} • ${formatarData(dataVenda)}`;
-
-  dadosVenda.innerHTML = `
-    <article class="detail-card">
-      <span>ID da venda</span>
-      <strong>${venda.id || "Venda antiga sem ID"}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Data da venda</span>
-      <strong>${formatarData(dataVenda)}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Produto</span>
-      <strong>${nomeVenda}</strong>
-    </article>
-    <article class="detail-card">
-      <span>SKU</span>
-      <strong>${formatarSku({ sku: venda.sku || produtoAtual?.sku })}</strong>
-    </article>
-    <article class="detail-card">
-      <span>ID da peça</span>
-      <strong>${venda.pecaId || "-"}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Quantidade vendida</span>
-      <strong>${venda.quantidadeVendidaNaVenda || venda.quantidadeVendida}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Preço unitário</span>
-      <strong>${formatarMoeda(venda.precoUnitario)}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Valor total</span>
-      <strong>${formatarMoeda(venda.valorTotal)}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Canal de venda</span>
-      <strong>${venda.canalVenda || venda.canal_venda || venda.cliente || "-"}</strong>
-    </article>
+  dadosProdutoVenda.innerHTML = `
+    <span class="thumb venda-peca__foto">${imagemUrl ? `<img src="${escaparHtml(imagemUrl)}" alt="" loading="lazy">` : '<i class="ri-image-line" aria-hidden="true"></i>'}</span>
+    <div class="item-cell__text venda-peca__texto">
+      ${venda.pecaId ? `<a class="item-cell__name" href="detalhes-produto.html?pecaId=${encodeURIComponent(venda.pecaId)}">${escaparHtml(nome)}</a>` : `<span class="cell-strong">${escaparHtml(nome)}</span>`}
+      ${meta ? `<span class="item-cell__meta">${meta}</span>` : ""}
+    </div>
+    <dl class="venda-peca__valores">
+      <div><dt>Qtd.</dt><dd>${formatarNumero(quantidade)}</dd></div>
+      <div><dt>Unitário</dt><dd>${formatarMoeda(unitario)}</dd></div>
+      <div><dt>Total</dt><dd>${formatarMoeda(receita)}</dd></div>
+    </dl>
   `;
 }
 
-function normalizarTipoCusto(tipo) {
-  return String(tipo || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replaceAll(" ", "_");
+function renderizarDadosVenda(venda) {
+  const observacao = String(venda.observacoes || "").trim();
+
+  dadosVenda.innerHTML = `
+    <div><dt>Data</dt><dd>${formatarData(obterDataVenda(venda))}</dd></div>
+    <div><dt>Canal</dt><dd>${escaparHtml(venda.canalVenda || "—")}</dd></div>
+    <div><dt>Observação</dt><dd>${escaparHtml(observacao || "—")}</dd></div>
+  `;
 }
 
-function obterCustoVendaPorTipo(tipo) {
-  const tipoNormalizado = normalizarTipoCusto(tipo);
-  return contextoVenda.custosVenda.find(custo => {
-    const tipoCusto = normalizarTipoCusto(custo.tipo || custo.tipoCusto);
-    return tipoCusto === tipoNormalizado || (tipoNormalizado === "outros" && tipoCusto.startsWith("outro"));
-  });
-}
+function renderizarCustos(venda) {
+  const custos = contextoVenda.custosVenda;
+  const total = window.financeiroUtils.calcularCustosVenda(venda.id, custos).valor;
 
-function preencherCampoCusto(campo, tipo) {
-  const custo = obterCustoVendaPorTipo(tipo);
-  campo.value = custo ? Number(custo.valor || 0) : "";
-}
+  totalCustosVendaDetalhe.textContent = custos.length ? formatarMoeda(total) : "";
 
-function abrirFormularioEdicaoVenda() {
-  if (!vendaAtual || !formEditarVenda) {
+  if (custos.length === 0) {
+    tabelaCustosVenda.innerHTML = '<tr class="data-table__empty"><td colspan="4">Nenhum custo lançado nesta venda.</td></tr>';
     return;
   }
 
-  editarVendaData.value = obterDataVenda(vendaAtual);
-  editarVendaCanal.value = vendaAtual.canalVenda || vendaAtual.canal_venda || vendaAtual.cliente || "";
+  tabelaCustosVenda.innerHTML = custos.map(custo => `
+    <tr>
+      <td class="cell-strong" data-label="Tipo">${escaparHtml(custo.tipoCusto || custo.tipo || "Custo da venda")}</td>
+      <td class="cell-nowrap" data-label="Data">${formatarData(custo.dataCusto || custo.data || obterDataVenda(venda))}</td>
+      <td class="cell-muted" data-label="Observação">${escaparHtml(custo.descricao || custo.observacoes || "—")}</td>
+      <td class="num" data-label="Valor">${formatarMoeda(custo.valor)}</td>
+    </tr>
+  `).join("");
+}
 
+// De onde veio o custo da peça: as entradas consumidas na baixa de estoque desta venda.
+function renderizarEntradaConsumida() {
+  const consumos = contextoVenda.consumos;
+
+  if (consumos.length === 0) {
+    statusCustoVenda.textContent = TEXTO_CUSTO_NAO_CALCULADO;
+    statusCustoVenda.className = "pill pill--warning";
+    tabelaCustoFifoVenda.innerHTML = `<tr class="data-table__empty"><td colspan="6">${TEXTO_CUSTO_NAO_CALCULADO}: não há entrada consumida registrada para esta venda.</td></tr>`;
+    return;
+  }
+
+  statusCustoVenda.textContent = "Custo calculado";
+  statusCustoVenda.className = "pill pill--success";
+
+  tabelaCustoFifoVenda.innerHTML = consumos.map(consumo => {
+    const entrada = contextoVenda.entradas.find(item => Number(item.id) === Number(consumo.entradaEstoqueId));
+    const origem = contextoVenda.origens.find(item => Number(item.id) === Number(entrada?.origemId));
+
+    return `
+      <tr>
+        <td class="cell-nowrap" data-label="Entrada"><span class="mono">ENT-${String(consumo.entradaEstoqueId || 0).padStart(6, "0")}</span></td>
+        <td data-label="Origem">${origem ? `<a href="detalhes-origem.html?origemId=${encodeURIComponent(origem.id)}">${escaparHtml(origem.descricao)}</a>` : "—"}</td>
+        <td class="cell-nowrap" data-label="Data da entrada">${formatarData(entrada?.dataEntrada)}</td>
+        <td class="num" data-label="Qtd.">${formatarNumero(consumo.quantidadeConsumida)}</td>
+        <td class="num" data-label="Custo unitário">${formatarMoeda(consumo.custoUnitario)}</td>
+        <td class="num cell-strong" data-label="Custo total">${formatarMoeda(consumo.custoTotal)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderizarResultado(venda) {
+  const resultado = window.financeiroUtils.calcularLucroVenda(venda, contextoVenda.consumos, contextoVenda.custosVenda);
+
+  resumo.receita.textContent = formatarMoeda(resultado.receita);
+  resumo.custosVenda.textContent = formatarNegativo(resultado.custosVenda);
+  resumo.lucroLinha.classList.remove("summary-side__result--success", "summary-side__result--danger", "summary-side__result--neutral");
+  resumo.margem.classList.remove("text-success", "text-danger");
+
+  if (!resultado.calculado) {
+    resumo.custoPeca.textContent = TEXTO_CUSTO_NAO_CALCULADO;
+    resumo.lucro.textContent = "—";
+    resumo.margem.textContent = "—";
+    resumo.lucroLinha.classList.add("summary-side__result--neutral");
+    resumo.nota.textContent = "Sem entrada consumida registrada, o lucro e a margem não são calculados.";
+    return;
+  }
+
+  const classe = resultado.lucro < 0 ? "danger" : "success";
+  resumo.custoPeca.textContent = formatarNegativo(resultado.custoConsumido);
+  resumo.lucro.textContent = formatarMoeda(resultado.lucro);
+  resumo.margem.textContent = resultado.margem === null ? "—" : formatarPercentual(resultado.margem);
+  resumo.lucroLinha.classList.add(`summary-side__result--${classe}`);
+  if (resultado.margem !== null) resumo.margem.classList.add(`text-${classe}`);
+  resumo.nota.textContent = "O custo da peça vem da entrada consumida na baixa de estoque desta venda.";
+}
+
+function renderizarTela() {
+  renderizarCabecalho(vendaAtual);
+  renderizarProduto(vendaAtual);
+  renderizarDadosVenda(vendaAtual);
+  renderizarCustos(vendaAtual);
+  renderizarEntradaConsumida();
+  renderizarResultado(vendaAtual);
+  conteudoVenda.hidden = false;
+}
+
+function mostrarMensagem(texto, tipo = "") {
+  mensagemVenda.textContent = texto;
+  mensagemVenda.className = `page-message${tipo === "success" ? " page-message--success" : ""}`;
+}
+
+// ---- Edição (data e canal) ----
+
+function selecionarCanalEdicao(canal) {
+  canalEditado = canal;
+  editarVendaCanais.querySelectorAll("[data-canal]").forEach(botao => {
+    botao.setAttribute("aria-pressed", String(botao.dataset.canal === canal));
+  });
+}
+
+function abrirEdicao() {
+  if (!vendaAtual) return;
+
+  const canalAtual = String(vendaAtual.canalVenda || "").trim();
+  const fixo = CANAIS_FIXOS.find(canal => canal.toLowerCase() === canalAtual.toLowerCase()) || "";
+
+  editarVendaData.value = obterDataVenda(vendaAtual);
+  selecionarCanalEdicao(fixo);
+  // Canal antigo em texto livre: continua como está, a menos que um dos botões seja escolhido.
+  dicaCanalAntigo.hidden = !canalAtual || Boolean(fixo);
+  dicaCanalAntigo.textContent = `Canal gravado: "${canalAtual}". Ele continua assim se nenhum botão for escolhido.`;
   formEditarVenda.hidden = false;
   editarVendaData.focus();
 }
 
-function fecharFormularioEdicaoVenda() {
-  if (formEditarVenda) {
-    formEditarVenda.hidden = true;
-  }
+function fecharEdicao() {
+  formEditarVenda.hidden = true;
 }
 
-
-function montarCustosVendaEditados() {
-  return Array.from(editarListaCustosVenda.querySelectorAll(".cost-line"))
-    .map(linha => {
-      const selectTipo = linha.querySelector("[data-campo='tipo']");
-      const tipo = selectTipo?.value || "";
-      const tipoCustoId = selectTipo?.selectedOptions[0]?.dataset?.tipoId || null;
-      const descricao = linha.querySelector("[data-campo='descricao']")?.value.trim() || tipo;
-      const valor = converterNumero(linha.querySelector("[data-campo='valor']")?.value || 0);
-
-      if (Number.isNaN(valor) || valor < 0) {
-        throw new Error("Valor de custo invalido.");
-      }
-
-      if (valor > 0 && !tipo) {
-        throw new Error("Selecione o tipo de custo em todas as linhas com valor.");
-      }
-
-      return {
-        tipo,
-        tipoCusto: tipo,
-        tipoCustoId,
-        descricao,
-        valor
-      };
-    })
-    .filter(custo => custo.tipo && Number(custo.valor || 0) > 0);
-}
-
-async function salvarEdicaoVenda(evento) {
+async function salvarEdicao(evento) {
   evento.preventDefault();
 
-  if (!vendaAtual?.id || !window.supabaseService?.estaConfigurado()) {
-    mensagemVendaNaoEncontrada.textContent = "Configure o Supabase antes de editar a venda.";
-    return;
-  }
-
   if (!editarVendaData.value) {
-    mensagemVendaNaoEncontrada.textContent = "Informe a data da venda.";
+    mostrarMensagem("Informe a data da venda.");
+    editarVendaData.focus();
     return;
   }
 
   const botaoSalvar = formEditarVenda.querySelector("button[type='submit']");
   botaoSalvar.disabled = true;
-  mensagemVendaNaoEncontrada.textContent = "Salvando venda...";
+  mostrarMensagem("Salvando venda…");
 
   try {
     const vendaAtualizada = await window.supabaseService.atualizarVendaBasica({
       id: vendaAtual.id,
       dataVenda: editarVendaData.value,
-      canalVenda: editarVendaCanal.value.trim()
+      canalVenda: canalEditado || vendaAtual.canalVenda || ""
     });
 
-    vendaAtual = {
-      ...vendaAtual,
-      ...vendaAtualizada,
-      custosVenda: contextoVenda.custosVenda,
-      totalCustosVenda: contextoVenda.custosVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0)
-    };
-
-    fecharFormularioEdicaoVenda();
-    renderizarDadosVendaCompleta(vendaAtual);
-    renderizarObservacoesVenda(vendaAtual);
-    renderizarResumoRapido(vendaAtual);
-    renderizarResumoFinanceiro(vendaAtual);
-    renderizarCustos(vendaAtual);
-    mensagemVendaNaoEncontrada.textContent = "Venda atualizada com sucesso.";
+    vendaAtual = { ...vendaAtual, dataVenda: vendaAtualizada.dataVenda, canalVenda: vendaAtualizada.canalVenda };
+    fecharEdicao();
+    renderizarTela();
+    mostrarMensagem("Venda atualizada.", "success");
   } catch (erro) {
     console.error("Erro ao editar venda:", erro);
-    mensagemVendaNaoEncontrada.textContent = "Não foi possível atualizar a venda.";
+    mostrarMensagem(erro?.message || "Não foi possível atualizar a venda.");
   } finally {
     botaoSalvar.disabled = false;
   }
 }
 
-function obterDescricaoOrigem(origemId) {
-  const origem = contextoVenda.origens.find(item => Number(item.id) === Number(origemId));
-
-  return origem?.descricao || "-";
-}
-
-function obterEntradaConsumida(entradaId) {
-  return contextoVenda.entradasEstoque.find(entrada => Number(entrada.id) === Number(entradaId));
-}
-
-function obterImagemProdutoVenda(produto) {
-  return String(produto?.imagemUrl || produto?.imagem_url || "").trim();
-}
-
-function renderizarImagemProdutoVenda(produto, nome) {
-  const imagemUrl = obterImagemProdutoVenda(produto);
-
-  if (imagemUrl) {
-    return `<img src="${escaparHtml(imagemUrl)}" alt="Imagem de ${escaparHtml(nome)}" loading="lazy">`;
-  }
-
-  return "<span>IMG</span>";
-}
-
-function renderizarDadosVendaCompleta(venda) {
-  tituloVenda.textContent = venda.id || "Venda sem ID";
-  const produtoAtual = contextoVenda.produto || buscarProdutos().find(item => Number(item.id) === Number(venda.pecaId));
-  const dataVenda = obterDataVenda(venda);
-  const nomeVenda = formatarNomePeca({
-    id: venda.pecaId,
-    nome: venda.produtoNome || produtoAtual?.nome,
-    sku: venda.sku || produtoAtual?.sku
-  });
-  const observacao = obterObservacoesVenda(venda);
-
-  subtituloVenda.textContent = `${nomeVenda} - ${formatarData(dataVenda)}`;
-
-  dadosVenda.innerHTML = `
-    <article class="detail-card">
-      <span>Data da venda</span>
-      <strong>${formatarData(dataVenda)}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Canal</span>
-      <strong>${escaparHtml(venda.canalVenda || venda.canal_venda || venda.cliente || "-")}</strong>
-    </article>
-    <article class="detail-card">
-      <span>ID da venda</span>
-      <strong>${escaparHtml(venda.id || "-")}</strong>
-    </article>
-    <article class="detail-card detail-card--wide">
-      <span>Observacao</span>
-      <strong>${escaparHtml(observacao)}</strong>
-    </article>
-  `;
-}
-
-function renderizarProduto(venda) {
-  const produtos = buscarProdutos();
-  const produto = contextoVenda.produto || produtos.find(item => Number(item.id) === Number(venda.pecaId));
-  const sku = venda.sku || produto?.sku;
-  const nome = venda.produtoNome || produto?.nome || produto?.nome_peca || produto?.descricao || "-";
-  const quantidade = obterQuantidadeVendida(venda);
-  const valorUnitario = obterValorUnitarioVenda(venda);
-  const receita = window.financeiroUtils.calcularReceitaVenda(venda);
-
-  if (!produto && !venda.pecaId) {
-    mensagemProdutoVenda.textContent = "Produto nao encontrado no estoque atual.";
-    dadosProdutoVenda.innerHTML = "";
-    acaoDetalhesProduto.innerHTML = "";
-    return;
-  }
-
-  mensagemProdutoVenda.textContent = "";
-  acaoDetalhesProduto.innerHTML = venda.pecaId
-    ? `<a class="button-secondary" href="detalhes-produto.html?pecaId=${encodeURIComponent(venda.pecaId)}">Ver produto</a>`
-    : "";
-
-  dadosProdutoVenda.innerHTML = `
-    <article class="sale-detail-product-line">
-      <div class="sale-detail-product-image">${renderizarImagemProdutoVenda(produto, nome)}</div>
-      <div class="sale-detail-product-info">
-        <span>${escaparHtml(formatarSku({ sku }))}</span>
-        <strong>${escaparHtml(nome)}</strong>
-        <small>ID da peca: ${escaparHtml(venda.pecaId || "-")}</small>
-      </div>
-      <div class="sale-detail-product-metric">
-        <span>Qtd.</span>
-        <strong>${quantidade}</strong>
-      </div>
-      <div class="sale-detail-product-metric">
-        <span>Unitario</span>
-        <strong>${formatarMoeda(valorUnitario)}</strong>
-      </div>
-      <div class="sale-detail-product-metric sale-detail-product-metric--total">
-        <span>Total</span>
-        <strong>${formatarMoeda(receita)}</strong>
-      </div>
-    </article>
-  `;
-}
-
-function renderizarCustos(venda) {
-  const custosVenda = obterCustosVendaParaCalculo(venda);
-  const totalCustosVenda = window.financeiroUtils.calcularCustosVenda(venda.id, custosVenda).valor;
-
-  tabelaCustosVenda.innerHTML = "";
-  totalCustosVendaDetalhe.textContent = formatarMoeda(totalCustosVenda);
-
-  if (custosVenda.length === 0) {
-    mensagemCustosVenda.textContent = "Nenhum custo vinculado diretamente a esta venda.";
-    return;
-  }
-
-  mensagemCustosVenda.textContent = "";
-
-  custosVenda.forEach(custo => {
-    const linha = document.createElement("article");
-    linha.className = "sale-detail-cost-line";
-    const tipoCusto = custo.tipo || custo.tipoCusto;
-
-    linha.innerHTML = `
-      <div>
-        <span>${escaparHtml(tipoCusto || "Custo da venda")}</span>
-        <small>${formatarData(custo.data || custo.dataCusto || obterDataVenda(venda))}</small>
-      </div>
-      <strong>${formatarMoeda(custo.valor)}</strong>
-      <p>${escaparHtml(custo.descricao || "-")}</p>
-    `;
-
-    tabelaCustosVenda.appendChild(linha);
-  });
-}
-
-function renderizarCustoFifo() {
-  tabelaCustoFifoVenda.innerHTML = "";
-
-  if (!contextoVenda.consumosFifo.length) {
-    mensagemCustoFifoVenda.textContent = TEXTO_CUSTO_NAO_CALCULADO;
-    statusFifoVenda.textContent = TEXTO_CUSTO_NAO_CALCULADO;
-    statusFifoVenda.className = "status-badge status-badge--warning";
-    const linha = document.createElement("article");
-    linha.className = "sale-detail-fifo-line sale-detail-fifo-line--empty";
-    linha.innerHTML = `<strong>${TEXTO_CUSTO_NAO_CALCULADO}</strong>`;
-    tabelaCustoFifoVenda.appendChild(linha);
-    return;
-  }
-
-  mensagemCustoFifoVenda.textContent = "";
-  statusFifoVenda.textContent = "Custo calculado";
-  statusFifoVenda.className = "status-badge status-badge--stock";
-
-  contextoVenda.consumosFifo.forEach(consumo => {
-    const entrada = obterEntradaConsumida(consumo.entradaEstoqueId);
-    const linha = document.createElement("article");
-    linha.className = "sale-detail-fifo-line";
-
-    linha.innerHTML = `
-      <strong>Entrada ${escaparHtml(consumo.entradaEstoqueId || "-")}</strong>
-      <time>${formatarData(entrada?.dataEntrada)}</time>
-      <span>${escaparHtml(consumo.quantidadeConsumida || "-")}</span>
-      <span>${formatarMoeda(consumo.custoUnitario)}</span>
-      <strong>${formatarMoeda(consumo.custoTotal)}</strong>
-    `;
-
-    tabelaCustoFifoVenda.appendChild(linha);
-  });
-
-  const custoConsumido = window.financeiroUtils.calcularCustoConsumidoVenda(vendaAtual?.id, contextoVenda.consumosFifo);
-  const linhaTotal = document.createElement("article");
-  linhaTotal.className = "sale-detail-fifo-line sale-detail-fifo-line--total";
-  linhaTotal.innerHTML = `
-    <strong>Custo total consumido</strong>
-    <span>-</span>
-    <span>-</span>
-    <span>-</span>
-    <strong>${formatarMoeda(custoConsumido.valor)}</strong>
-  `;
-  tabelaCustoFifoVenda.appendChild(linhaTotal);
-}
-
-function renderizarResumoFinanceiro(venda) {
-  const resultado = recalcularVendaComCustoAtual(venda);
-
-  if (!resultado.custoCalculado) {
-    resumoFinanceiroVenda.innerHTML = `
-      <div class="sale-detail-result-note">
-        <strong>${TEXTO_CUSTO_NAO_CALCULADO}</strong>
-        <p>Nao ha custo consumido registrado para esta venda. O lucro e a margem ficam bloqueados ate o custo da peca estar disponivel.</p>
-      </div>
-    `;
-    return;
-  }
-
-  resumoFinanceiroVenda.innerHTML = `
-    <div class="sale-detail-result-note">
-      <p>Receita de ${formatarMoeda(resultado.receita)} menos ${formatarMoeda(resultado.custoTotal)} de custo da peca e ${formatarMoeda(resultado.custosVenda)} de custos da venda.</p>
-      <strong>Resultado final: ${formatarMoeda(resultado.lucroVenda)} de lucro, margem de ${formatarPorcentagem(resultado.margem)}.</strong>
-    </div>
-  `;
-}
-
-function renderizarResumoRapido(venda) {
-  if (!resumoRapidoVenda) {
-    return;
-  }
-
-  const resultado = recalcularVendaComCustoAtual(venda);
-  const classeCardResultado = resultado.custoCalculado
-    ? (resultado.lucroVenda >= 0 ? "summary-card summary-card--profit" : "summary-card summary-card--loss")
-    : "summary-card";
-
-  resumoRapidoVenda.innerHTML = `
-    <article class="summary-card">
-      <span>Receita</span>
-      <strong>${formatarMoeda(resultado.receita)}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custo da peça</span>
-      <strong>${resultado.custoCalculado ? formatarMoeda(resultado.custoTotal) : TEXTO_CUSTO_NAO_CALCULADO}</strong>
-    </article>
-    <article class="summary-card">
-      <span>Custos da venda</span>
-      <strong>${formatarMoeda(resultado.custosVenda)}</strong>
-    </article>
-    <article class="${classeCardResultado}">
-      <span>Lucro</span>
-      <strong>${resultado.custoCalculado ? `<span class="${obterClasseLucro(resultado.lucroVenda)}">${formatarMoeda(resultado.lucroVenda)}</span>` : TEXTO_CUSTO_NAO_CALCULADO}</strong>
-    </article>
-    <article class="${classeCardResultado}">
-      <span>Margem</span>
-      <strong>${resultado.custoCalculado ? `<span class="${obterClasseLucro(resultado.lucroVenda)}">${formatarPorcentagem(resultado.margem)}</span>` : TEXTO_CUSTO_NAO_CALCULADO}</strong>
-    </article>
-  `;
-}
-
-function renderizarObservacoesVenda(venda) {
-  if (!dadosObservacoesVenda) {
-    return;
-  }
-
-  dadosObservacoesVenda.innerHTML = `
-    <article class="detail-card detail-card--wide">
-      <span>Observacoes</span>
-      <strong>${escaparHtml(obterObservacoesVenda(venda))}</strong>
-    </article>
-    <article class="detail-card">
-      <span>Permitido editar</span>
-      <strong>Data da venda e canal.</strong>
-    </article>
-    <article class="detail-card">
-      <span>Protegido</span>
-      <strong>Quantidade vendida e custo consumido.</strong>
-    </article>
-  `;
-}
-
-async function carregarContextoSupabase(venda) {
-  if (!window.supabaseService || !window.supabaseService.estaConfigurado() || !venda?.id) {
-    return venda;
-  }
-
-  const [produto, origens, custosVenda, consumosEstoque, entradasEstoque] = await Promise.all([
-    window.supabaseService.buscarPecaPorId(venda.pecaId),
-    window.supabaseService.listarOrigens(),
-    window.supabaseService.listarCustosVenda(),
-    window.supabaseService.listarConsumosEstoque(),
-    window.supabaseService.listarEntradasEstoque()
-  ]);
-  const custosVendaDaVenda = custosVenda.filter(custo => Number(custo.vendaId || 0) === Number(venda.id));
-
-  contextoVenda = {
-    produto,
-    origens,
-    entradasEstoque: entradasEstoque || [],
-    custosVenda: custosVendaDaVenda,
-    consumosFifo: consumosEstoque.filter(consumo => Number(consumo.vendaId || 0) === Number(venda.id))
-  };
-
-  return {
-    ...venda,
-    custosVenda: custosVendaDaVenda,
-    totalCustosVenda: custosVendaDaVenda.reduce((total, custo) => total + Number(custo.valor || 0), 0)
-  };
-}
+// ---- Início ----
 
 async function iniciarDetalhesVenda() {
-  let venda = null;
+  const vendaId = Number(new URLSearchParams(window.location.search).get("vendaId") || 0);
 
-  await carregarTiposCustoVendaDetalhes();
-
-  try {
-    venda = await encontrarVendaSupabase();
-  } catch (erro) {
-    console.error("Erro ao carregar venda do Supabase:", erro);
-    mensagemVendaNaoEncontrada.textContent = "Nao foi possivel carregar a venda do Supabase. Tentando dados temporarios.";
-  }
-
-  venda = venda || encontrarVenda();
-
-  if (!venda) {
-    mensagemVendaNaoEncontrada.textContent = "Selecione uma venda pelo historico para abrir os detalhes.";
-    dadosVenda.innerHTML = "";
-    resumoRapidoVenda.innerHTML = "";
-    resumoFinanceiroVenda.innerHTML = "";
-    tabelaCustoFifoVenda.innerHTML = "";
+  if (!vendaId) {
+    subtituloVenda.textContent = "";
+    mostrarMensagem("Abra uma venda pela lista de Vendas.");
     return;
   }
 
-  venda = await carregarContextoSupabase(venda);
-  vendaAtual = venda;
-  mensagemVendaNaoEncontrada.textContent = "";
-  renderizarDadosVendaCompleta(venda);
-  renderizarResumoRapido(venda);
-  renderizarResumoFinanceiro(venda);
-  renderizarCustoFifo();
-  renderizarProduto(venda);
-  renderizarCustos(venda);
-  renderizarObservacoesVenda(venda);
+  if (!window.supabaseService?.estaConfigurado()) {
+    subtituloVenda.textContent = "";
+    mostrarMensagem("Configure o Supabase para ver a venda.");
+    return;
+  }
+
+  try {
+    const servico = window.supabaseService;
+    const [vendas, origens, custosVenda, consumos, entradas] = await Promise.all([
+      servico.listarVendas(),
+      servico.listarOrigens(),
+      servico.listarCustosVenda(),
+      servico.listarConsumosEstoque(),
+      servico.listarEntradasEstoque()
+    ]);
+    const venda = (vendas || []).find(item => Number(item.id) === vendaId);
+
+    if (!venda) {
+      subtituloVenda.textContent = "";
+      mostrarMensagem("Venda não encontrada.");
+      return;
+    }
+
+    contextoVenda = {
+      produto: venda.pecaId ? await servico.buscarPecaPorId(venda.pecaId) : null,
+      origens: origens || [],
+      entradas: entradas || [],
+      custosVenda: (custosVenda || []).filter(custo => Number(custo.vendaId) === vendaId),
+      consumos: (consumos || []).filter(consumo => Number(consumo.vendaId) === vendaId)
+    };
+    vendaAtual = venda;
+    mostrarMensagem("");
+    renderizarTela();
+  } catch (erro) {
+    console.error("Erro ao carregar a venda:", erro);
+    subtituloVenda.textContent = "";
+    mostrarMensagem("Não foi possível carregar a venda.");
+  }
 }
 
-botaoEditarVenda?.addEventListener("click", abrirFormularioEdicaoVenda);
-cancelarEdicaoVenda?.addEventListener("click", fecharFormularioEdicaoVenda);
-formEditarVenda?.addEventListener("submit", salvarEdicaoVenda);
-botaoEditarAdicionarCustoVenda?.addEventListener("click", () => adicionarLinhaEdicaoCustoVenda());
-editarListaCustosVenda?.addEventListener("click", evento => {
-  const botao = evento.target.closest("[data-acao='remover-custo']");
+if (formEditarVenda) {
+  botaoEditarVenda.addEventListener("click", abrirEdicao);
+  cancelarEdicaoVenda.addEventListener("click", fecharEdicao);
+  formEditarVenda.addEventListener("submit", salvarEdicao);
+  editarVendaCanais.addEventListener("click", evento => {
+    const botao = evento.target.closest("[data-canal]");
+    if (botao) selecionarCanalEdicao(botao.dataset.canal);
+  });
 
-  if (botao) {
-    botao.closest(".cost-line")?.remove();
-  }
-});
-
-iniciarDetalhesVenda();
+  iniciarDetalhesVenda();
+}

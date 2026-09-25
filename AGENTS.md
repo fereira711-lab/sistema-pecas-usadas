@@ -322,26 +322,13 @@ Implementacao atual confirmada:
 
 ## Padrao da tela Detalhes da venda
 
-- `paginas/detalhes-venda.html` funciona como extrato completo de uma venda especifica.
-- A tela mostra produto vendido, dados da venda, custos da venda, entrada consumida, custo da peca, lucro e margem.
-- Nao transformar Detalhes da venda em analise geral do sistema.
-- Evitar destacar o termo FIFO para o usuario final.
-- Usar linguagem de interface simples: `Custo da peca`, `Custo consumido`, `Entrada consumida`, `Custo calculado` e `Custo nao calculado`.
-- FIFO continua sendo a regra tecnica interna oficial de custo.
-- O custo real da venda vem de `venda_consumos_estoque`.
-- Nao usar custo medio.
-- Nao usar `origem.valor_total` como custo da venda.
-- Se nao houver consumo registrado, mostrar `Custo nao calculado`.
-- Data, canal e observacao podem ser editados se essa for a regra atual da tela.
-- Quantidade vendida e custo consumido ficam protegidos no extrato.
-
-Implementacao atual confirmada:
-
-- `js/detalhes-venda.js` monta o contexto da venda com produto, origens, entradas, custos da venda e consumos reais de estoque.
-- O resultado financeiro atual e recalculado com `window.financeiroUtils.calcularLucroVenda(...)`.
-- Lucro e margem so aparecem quando existe custo consumido calculado; caso contrario a tela mostra `Custo nao calculado`.
-- A tela mostra receita, custo da peca, custos da venda, lucro e margem no extrato, sem virar analise geral.
-- A edicao atual fica restrita a data, canal e custos da venda quando o Supabase esta configurado.
+- `paginas/detalhes-venda.html` e o extrato completo de uma venda. Tela ja migrada para o redesenho (`ui-v2`, `css/detalhes-venda.css`, `js/detalhes-venda.js`).
+- Cabecalho: link `Vendas`, titulo "Venda de {peca}", subtitulo "Venda nº N · data · canal". Acoes: `Ver peça` e `Editar venda` (secundarios).
+- Blocos: Peça vendida (foto, nome, SKU · origem com link, quantidade, unitario e total), Dados da venda (data, canal, observacao), Custos da venda (tabela Tipo, Data, Observacao, Valor e o total no cabecalho) e Entrada consumida (tabela Entrada, Origem, Data da entrada, Qtd., Custo unitario, Custo total; pilula `Custo calculado` ou `Custo não calculado`).
+- Resumo lateral "Resultado da venda": receita, custo da peca, custos da venda, lucro e margem (verde/vermelho), por `financeiro-utils.calcularLucroVenda`. Sem consumo registrado: `Custo não calculado`, sem lucro nem margem.
+- `Editar venda` abre um formulario na propria tela so com data e canal (botoes `.choice` com os canais fixos; canal antigo em texto livre e mantido se nao for trocado). Quantidade, valor e custo consumido ficam protegidos.
+- O custo real da venda vem de `venda_consumos_estoque`. Sem custo medio e sem `origem.valor_total` como custo. FIFO continua regra tecnica interna, fora da interface.
+- Sairam no redesenho: o modo sem Supabase (`localStorage`). Nao transformar o extrato em analise geral.
 
 ## Padrao das telas de analise financeira
 
