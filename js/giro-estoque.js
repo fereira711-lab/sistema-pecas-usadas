@@ -1,25 +1,32 @@
+// Análises · Giro de estoque (redesenho): quais peças vendem rápido e quais estão paradas.
+// Faixas de alertas-regras.js: Girando até 30 dias, Lento de 31 a 90, Parado acima de 90 (decisão de 2026-09-25).
+const ITENS_POR_PAGINA = 20;
+
 const mensagemGiroEstoque = document.getElementById("mensagemGiroEstoque");
 const resumoGiroEstoque = document.getElementById("resumoGiroEstoque");
 const tabelaGiroEstoque = document.getElementById("tabelaGiroEstoque");
 const buscaGiroEstoque = document.getElementById("buscaGiroEstoque");
-const giroEstoqueShell = document.getElementById("giroEstoqueShell");
-const botaoAbrirFiltrosGiroEstoque = document.getElementById("botaoAbrirFiltrosGiroEstoque");
-const botaoFecharFiltrosGiroEstoque = document.getElementById("botaoFecharFiltrosGiroEstoque");
-const botaoLimparFiltrosGiroEstoque = document.getElementById("botaoLimparFiltrosGiroEstoque");
-const botaoAplicarFiltrosGiroEstoque = document.getElementById("botaoAplicarFiltrosGiroEstoque");
 const periodoRapidoGiroEstoque = document.getElementById("periodoRapidoGiroEstoque");
 const dataInicialGiroEstoque = document.getElementById("dataInicialGiroEstoque");
 const dataFinalGiroEstoque = document.getElementById("dataFinalGiroEstoque");
 const filtroStatusGiroEstoque = document.getElementById("filtroStatusGiroEstoque");
 const filtroOrigemGiroEstoque = document.getElementById("filtroOrigemGiroEstoque");
 const ordenacaoGiroEstoque = document.getElementById("ordenacaoGiroEstoque");
+const paginacaoGiroEstoque = document.getElementById("paginacaoGiroEstoque");
+const paginacaoTextoGiroEstoque = document.getElementById("paginacaoTextoGiroEstoque");
+const botaoPaginaAnterior = document.getElementById("paginaAnteriorGiroEstoque");
+const botaoPaginaProxima = document.getElementById("paginaProximaGiroEstoque");
 
 let dadosGiroEstoque = {
   pecas: [],
   vendas: [],
-  entradasEstoque: []
+  entradasEstoque: [],
+  origens: []
 };
-let linhasGiroEstoque = [];
+let statusSelecionado = "";
+let paginaAtual = 1;
+
+// ---- Formatação ----
 
 function escaparHtml(valor) {
   return String(valor ?? "")
@@ -31,33 +38,16 @@ function escaparHtml(valor) {
 }
 
 function formatarData(data) {
-  if (!data) {
-    return "-";
-  }
-
-  const dataIso = String(data).slice(0, 10);
-  const partes = dataIso.split("-");
-
-  if (partes.length !== 3) {
-    return dataIso;
-  }
-
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  const [ano, mes, dia] = String(data || "").slice(0, 10).split("-");
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : "—";
 }
 
 function formatarDataInput(data) {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}-${String(data.getDate()).padStart(2, "0")}`;
 }
 
 function formatarNumero(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  });
+  return Number(valor || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 }
 
 function normalizarTexto(valor) {
@@ -68,8 +58,38 @@ function normalizarTexto(valor) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function criarKpi(rotulo, valor, nota = "", classeNota = "") {
+  return `
+    <article class="kpi">
+      <span class="kpi__label">${rotulo}</span>
+      <span class="kpi__value">${valor}</span>
+      ${nota ? `<span class="kpi__note ${classeNota}">${nota}</span>` : ""}
+    </article>
+  `;
+}
+
+// ---- Período ----
+
+function aplicarPeriodoRapido() {
+  const valor = periodoRapidoGiroEstoque.value;
+  if (valor === "personalizado") return;
+
+  if (valor === "todos") {
+    dataInicialGiroEstoque.value = "";
+    dataFinalGiroEstoque.value = "";
+    return;
+  }
+
+  const hoje = new Date();
+  const dias = { hoje: 0, 7: 6, 30: 29, 90: 89 }[valor] || 0;
+  dataInicialGiroEstoque.value = formatarDataInput(new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - dias));
+  dataFinalGiroEstoque.value = formatarDataInput(hoje);
+}
+
+// ---- Dados ----
+
 function formatarSku(peca) {
-  return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim() || "-";
+  return String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
 }
 
 function formatarNome(peca) {
@@ -77,489 +97,223 @@ function formatarNome(peca) {
 }
 
 function obterDataVenda(venda) {
-  return String(venda.dataVenda || venda.data_venda || venda.createdAt || venda.created_at || "").slice(0, 10);
-}
-
-function agruparPorId(lista, campo) {
-  return lista.reduce((mapa, item) => {
-    const id = Number(item[campo] || 0);
-
-    if (!mapa[id]) {
-      mapa[id] = [];
-    }
-
-    mapa[id].push(item);
-    return mapa;
-  }, {});
-}
-
-function somarQuantidadeVendida(vendas) {
-  return vendas.reduce((total, venda) => {
-    return total + Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0);
-  }, 0);
-}
-
-function somarCampo(lista, campo) {
-  return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
-}
-
-function obterUltimaVenda(vendas) {
-  return vendas.reduce((ultimaData, venda) => {
-    const dataVenda = obterDataVenda(venda);
-
-    if (!dataVenda) {
-      return ultimaData;
-    }
-
-    return !ultimaData || dataVenda > ultimaData ? dataVenda : ultimaData;
-  }, "");
-}
-
-function obterDataEntradaOuCadastro(peca, entradasDaPeca) {
-  const datasEntrada = entradasDaPeca
-    .map(entrada => String(entrada.dataEntrada || entrada.createdAt || "").slice(0, 10))
-    .filter(Boolean)
-    .sort();
-
-  return String(peca.createdAt || peca.created_at || datasEntrada[0] || "").slice(0, 10);
-}
-
-function calcularDiasDesde(dataIso) {
-  if (!dataIso) {
-    return null;
-  }
-
-  const hoje = new Date();
-  const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-  const partes = String(dataIso).slice(0, 10).split("-").map(Number);
-
-  if (partes.length !== 3 || partes.some(Number.isNaN)) {
-    return null;
-  }
-
-  const data = new Date(partes[0], partes[1] - 1, partes[2]);
-  const milissegundosPorDia = 24 * 60 * 60 * 1000;
-
-  return Math.max(0, Math.floor((inicioHoje - data) / milissegundosPorDia));
-}
-
-function definirPeriodoPadrao() {
-  if (periodoRapidoGiroEstoque) {
-    periodoRapidoGiroEstoque.value = "todos";
-  }
-
-  dataInicialGiroEstoque.value = "";
-  dataFinalGiroEstoque.value = "";
-}
-
-function aplicarPeriodoRapido() {
-  if (!periodoRapidoGiroEstoque || periodoRapidoGiroEstoque.value === "personalizado") {
-    return;
-  }
-
-  if (periodoRapidoGiroEstoque.value === "todos") {
-    dataInicialGiroEstoque.value = "";
-    dataFinalGiroEstoque.value = "";
-    return;
-  }
-
-  const hoje = new Date();
-  const fim = formatarDataInput(hoje);
-  let inicio = fim;
-
-  if (periodoRapidoGiroEstoque.value === "7") {
-    const data = new Date(hoje);
-    data.setDate(data.getDate() - 6);
-    inicio = formatarDataInput(data);
-  }
-
-  if (periodoRapidoGiroEstoque.value === "30") {
-    const data = new Date(hoje);
-    data.setDate(data.getDate() - 29);
-    inicio = formatarDataInput(data);
-  }
-
-  if (periodoRapidoGiroEstoque.value === "90") {
-    const data = new Date(hoje);
-    data.setDate(data.getDate() - 89);
-    inicio = formatarDataInput(data);
-  }
-
-  dataInicialGiroEstoque.value = inicio;
-  dataFinalGiroEstoque.value = fim;
+  return String(venda.dataVenda || venda.data_venda || "").slice(0, 10);
 }
 
 function itemDentroDoPeriodo(data) {
-  const inicio = dataInicialGiroEstoque?.value || "";
-  const fim = dataFinalGiroEstoque?.value || "";
+  const inicio = dataInicialGiroEstoque.value;
+  const fim = dataFinalGiroEstoque.value;
   const dataIso = String(data || "").slice(0, 10);
-
-  if (!inicio && !fim) {
-    return true;
-  }
-
-  if (!dataIso) {
-    return false;
-  }
-
-  if (inicio && dataIso < inicio) {
-    return false;
-  }
-
-  if (fim && dataIso > fim) {
-    return false;
-  }
-
-  return true;
+  if (!inicio && !fim) return true;
+  return Boolean(dataIso) && (!inicio || dataIso >= inicio) && (!fim || dataIso <= fim);
 }
 
-function classificarGiro(quantidadeVendida, diasSemVenda) {
-  if (quantidadeVendida <= 0) {
-    return "sem venda";
-  }
-
-  if (diasSemVenda <= 15) {
-    return "rapido";
-  }
-
-  if (diasSemVenda <= 30) {
-    return "atencao";
-  }
-
-  return "parado";
-}
-
-function obterStatusEstoque(estoqueDisponivel) {
-  if (estoqueDisponivel <= 0) {
-    return "sem-estoque";
-  }
-
-  if (estoqueDisponivel <= 1) {
-    return "estoque-baixo";
-  }
-
-  return "em-estoque";
-}
-
-function obterClasseClassificacao(status) {
-  const classes = {
-    rapido: "status-badge status-badge--fast",
-    atencao: "status-badge status-badge--attention",
-    parado: "status-badge status-badge--stopped",
-    "sem venda": "status-badge status-badge--no-sale",
-    "sem-estoque": "status-badge status-badge--empty",
-    "estoque-baixo": "status-badge status-badge--warning",
-    "em-estoque": "status-badge status-badge--stock"
-  };
-
-  return classes[status] || "status-badge";
-}
-
-function formatarStatus(linha) {
-  if (linha.statusEstoque === "sem-estoque") {
-    return "Sem estoque";
-  }
-
-  if (linha.statusEstoque === "estoque-baixo") {
-    return "Estoque baixo";
-  }
-
-  const nomes = {
-    rapido: "Maior giro",
-    atencao: "Atenção",
-    parado: "Parado",
-    "sem venda": "Sem venda"
-  };
-
-  return nomes[linha.classificacao] || linha.classificacao;
-}
-
-function criarCard(titulo, valor, classe = "") {
-  const classeCard = classe ? `summary-card ${classe}` : "summary-card";
-
-  return `
-    <article class="${classeCard}">
-      <span>${titulo}</span>
-      <strong>${valor}</strong>
-    </article>
-  `;
-}
-
-function obterOrigemTexto(entradasDaPeca) {
-  const entrada = entradasDaPeca.find(item => item.origemDescricao || item.origemId);
-
-  if (!entrada) {
-    return "";
-  }
-
-  return String(entrada.origemDescricao || "").trim() || (entrada.origemId ? `Origem ${entrada.origemId}` : "");
-}
-
+// Situação pela regra de alertas-regras.classificarGiroPecas (as mesmas faixas de Produtos e Alertas);
+// o período só muda a coluna "Vendidas".
 function calcularGiro(dados) {
-  const vendasPorPeca = agruparPorId(dados.vendas, "pecaId");
-  const entradasPorPeca = agruparPorId(dados.entradasEstoque, "pecaId");
+  const origensPorId = new Map(dados.origens.map(origem => [Number(origem.id), origem]));
+  const vendasNoPeriodo = dados.vendas.filter(venda => itemDentroDoPeriodo(obterDataVenda(venda)));
 
-  return dados.pecas.map(peca => {
+  return window.alertasRegras.classificarGiroPecas(dados).map(item => {
+    const peca = item.peca;
     const pecaId = Number(peca.id);
-    const vendasDaPeca = vendasPorPeca[pecaId] || [];
-    const entradasDaPeca = entradasPorPeca[pecaId] || [];
-    const vendasNoPeriodo = vendasDaPeca.filter(venda => itemDentroDoPeriodo(obterDataVenda(venda)));
-    const quantidadeVendidaNoPeriodo = somarQuantidadeVendida(vendasNoPeriodo);
-    const quantidadeVendidaTotal = somarQuantidadeVendida(vendasDaPeca) || Number(peca.quantidadeVendida || peca.quantidade_vendida || 0);
-    const totalEntradas = somarCampo(entradasDaPeca, "quantidadeTotal");
-    const quantidadeTotal = totalEntradas > 0 ? totalEntradas : Number(peca.quantidade || 0);
-    const estoqueDisponivel = Math.max(0, quantidadeTotal - quantidadeVendidaTotal);
-    const ultimaVenda = obterUltimaVenda(vendasDaPeca);
-    const ultimaVendaNoPeriodo = obterUltimaVenda(vendasNoPeriodo);
-    const dataBaseSemVenda = ultimaVenda || obterDataEntradaOuCadastro(peca, entradasDaPeca);
-    const diasSemVenda = calcularDiasDesde(dataBaseSemVenda);
-    const classificacao = classificarGiro(quantidadeVendidaNoPeriodo, diasSemVenda);
-    const statusEstoque = obterStatusEstoque(estoqueDisponivel);
 
     return {
       pecaId,
       sku: formatarSku(peca),
       nome: formatarNome(peca),
-      origem: obterOrigemTexto(entradasDaPeca),
-      estoqueDisponivel,
-      quantidadeVendida: quantidadeVendidaNoPeriodo,
-      quantidadeVendidaTotal,
-      ultimaVenda,
-      ultimaVendaNoPeriodo,
-      diasSemVenda,
-      classificacao,
-      statusEstoque
+      origem: origensPorId.get(Number(peca.origemId))?.descricao || "",
+      estoqueDisponivel: item.saldo,
+      quantidadeVendida: vendasNoPeriodo
+        .filter(venda => Number(venda.pecaId) === pecaId)
+        .reduce((total, venda) => total + Number(venda.quantidadeVendida || 0), 0),
+      ultimaVenda: item.ultimaVenda,
+      diasSemVenda: item.dias,
+      situacao: item.chave
     };
   });
 }
 
-function preencherOrigens(linhas) {
-  if (!filtroOrigemGiroEstoque) {
-    return;
-  }
+// ---- Situação e filtros ----
 
-  const valorAtual = filtroOrigemGiroEstoque.value;
-  const origens = Array.from(new Set(linhas.map(linha => linha.origem).filter(Boolean))).sort((a, b) => a.localeCompare(b, "pt-BR"));
+const SITUACOES = {
+  girando: { texto: "Girando", pill: "pill--success" },
+  lento: { texto: "Lento", pill: "pill--info" },
+  parado: { texto: "Parado", pill: "pill--warning" },
+  "sem-estoque": { texto: "Sem estoque", pill: "pill--neutral" }
+};
 
-  filtroOrigemGiroEstoque.innerHTML = '<option value="">Todas</option>';
-  origens.forEach(origem => {
-    const opcao = document.createElement("option");
-    opcao.value = origem;
-    opcao.textContent = origem;
-    filtroOrigemGiroEstoque.appendChild(opcao);
-  });
-
-  filtroOrigemGiroEstoque.value = origens.includes(valorAtual) ? valorAtual : "";
+function combinaComStatus(linha, status) {
+  return !status || linha.situacao === status;
 }
 
-function linhaDentroDosFiltros(linha) {
-  const termo = normalizarTexto(buscaGiroEstoque?.value || "");
-  const status = filtroStatusGiroEstoque?.value || "";
-  const origem = filtroOrigemGiroEstoque?.value || "";
+function preencherOrigens(linhas) {
+  const atual = filtroOrigemGiroEstoque.value;
+  const origens = [...new Set(linhas.map(linha => linha.origem).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  filtroOrigemGiroEstoque.innerHTML = '<option value="">Todas as origens</option>' +
+    origens.map(origem => `<option value="${escaparHtml(origem)}">${escaparHtml(origem)}</option>`).join("");
+  filtroOrigemGiroEstoque.value = origens.includes(atual) ? atual : "";
+}
 
-  if (termo && !normalizarTexto(`${linha.sku} ${linha.nome}`).includes(termo)) {
-    return false;
-  }
+function filtrarPorBuscaEOrigem(linhas) {
+  const palavras = normalizarTexto(buscaGiroEstoque.value).split(/\s+/).filter(Boolean);
+  const origem = filtroOrigemGiroEstoque.value;
 
-  if (origem && linha.origem !== origem) {
-    return false;
-  }
-
-  if (status === "sem-estoque" || status === "estoque-baixo") {
-    return linha.statusEstoque === status;
-  }
-
-  if (status === "sem-venda") {
-    return linha.classificacao === "sem venda";
-  }
-
-  if (status && linha.classificacao !== status) {
-    return false;
-  }
-
-  return true;
+  return linhas.filter(linha => {
+    const texto = normalizarTexto(`${linha.sku} ${linha.nome}`);
+    return (!origem || linha.origem === origem) && palavras.every(palavra => texto.includes(palavra));
+  });
 }
 
 function ordenarLinhas(linhas) {
-  const ordenacao = ordenacaoGiroEstoque?.value || "giro";
-  const ordenadas = [...linhas];
+  const ordenacao = ordenacaoGiroEstoque.value || "giro";
 
-  return ordenadas.sort((a, b) => {
-    if (ordenacao === "nome") {
-      return a.nome.localeCompare(b.nome, "pt-BR");
-    }
-
-    if (ordenacao === "estoque") {
-      return a.estoqueDisponivel - b.estoqueDisponivel;
-    }
-
-    if (ordenacao === "ultima-venda") {
-      return String(b.ultimaVenda || "").localeCompare(String(a.ultimaVenda || ""));
-    }
-
-    if (ordenacao === "parado") {
-      return Number(b.diasSemVenda || 0) - Number(a.diasSemVenda || 0);
-    }
-
+  return [...linhas].sort((a, b) => {
+    if (ordenacao === "nome") return a.nome.localeCompare(b.nome, "pt-BR");
+    if (ordenacao === "estoque") return a.estoqueDisponivel - b.estoqueDisponivel;
+    if (ordenacao === "ultima-venda") return String(b.ultimaVenda || "").localeCompare(String(a.ultimaVenda || ""));
+    if (ordenacao === "parado") return Number(b.diasSemVenda || 0) - Number(a.diasSemVenda || 0);
     return Number(b.quantidadeVendida || 0) - Number(a.quantidadeVendida || 0);
   });
 }
 
+// ---- Renderização ----
+
 function renderizarResumo(linhas) {
-  const maiorGiro = linhas.filter(linha => linha.classificacao === "rapido").length;
-  const parados = linhas.filter(linha => linha.classificacao === "parado").length;
-  const estoqueBaixo = linhas.filter(linha => linha.statusEstoque === "estoque-baixo").length;
-  const semEstoque = linhas.filter(linha => linha.statusEstoque === "sem-estoque").length;
-  const quantidadeVendida = linhas.reduce((total, linha) => total + Number(linha.quantidadeVendida || 0), 0);
+  const contar = status => linhas.filter(linha => combinaComStatus(linha, status)).length;
+  const vendidas = linhas.reduce((total, linha) => total + Number(linha.quantidadeVendida || 0), 0);
+  const comVenda = linhas.filter(linha => linha.quantidadeVendida > 0).length;
+  const paradas = contar("parado");
 
   resumoGiroEstoque.innerHTML =
-    criarCard("Produtos com maior giro", formatarNumero(maiorGiro), "summary-card--profit") +
-    criarCard("Produtos parados", formatarNumero(parados), "summary-card--loss") +
-    criarCard("Estoque baixo", formatarNumero(estoqueBaixo)) +
-    criarCard("Sem estoque", formatarNumero(semEstoque), "summary-card--loss") +
-    criarCard("Quantidade vendida", formatarNumero(quantidadeVendida));
+    criarKpi("Girando", formatarNumero(contar("girando")), "venda ou entrada nos últimos 30 dias") +
+    criarKpi("Lentas", formatarNumero(contar("lento")), "de 31 a 90 dias sem venda") +
+    criarKpi("Paradas", formatarNumero(paradas), "mais de 90 dias sem venda", paradas ? "kpi__note--warning" : "") +
+    criarKpi("Unidades vendidas", formatarNumero(vendidas), `${formatarNumero(comVenda)} ${comVenda === 1 ? "peça" : "peças"} no período`);
 }
 
-function renderizarTabela(linhas) {
-  tabelaGiroEstoque.innerHTML = "";
+function renderizarLinha(linha) {
+  const situacao = SITUACOES[linha.situacao] || SITUACOES["sem-estoque"];
+  const href = `detalhes-produto.html?pecaId=${encodeURIComponent(linha.pecaId)}`;
+  const detalhe = [
+    linha.sku ? `<span class="mono">${escaparHtml(linha.sku)}</span>` : "",
+    linha.origem ? escaparHtml(linha.origem) : ""
+  ].filter(Boolean).join(" · ");
 
-  if (linhas.length === 0) {
-    mensagemGiroEstoque.textContent = "Nenhuma peça encontrada para os filtros selecionados.";
-    return;
-  }
-
-  mensagemGiroEstoque.textContent = "";
-
-  linhas.forEach(linha => {
-    const tr = document.createElement("tr");
-    const diasSemVenda = linha.diasSemVenda === null ? "-" : `${formatarNumero(linha.diasSemVenda)} dias`;
-    const statusClasse = linha.statusEstoque === "em-estoque"
-      ? obterClasseClassificacao(linha.classificacao)
-      : obterClasseClassificacao(linha.statusEstoque);
-
-    tr.innerHTML = `
-      <td data-label="SKU">${escaparHtml(linha.sku)}</td>
-      <td data-label="Peça"><strong class="product-name">${escaparHtml(linha.nome)}</strong></td>
-      <td data-label="Estoque disponível">${formatarNumero(linha.estoqueDisponivel)}</td>
-      <td data-label="Qtd. vendida">${formatarNumero(linha.quantidadeVendida)}</td>
-      <td data-label="Última venda">${formatarData(linha.ultimaVenda)}</td>
-      <td data-label="Tempo parado">${diasSemVenda}</td>
-      <td data-label="Status">
-        <span class="${statusClasse}">${escaparHtml(formatarStatus(linha))}</span>
-      </td>
-      <td data-label="Ações">
-        <div class="table-actions table-actions--single">
-          <a class="table-link" href="detalhes-produto.html?pecaId=${encodeURIComponent(linha.pecaId)}">Ver detalhes da peça</a>
+  return `
+    <tr>
+      <td data-label="Peça">
+        <div class="item-cell__text">
+          <a class="item-cell__name" href="${href}">${escaparHtml(linha.nome)}</a>
+          ${detalhe ? `<span class="item-cell__meta">${detalhe}</span>` : ""}
         </div>
       </td>
-    `;
-
-    tabelaGiroEstoque.appendChild(tr);
-  });
+      <td class="num" data-label="Estoque">${formatarNumero(linha.estoqueDisponivel)}</td>
+      <td class="num" data-label="Vendidas">${formatarNumero(linha.quantidadeVendida)}</td>
+      <td class="cell-nowrap" data-label="Última venda">${formatarData(linha.ultimaVenda)}</td>
+      <td class="num" data-label="Sem venda há">${linha.diasSemVenda === null ? "—" : `${formatarNumero(linha.diasSemVenda)} ${linha.diasSemVenda === 1 ? "dia" : "dias"}`}</td>
+      <td data-label="Situação"><span class="pill ${situacao.pill}">${escaparHtml(situacao.texto)}</span></td>
+    </tr>
+  `;
 }
 
 function renderizarGiroEstoque() {
-  linhasGiroEstoque = calcularGiro(dadosGiroEstoque);
-  preencherOrigens(linhasGiroEstoque);
-  const filtradas = ordenarLinhas(linhasGiroEstoque.filter(linhaDentroDosFiltros));
+  const todas = calcularGiro(dadosGiroEstoque);
+  preencherOrigens(todas);
+  const linhas = filtrarPorBuscaEOrigem(todas);
+  const filtradas = ordenarLinhas(linhas.filter(linha => combinaComStatus(linha, statusSelecionado)));
 
-  renderizarResumo(filtradas);
-  renderizarTabela(filtradas);
-}
+  renderizarResumo(linhas);
+  filtroStatusGiroEstoque.querySelectorAll("[data-contagem]").forEach(contador => {
+    contador.textContent = formatarNumero(linhas.filter(linha => combinaComStatus(linha, contador.dataset.contagem)).length);
+  });
 
-function definirPainelFiltrosAberto(aberto) {
-  giroEstoqueShell?.classList.toggle("inventory-turnover-shell--filters-open", aberto);
-  botaoAbrirFiltrosGiroEstoque?.setAttribute("aria-expanded", aberto ? "true" : "false");
-}
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ITENS_POR_PAGINA));
+  paginaAtual = Math.min(Math.max(1, paginaAtual), totalPaginas);
+  const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const pagina = filtradas.slice(inicio, inicio + ITENS_POR_PAGINA);
 
-async function carregarDados() {
-  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
-    mensagemGiroEstoque.textContent = "Configure o Supabase para carregar o giro de estoque.";
-    return null;
-  }
-
-  try {
-    const [pecas, vendas, entradasEstoque] = await Promise.all([
-      window.supabaseService.listarPecas(),
-      window.supabaseService.listarVendas(),
-      window.supabaseService.listarEntradasEstoque()
-    ]);
-
-    return {
-      pecas: pecas || [],
-      vendas: vendas || [],
-      entradasEstoque: entradasEstoque || []
-    };
-  } catch (erro) {
-    console.error("Erro ao carregar giro de estoque:", erro);
-    mensagemGiroEstoque.textContent = "Não foi possível carregar os dados do giro de estoque.";
-    return null;
-  }
-}
-
-async function iniciarGiroEstoque() {
-  definirPeriodoPadrao();
-  const dados = await carregarDados();
-
-  if (!dados) {
-    resumoGiroEstoque.innerHTML = "";
-    tabelaGiroEstoque.innerHTML = "";
+  if (!filtradas.length) {
+    tabelaGiroEstoque.innerHTML = '<tr class="data-table__empty"><td colspan="6">Nenhuma peça encontrada para os filtros selecionados.</td></tr>';
+    paginacaoGiroEstoque.hidden = true;
     return;
   }
 
-  dadosGiroEstoque = dados;
+  tabelaGiroEstoque.innerHTML = pagina.map(renderizarLinha).join("");
+  paginacaoGiroEstoque.hidden = filtradas.length <= ITENS_POR_PAGINA;
+  paginacaoTextoGiroEstoque.textContent = `Mostrando ${inicio + 1}–${inicio + pagina.length} de ${filtradas.length}`;
+  botaoPaginaAnterior.disabled = paginaAtual <= 1;
+  botaoPaginaProxima.disabled = paginaAtual >= totalPaginas;
+}
+
+// ---- Início ----
+
+async function iniciarGiroEstoque() {
+  if (!window.supabaseService?.estaConfigurado()) {
+    mensagemGiroEstoque.textContent = "Configure o Supabase para carregar o giro de estoque.";
+    return;
+  }
+
+  try {
+    const [pecas, vendas, entradasEstoque, origens] = await Promise.all([
+      window.supabaseService.listarPecas(),
+      window.supabaseService.listarVendas(),
+      window.supabaseService.listarEntradasEstoque(),
+      window.supabaseService.listarOrigens()
+    ]);
+
+    dadosGiroEstoque = {
+      pecas: pecas || [],
+      vendas: vendas || [],
+      entradasEstoque: entradasEstoque || [],
+      origens: origens || []
+    };
+    renderizarGiroEstoque();
+  } catch (erro) {
+    console.error("Erro ao carregar giro de estoque:", erro);
+    mensagemGiroEstoque.textContent = "Não foi possível carregar os dados do giro de estoque.";
+  }
+}
+
+function atualizarDoInicio() {
+  paginaAtual = 1;
   renderizarGiroEstoque();
 }
 
-buscaGiroEstoque?.addEventListener("input", renderizarGiroEstoque);
+if (tabelaGiroEstoque) {
+  periodoRapidoGiroEstoque.addEventListener("change", () => {
+    aplicarPeriodoRapido();
+    atualizarDoInicio();
+  });
 
-periodoRapidoGiroEstoque?.addEventListener("change", () => {
-  aplicarPeriodoRapido();
-  renderizarGiroEstoque();
-});
-
-[dataInicialGiroEstoque, dataFinalGiroEstoque].forEach(campo => {
-  campo?.addEventListener("change", () => {
-    if (periodoRapidoGiroEstoque) {
+  [dataInicialGiroEstoque, dataFinalGiroEstoque].forEach(campo => {
+    campo.addEventListener("change", () => {
       periodoRapidoGiroEstoque.value = "personalizado";
-    }
+      atualizarDoInicio();
+    });
+  });
+
+  [buscaGiroEstoque, filtroOrigemGiroEstoque, ordenacaoGiroEstoque].forEach(campo => campo.addEventListener("input", atualizarDoInicio));
+
+  filtroStatusGiroEstoque.addEventListener("click", evento => {
+    const botao = evento.target.closest("[data-status]");
+    if (!botao) return;
+    statusSelecionado = botao.dataset.status;
+    filtroStatusGiroEstoque.querySelectorAll("[data-status]").forEach(item => {
+      item.setAttribute("aria-pressed", String(item.dataset.status === statusSelecionado));
+    });
+    atualizarDoInicio();
+  });
+
+  botaoPaginaAnterior.addEventListener("click", () => {
+    paginaAtual -= 1;
     renderizarGiroEstoque();
   });
-});
 
-[filtroStatusGiroEstoque, filtroOrigemGiroEstoque, ordenacaoGiroEstoque].forEach(campo => {
-  campo?.addEventListener("change", renderizarGiroEstoque);
-});
+  botaoPaginaProxima.addEventListener("click", () => {
+    paginaAtual += 1;
+    renderizarGiroEstoque();
+  });
 
-botaoAbrirFiltrosGiroEstoque?.addEventListener("click", () => {
-  definirPainelFiltrosAberto(!giroEstoqueShell?.classList.contains("inventory-turnover-shell--filters-open"));
-});
-
-botaoFecharFiltrosGiroEstoque?.addEventListener("click", () => {
-  definirPainelFiltrosAberto(false);
-});
-
-botaoAplicarFiltrosGiroEstoque?.addEventListener("click", () => {
-  aplicarPeriodoRapido();
-  renderizarGiroEstoque();
-  definirPainelFiltrosAberto(false);
-});
-
-botaoLimparFiltrosGiroEstoque?.addEventListener("click", () => {
-  definirPeriodoPadrao();
-  if (buscaGiroEstoque) {
-    buscaGiroEstoque.value = "";
-  }
-  if (filtroStatusGiroEstoque) {
-    filtroStatusGiroEstoque.value = "";
-  }
-  if (filtroOrigemGiroEstoque) {
-    filtroOrigemGiroEstoque.value = "";
-  }
-  if (ordenacaoGiroEstoque) {
-    ordenacaoGiroEstoque.value = "giro";
-  }
-  renderizarGiroEstoque();
-});
-
-document.addEventListener("DOMContentLoaded", iniciarGiroEstoque);
+  iniciarGiroEstoque();
+}

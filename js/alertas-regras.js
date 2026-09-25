@@ -6,6 +6,7 @@
 // Funções puras: recebem os dados já carregados e não tocam no DOM. Lucro e prejuízo vêm do financeiro-utils.js.
 (function () {
   const DIAS_PARA_PECA_PARADA = 90;
+  const DIAS_PARA_GIRO_LENTO = 30;
   const TOLERANCIA = 0.009;
   const UM_DIA_MS = 24 * 60 * 60 * 1000;
 
@@ -71,6 +72,38 @@
         quantidade: entradasParadas.reduce((total, entrada) => total + obterSaldoEntrada(entrada), 0),
         valorParado: entradasParadas.reduce((total, entrada) => total + obterSaldoEntrada(entrada) * Number(entrada.custoUnitario || 0), 0)
       }];
+    });
+  }
+
+  // Giro de estoque (Análises), nas mesmas faixas do resto do sistema (decisão de 2026-09-25):
+  // Girando até 30 dias, Lento de 31 a 90, Parado acima de 90 (o mesmo limite da peça parada).
+  // Os dias contam desde a última venda ou, sem venda desde que a peça entrou, desde a entrada
+  // mais antiga que ainda tem saldo. Peça sem saldo fica "Sem estoque".
+  function classificarGiroPecas(dados, hoje) {
+    const hojeMs = hojeUtc(hoje);
+    const vendasPorPeca = agruparPor(dados.vendas, "pecaId");
+    const entradasPorPeca = agruparPor(dados.entradasEstoque, "pecaId");
+
+    return (dados.pecas || []).map(peca => {
+      const pecaId = obterId(peca.id);
+      const entradas = entradasPorPeca[pecaId] || [];
+      const datasVenda = (vendasPorPeca[pecaId] || []).map(venda => dataDoDia(venda.dataVenda)).filter(Boolean);
+      const ultimaVenda = datasVenda.length ? Math.max(...datasVenda) : null;
+      const saldo = entradas.reduce((total, entrada) => total + obterSaldoEntrada(entrada), 0);
+      const datasEntradaComSaldo = entradas
+        .filter(entrada => obterSaldoEntrada(entrada) > 0)
+        .map(entrada => dataDoDia(entrada.dataEntrada || entrada.createdAt))
+        .filter(Boolean);
+      const entradaComSaldo = datasEntradaComSaldo.length ? Math.min(...datasEntradaComSaldo) : null;
+      const base = Math.max(ultimaVenda || 0, entradaComSaldo || 0) || null;
+      const dias = base === null ? null : Math.max(0, Math.floor((hojeMs - base) / UM_DIA_MS));
+
+      let chave = "sem-estoque";
+      if (saldo > 0) {
+        chave = dias === null || dias <= DIAS_PARA_GIRO_LENTO ? "girando" : dias <= DIAS_PARA_PECA_PARADA ? "lento" : "parado";
+      }
+
+      return { peca, chave, dias, saldo, ultimaVenda: ultimaVenda === null ? "" : new Date(ultimaVenda).toISOString().slice(0, 10) };
     });
   }
 
@@ -181,7 +214,9 @@
 
   window.alertasRegras = {
     DIAS_PARA_PECA_PARADA,
+    DIAS_PARA_GIRO_LENTO,
     calcularPecasParadas,
+    classificarGiroPecas,
     calcularPrecosAbaixoDoCusto,
     calcularAtencao,
     contarGruposDeAtencao

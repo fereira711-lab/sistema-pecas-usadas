@@ -3,159 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Análise por Produto</title>
+  <title>Análises</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/base.css?v=16">
-  <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark product-analysis-page">
-  <header class="page-header">
-    <div>
-      <h1>Análises</h1>
-      <p class="hero__description">Resultado financeiro agrupado por peça.</p>
-      <nav class="tabs" aria-label="Tipos de análise">
-        <a class="tabs__item" href="analise-produto.html" aria-current="page">Por produto</a>
-        <a class="tabs__item" href="analise-periodo.html">Por período</a>
-        <a class="tabs__item" href="analise-custos.html">Custos</a>
-        <a class="tabs__item" href="giro-estoque.html">Giro de estoque</a>
-      </nav>
-    </div>
-  </header>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <h1 class="page-head__title">Análises</h1>
+        <p class="page-head__subtitle">Resultado financeiro por peça.</p>
+        <nav class="tabs" aria-label="Tipos de análise">
+          <a class="tabs__item" href="analise-produto.html" aria-current="page">Por produto</a>
+          <a class="tabs__item" href="analise-periodo.html">Por período</a>
+          <a class="tabs__item" href="analise-custos.html">Custos</a>
+          <a class="tabs__item" href="giro-estoque.html">Giro de estoque</a>
+        </nav>
+      </div>
+    </header>
 
-  <main class="container stock-layout product-analysis-layout">
-    <section id="analiseProdutoShell" class="stock-card product-analysis-shell">
-      <div class="stock-header product-analysis-header">
-        <div>
-          <span class="piece-form-eyebrow">Financeiro por peça</span>
-          <h2>Desempenho dos produtos</h2>
-          <p>Receita, custo da peça, custos da venda, lucro e margem.</p>
+    <p id="mensagemAnaliseProduto" class="page-message" role="status"></p>
+
+    <section id="resumoAnaliseProduto" class="kpi-grid" aria-label="Resumo da análise por produto"></section>
+
+    <div class="toolbar">
+      <div class="toolbar__group">
+        <div class="search-field">
+          <label class="sr-only" for="buscaAnaliseProduto">Buscar peça</label>
+          <i class="ri-search-line search-field__icon" aria-hidden="true"></i>
+          <input id="buscaAnaliseProduto" class="input" type="search" placeholder="Buscar por SKU ou nome da peça" autocomplete="off">
         </div>
-        <div class="form-actions">
-          <a class="button-secondary" href="produtos.html">Ver produtos</a>
+        <div class="filtro-periodo">
+          <label class="filtro-periodo__rotulo" for="filtroDataInicialAnaliseProduto">Vendas de</label>
+          <input id="filtroDataInicialAnaliseProduto" class="input filtro-periodo__data" type="date">
+          <label class="filtro-periodo__rotulo" for="filtroDataFinalAnaliseProduto">até</label>
+          <input id="filtroDataFinalAnaliseProduto" class="input filtro-periodo__data" type="date">
+        </div>
+        <label class="sr-only" for="filtroCanalAnaliseProduto">Canal</label>
+        <select id="filtroCanalAnaliseProduto" class="select">
+          <option value="">Todos os canais</option>
+        </select>
+        <label class="sr-only" for="ordenacaoAnaliseProduto">Ordenar por</label>
+        <select id="ordenacaoAnaliseProduto" class="select">
+          <option value="receita">Maior receita</option>
+          <option value="lucro">Maior lucro</option>
+          <option value="margem">Maior margem</option>
+          <option value="quantidade">Mais vendidas</option>
+          <option value="nome">Nome</option>
+        </select>
+      </div>
+      <div class="segmented" role="group" aria-label="Resultado" id="filtroResultadoAnaliseProduto">
+        <button type="button" class="segmented__item" data-resultado="com-venda" aria-pressed="true">Com venda <span class="segmented__count" data-contagem="com-venda">0</span></button>
+        <button type="button" class="segmented__item" data-resultado="prejuizo" aria-pressed="false">Prejuízo <span class="segmented__count" data-contagem="prejuizo">0</span></button>
+        <button type="button" class="segmented__item" data-resultado="pendente" aria-pressed="false">Custo não calculado <span class="segmented__count" data-contagem="pendente">0</span></button>
+        <button type="button" class="segmented__item" data-resultado="" aria-pressed="false">Todas <span class="segmented__count" data-contagem="">0</span></button>
+      </div>
+    </div>
+
+    <section class="card card--table" aria-label="Resultado por peça">
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive">
+          <thead>
+            <tr>
+              <th scope="col">Peça</th>
+              <th scope="col" class="num">Vendidas</th>
+              <th scope="col" class="num">Receita</th>
+              <th scope="col" class="num">Custo da peça</th>
+              <th scope="col" class="num" title="Custos lançados na peça (limpeza, pintura…) e custos das vendas (frete, tarifa…)">Outros custos</th>
+              <th scope="col" class="num">Lucro</th>
+              <th scope="col" class="num">Margem</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaAnaliseProduto"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="paginacaoAnaliseProduto" hidden>
+        <span id="paginacaoTextoAnaliseProduto"></span>
+        <div class="pager__buttons">
+          <button type="button" class="btn btn--secondary btn--compact" id="paginaAnteriorAnaliseProduto">Anterior</button>
+          <button type="button" class="btn btn--secondary btn--compact" id="paginaProximaAnaliseProduto">Próxima</button>
         </div>
       </div>
-
-      <p id="mensagemAnaliseProduto" class="empty-message"></p>
-
-      <section class="products-toolbar product-analysis-toolbar" aria-label="Busca e filtros da análise por produto">
-        <div class="products-main-controls operational-filter-main-controls">
-          <div class="form-group products-page-size-field">
-            <label for="quantidadeAnaliseProduto">Mostrar</label>
-            <select id="quantidadeAnaliseProduto">
-              <option value="12">12</option>
-              <option value="24">24</option>
-              <option value="48">48</option>
-            </select>
-          </div>
-
-          <div class="form-group products-search-field">
-            <label for="buscaAnaliseProduto">Buscar produto</label>
-            <input id="buscaAnaliseProduto" type="search" placeholder="Buscar por SKU ou nome da peça">
-          </div>
-
-          <button id="botaoAbrirFiltrosAnaliseProduto" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosAnaliseProduto" aria-expanded="false">
-            Filtros
-          </button>
-        </div>
-      </section>
-
-      <section id="resumoAnaliseProduto" class="summary-grid summary-grid--compact" aria-label="Resumo da análise por produto"></section>
-
-      <section class="product-analysis-section" aria-labelledby="tituloListaAnaliseProduto">
-        <div class="stock-header product-analysis-section__header">
-          <div>
-            <span class="piece-form-eyebrow">Produtos analisados</span>
-            <h2 id="tituloListaAnaliseProduto">Resultado por peça</h2>
-          </div>
-        </div>
-
-        <div class="product-analysis-list" aria-label="Lista de análise por produto">
-          <div class="product-analysis-list__head" aria-hidden="true">
-            <span>SKU</span>
-            <span>Peça</span>
-            <span>Qtd.</span>
-            <span>Receita</span>
-            <span>Custo da peça</span>
-            <span>Custos da venda</span>
-            <span>Lucro</span>
-            <span>Margem</span>
-            <span>Ações</span>
-          </div>
-          <div id="tabelaAnaliseProduto" class="product-analysis-list__body"></div>
-        </div>
-      </section>
-
-      <aside id="painelFiltrosAnaliseProduto" class="products-filter-panel product-analysis-filter-panel" aria-label="Filtros avançados da análise por produto">
-        <div class="products-filter-panel__header">
-          <h3>Filtros avançados</h3>
-          <button id="botaoFecharFiltrosAnaliseProduto" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
-        </div>
-
-        <div class="products-filters">
-          <div class="form-group">
-            <label for="filtroDataInicialAnaliseProduto">Período inicial</label>
-            <input id="filtroDataInicialAnaliseProduto" type="date">
-          </div>
-
-          <div class="form-group">
-            <label for="filtroDataFinalAnaliseProduto">Período final</label>
-            <input id="filtroDataFinalAnaliseProduto" type="date">
-          </div>
-
-          <div class="form-group">
-            <label for="filtroCanalAnaliseProduto">Canal</label>
-            <select id="filtroCanalAnaliseProduto">
-              <option value="">Todos</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="filtroCustoAnaliseProduto">Situação do custo</label>
-            <select id="filtroCustoAnaliseProduto">
-              <option value="">Todos</option>
-              <option value="calculado">Custo calculado</option>
-              <option value="pendente">Custo não calculado</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="filtroResultadoAnaliseProduto">Resultado</label>
-            <select id="filtroResultadoAnaliseProduto">
-              <option value="">Todos</option>
-              <option value="lucro">Lucro</option>
-              <option value="prejuizo">Prejuízo</option>
-              <option value="zero">Zero</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="ordenacaoAnaliseProduto">Ordenar por</label>
-            <select id="ordenacaoAnaliseProduto">
-              <option value="receita">Receita</option>
-              <option value="lucro">Lucro</option>
-              <option value="margem">Margem</option>
-              <option value="quantidade">Quantidade vendida</option>
-              <option value="nome">Nome</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="products-filter-panel__actions">
-          <button id="botaoLimparFiltrosAnaliseProduto" class="button-secondary" type="button">Limpar filtros</button>
-          <button id="botaoAplicarFiltrosAnaliseProduto" class="button-primary" type="button">Aplicar/Fechar</button>
-        </div>
-      </aside>
     </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
+  <script src="../js/moeda-utils.js?v=2"></script>
   <script src="../js/supabase-service.js?v=36"></script>
   <script src="../js/financeiro-utils.js?v=6"></script>
-  <script src="../js/analise-produto.js?v=6"></script>
+  <script src="../js/analise-produto.js?v=7"></script>
   <script src="../js/sidebar.js?v=9"></script>
 </body>
 </html>

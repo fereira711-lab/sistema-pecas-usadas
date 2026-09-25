@@ -324,52 +324,36 @@ Scripts criticos:
 
 ## Padrao das telas de analise financeira
 
-- `paginas/analise-produto.html`, `paginas/analise-periodo.html` e `paginas/analise-custos.html` sao telas financeiras.
-- Elas podem mostrar receita, custo, lucro, margem e totais quando fizer sentido.
-- Nao confundir com telas operacionais como Produtos, Historico de vendas ou Cadastro.
-- UX padrao: busca principal no topo, seletor `Mostrar`, botao `Filtros`, filtros laterais, cards compactos de resumo, listas sem rolagem horizontal e expansoes para detalhes extras.
-- `analise-produto.html` mostra resultado financeiro agrupado por peca, com busca por SKU/nome, cards de resumo e lista por produto.
-- Em Analise por produto, mostrar custo da peca, custos da venda, lucro e margem; se faltar custo calculado, mostrar `Custo nao calculado` e nao inventar lucro/margem.
+- Analises e uma pagina com 4 abas (Por produto, Por período, Custos, Giro de estoque): `analise-produto.html`, `analise-periodo.html`, `analise-custos.html` e `giro-estoque.html`. Todas ja migradas para o redesenho (`ui-v2`, so componentes do `base.css`). Cabecalho "Análises" com subtitulo da aba e a barra de abas (`.tabs`).
+- Padrao comum: KPIs no topo, barra de filtros (busca, periodo, selects) com controle segmentado e contagem, tabela com 20 por pagina. Sem seletor `Mostrar`, sem painel lateral de filtros e sem expansao "Detalhes" dentro da linha: o detalhe fica no extrato da venda (`Ver venda`) ou no detalhe da peca (nome com link).
+- Sao telas financeiras: podem mostrar receita, custo, lucro, margem e totais. Se faltar custo calculado, mostrar `Custo não calculado` e nao inventar lucro/margem. Todos os calculos vem do `financeiro-utils.js`; FIFO continua regra tecnica interna. Sem custo medio e sem `origem.valor_total` como custo da venda.
 
-Implementacao atual confirmada:
+Por produto (`js/analise-produto.js`):
 
-- `js/analise-produto.js` exige Supabase configurado para carregar a analise consolidada.
-- A tela consolida pecas, vendas, consumos de estoque, custos da peca, custos da venda e entradas, usando `financeiro-utils.js` como fonte oficial do calculo.
-- O topo atual mostra receita total, custo das pecas vendidas, custos da venda, lucro total e margem media.
-- A lista atual suporta busca, `Mostrar`, filtros por periodo/canal/situacao do custo/resultado, ordenacao e expansao `Detalhes` por produto.
-- Na expansao, a tela mostra vendas relacionadas, entradas consumidas, custos vinculados e resumo simples do calculo.
-- Quando houver custo pendente, o card agregado de lucro total permanece neutro em vez de sinalizar perda.
-- Se houver venda sem custo real, lucro e margem ficam como `Custo nao calculado` ou `Pendente`.
+- Resultado por peca por `financeiro-utils.calcularLucroPeca`. Filtros: busca por SKU/nome, periodo das vendas (custos da peca pela data do custo), canal, ordenacao e segmentado Com venda (padrao) / Prejuízo (so peca com venda) / Custo não calculado / Todas.
+- KPIs (todas as pecas da busca, periodo e canal, sem o segmentado): Receita, Custo das pecas vendidas, Outros custos ("R$ X na peça · R$ Y na venda") e Lucro com margem. O lucro total inclui custos lancados em peca ainda nao vendida, como antes.
+- Tabela: Peca, Vendidas (no periodo), Receita, Custo da peca (consumido), Outros custos (custos da peca + custos da venda), Lucro e Margem. Receita − custo − outros custos = lucro da linha.
 
-- `analise-periodo.html` mostra resultado financeiro por intervalo de datas, com filtros por data, canal e situacao do custo.
-- Em Analise por periodo, a lista de vendas e o resumo devem bater com Detalhes da venda e Analise por produto.
+Por período (`js/analise-periodo.js`):
 
-Implementacao atual confirmada:
+- Vendas do intervalo (padrao: mes atual; atalhos Hoje, 7 dias, 30 dias, Personalizado) por `financeiro-utils.calcularLucroVenda`. Filtros: busca por SKU/peca/canal, canal e segmentado Todas / Custo calculado / Custo não calculado.
+- KPIs: Receita (vendas e unidades), Custo das pecas, Custos da venda e Lucro com margem (mesma conta do Painel; custos lancados na peca nao entram no lucro da venda).
+- Tabela: Data, Peca (link para o extrato), Canal, Qtd., Receita, Custo da peca, Custos da venda, Lucro, Margem e `Ver venda`. As linhas batem com Detalhes da venda.
 
-- `js/analise-periodo.js` exige Supabase configurado para carregar a analise.
-- O periodo padrao atual abre no mes corrente, com atalhos para Hoje, Ultimos 7 dias, Ultimos 30 dias e Personalizado.
-- A tela recalcula por venda custo da peca, custos da venda, lucro e margem usando `financeiro-utils.js`.
-- O topo atual mostra receita total, custo das pecas, custos da venda, lucro total, margem media e quantidade vendida.
-- A lista atual suporta busca por SKU/nome/canal, filtro por canal e situacao do custo, seletor `Mostrar` e expansao `Detalhes` por venda.
-- Se faltar custo real em alguma venda, o agregado e a linha correspondente mostram `Custo nao calculado`.
+Custos (`js/analise-custos.js`):
 
-- `analise-custos.html` tem foco em custos operacionais, separando custos da peca e custos da venda.
-- Analise de custos mostra total de custos, maior tipo, quantidade de lancamentos e lista por tipo de custo; nao mostrar lucro/margem nessa tela.
+- Custos da peca e custos da venda juntos, sem lucro nem margem. Filtros: busca (tipo, peca, venda, observacao), periodo (padrao todo o periodo), tipo e segmentado Todos / Na peça / Na venda.
+- KPIs: Total de custos (lancamentos), Custos da peca, Custos da venda e Maior tipo (valor e % do total).
+- "Por tipo": Tipo, Lancamentos, Na peca, Na venda, Total, % do total e `Ver lançamentos` (filtra a lista de baixo pelo tipo). "Lançamentos": Data, Tipo, Lancado em (peca ou venda, com link), Observacao e Valor; 20 por pagina.
+- Nome do tipo como cadastrado; tipo antigo gravado em minusculas ganha a primeira letra maiuscula (`formatarNomeTipoCusto`).
 
-Implementacao atual confirmada:
+## Giro de estoque
 
-- `js/analise-custos.js` exige Supabase configurado para consolidar custos da peca, custos da venda, pecas e vendas.
-- A base atual e unificada por tipo normalizado, categoria, referencia e observacao.
-- O topo atual mostra total de custos, custos da peca, custos da venda, maior tipo e quantidade de lancamentos.
-- A lista atual agrupa por tipo e suporta filtros por periodo, tipo, categoria, origem do custo e busca textual.
-- Na expansao, a tela mostra ultimos lancamentos, pecas relacionadas, vendas relacionadas e observacoes.
-- Analise de custos continua sem lucro ou margem.
-- FIFO continua sendo regra tecnica interna.
-- A interface deve usar `Custo da peca`, `Custo calculado` e `Custo nao calculado`.
-- O custo real da venda vem de `venda_consumos_estoque`.
-- `financeiro-utils.js` continua sendo a fonte oficial de calculo.
-- Nao usar custo medio.
-- Nao usar `origem.valor_total` como custo da venda.
+- `paginas/giro-estoque.html` e a aba "Giro de estoque" das Analises: leitura operacional de quais pecas vendem e quais estao paradas, sem financeiro pesado (`js/giro-estoque.js`).
+- Faixas (decisao de Rafael de 2026-09-25, em `alertas-regras.classificarGiroPecas`, com teste): Girando ate 30 dias, Lento de 31 a 90, Parado acima de 90 (o mesmo limite da peca parada de Produtos e Alertas). Os dias contam da ultima venda ou, sem venda desde que a peca entrou, da entrada mais antiga que ainda tem saldo. Peca sem saldo fica "Sem estoque". Com uma unidade por entrada (desmanche), "Parado" no Giro e exatamente a peca parada dos Alertas.
+- KPIs: Girando, Lentas, Paradas e Unidades vendidas no periodo. Filtros: busca por SKU/nome, periodo das vendas (so muda a coluna "Vendidas"), origem, ordenacao e segmentado Todas / Girando / Lento / Parado / Sem estoque.
+- Tabela: Peca (link + SKU · origem), Estoque, Vendidas, Ultima venda, Sem venda ha (dias) e Situacao (pilula).
+- Sairam no redesenho: as faixas antigas (Maior giro ate 15 dias, Atenção ate 30, Parado acima de 30), "Estoque baixo" e o uso da data de cadastro da peca no lugar da data da entrada.
 
 ## Padrao da tela Tipos de custo
 
@@ -394,17 +378,6 @@ Implementacao atual confirmada:
 - Filtros: busca por codigo da entrada (ENT-000123), SKU, peca ou origem (cada palavra, sem acento), origem, periodo e controle segmentado com contagem: Todas, Com saldo, Parcial, Consumida.
 - Tabela: Data, Peca (link para o produto + SKU · codigo da entrada), Origem (link para a origem), Qtd., Consumida, Saldo, Custo unitario, Valor atribuido e Situacao. Mais recente primeiro; 20 por pagina.
 - Sairam no redesenho: seletor `Mostrar`, painel lateral de filtros, filtro por produto (a busca cobre) e os botoes `Ver produto`/`Ver origem` (viraram links no nome).
-
-## Giro de estoque
-
-- `paginas/giro-estoque.html` e tela operacional de leitura de giro, nao analise financeira pesada.
-- A tela deve mostrar busca por SKU/nome, filtros por periodo/status/origem/ordenacao, resumo de giro e lista com classificacao e acao `Ver detalhes da peca`.
-
-Implementacao atual confirmada:
-
-- `js/giro-estoque.js` consolida pecas, vendas e entradas via Supabase.
-- O giro considera quantidade vendida no periodo, ultima venda, dias sem venda e estoque disponivel por peca.
-- A origem exibida prioriza a descricao operacional da entrada e so cai para `Origem <id>` quando necessario.
 
 ## Alertas
 

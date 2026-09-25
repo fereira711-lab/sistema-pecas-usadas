@@ -1,19 +1,23 @@
+// Análises · Custos (redesenho): custos da peça e custos da venda agrupados por tipo, e a lista de lançamentos.
+// Sem lucro nem margem nesta aba.
+const ITENS_POR_PAGINA = 20;
+
 const mensagemAnaliseCustos = document.getElementById("mensagemAnaliseCustos");
 const resumoAnaliseCustos = document.getElementById("resumoAnaliseCustos");
 const tabelaAnaliseCustos = document.getElementById("tabelaAnaliseCustos");
 const buscaAnaliseCustos = document.getElementById("buscaAnaliseCustos");
-const analiseCustosShell = document.getElementById("analiseCustosShell");
-const botaoAbrirFiltrosAnaliseCustos = document.getElementById("botaoAbrirFiltrosAnaliseCustos");
-const botaoFecharFiltrosAnaliseCustos = document.getElementById("botaoFecharFiltrosAnaliseCustos");
-const botaoLimparFiltrosAnaliseCustos = document.getElementById("botaoLimparFiltrosAnaliseCustos");
-const botaoAplicarFiltrosAnaliseCustos = document.getElementById("botaoAplicarFiltrosAnaliseCustos");
 const periodoRapidoAnaliseCustos = document.getElementById("periodoRapidoAnaliseCustos");
 const dataInicialAnaliseCustos = document.getElementById("dataInicialAnaliseCustos");
 const dataFinalAnaliseCustos = document.getElementById("dataFinalAnaliseCustos");
 const filtroTipoAnaliseCustos = document.getElementById("filtroTipoAnaliseCustos");
 const filtroCategoriaAnaliseCustos = document.getElementById("filtroCategoriaAnaliseCustos");
-const filtroOrigemAnaliseCustos = document.getElementById("filtroOrigemAnaliseCustos");
-const quantidadeAnaliseCustos = document.getElementById("quantidadeAnaliseCustos");
+const secaoLancamentosCustos = document.getElementById("secaoLancamentosCustos");
+const contadorLancamentosCustos = document.getElementById("contadorLancamentosCustos");
+const tabelaLancamentosCustos = document.getElementById("tabelaLancamentosCustos");
+const paginacaoLancamentosCustos = document.getElementById("paginacaoLancamentosCustos");
+const paginacaoTextoLancamentosCustos = document.getElementById("paginacaoTextoLancamentosCustos");
+const botaoPaginaAnterior = document.getElementById("paginaAnteriorLancamentosCustos");
+const botaoPaginaProxima = document.getElementById("paginaProximaLancamentosCustos");
 
 let dadosAnaliseCustos = {
   custosPeca: [],
@@ -21,7 +25,10 @@ let dadosAnaliseCustos = {
   pecas: [],
   vendas: []
 };
-let tipoExpandidoChave = null;
+let categoriaSelecionada = "";
+let paginaAtual = 1;
+
+// ---- Formatação ----
 
 function escaparHtml(valor) {
   return String(valor ?? "")
@@ -33,10 +40,8 @@ function escaparHtml(valor) {
 }
 
 function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(Number(valor || 0));
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function formatarNumero(valor) {
@@ -44,33 +49,17 @@ function formatarNumero(valor) {
 }
 
 function formatarPercentual(valor) {
-  return `${Number(valor || 0).toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })}%`;
+  if (window.moedaUtils?.formatarPercentualBR) return window.moedaUtils.formatarPercentualBR(valor, 1);
+  return `${Number(valor || 0).toFixed(1).replace(".", ",")}%`;
 }
 
 function formatarData(data) {
-  if (!data) {
-    return "-";
-  }
-
-  const dataIso = String(data).slice(0, 10);
-  const partes = dataIso.split("-");
-
-  if (partes.length !== 3) {
-    return dataIso;
-  }
-
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  const [ano, mes, dia] = String(data || "").slice(0, 10).split("-");
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : "—";
 }
 
 function formatarDataInput(data) {
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, "0");
-  const dia = String(data.getDate()).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}-${String(data.getDate()).padStart(2, "0")}`;
 }
 
 function normalizarTexto(valor) {
@@ -101,77 +90,51 @@ function obterChaveTipoCusto(valor) {
   return normalizarTexto(valor || "Sem tipo");
 }
 
-function obterDataCusto(custo) {
-  return String(custo.dataCusto || custo.data || custo.data_custo || "").slice(0, 10);
-}
-
-function formatarSku(peca) {
-  return String(peca?.sku || peca?.codigo || peca?.codigo_peca || peca?.cod || "").trim() || "-";
-}
-
-function formatarNomePeca(peca) {
-  return peca?.nome || peca?.nome_peca || peca?.nomeProduto || peca?.produtoNome || peca?.descricao || `Peça ${peca?.id || ""}`.trim();
-}
-
-function somar(lista, campo = "valor") {
-  return lista.reduce((total, item) => total + Number(item[campo] || 0), 0);
-}
-
-function criarCard(titulo, valor) {
+function criarKpi(rotulo, valor, nota = "", classeValor = "") {
   return `
-    <article class="summary-card">
-      <span>${titulo}</span>
-      <strong>${valor}</strong>
+    <article class="kpi">
+      <span class="kpi__label">${rotulo}</span>
+      <span class="kpi__value ${classeValor}">${valor}</span>
+      ${nota ? `<span class="kpi__note">${nota}</span>` : ""}
     </article>
   `;
 }
 
-function definirPeriodoPadrao() {
-  if (periodoRapidoAnaliseCustos) {
-    periodoRapidoAnaliseCustos.value = "todos";
-  }
-
-  dataInicialAnaliseCustos.value = "";
-  dataFinalAnaliseCustos.value = "";
-}
+// ---- Período ----
 
 function aplicarPeriodoRapido() {
-  if (!periodoRapidoAnaliseCustos || periodoRapidoAnaliseCustos.value === "personalizado") {
-    return;
-  }
+  const valor = periodoRapidoAnaliseCustos.value;
+  if (valor === "personalizado") return;
 
-  if (periodoRapidoAnaliseCustos.value === "todos") {
+  if (valor === "todos") {
     dataInicialAnaliseCustos.value = "";
     dataFinalAnaliseCustos.value = "";
     return;
   }
 
   const hoje = new Date();
-  const fim = formatarDataInput(hoje);
-  let inicio = "";
+  const inicioPor = {
+    hoje: hoje,
+    7: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 6),
+    30: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 29),
+    mes: new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+  };
+  dataInicialAnaliseCustos.value = formatarDataInput(inicioPor[valor] || hoje);
+  dataFinalAnaliseCustos.value = formatarDataInput(hoje);
+}
 
-  if (periodoRapidoAnaliseCustos.value === "hoje") {
-    inicio = fim;
-  }
+// ---- Dados (mesmas regras da tela anterior) ----
 
-  if (periodoRapidoAnaliseCustos.value === "7") {
-    const data = new Date(hoje);
-    data.setDate(data.getDate() - 6);
-    inicio = formatarDataInput(data);
-  }
+function obterDataCusto(custo) {
+  return String(custo.dataCusto || custo.data || custo.data_custo || "").slice(0, 10);
+}
 
-  if (periodoRapidoAnaliseCustos.value === "30") {
-    const data = new Date(hoje);
-    data.setDate(data.getDate() - 29);
-    inicio = formatarDataInput(data);
-  }
+function formatarSku(peca) {
+  return String(peca?.sku || peca?.codigo || peca?.codigo_peca || peca?.cod || "").trim();
+}
 
-  if (periodoRapidoAnaliseCustos.value === "mes") {
-    inicio = formatarDataInput(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
-  }
-
-  dataInicialAnaliseCustos.value = inicio;
-  dataFinalAnaliseCustos.value = fim;
+function formatarNomePeca(peca) {
+  return peca?.nome || peca?.nome_peca || peca?.nomeProduto || peca?.produtoNome || peca?.descricao || `Peça ${peca?.id || ""}`.trim();
 }
 
 function mapearPorId(lista) {
@@ -186,19 +149,21 @@ function obterReferenciaCusto(custo, categoria, pecasPorId, vendasPorId) {
     const peca = pecasPorId[Number(custo.pecaId || custo.peca_id || 0)] || {};
 
     return {
-      texto: `${formatarSku(peca)} - ${formatarNomePeca(peca)}`,
+      nome: formatarNomePeca(peca),
+      detalhe: formatarSku(peca),
       busca: `${formatarSku(peca)} ${formatarNomePeca(peca)}`,
       link: Number(peca.id) ? `detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}` : ""
     };
   }
 
   const venda = vendasPorId[Number(custo.vendaId || custo.venda_id || 0)] || {};
-  const peca = pecasPorId[Number(venda.pecaId || venda.peca_id || 0)] || {};
-  const sku = formatarSku(peca) !== "-" ? formatarSku(peca) : String(venda.sku || "").trim() || "-";
-  const nome = formatarNomePeca(peca) !== "Peça" ? formatarNomePeca(peca) : venda.produtoNome || venda.nome || `Venda ${custo.vendaId || "-"}`;
+  const peca = pecasPorId[Number(venda.pecaId || venda.peca_id || 0)] || null;
+  const sku = formatarSku(peca) || String(venda.sku || "").trim();
+  const nome = peca ? formatarNomePeca(peca) : venda.produtoNome || venda.nome || `Venda ${custo.vendaId || "—"}`;
 
   return {
-    texto: `Venda ${custo.vendaId || "-"} - ${sku} - ${nome}`,
+    nome,
+    detalhe: [`Venda nº ${custo.vendaId || "—"}`, sku].filter(Boolean).join(" · "),
     busca: `${sku} ${nome} ${custo.vendaId || ""}`,
     link: Number(custo.vendaId || 0) ? `detalhes-venda.html?vendaId=${encodeURIComponent(custo.vendaId)}` : ""
   };
@@ -207,99 +172,47 @@ function obterReferenciaCusto(custo, categoria, pecasPorId, vendasPorId) {
 function montarCustosDetalhados(dados) {
   const pecasPorId = mapearPorId(dados.pecas);
   const vendasPorId = mapearPorId(dados.vendas);
-  const custosPeca = (dados.custosPeca || []).map(custo => {
-    const referencia = obterReferenciaCusto(custo, "peca", pecasPorId, vendasPorId);
+  const montar = categoria => custo => {
     const tipo = formatarNomeTipoCusto(custo.tipoCusto || custo.tipo);
-
     return {
       ...custo,
-      categoria: "peca",
-      categoriaTexto: "Peça",
+      categoria,
       tipo,
       tipoChave: obterChaveTipoCusto(tipo),
       data: obterDataCusto(custo),
-      referencia,
-      observacao: custo.observacoes || custo.observacao || custo.descricao || "-"
+      referencia: obterReferenciaCusto(custo, categoria, pecasPorId, vendasPorId),
+      observacao: custo.observacoes || custo.observacao || custo.descricao || ""
     };
-  });
-  const custosVenda = (dados.custosVenda || []).map(custo => {
-    const referencia = obterReferenciaCusto(custo, "venda", pecasPorId, vendasPorId);
-    const tipo = formatarNomeTipoCusto(custo.tipoCusto || custo.tipo);
+  };
 
-    return {
-      ...custo,
-      categoria: "venda",
-      categoriaTexto: "Venda",
-      tipo,
-      tipoChave: obterChaveTipoCusto(tipo),
-      data: obterDataCusto(custo),
-      referencia,
-      observacao: custo.observacoes || custo.observacao || custo.descricao || "-"
-    };
-  });
-
-  return [...custosPeca, ...custosVenda].sort((a, b) => {
-    if (a.data !== b.data) {
-      return String(b.data || "").localeCompare(String(a.data || ""));
-    }
-
-    return Number(b.id || 0) - Number(a.id || 0);
-  });
+  return [
+    ...(dados.custosPeca || []).map(montar("peca")),
+    ...(dados.custosVenda || []).map(montar("venda"))
+  ].sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")) || Number(b.id || 0) - Number(a.id || 0));
 }
 
 function preencherTipos(custos) {
-  if (!filtroTipoAnaliseCustos) {
-    return;
-  }
+  const atual = filtroTipoAnaliseCustos.value;
+  const tipos = Array.from(new Map(custos.map(custo => [custo.tipoChave, custo.tipo])).entries())
+    .sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
 
-  const valorAtual = filtroTipoAnaliseCustos.value;
-  const tipos = Array.from(new Map(custos.map(custo => [custo.tipoChave, custo.tipo])).values())
-    .sort((a, b) => a.localeCompare(b, "pt-BR"));
-
-  filtroTipoAnaliseCustos.innerHTML = '<option value="">Todos</option>';
-  tipos.forEach(tipo => {
-    const opcao = document.createElement("option");
-    opcao.value = obterChaveTipoCusto(tipo);
-    opcao.textContent = tipo;
-    filtroTipoAnaliseCustos.appendChild(opcao);
-  });
-
-  filtroTipoAnaliseCustos.value = tipos.some(tipo => obterChaveTipoCusto(tipo) === valorAtual) ? valorAtual : "";
+  filtroTipoAnaliseCustos.innerHTML = '<option value="">Todos os tipos</option>' +
+    tipos.map(([chave, nome]) => `<option value="${escaparHtml(chave)}">${escaparHtml(nome)}</option>`).join("");
+  filtroTipoAnaliseCustos.value = tipos.some(([chave]) => chave === atual) ? atual : "";
 }
 
+// Busca, período e tipo; a categoria (Na peça / Na venda) é aplicada depois, para as contagens.
 function custoDentroDosFiltros(custo) {
-  const termo = normalizarTexto(buscaAnaliseCustos?.value || "");
-  const inicio = dataInicialAnaliseCustos?.value || "";
-  const fim = dataFinalAnaliseCustos?.value || "";
-  const tipo = filtroTipoAnaliseCustos?.value || "";
-  const categoria = filtroCategoriaAnaliseCustos?.value || "";
-  const origem = filtroOrigemAnaliseCustos?.value || "";
+  const palavras = normalizarTexto(buscaAnaliseCustos.value).split(/\s+/).filter(Boolean);
+  const inicio = dataInicialAnaliseCustos.value;
+  const fim = dataFinalAnaliseCustos.value;
+  const tipo = filtroTipoAnaliseCustos.value;
+  const texto = normalizarTexto(`${custo.tipo} ${custo.referencia.busca} ${custo.observacao}`);
 
-  if (inicio && custo.data && custo.data < inicio) {
-    return false;
-  }
-
-  if (fim && custo.data && custo.data > fim) {
-    return false;
-  }
-
-  if (tipo && custo.tipoChave !== tipo) {
-    return false;
-  }
-
-  if (categoria && custo.categoria !== categoria) {
-    return false;
-  }
-
-  if (origem && custo.categoria !== origem) {
-    return false;
-  }
-
-  if (!termo) {
-    return true;
-  }
-
-  return normalizarTexto(`${custo.tipo} ${custo.categoriaTexto} ${custo.referencia.busca} ${custo.observacao}`).includes(termo);
+  return (!inicio || !custo.data || custo.data >= inicio) &&
+    (!fim || !custo.data || custo.data <= fim) &&
+    (!tipo || custo.tipoChave === tipo) &&
+    palavras.every(palavra => texto.includes(palavra));
 }
 
 function agruparCustosPorTipo(custos) {
@@ -308,54 +221,121 @@ function agruparCustosPorTipo(custos) {
 
   custos.forEach(custo => {
     if (!mapa.has(custo.tipoChave)) {
-      mapa.set(custo.tipoChave, {
-        tipoChave: custo.tipoChave,
-        tipo: custo.tipo,
-        totalCustosPeca: 0,
-        totalCustosVenda: 0,
-        totalGeral: 0,
-        percentual: 0,
-        quantidade: 0,
-        custos: []
-      });
+      mapa.set(custo.tipoChave, { tipoChave: custo.tipoChave, tipo: custo.tipo, totalCustosPeca: 0, totalCustosVenda: 0, totalGeral: 0, quantidade: 0 });
     }
 
     const grupo = mapa.get(custo.tipoChave);
     const valor = Number(custo.valor || 0);
-
-    if (custo.categoria === "peca") {
-      grupo.totalCustosPeca += valor;
-    }
-
-    if (custo.categoria === "venda") {
-      grupo.totalCustosVenda += valor;
-    }
-
+    if (custo.categoria === "peca") grupo.totalCustosPeca += valor;
+    if (custo.categoria === "venda") grupo.totalCustosVenda += valor;
     grupo.totalGeral += valor;
     grupo.quantidade += 1;
-    grupo.custos.push(custo);
   });
 
   return Array.from(mapa.values())
-    .map(grupo => ({
-      ...grupo,
-      percentual: totalCustos > 0 ? (grupo.totalGeral / totalCustos) * 100 : 0,
-      categoriaPrincipal: grupo.totalCustosPeca >= grupo.totalCustosVenda ? "Peça" : "Venda",
-      origemPrincipal: grupo.totalCustosPeca >= grupo.totalCustosVenda ? "Custos da peça" : "Custos da venda"
-    }))
-    .sort((a, b) => {
-      if (b.totalGeral !== a.totalGeral) {
-        return b.totalGeral - a.totalGeral;
-      }
-
-      return a.tipo.localeCompare(b.tipo, "pt-BR");
-    });
+    .map(grupo => ({ ...grupo, percentual: totalCustos > 0 ? (grupo.totalGeral / totalCustos) * 100 : 0 }))
+    .sort((a, b) => b.totalGeral - a.totalGeral || a.tipo.localeCompare(b.tipo, "pt-BR"));
 }
 
-async function carregarDados() {
-  if (!window.supabaseService || !window.supabaseService.estaConfigurado()) {
+// ---- Renderização ----
+
+function renderizarResumo(custos, grupos) {
+  const totalPeca = custos.filter(custo => custo.categoria === "peca").reduce((total, custo) => total + Number(custo.valor || 0), 0);
+  const totalVenda = custos.filter(custo => custo.categoria === "venda").reduce((total, custo) => total + Number(custo.valor || 0), 0);
+  const maior = grupos[0];
+  const quantidadePeca = custos.filter(custo => custo.categoria === "peca").length;
+  const quantidadeVenda = custos.length - quantidadePeca;
+
+  resumoAnaliseCustos.innerHTML =
+    criarKpi("Total de custos", formatarMoeda(totalPeca + totalVenda), `${formatarNumero(custos.length)} ${custos.length === 1 ? "lançamento" : "lançamentos"}`) +
+    criarKpi("Custos da peça", formatarMoeda(totalPeca), `${formatarNumero(quantidadePeca)} · limpeza, pintura, conserto`) +
+    criarKpi("Custos da venda", formatarMoeda(totalVenda), `${formatarNumero(quantidadeVenda)} · frete, embalagem, tarifas`) +
+    criarKpi("Maior tipo", maior ? escaparHtml(maior.tipo) : "—", maior ? `${formatarMoeda(maior.totalGeral)} · ${formatarPercentual(maior.percentual)} do total` : "", maior ? "kpi__value--tight" : "kpi__value--muted");
+}
+
+function renderizarGrupos(grupos) {
+  if (!grupos.length) {
+    tabelaAnaliseCustos.innerHTML = '<tr class="data-table__empty"><td colspan="7">Nenhum custo encontrado para os filtros selecionados.</td></tr>';
+    return;
+  }
+
+  tabelaAnaliseCustos.innerHTML = grupos.map(grupo => `
+    <tr>
+      <td class="cell-strong" data-label="Tipo">${escaparHtml(grupo.tipo)}</td>
+      <td class="num" data-label="Lançamentos">${formatarNumero(grupo.quantidade)}</td>
+      <td class="num" data-label="Na peça">${grupo.totalCustosPeca ? formatarMoeda(grupo.totalCustosPeca) : "—"}</td>
+      <td class="num" data-label="Na venda">${grupo.totalCustosVenda ? formatarMoeda(grupo.totalCustosVenda) : "—"}</td>
+      <td class="num cell-strong" data-label="Total">${formatarMoeda(grupo.totalGeral)}</td>
+      <td class="num" data-label="% do total">${formatarPercentual(grupo.percentual)}</td>
+      <td class="cell-acoes"><button type="button" class="btn btn--secondary btn--compact" data-tipo-chave="${escaparHtml(grupo.tipoChave)}">Ver lançamentos</button></td>
+    </tr>
+  `).join("");
+}
+
+function renderizarLancamento(custo) {
+  const referencia = custo.referencia;
+  const nome = referencia.link
+    ? `<a class="item-cell__name" href="${referencia.link}">${escaparHtml(referencia.nome)}</a>`
+    : `<span class="item-cell__name">${escaparHtml(referencia.nome)}</span>`;
+
+  return `
+    <tr>
+      <td class="cell-nowrap" data-label="Data">${formatarData(custo.data)}</td>
+      <td data-label="Tipo">${escaparHtml(custo.tipo)}</td>
+      <td data-label="Lançado em">
+        <div class="item-cell__text">
+          ${nome}
+          <span class="item-cell__meta">${custo.categoria === "peca" ? "Peça" : "Venda"}${referencia.detalhe ? ` · ${escaparHtml(referencia.detalhe)}` : ""}</span>
+        </div>
+      </td>
+      <td class="cell-muted" data-label="Observação">${escaparHtml(custo.observacao || "—")}</td>
+      <td class="num cell-strong" data-label="Valor">${formatarMoeda(custo.valor)}</td>
+    </tr>
+  `;
+}
+
+function renderizarLancamentos(custos) {
+  contadorLancamentosCustos.textContent = `${formatarNumero(custos.length)} ${custos.length === 1 ? "lançamento" : "lançamentos"}`;
+
+  const totalPaginas = Math.max(1, Math.ceil(custos.length / ITENS_POR_PAGINA));
+  paginaAtual = Math.min(Math.max(1, paginaAtual), totalPaginas);
+  const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const pagina = custos.slice(inicio, inicio + ITENS_POR_PAGINA);
+
+  if (!custos.length) {
+    tabelaLancamentosCustos.innerHTML = '<tr class="data-table__empty"><td colspan="5">Nenhum lançamento encontrado.</td></tr>';
+    paginacaoLancamentosCustos.hidden = true;
+    return;
+  }
+
+  tabelaLancamentosCustos.innerHTML = pagina.map(renderizarLancamento).join("");
+  paginacaoLancamentosCustos.hidden = custos.length <= ITENS_POR_PAGINA;
+  paginacaoTextoLancamentosCustos.textContent = `Mostrando ${inicio + 1}–${inicio + pagina.length} de ${custos.length}`;
+  botaoPaginaAnterior.disabled = paginaAtual <= 1;
+  botaoPaginaProxima.disabled = paginaAtual >= totalPaginas;
+}
+
+function renderizarAnaliseCustos() {
+  const semCategoria = montarCustosDetalhados(dadosAnaliseCustos).filter(custoDentroDosFiltros);
+  const custos = semCategoria.filter(custo => !categoriaSelecionada || custo.categoria === categoriaSelecionada);
+
+  filtroCategoriaAnaliseCustos.querySelectorAll("[data-contagem]").forEach(contador => {
+    const chave = contador.dataset.contagem;
+    contador.textContent = formatarNumero(semCategoria.filter(custo => !chave || custo.categoria === chave).length);
+  });
+
+  const grupos = agruparCustosPorTipo(custos);
+  renderizarResumo(custos, grupos);
+  renderizarGrupos(grupos);
+  renderizarLancamentos(custos);
+}
+
+// ---- Início ----
+
+async function iniciarAnaliseCustos() {
+  if (!window.supabaseService?.estaConfigurado()) {
     mensagemAnaliseCustos.textContent = "Configure o Supabase para carregar a análise de custos.";
-    return null;
+    return;
   }
 
   try {
@@ -366,214 +346,68 @@ async function carregarDados() {
       window.supabaseService.listarVendas()
     ]);
 
-    mensagemAnaliseCustos.textContent = "";
-
-    return {
+    dadosAnaliseCustos = {
       custosPeca: custosPeca || [],
       custosVenda: custosVenda || [],
       pecas: pecas || [],
       vendas: vendas || []
     };
+    preencherTipos(montarCustosDetalhados(dadosAnaliseCustos));
+    renderizarAnaliseCustos();
   } catch (erro) {
     console.error("Erro ao carregar análise de custos:", erro);
     mensagemAnaliseCustos.textContent = "Não foi possível carregar os dados da análise de custos.";
-    return null;
   }
 }
 
-function renderizarResumo(custos, grupos) {
-  const totalCustosPeca = custos.filter(custo => custo.categoria === "peca").reduce((total, custo) => total + Number(custo.valor || 0), 0);
-  const totalCustosVenda = custos.filter(custo => custo.categoria === "venda").reduce((total, custo) => total + Number(custo.valor || 0), 0);
-  const totalGeral = totalCustosPeca + totalCustosVenda;
-  const maiorTipo = grupos[0]?.tipo || "-";
-
-  resumoAnaliseCustos.innerHTML =
-    criarCard("Total de custos", formatarMoeda(totalGeral)) +
-    criarCard("Custos da peça", formatarMoeda(totalCustosPeca)) +
-    criarCard("Custos da venda", formatarMoeda(totalCustosVenda)) +
-    criarCard("Maior tipo", escaparHtml(maiorTipo)) +
-    criarCard("Lançamentos", formatarNumero(custos.length));
+function atualizarDoInicio() {
+  paginaAtual = 1;
+  renderizarAnaliseCustos();
 }
 
-function obterGruposVisiveis(grupos) {
-  const quantidade = quantidadeAnaliseCustos?.value || "12";
-
-  if (quantidade === "todos") {
-    return grupos;
-  }
-
-  return grupos.slice(0, Number(quantidade || 12));
-}
-
-function listarReferenciasUnicas(custos, categoria) {
-  const valores = custos
-    .filter(custo => !categoria || custo.categoria === categoria)
-    .map(custo => custo.referencia.texto)
-    .filter(Boolean);
-
-  return [...new Set(valores)].slice(0, 4);
-}
-
-function criarDetalhesGrupoHtml(grupo) {
-  const ultimosLancamentos = grupo.custos.slice(0, 4)
-    .map(custo => `${formatarData(custo.data)} - ${custo.referencia.texto} - ${formatarMoeda(custo.valor)}`)
-    .join("; ") || "Nenhum lançamento encontrado.";
-  const pecasRelacionadas = listarReferenciasUnicas(grupo.custos, "peca").join("; ") || "Nenhuma peça relacionada.";
-  const vendasRelacionadas = listarReferenciasUnicas(grupo.custos, "venda").join("; ") || "Nenhuma venda relacionada.";
-  const observacoes = grupo.custos
-    .map(custo => custo.observacao)
-    .filter(observacao => observacao && observacao !== "-")
-    .slice(0, 3)
-    .join("; ") || "Sem observações relevantes.";
-
-  return `
-    <section class="cost-analysis-detail-panel" aria-label="Detalhes do tipo ${escaparHtml(grupo.tipo)}">
-      <div>
-        <span class="piece-form-eyebrow">Últimos lançamentos</span>
-        <p>${escaparHtml(ultimosLancamentos)}</p>
-      </div>
-      <div>
-        <span class="piece-form-eyebrow">Peças relacionadas</span>
-        <p>${escaparHtml(pecasRelacionadas)}</p>
-      </div>
-      <div>
-        <span class="piece-form-eyebrow">Vendas relacionadas</span>
-        <p>${escaparHtml(vendasRelacionadas)}</p>
-      </div>
-      <div>
-        <span class="piece-form-eyebrow">Observações</span>
-        <p>${escaparHtml(observacoes)}</p>
-      </div>
-    </section>
-  `;
-}
-
-function renderizarTabelaGrupos(grupos) {
-  tabelaAnaliseCustos.innerHTML = "";
-
-  if (grupos.length === 0) {
-    mensagemAnaliseCustos.textContent = "Nenhum custo encontrado para os filtros selecionados.";
-    return;
-  }
-
-  mensagemAnaliseCustos.textContent = "";
-
-  obterGruposVisiveis(grupos).forEach(grupo => {
-    const expandido = tipoExpandidoChave === grupo.tipoChave;
-
-    tabelaAnaliseCustos.insertAdjacentHTML("beforeend", `
-      <article class="cost-analysis-row${expandido ? " cost-analysis-row--expanded" : ""}">
-        <strong class="product-name" data-label="Tipo de custo">${escaparHtml(grupo.tipo)}</strong>
-        <span data-label="Categoria"><span class="status-badge status-badge--stock">${escaparHtml(grupo.categoriaPrincipal)}</span></span>
-        <span data-label="Qtd.">${formatarNumero(grupo.quantidade)}</span>
-        <span data-label="Total"><strong>${formatarMoeda(grupo.totalGeral)}</strong></span>
-        <span data-label="% do total">${formatarPercentual(grupo.percentual)}</span>
-        <span data-label="Origem principal">${escaparHtml(grupo.origemPrincipal)}</span>
-        <button type="button" class="button-secondary button-compact" data-acao="alternar-detalhes" data-tipo-chave="${escaparHtml(grupo.tipoChave)}">
-          ${expandido ? "Ocultar" : "Detalhes"}
-        </button>
-      </article>
-    `);
-
-    if (expandido) {
-      tabelaAnaliseCustos.insertAdjacentHTML("beforeend", criarDetalhesGrupoHtml(grupo));
-    }
+if (tabelaAnaliseCustos) {
+  periodoRapidoAnaliseCustos.addEventListener("change", () => {
+    aplicarPeriodoRapido();
+    atualizarDoInicio();
   });
-}
 
-function renderizarAnaliseCustos() {
-  const custos = montarCustosDetalhados(dadosAnaliseCustos).filter(custoDentroDosFiltros);
-  const grupos = agruparCustosPorTipo(custos);
-
-  if (tipoExpandidoChave && !grupos.some(grupo => grupo.tipoChave === tipoExpandidoChave)) {
-    tipoExpandidoChave = null;
-  }
-
-  renderizarResumo(custos, grupos);
-  renderizarTabelaGrupos(grupos);
-}
-
-function definirPainelFiltrosAberto(aberto) {
-  analiseCustosShell?.classList.toggle("cost-analysis-shell--filters-open", aberto);
-  botaoAbrirFiltrosAnaliseCustos?.setAttribute("aria-expanded", aberto ? "true" : "false");
-}
-
-async function iniciarAnaliseCustos() {
-  definirPeriodoPadrao();
-  const dados = await carregarDados();
-
-  if (!dados) {
-    resumoAnaliseCustos.innerHTML = "";
-    tabelaAnaliseCustos.innerHTML = "";
-    return;
-  }
-
-  dadosAnaliseCustos = dados;
-  preencherTipos(montarCustosDetalhados(dadosAnaliseCustos));
-  renderizarAnaliseCustos();
-}
-
-buscaAnaliseCustos?.addEventListener("input", renderizarAnaliseCustos);
-
-botaoAbrirFiltrosAnaliseCustos?.addEventListener("click", () => {
-  definirPainelFiltrosAberto(!analiseCustosShell?.classList.contains("cost-analysis-shell--filters-open"));
-});
-
-botaoFecharFiltrosAnaliseCustos?.addEventListener("click", () => {
-  definirPainelFiltrosAberto(false);
-});
-
-botaoAplicarFiltrosAnaliseCustos?.addEventListener("click", () => {
-  aplicarPeriodoRapido();
-  renderizarAnaliseCustos();
-  definirPainelFiltrosAberto(false);
-});
-
-botaoLimparFiltrosAnaliseCustos?.addEventListener("click", () => {
-  definirPeriodoPadrao();
-  if (buscaAnaliseCustos) {
-    buscaAnaliseCustos.value = "";
-  }
-  if (filtroTipoAnaliseCustos) {
-    filtroTipoAnaliseCustos.value = "";
-  }
-  if (filtroCategoriaAnaliseCustos) {
-    filtroCategoriaAnaliseCustos.value = "";
-  }
-  if (filtroOrigemAnaliseCustos) {
-    filtroOrigemAnaliseCustos.value = "";
-  }
-  renderizarAnaliseCustos();
-});
-
-periodoRapidoAnaliseCustos?.addEventListener("change", () => {
-  aplicarPeriodoRapido();
-  renderizarAnaliseCustos();
-});
-
-[dataInicialAnaliseCustos, dataFinalAnaliseCustos].forEach(campo => {
-  campo?.addEventListener("change", () => {
-    if (periodoRapidoAnaliseCustos) {
+  [dataInicialAnaliseCustos, dataFinalAnaliseCustos].forEach(campo => {
+    campo.addEventListener("change", () => {
       periodoRapidoAnaliseCustos.value = "personalizado";
-    }
+      atualizarDoInicio();
+    });
+  });
+
+  [buscaAnaliseCustos, filtroTipoAnaliseCustos].forEach(campo => campo.addEventListener("input", atualizarDoInicio));
+
+  filtroCategoriaAnaliseCustos.addEventListener("click", evento => {
+    const botao = evento.target.closest("[data-categoria]");
+    if (!botao) return;
+    categoriaSelecionada = botao.dataset.categoria;
+    filtroCategoriaAnaliseCustos.querySelectorAll("[data-categoria]").forEach(item => {
+      item.setAttribute("aria-pressed", String(item.dataset.categoria === categoriaSelecionada));
+    });
+    atualizarDoInicio();
+  });
+
+  // "Ver lançamentos" filtra a lista de baixo pelo tipo e leva até ela.
+  tabelaAnaliseCustos.addEventListener("click", evento => {
+    const botao = evento.target.closest("button[data-tipo-chave]");
+    if (!botao) return;
+    filtroTipoAnaliseCustos.value = botao.dataset.tipoChave;
+    atualizarDoInicio();
+    secaoLancamentosCustos.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  botaoPaginaAnterior.addEventListener("click", () => {
+    paginaAtual -= 1;
     renderizarAnaliseCustos();
   });
-});
 
-[filtroTipoAnaliseCustos, filtroCategoriaAnaliseCustos, filtroOrigemAnaliseCustos, quantidadeAnaliseCustos].forEach(campo => {
-  campo?.addEventListener("change", renderizarAnaliseCustos);
-});
+  botaoPaginaProxima.addEventListener("click", () => {
+    paginaAtual += 1;
+    renderizarAnaliseCustos();
+  });
 
-tabelaAnaliseCustos?.addEventListener("click", evento => {
-  const botao = evento.target.closest("button[data-acao='alternar-detalhes']");
-
-  if (!botao) {
-    return;
-  }
-
-  const tipoChave = botao.dataset.tipoChave || "";
-  tipoExpandidoChave = tipoExpandidoChave === tipoChave ? null : tipoChave;
-  renderizarAnaliseCustos();
-});
-
-document.addEventListener("DOMContentLoaded", iniciarAnaliseCustos);
+  iniciarAnaliseCustos();
+}

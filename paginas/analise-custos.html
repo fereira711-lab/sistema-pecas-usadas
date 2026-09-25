@@ -3,156 +3,122 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Análise de Custos</title>
+  <title>Análises</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/base.css?v=16">
-  <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark cost-analysis-page">
-  <header class="page-header">
-    <div>
-      <h1>Análises</h1>
-      <p class="hero__description">Custos operacionais agrupados por tipo e período.</p>
-      <nav class="tabs" aria-label="Tipos de análise">
-        <a class="tabs__item" href="analise-produto.html">Por produto</a>
-        <a class="tabs__item" href="analise-periodo.html">Por período</a>
-        <a class="tabs__item" href="analise-custos.html" aria-current="page">Custos</a>
-        <a class="tabs__item" href="giro-estoque.html">Giro de estoque</a>
-      </nav>
-    </div>
-  </header>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <h1 class="page-head__title">Análises</h1>
+        <p class="page-head__subtitle">Custos lançados nas peças e nas vendas, por tipo.</p>
+        <nav class="tabs" aria-label="Tipos de análise">
+          <a class="tabs__item" href="analise-produto.html">Por produto</a>
+          <a class="tabs__item" href="analise-periodo.html">Por período</a>
+          <a class="tabs__item" href="analise-custos.html" aria-current="page">Custos</a>
+          <a class="tabs__item" href="giro-estoque.html">Giro de estoque</a>
+        </nav>
+      </div>
+    </header>
 
-  <main class="container stock-layout cost-analysis-layout">
-    <section id="analiseCustosShell" class="stock-card cost-analysis-shell">
-      <div class="stock-header cost-analysis-header">
-        <div>
-          <span class="piece-form-eyebrow">Financeiro de custos</span>
-          <h2>Custos por tipo</h2>
-          <p>Custos da peça e custos da venda organizados por tipo.</p>
+    <p id="mensagemAnaliseCustos" class="page-message" role="status"></p>
+
+    <section id="resumoAnaliseCustos" class="kpi-grid" aria-label="Resumo da análise de custos"></section>
+
+    <div class="toolbar">
+      <div class="toolbar__group">
+        <div class="search-field">
+          <label class="sr-only" for="buscaAnaliseCustos">Buscar custo</label>
+          <i class="ri-search-line search-field__icon" aria-hidden="true"></i>
+          <input id="buscaAnaliseCustos" class="input" type="search" placeholder="Buscar por tipo, peça, venda ou observação" autocomplete="off">
         </div>
-        <div class="form-actions">
-          <a class="button-secondary" href="cadastro-custo.html">Lançar custo</a>
+        <label class="sr-only" for="periodoRapidoAnaliseCustos">Período</label>
+        <select id="periodoRapidoAnaliseCustos" class="select">
+          <option value="todos">Todo o período</option>
+          <option value="mes">Mês atual</option>
+          <option value="hoje">Hoje</option>
+          <option value="7">Últimos 7 dias</option>
+          <option value="30">Últimos 30 dias</option>
+          <option value="personalizado">Personalizado</option>
+        </select>
+        <div class="filtro-periodo">
+          <label class="filtro-periodo__rotulo" for="dataInicialAnaliseCustos">De</label>
+          <input id="dataInicialAnaliseCustos" class="input filtro-periodo__data" type="date">
+          <label class="filtro-periodo__rotulo" for="dataFinalAnaliseCustos">até</label>
+          <input id="dataFinalAnaliseCustos" class="input filtro-periodo__data" type="date">
+        </div>
+        <label class="sr-only" for="filtroTipoAnaliseCustos">Tipo</label>
+        <select id="filtroTipoAnaliseCustos" class="select">
+          <option value="">Todos os tipos</option>
+        </select>
+      </div>
+      <div class="segmented" role="group" aria-label="Lançado em" id="filtroCategoriaAnaliseCustos">
+        <button type="button" class="segmented__item" data-categoria="" aria-pressed="true">Todos <span class="segmented__count" data-contagem="">0</span></button>
+        <button type="button" class="segmented__item" data-categoria="peca" aria-pressed="false">Na peça <span class="segmented__count" data-contagem="peca">0</span></button>
+        <button type="button" class="segmented__item" data-categoria="venda" aria-pressed="false">Na venda <span class="segmented__count" data-contagem="venda">0</span></button>
+      </div>
+    </div>
+
+    <section class="card card--flush" aria-labelledby="tituloTiposAnaliseCustos">
+      <div class="card__head">
+        <h2 class="card__title" id="tituloTiposAnaliseCustos">Por tipo</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive">
+          <thead>
+            <tr>
+              <th scope="col">Tipo</th>
+              <th scope="col" class="num">Lançamentos</th>
+              <th scope="col" class="num">Na peça</th>
+              <th scope="col" class="num">Na venda</th>
+              <th scope="col" class="num">Total</th>
+              <th scope="col" class="num">% do total</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody id="tabelaAnaliseCustos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card card--flush" id="secaoLancamentosCustos" aria-labelledby="tituloLancamentosCustos">
+      <div class="card__head">
+        <h2 class="card__title" id="tituloLancamentosCustos">Lançamentos</h2>
+        <span class="card__subtitle" id="contadorLancamentosCustos"></span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive">
+          <thead>
+            <tr>
+              <th scope="col">Data</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Lançado em</th>
+              <th scope="col">Observação</th>
+              <th scope="col" class="num">Valor</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaLancamentosCustos"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="paginacaoLancamentosCustos" hidden>
+        <span id="paginacaoTextoLancamentosCustos"></span>
+        <div class="pager__buttons">
+          <button type="button" class="btn btn--secondary btn--compact" id="paginaAnteriorLancamentosCustos">Anterior</button>
+          <button type="button" class="btn btn--secondary btn--compact" id="paginaProximaLancamentosCustos">Próxima</button>
         </div>
       </div>
-
-      <p id="mensagemAnaliseCustos" class="empty-message"></p>
-
-      <section class="products-toolbar cost-analysis-toolbar" aria-label="Busca e filtros da análise de custos">
-        <div class="products-main-controls operational-filter-main-controls">
-          <div class="form-group products-page-size-field">
-            <label for="quantidadeAnaliseCustos">Mostrar</label>
-            <select id="quantidadeAnaliseCustos">
-              <option value="12">12</option>
-              <option value="24">24</option>
-              <option value="48">48</option>
-            </select>
-          </div>
-
-          <div class="form-group products-search-field">
-            <label for="buscaAnaliseCustos">Buscar custo</label>
-            <input id="buscaAnaliseCustos" type="search" placeholder="Buscar por tipo, peça, SKU ou observação">
-          </div>
-
-          <button id="botaoAbrirFiltrosAnaliseCustos" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosAnaliseCustos" aria-expanded="false">
-            Filtros
-          </button>
-        </div>
-      </section>
-
-      <section id="resumoAnaliseCustos" class="summary-grid summary-grid--compact" aria-label="Resumo da análise de custos"></section>
-
-      <section class="cost-analysis-section" aria-labelledby="tituloRankingCustos">
-        <div class="stock-header cost-analysis-section__header">
-          <div>
-            <span class="piece-form-eyebrow">Tipos de custo</span>
-            <h2 id="tituloRankingCustos">Totais por tipo</h2>
-          </div>
-        </div>
-
-        <div class="cost-analysis-list" aria-label="Lista por tipo de custo">
-          <div class="cost-analysis-list__head" aria-hidden="true">
-            <span>Tipo de custo</span>
-            <span>Categoria</span>
-            <span>Qtd.</span>
-            <span>Total</span>
-            <span>% do total</span>
-            <span>Origem principal</span>
-            <span>Ações</span>
-          </div>
-          <div id="tabelaAnaliseCustos" class="cost-analysis-list__body"></div>
-        </div>
-      </section>
-
-      <aside id="painelFiltrosAnaliseCustos" class="products-filter-panel cost-analysis-filter-panel" aria-label="Filtros avançados da análise de custos">
-        <div class="products-filter-panel__header">
-          <h3>Filtros avançados</h3>
-          <button id="botaoFecharFiltrosAnaliseCustos" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
-        </div>
-
-        <div class="products-filters">
-          <div class="form-group">
-            <label for="periodoRapidoAnaliseCustos">Período</label>
-            <select id="periodoRapidoAnaliseCustos">
-              <option value="todos">Todo período</option>
-              <option value="mes">Mês atual</option>
-              <option value="hoje">Hoje</option>
-              <option value="7">Últimos 7 dias</option>
-              <option value="30">Últimos 30 dias</option>
-              <option value="personalizado">Personalizado</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="dataInicialAnaliseCustos">Data inicial</label>
-            <input id="dataInicialAnaliseCustos" type="date">
-          </div>
-
-          <div class="form-group">
-            <label for="dataFinalAnaliseCustos">Data final</label>
-            <input id="dataFinalAnaliseCustos" type="date">
-          </div>
-
-          <div class="form-group">
-            <label for="filtroTipoAnaliseCustos">Tipo de custo</label>
-            <select id="filtroTipoAnaliseCustos">
-              <option value="">Todos</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="filtroCategoriaAnaliseCustos">Categoria</label>
-            <select id="filtroCategoriaAnaliseCustos">
-              <option value="">Ambos</option>
-              <option value="peca">Peça</option>
-              <option value="venda">Venda</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="filtroOrigemAnaliseCustos">Origem do custo</label>
-            <select id="filtroOrigemAnaliseCustos">
-              <option value="">Todos</option>
-              <option value="peca">Custo da peça</option>
-              <option value="venda">Custo da venda</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="products-filter-panel__actions">
-          <button id="botaoLimparFiltrosAnaliseCustos" class="button-secondary" type="button">Limpar filtros</button>
-          <button id="botaoAplicarFiltrosAnaliseCustos" class="button-primary" type="button">Aplicar/Fechar</button>
-        </div>
-      </aside>
     </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
+  <script src="../js/moeda-utils.js?v=2"></script>
   <script src="../js/supabase-service.js?v=36"></script>
-  <script src="../js/analise-custos.js?v=5"></script>
+  <script src="../js/analise-custos.js?v=8"></script>
   <script src="../js/sidebar.js?v=9"></script>
 </body>
 </html>

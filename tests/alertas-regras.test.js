@@ -182,3 +182,60 @@ test("Tela Alertas: um grupo por tipo, uma linha por ocorrencia, com acao e busc
   assert.equal(tela.montarTitulo({ ...filtrado, total: 6 }, filtrado.linhas.length), "1 de 6 vendas com prejuízo");
   assert.equal(tela.filtrarGrupos(grupos, "radiador", "danger").length, 0);
 });
+
+// Giro de estoque (Análises): Girando até 30 dias, Lento de 31 a 90, Parado acima de 90,
+// pela última venda ou, sem venda desde a entrada, pela entrada mais antiga com saldo.
+test("Giro: faixas de 30 e 90 dias contadas da entrada quando a peca nao vendeu", () => {
+  const classificar = dataEntrada => alertasRegras.classificarGiroPecas({
+    pecas: [{ id: 1 }],
+    entradasEstoque: [{ id: 10, pecaId: 1, quantidadeTotal: 1, quantidadeConsumida: 0, dataEntrada }],
+    vendas: []
+  }, HOJE)[0];
+
+  assert.deepEqual([classificar("2026-08-25").chave, classificar("2026-08-25").dias], ["girando", 30]);
+  assert.deepEqual([classificar("2026-08-24").chave, classificar("2026-08-24").dias], ["lento", 31]);
+  assert.equal(classificar("2026-06-26").chave, "lento");
+  assert.deepEqual([classificar("2026-06-25").chave, classificar("2026-06-25").dias], ["parado", 91]);
+});
+
+test("Giro: venda depois da entrada conta a partir da venda; sem saldo e Sem estoque", () => {
+  const giro = alertasRegras.classificarGiroPecas({
+    pecas: [{ id: 1 }, { id: 2 }, { id: 3 }],
+    entradasEstoque: [
+      { id: 10, pecaId: 1, quantidadeTotal: 3, quantidadeConsumida: 1, dataEntrada: "2026-01-10" },
+      { id: 20, pecaId: 2, quantidadeTotal: 2, quantidadeConsumida: 1, dataEntrada: "2026-01-10" },
+      { id: 30, pecaId: 3, quantidadeTotal: 1, quantidadeConsumida: 1, dataEntrada: "2026-01-10" }
+    ],
+    vendas: [
+      { id: 5, pecaId: 1, dataVenda: "2026-09-10" },
+      { id: 6, pecaId: 2, dataVenda: "2026-07-01" },
+      { id: 7, pecaId: 3, dataVenda: "2026-02-01" }
+    ]
+  }, HOJE);
+
+  assert.deepEqual(Array.from(giro, item => [item.chave, item.dias, item.ultimaVenda]), [
+    ["girando", 14, "2026-09-10"],
+    ["lento", 85, "2026-07-01"],
+    ["sem-estoque", 235, "2026-02-01"]
+  ]);
+});
+
+test("Giro: peca Parada no giro e a mesma peca parada dos Alertas (1 unidade por entrada)", () => {
+  const dados = {
+    pecas: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+    entradasEstoque: [
+      { id: 10, pecaId: 1, quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 50, dataEntrada: "2026-04-01" },
+      { id: 20, pecaId: 2, quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 50, dataEntrada: "2026-08-01" },
+      { id: 30, pecaId: 3, quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 50, dataEntrada: "2026-05-01" },
+      { id: 31, pecaId: 3, quantidadeTotal: 1, quantidadeConsumida: 1, custoUnitario: 50, dataEntrada: "2026-03-01" },
+      { id: 40, pecaId: 4, quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 50, dataEntrada: "2026-09-20" }
+    ],
+    vendas: [{ id: 8, pecaId: 3, dataVenda: "2026-03-15" }]
+  };
+  const paradasGiro = Array.from(alertasRegras.classificarGiroPecas(dados, HOJE))
+    .filter(item => item.chave === "parado").map(item => item.peca.id);
+  const paradasAlertas = Array.from(alertasRegras.calcularPecasParadas(dados, HOJE), item => item.peca.id);
+
+  assert.deepEqual(paradasGiro, [1, 3]);
+  assert.deepEqual(paradasGiro, paradasAlertas);
+});
