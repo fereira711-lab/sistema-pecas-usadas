@@ -2,7 +2,8 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const root = __dirname;
+// Pasta servida: a do projeto ou, com "node dev-server.js dist", a pasta de publicação.
+const root = path.resolve(__dirname, process.argv[2] || ".");
 const port = Number(process.env.PORT || 8080);
 
 const tipos = {

@@ -20,3 +20,5 @@ backups/
 # configuracao local do Supabase
 js/supabaseconfig.js
 
+# build de publicacao (Netlify)
+dist/

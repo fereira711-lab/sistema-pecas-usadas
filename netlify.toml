@@ -1,0 +1,19 @@
+# Publicação no Netlify: o build copia para dist/ só o que o navegador precisa.
+[build]
+  command = "node scripts/build.js"
+  publish = "dist"
+
+# "/" abre o Painel (sem sessão, o auth.js leva para o Login e volta ao Painel depois).
+# force = true porque existe index.html em "/" e o Netlify daria preferência a ele.
+[[redirects]]
+  from = "/"
+  to = "/painel.html"
+  status = 302
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

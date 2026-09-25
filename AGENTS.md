@@ -113,6 +113,12 @@ Decisoes de 2026-09-24:
 - Regras de atencao do redesenho (secao 8 da especificacao) ficam em `js/alertas-regras.js` (funcoes puras): peca parada ha mais de 90 dias sem venda desde a entrada, venda sem custo calculado, venda com prejuizo, origem com valor a distribuir e distribuicao acima do pago. Na Fase 4 entrou tambem "preco abaixo do custo" (peca com saldo cujo preco cadastrado e menor que o custo da proxima unidade a sair; peca sem preco nao entra).
 - Compatibilidade da peca: coluna `pecas.compatibilidade` (texto livre, opcional), migration `sql/14_compatibilidade_pecas.sql`, adiantada da Fase 5 para o conjunto de demonstracao. Ja entra na busca de Produtos; o campo no cadastro/edicao vem na Fase 5. Quantidade 1 e peca recem-cadastrada sem venda nao sao alerta.
 
+## Publicacao (Netlify)
+
+- Preparada em 2026-09-25, ainda nao publicada. `netlify.toml`: build `node scripts/build.js`, publica a pasta `dist/` (fora do Git), "/" abre `/painel.html` e cabecalhos X-Frame-Options DENY, X-Content-Type-Options nosniff e Referrer-Policy strict-origin-when-cross-origin.
+- `scripts/build.js` (sem dependencias) copia so `index.html`, `painel.html`, `paginas/`, `css/` e `js/` (menos `css/mapa-mental.css`, que so a documentacao usa). Falha se aparecer arquivo proibido (.md, .sql, .bat, .ps1, .log, .env, backup...) ou se uma pagina apontar para arquivo que nao foi copiado. Tela nova ou arquivo novo fora dessas pastas precisa entrar na lista do script.
+- Testar a publicacao localmente: `node scripts/build.js` e `node dev-server.js dist`.
+
 ## Integracoes futuras
 
 - Mercado Livre (anunciar peca direto do ERP, inclusive a partir do alerta de peca parada) fica para DEPOIS de o sistema de controle estar concluido e em uso real. Nao implementar agora: nem conexao, nem botao "Anunciar". Nenhum aviso de funcao futura aparece para o cliente: o card "Anúncio no marketplace" de Detalhes do produto saiu em 2026-09-25 (decisao de 2026-09-24 registrada tambem em `_base-ia/05-projetos/sistema-pecas-usadas.md`).
