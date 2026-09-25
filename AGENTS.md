@@ -119,12 +119,12 @@ Decisoes de 2026-09-24:
 - `netlify.toml`: build `node scripts/build.js`, publica a pasta `dist/` (fora do Git), "/" abre `/painel.html` e cabecalhos X-Frame-Options DENY, X-Content-Type-Options nosniff e Referrer-Policy strict-origin-when-cross-origin.
 - `scripts/build.js` (sem dependencias) copia so `index.html`, `painel.html`, `paginas/`, `css/` e `js/` (menos `css/mapa-mental.css`, que so a documentacao usa). Falha se aparecer arquivo proibido (.md, .sql, .bat, .ps1, .log, .env, backup...) ou se uma pagina apontar para arquivo que nao foi copiado. Tela nova ou arquivo novo fora dessas pastas precisa entrar na lista do script.
 - Testar a publicacao localmente: `node scripts/build.js` e `node dev-server.js dist`.
+- Uso real comecou em 2026-09-25: backup antes (tarefa agendada, codigo 0) e demonstracao removida do banco de producao por `scripts\demo-apagar.bat` (3 origens, 27 pecas, 27 entradas, 12 vendas). Banco sem origem, peca, entrada, venda nem custo; os 7 tipos de custo ficaram (5 ativos). A demonstracao pode ser recriada com `scripts\demo-carregar.bat`, mas agora cairia no meio dos dados reais: so com pedido de Rafael.
 - Pendencias depois da publicacao:
-  - dados de demonstracao ainda estao no banco de producao (3 origens `[DEMO]`, 27 pecas `DM-`, 12 vendas): o site publicado mostra esses dados; apagar com `scripts\demo-apagar.bat` antes do uso real (decisao de Rafael sobre quando);
   - e-mail de recuperacao de senha usa o SMTP padrao do Supabase (limite baixo de envios por hora); para uso real, configurar SMTP proprio em Authentication > SMTP Settings;
   - repositorio `fereira711-lab/sistema-pecas-usadas` e publico (sem segredo versionado, mas expoe `sql/`, documentacao e o endereco do projeto Supabase); decidir se fica privado (o Netlify funciona igual);
   - bucket Storage `pecas` com 64 imagens orfas da simulacao (15,43 MB), remocao por Rafael pelo painel do Supabase;
-  - revisar os tipos de custo `Embalagem 2` e `Rafael`, que parecem cadastros de teste;
+  - tipos de custo `Embalagem 2` e `Rafael` (cadastros de teste) ja estao inativos; excluir de vez so se Rafael quiser (a tela nao exclui);
   - riscos que continuam: backups diarios so nesta maquina e sem as imagens do Storage; projeto Supabase pode pausar por inatividade; RPCs `criar_peca_com_entrada` e `registrar_venda_fifo` sem teste automatizado.
 
 ## Integracoes futuras
@@ -144,6 +144,7 @@ Decisoes de 2026-09-24:
 - Marcacao: origens com `observacoes` comecando com `[DEMO]` e pecas com SKU `DM-`. O apagar remove so esses registros (e o que estiver ligado as pecas deles) e para sem apagar nada se a marcacao nao bater.
 - As vendas passam por `registrar_venda_fifo` com `p_custos`, o mesmo caminho da tela. Os custos de peca entram em `custos_peca` com os mesmos campos que a tela Custo de peca grava.
 - Usar esse conjunto em todas as conferencias das proximas fases, em vez de criar dados avulsos.
+- Desde 2026-09-25 (inicio do uso real) a demonstracao NAO esta no banco. Nao carregar de novo sem pedido de Rafael: o banco agora tem dados reais.
 
 ## Banco de dados e Supabase
 
