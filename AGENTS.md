@@ -114,7 +114,7 @@ Decisoes de 2026-09-24:
 
 ## Integracoes futuras
 
-- Mercado Livre (anunciar peca direto do ERP, inclusive a partir do alerta de peca parada) fica para DEPOIS de o sistema de controle estar concluido e em uso real. Nao implementar agora: nem conexao, nem botao "Anunciar". A area de marketplace em Detalhes do produto continua so visual (decisao de 2026-09-24, registrada tambem em `_base-ia/05-projetos/sistema-pecas-usadas.md`).
+- Mercado Livre (anunciar peca direto do ERP, inclusive a partir do alerta de peca parada) fica para DEPOIS de o sistema de controle estar concluido e em uso real. Nao implementar agora: nem conexao, nem botao "Anunciar". Nenhum aviso de funcao futura aparece para o cliente: o card "Anúncio no marketplace" de Detalhes do produto saiu em 2026-09-25 (decisao de 2026-09-24 registrada tambem em `_base-ia/05-projetos/sistema-pecas-usadas.md`).
 
 ## Ideias futuras (nao implementar sem pedido)
 
@@ -242,7 +242,6 @@ Scripts criticos:
 - Entradas de estoque: `Nova entrada` abre o formulario dentro do card (origem, quantidade, custo unitario, data padrao hoje); tabela com Data, Origem (link), Qtd., Consumida, Saldo, Custo unitario, Valor atribuido, `Editar` e `Excluir` (travados quando a entrada ja foi consumida por venda).
 - Custos da peca: link `Lançar custo` (abre `cadastro-custo.html?pecaId=`); tabela com Data, Tipo, Descricao (e observacao), Valor, `Editar` (formulario no card) e `Excluir`.
 - Vendas: Data, Canal, Qtd., Valor, Lucro da venda (`financeiro-utils.calcularLucroVenda`; `Custo não calculado` sem consumo) e `Ver venda`.
-- Anuncio no marketplace: so um aviso de que a integracao com o Mercado Livre vem depois (sem conexao, sem botao).
 - Aceita `?editar=1` (abre a edicao; com `&campo=preco` o foco vai para o preco) e `#excluir` (usado pelo menu de Produtos: inicia a exclusao, com as mesmas travas e a confirmacao).
 - Exclusao da peca: so sem venda, custo ou consumo; se ainda houver entrada sem consumo, pede para excluir as entradas antes.
 - Registros sao ligados a peca so pelo id (o vinculo antigo por nome/SKU misturava pecas com o mesmo nome). Sairam o modo `localStorage`, a lista local de tipos de custo e o campo "Observação" da nova entrada (nao era gravado).

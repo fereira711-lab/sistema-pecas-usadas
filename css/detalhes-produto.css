@@ -151,10 +151,3 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
-
-/* ---- Marketplace (só visual, integração depois) ---- */
-
-.peca-marketplace__texto {
-  font-size: var(--fs-label);
-  color: var(--text-muted);
-}
