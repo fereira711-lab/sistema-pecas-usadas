@@ -3,182 +3,143 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custo de peca</title>
+  <title>Custo de peça</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/base.css?v=16">
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/custo-peca.css?v=1">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark cost-cadastro-page">
-  <header class="page-header">
-    <div>
-      <p class="hero__tag">Custos operacionais</p>
-      <h1>Custo de peca</h1>
-      <p class="hero__description">
-        Lance, edite e acompanhe custos operacionais vinculados a peca.
-      </p>
-    </div>
-  </header>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <a class="page-head__back" id="linkVoltarCusto" href="produtos.html"><i class="ri-arrow-left-s-line" aria-hidden="true"></i><span id="textoVoltarCusto">Produtos</span></a>
+        <h1 class="page-head__title">Lançar custo</h1>
+        <p class="page-head__subtitle">Limpeza, pintura, conserto e outros gastos com a peça.</p>
+      </div>
+    </header>
 
-  <main class="container stock-layout cost-form-layout cost-operational-flow">
-    <section class="form-card cost-form-shell">
-      <div class="piece-form-top">
-        <div>
-          <span class="piece-form-eyebrow">Cadastro operacional</span>
-          <h2>Custo de peca</h2>
-        </div>
+    <p id="mensagemCusto" class="page-message" role="status" aria-live="polite"></p>
+
+    <form id="formCusto" class="form-layout" novalidate>
+      <div class="form-stack">
+        <section class="card" aria-labelledby="tituloPecaCusto">
+          <h2 class="card__title" id="tituloPecaCusto">Peça</h2>
+          <div class="field custo-busca" id="campoBuscaPecaCusto">
+            <label class="sr-only" for="buscaPecaCusto">Buscar peça</label>
+            <div class="search-field custo-busca__campo">
+              <i class="ri-search-line search-field__icon" aria-hidden="true"></i>
+              <input id="buscaPecaCusto" class="input" type="search" placeholder="Buscar por SKU, nome, compatibilidade ou origem" autocomplete="off"
+                role="combobox" aria-expanded="false" aria-controls="sugestoesPecaCusto" aria-autocomplete="list">
+            </div>
+            <div id="sugestoesPecaCusto" class="custo-busca__lista" role="listbox" aria-label="Peças encontradas" hidden></div>
+          </div>
+          <div id="cartaoPecaCusto" class="custo-peca" hidden></div>
+        </section>
+
+        <section class="card" aria-labelledby="tituloDadosCusto">
+          <div class="card__head">
+            <h2 class="card__title" id="tituloDadosCusto">Custo</h2>
+            <a class="card__link" href="tipos-custo.html">Gerenciar tipos</a>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label class="field__label" for="tipoCusto">Tipo</label>
+              <select id="tipoCusto" class="select" required></select>
+            </div>
+            <div class="field">
+              <label class="field__label" for="valorCusto">Valor</label>
+              <input id="valorCusto" class="input" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" required>
+            </div>
+            <div class="field">
+              <label class="field__label" for="dataCusto">Data</label>
+              <input id="dataCusto" class="input" type="date" required>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="descricaoCusto">Descrição</label>
+            <input id="descricaoCusto" class="input" type="text" placeholder="Ex.: Solda na base do farol" autocomplete="off" required>
+          </div>
+          <div class="field">
+            <label class="field__label" for="observacoesCusto">Observação <span class="field__optional">(opcional)</span></label>
+            <input id="observacoesCusto" class="input" type="text" autocomplete="off">
+          </div>
+        </section>
       </div>
 
-      <form id="formCusto">
-        <div class="piece-form-sections">
-          <section class="form-section cost-section">
-            <div class="form-section__header">
-              <div>
-                <h3>Buscar peca</h3>
-              </div>
-            </div>
-
-            <div class="form-fields">
-              <div class="form-group field-span-12">
-                <label for="buscaPecaCusto">Buscar por SKU ou nome</label>
-                <input id="buscaPecaCusto" type="search" placeholder="Pesquisar peca por nome ou SKU">
-                <input id="produtoCusto" name="produtoCusto" type="hidden" required>
-                <div id="sugestoesPecaCusto" class="autocomplete-list" role="listbox"></div>
-              </div>
-            </div>
-          </section>
-
-          <section class="form-section cost-section">
-            <div class="form-section__header">
-              <div>
-                <h3>Dados da peca selecionada</h3>
-              </div>
-            </div>
-
-            <section id="resumoProdutoCusto" class="summary-grid summary-grid--compact cost-summary-grid" aria-label="Resumo operacional da peca"></section>
-          </section>
-
-          <section class="form-section cost-section">
-            <div class="form-section__header">
-              <div>
-                <h3>Novo custo</h3>
-              </div>
-            </div>
-
-            <div class="form-fields">
-              <div class="form-group field-span-6">
-                <label for="tipoCusto">Tipo de custo</label>
-                <select id="tipoCusto" name="tipoCusto" required></select>
-                <div class="field-actions">
-                  <button id="botaoNovoTipoCusto" type="button" class="button-secondary button-compact">+ Novo tipo</button>
-                </div>
-              </div>
-
-              <div class="form-group field-span-6">
-                <label for="dataCusto">Data do custo</label>
-                <input id="dataCusto" name="dataCusto" type="date" required>
-              </div>
-
-              <div class="form-group field-span-8">
-                <label for="descricaoCusto">Descricao</label>
-                <input id="descricaoCusto" name="descricaoCusto" type="text" placeholder="Ex.: Solda na base do farol" required>
-              </div>
-
-              <div class="form-group field-span-4">
-                <label for="valorCusto">Valor</label>
-                <input id="valorCusto" name="valorCusto" type="number" min="0" step="0.01" placeholder="0,00" required>
-              </div>
-
-              <div class="form-group field-span-12">
-                <label for="observacoesCusto">Observacoes</label>
-                <textarea id="observacoesCusto" name="observacoesCusto" rows="2" placeholder="Ex.: Custo de preparo antes da venda"></textarea>
-              </div>
-            </div>
-
-            <p id="mensagemCusto" class="form-message" aria-live="polite"></p>
-
-            <div class="form-actions cost-form-actions">
-              <button id="botaoSalvarCusto" type="submit" class="button-primary">Salvar custo</button>
-              <button id="botaoCancelarEdicaoCusto" type="button" class="button-secondary" hidden>Cancelar edicao</button>
-            </div>
-          </section>
+      <aside class="card summary-side" aria-labelledby="tituloResumoCusto">
+        <h2 class="card__title" id="tituloResumoCusto">Custos da peça</h2>
+        <div class="summary-side__rows">
+          <div class="summary-side__row"><span class="summary-side__label">Peça</span><span class="summary-side__value" id="resumoPecaCusto">—</span></div>
+          <div class="summary-side__row"><span class="summary-side__label" id="rotuloJaLancados">Já lançados</span><span class="summary-side__value" id="resumoJaLancados">—</span></div>
+          <div class="summary-side__row"><span class="summary-side__label" id="rotuloEsteCusto">Este custo</span><span class="summary-side__value" id="resumoEsteCusto">—</span></div>
         </div>
-      </form>
-    </section>
-
-    <section class="stock-card section-spaced cost-list-shell">
-      <div class="stock-header cost-list-header">
-        <div>
-          <span class="piece-form-eyebrow">Historico</span>
-          <h2>Custos cadastrados</h2>
+        <div class="summary-side__result summary-side__result--neutral">
+          <span>Total de custos da peça</span><span id="resumoTotalCustos">—</span>
         </div>
-      </div>
-
-      <section class="products-toolbar operational-filter-toolbar" aria-label="Busca e filtros de custos cadastrados">
-        <div class="products-main-controls operational-filter-main-controls">
-          <div class="form-group products-search-field">
-            <label for="buscaCustosLista">Buscar custo</label>
-            <input id="buscaCustosLista" type="search" placeholder="Buscar por SKU, peca ou descricao">
-          </div>
-
-          <button id="botaoAbrirFiltrosCustos" class="button-secondary products-filter-toggle" type="button" aria-controls="painelFiltrosCustos" aria-expanded="false">
-            Filtros
-          </button>
-        </div>
-      </section>
-
-      <p id="mensagemListaCustos" class="empty-message"></p>
-
-      <aside id="painelFiltrosCustos" class="products-filter-panel" aria-label="Filtros avancados de custos">
-        <div class="products-filter-panel__header">
-          <h3>Filtros avancados</h3>
-          <button id="botaoFecharFiltrosCustos" class="products-filter-close" type="button" aria-label="Fechar filtros">X</button>
-        </div>
-
-        <div class="products-filters">
-          <div class="form-group">
-            <label for="dataInicialCustos">Data inicial</label>
-            <input id="dataInicialCustos" type="date">
-          </div>
-
-          <div class="form-group">
-            <label for="dataFinalCustos">Data final</label>
-            <input id="dataFinalCustos" type="date">
-          </div>
-
-          <div class="form-group">
-            <label for="filtroTipoCustoLista">Tipo</label>
-            <select id="filtroTipoCustoLista">
-              <option value="">Todos</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="products-filter-panel__actions">
-          <button id="botaoLimparFiltrosCustos" class="button-secondary" type="button">Limpar filtros</button>
-          <button id="botaoAplicarFiltrosCustos" class="button-primary" type="button">Aplicar/Fechar</button>
+        <div class="custo__acoes">
+          <button type="submit" id="botaoSalvarCusto" class="btn btn--primary">Salvar custo</button>
+          <button type="button" id="botaoCancelarCusto" class="btn btn--quiet">Cancelar</button>
         </div>
       </aside>
+    </form>
 
-      <div class="cost-lines-wrapper">
-        <div class="cost-lines-head" aria-hidden="true">
-          <span>Data</span>
-          <span>Tipo</span>
-          <span>Valor</span>
-          <span>Observacao</span>
-          <span>Acoes</span>
+    <section class="card card--flush" aria-labelledby="tituloListaCustos">
+      <div class="card__head">
+        <h2 class="card__title" id="tituloListaCustos">Custos lançados</h2>
+        <span class="card__subtitle" id="contadorCustos"></span>
+      </div>
+      <div class="toolbar custo-lista__filtros">
+        <div class="toolbar__group">
+          <div class="search-field">
+            <label class="sr-only" for="buscaCustosLista">Buscar custo</label>
+            <i class="ri-search-line search-field__icon" aria-hidden="true"></i>
+            <input id="buscaCustosLista" class="input" type="search" placeholder="Buscar por SKU, peça, tipo ou descrição" autocomplete="off">
+          </div>
+          <label class="sr-only" for="filtroTipoCustoLista">Tipo</label>
+          <select id="filtroTipoCustoLista" class="select">
+            <option value="">Todos os tipos</option>
+          </select>
         </div>
-        <div id="tabelaCustos" class="cost-lines-list" aria-label="Custos cadastrados"></div>
+        <div class="filtro-periodo">
+          <label class="filtro-periodo__rotulo" for="dataInicialCustos">De</label>
+          <input id="dataInicialCustos" class="input filtro-periodo__data" type="date">
+          <label class="filtro-periodo__rotulo" for="dataFinalCustos">até</label>
+          <input id="dataFinalCustos" class="input filtro-periodo__data" type="date">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive">
+          <thead>
+            <tr>
+              <th scope="col">Data</th>
+              <th scope="col">Peça</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Descrição</th>
+              <th scope="col" class="num">Valor</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody id="tabelaCustos"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="paginacaoCustos" hidden>
+        <span id="paginacaoTextoCustos"></span>
+        <div class="pager__buttons">
+          <button type="button" class="btn btn--secondary btn--compact" id="paginaAnteriorCustos">Anterior</button>
+          <button type="button" class="btn btn--secondary btn--compact" id="paginaProximaCustos">Próxima</button>
+        </div>
       </div>
     </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../js/supabase-config.js?v=4"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
+  <script src="../js/moeda-utils.js?v=2"></script>
   <script src="../js/supabase-service.js?v=36"></script>
-  <script src="../js/custos.js?v=20"></script>
+  <script src="../js/custos.js?v=21"></script>
   <script src="../js/sidebar.js?v=9"></script>
 </body>
 </html>

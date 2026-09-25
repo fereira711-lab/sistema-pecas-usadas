@@ -1,986 +1,653 @@
-const formularioCusto = document.getElementById("formCusto");
-const selectProdutoCusto = document.getElementById("produtoCusto");
-const resumoProdutoCusto = document.getElementById("resumoProdutoCusto");
-const tabelaCustos = document.getElementById("tabelaCustos");
+// Custo de peça (redesenho): lança, edita e exclui custos ligados a uma peça (limpeza, pintura, conserto...).
+// Os custos entram no lucro das vendas e no resultado da origem pelo financeiro-utils; esta tela não calcula resultado.
+const ITENS_POR_PAGINA = 20;
+const MAXIMO_SUGESTOES = 8;
+const TIPO_LEGADO = "legado";
+
+const formCusto = document.getElementById("formCusto");
 const mensagemCusto = document.getElementById("mensagemCusto");
-const mensagemListaCustos = document.getElementById("mensagemListaCustos");
-const campoBuscaPecaCusto = document.getElementById("buscaPecaCusto");
+const linkVoltarCusto = document.getElementById("linkVoltarCusto");
+const textoVoltarCusto = document.getElementById("textoVoltarCusto");
+const campoBuscaPeca = document.getElementById("campoBuscaPecaCusto");
+const buscaPecaCusto = document.getElementById("buscaPecaCusto");
 const sugestoesPecaCusto = document.getElementById("sugestoesPecaCusto");
+const cartaoPecaCusto = document.getElementById("cartaoPecaCusto");
 const selectTipoCusto = document.getElementById("tipoCusto");
-const botaoNovoTipoCusto = document.getElementById("botaoNovoTipoCusto");
+const campoValorCusto = document.getElementById("valorCusto");
+const campoDataCusto = document.getElementById("dataCusto");
+const campoDescricaoCusto = document.getElementById("descricaoCusto");
+const campoObservacoesCusto = document.getElementById("observacoesCusto");
 const botaoSalvarCusto = document.getElementById("botaoSalvarCusto");
-const botaoCancelarEdicaoCusto = document.getElementById("botaoCancelarEdicaoCusto");
-const campoBuscaCustosLista = document.getElementById("buscaCustosLista");
+const botaoCancelarCusto = document.getElementById("botaoCancelarCusto");
+const resumoPecaCusto = document.getElementById("resumoPecaCusto");
+const rotuloJaLancados = document.getElementById("rotuloJaLancados");
+const resumoJaLancados = document.getElementById("resumoJaLancados");
+const rotuloEsteCusto = document.getElementById("rotuloEsteCusto");
+const resumoEsteCusto = document.getElementById("resumoEsteCusto");
+const resumoTotalCustos = document.getElementById("resumoTotalCustos");
+const contadorCustos = document.getElementById("contadorCustos");
+const buscaCustosLista = document.getElementById("buscaCustosLista");
+const filtroTipoCustoLista = document.getElementById("filtroTipoCustoLista");
 const dataInicialCustos = document.getElementById("dataInicialCustos");
 const dataFinalCustos = document.getElementById("dataFinalCustos");
-const filtroTipoCustoLista = document.getElementById("filtroTipoCustoLista");
-const shellCustos = document.querySelector(".cost-list-shell");
-const botaoAbrirFiltrosCustos = document.getElementById("botaoAbrirFiltrosCustos");
-const botaoFecharFiltrosCustos = document.getElementById("botaoFecharFiltrosCustos");
-const botaoLimparFiltrosCustos = document.getElementById("botaoLimparFiltrosCustos");
-const botaoAplicarFiltrosCustos = document.getElementById("botaoAplicarFiltrosCustos");
-let produtosCustoCarregados = [];
-let custosCustoCarregados = [];
-let origensCustoCarregadas = [];
-let tiposCustoCarregados = [];
-let sugestoesCustoAtuais = [];
-let indiceSugestaoCusto = -1;
-let custoEmEdicaoId = null;
-let custoExclusaoPendenteId = null;
-const tiposCustoPadrao = ["Limpeza", "Solda", "Pintura", "Conserto", "Preparo"];
-const categoriasTipoCusto = ["peca", "venda", "ambos"];
+const tabelaCustos = document.getElementById("tabelaCustos");
+const paginacaoCustos = document.getElementById("paginacaoCustos");
+const paginacaoTextoCustos = document.getElementById("paginacaoTextoCustos");
+const botaoPaginaAnterior = document.getElementById("paginaAnteriorCustos");
+const botaoPaginaProxima = document.getElementById("paginaProximaCustos");
 
-function supabaseEstaConfigurado() {
-  return window.supabaseService && window.supabaseService.estaConfigurado();
+let pecasCusto = [];
+let origensCusto = [];
+let entradasCusto = [];
+let custosCusto = [];
+let tiposCusto = [];
+let pecaSelecionada = null;
+let custoEmEdicao = null;
+let sugestoesAtuais = [];
+let indiceSugestao = -1;
+let paginaAtual = 1;
+
+// ---- Formatação ----
+
+function escaparHtml(valor) {
+  return String(valor ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-function buscarProdutos() {
-  return JSON.parse(localStorage.getItem("produtos")) || [];
-}
-
-function salvarProdutos(produtos) {
-  localStorage.setItem("produtos", JSON.stringify(produtos));
-}
-
-function obterPecaIdDaUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const pecaId = Number(params.get("pecaId"));
-
-  return pecaId || null;
-}
-
-function formatarNomePeca(peca) {
-  const nome = peca.nome || peca.nome_peca || peca.nomePeca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
-  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
-
-  return sku ? `${sku} - ${nome}` : nome;
-}
-
-function escaparHtml(texto) {
-  return String(texto || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function escaparRegex(texto) {
-  return String(texto || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function destacarBusca(texto) {
-  const termo = String(campoBuscaPecaCusto?.value || "").trim();
-  const textoSeguro = escaparHtml(texto);
-
-  if (!termo) {
-    return textoSeguro;
-  }
-
-  return textoSeguro.replace(new RegExp(`(${escaparRegex(termo)})`, "gi"), "<mark>$1</mark>");
-}
-
-// Mantém o nome como foi digitado: só tira espaços das pontas e duplicados.
-function padronizarNomeTipoCusto(nome) {
-  return String(nome || "").trim().replace(/\s+/g, " ");
-}
-
-// Comparação sem diferenciar maiúsculas, acentos e espaços extras.
-function normalizarNomeTipoCusto(nome) {
-  return padronizarNomeTipoCusto(nome)
+function normalizarTexto(valor) {
+  return String(valor || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+    .toLowerCase()
+    .trim();
+}
+
+function formatarMoeda(valor) {
+  if (window.moedaUtils?.formatarMoedaBR) return window.moedaUtils.formatarMoedaBR(Number(valor || 0));
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function lerMoeda(texto) {
+  const valor = String(texto || "").trim();
+  if (!valor) return null;
+  const numero = window.moedaUtils?.parseMoedaBR ? window.moedaUtils.parseMoedaBR(valor) : Number(valor.replace(",", "."));
+  return Number.isFinite(numero) ? numero : NaN;
+}
+
+function formatarData(data) {
+  const [ano, mes, dia] = String(data || "").slice(0, 10).split("-");
+  return ano && mes && dia ? `${dia}/${mes}/${ano}` : "—";
 }
 
 function obterDataLocalHoje() {
   const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-  const dia = String(hoje.getDate()).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
+  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 }
 
-function preencherDataCustoPadrao() {
-  const campoDataCusto = document.getElementById("dataCusto");
-
-  if (campoDataCusto && !campoDataCusto.value) {
-    campoDataCusto.value = obterDataLocalHoje();
-  }
+function mostrarMensagem(html, sucesso = false) {
+  mensagemCusto.innerHTML = html;
+  mensagemCusto.classList.toggle("page-message--success", sucesso);
 }
 
-function buscarTiposCustoLocais() {
-  const tipos = JSON.parse(localStorage.getItem("tiposCusto")) || [];
+// ---- Dados da peça ----
 
-  if (tipos.length > 0) {
-    return tipos;
-  }
-
-  return tiposCustoPadrao.map((nome, indice) => ({
-    id: `local-${indice + 1}`,
-    nome,
-    categoria: "peca",
-    ativo: true
-  }));
+function calcularSaldo(pecaId) {
+  return entradasCusto
+    .filter(entrada => Number(entrada.pecaId) === Number(pecaId))
+    .reduce((total, entrada) => total + Math.max(0, Number(entrada.quantidadeTotal || 0) - Number(entrada.quantidadeConsumida || 0)), 0);
 }
 
-function salvarTiposCustoLocais(tipos) {
-  localStorage.setItem("tiposCusto", JSON.stringify(tipos));
+function obterOrigem(peca) {
+  return origensCusto.find(origem => Number(origem.id) === Number(peca?.origemId)) || null;
 }
 
-function renderizarTiposCusto(tipoSelecionado = "") {
-  const valorSelecionado = tipoSelecionado || selectTipoCusto.value;
-  let encontrouSelecionado = !valorSelecionado;
-
-  selectTipoCusto.innerHTML = '<option value="">Selecione o tipo</option>';
-
-  tiposCustoCarregados
-    .filter(tipo => tipo.ativo !== false && ["peca", "ambos"].includes(tipo.categoria || "ambos"))
-    .sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"))
-    .forEach(tipo => {
-      const opcao = document.createElement("option");
-      opcao.value = tipo.nome;
-      opcao.textContent = tipo.nome;
-      opcao.dataset.tipoId = tipo.id;
-      selectTipoCusto.appendChild(opcao);
-      encontrouSelecionado = encontrouSelecionado || tipo.nome === valorSelecionado;
-    });
-
-  if (valorSelecionado && !encontrouSelecionado) {
-    const opcao = document.createElement("option");
-    opcao.value = valorSelecionado;
-    opcao.textContent = valorSelecionado;
-    selectTipoCusto.appendChild(opcao);
-  }
-
-  if (valorSelecionado) {
-    selectTipoCusto.value = valorSelecionado;
-  }
+function obterPeca(pecaId) {
+  return pecasCusto.find(peca => Number(peca.id) === Number(pecaId)) || null;
 }
 
-async function carregarTiposCusto() {
-  if (supabaseEstaConfigurado()) {
-    try {
-      tiposCustoCarregados = await window.supabaseService.listarTiposCusto("peca") || [];
-      salvarTiposCustoLocais(tiposCustoCarregados);
-      renderizarTiposCusto();
-      return;
-    } catch (erro) {
-      console.error("Erro ao carregar tipos de custo:", erro);
-      mensagemCusto.textContent = "Nao foi possivel carregar os tipos de custo do Supabase. Usando lista local.";
-      mensagemCusto.className = "form-message form-message--warning";
-    }
-  }
-
-  tiposCustoCarregados = buscarTiposCustoLocais();
-  renderizarTiposCusto();
+function custosDaPeca(pecaId) {
+  return custosCusto.filter(custo => Number(custo.pecaId) === Number(pecaId));
 }
 
-async function criarNovoTipoCusto() {
-  const nomeDigitado = prompt("Nome do novo tipo de custo:");
-  const nomePadronizado = padronizarNomeTipoCusto(nomeDigitado);
+// ---- Busca e cartão da peça ----
 
-  if (!nomeDigitado) {
-    return;
-  }
-
-  if (!nomePadronizado) {
-    mensagemCusto.textContent = "Informe um nome valido para o tipo de custo.";
-    mensagemCusto.className = "form-message form-message--warning";
-    return;
-  }
-
-  const tipoExistente = tiposCustoCarregados.find(tipo => (
-    normalizarNomeTipoCusto(tipo.nome) === normalizarNomeTipoCusto(nomePadronizado)
-  ));
-
-  if (tipoExistente) {
-    renderizarTiposCusto(tipoExistente.nome);
-    mensagemCusto.textContent = `Tipo "${tipoExistente.nome}" ja existe e foi selecionado.`;
-    mensagemCusto.className = "form-message form-message--warning";
-    return;
-  }
-
-  const categoriaDigitada = prompt("Categoria do tipo: peca, venda ou ambos", "peca");
-  const categoria = normalizarNomeTipoCusto(categoriaDigitada || "peca");
-
-  if (!categoriasTipoCusto.includes(categoria)) {
-    mensagemCusto.textContent = "Categoria invalida. Use peca, venda ou ambos.";
-    mensagemCusto.className = "form-message form-message--warning";
-    return;
-  }
-
-  try {
-    const novoTipo = supabaseEstaConfigurado()
-      ? await window.supabaseService.criarTipoCusto(nomePadronizado, categoria)
-      : {
-          id: `local-${Date.now()}`,
-          nome: nomePadronizado,
-          categoria,
-          ativo: true
-        };
-
-    tiposCustoCarregados.push(novoTipo);
-    salvarTiposCustoLocais(tiposCustoCarregados);
-    renderizarTiposCusto(novoTipo.nome);
-    mensagemCusto.textContent = `Tipo "${novoTipo.nome}" criado e selecionado.`;
-    mensagemCusto.className = "form-message form-message--success";
-  } catch (erro) {
-    console.error("Erro ao criar tipo de custo:", erro);
-    mensagemCusto.textContent = "Nao foi possivel criar o tipo de custo. Verifique se ele ja existe.";
-    mensagemCusto.className = "form-message form-message--warning";
-  }
+function textoBuscaPeca(peca) {
+  return normalizarTexto([peca.sku, peca.nome, peca.compatibilidade, obterOrigem(peca)?.descricao].join(" "));
 }
 
-function formatarNomePecaDestacado(peca) {
-  const nome = peca.nome || peca.nome_peca || peca.nomePeca || peca.nomeProduto || peca.descricao || `Peca ${peca.id}`;
-  const sku = String(peca.sku || peca.codigo || peca.codigo_peca || peca.cod || "").trim();
+function buscarPecas(termo) {
+  const palavras = normalizarTexto(termo).split(/\s+/).filter(Boolean);
+  if (!palavras.length) return [];
 
-  return sku
-    ? `${destacarBusca(sku)} - ${destacarBusca(nome)}`
-    : destacarBusca(nome);
+  return pecasCusto
+    .filter(peca => palavras.every(palavra => textoBuscaPeca(peca).includes(palavra)))
+    .sort((a, b) => Number(calcularSaldo(b.id) > 0) - Number(calcularSaldo(a.id) > 0))
+    .slice(0, MAXIMO_SUGESTOES);
 }
 
-function filtrarProdutosPorBusca(produtos) {
-  const termo = String(campoBuscaPecaCusto?.value || "").trim().toLowerCase();
-
-  if (!termo) {
-    return produtos;
-  }
-
-  return produtos.filter(produto => {
-    const nome = String(produto.nome || produto.nome_peca || produto.nomePeca || produto.nomeProduto || "").toLowerCase();
-    const sku = String(produto.sku || produto.codigo || produto.codigo_peca || produto.cod || "").toLowerCase();
-
-    return nome.includes(termo) || sku.includes(termo);
-  });
-}
-
-function buscarOrigens() {
-  return JSON.parse(localStorage.getItem("origens")) || [];
-}
-
-function buscarCustos() {
-  return JSON.parse(localStorage.getItem("custosDiversos")) || [];
-}
-
-function salvarCustos(custos) {
-  localStorage.setItem("custosDiversos", JSON.stringify(custos));
-}
-
-function normalizarProduto(produto) {
-  const quantidade = Number(produto.quantidade || 1);
-  const quantidadeVendida = Number(produto.quantidadeVendida || 0);
-  const quantidadeDisponivel = Math.max(quantidade - quantidadeVendida, 0);
-
-  return {
-    ...produto,
-    id: Number(produto.id),
-    nome: produto.nome || produto.nome_peca || produto.nomePeca || produto.nomeProduto || produto.descricao || `Peca ${produto.id}`,
-    sku: produto.sku || produto.codigo || produto.codigo_peca || produto.cod || "",
-    quantidade,
-    quantidadeVendida,
-    status: quantidadeDisponivel <= 0 ? "vendida" : "em_estoque",
-    origemId: Number(produto.origemId || produto.origem_id || 0)
-  };
-}
-
-function salvarCustoNoCache(custo) {
-  const custos = buscarCustos().filter(item => Number(item.id) !== Number(custo.id));
-  custos.push(custo);
-  salvarCustos(custos);
-}
-
-function calcularQuantidadeDisponivel(peca) {
-  return Math.max(Number(peca.quantidade || 1) - Number(peca.quantidadeVendida || 0), 0);
-}
-
-async function carregarProdutos() {
-  let produtos = [];
-  const supabaseConfigurado = supabaseEstaConfigurado();
-
-  if (supabaseConfigurado) {
-    try {
-      produtos = await window.supabaseService.listarPecas();
-      salvarProdutos(produtos.map(normalizarProduto));
-    } catch (erro) {
-      console.error("Erro ao carregar pecas do Supabase para custos:", erro);
-      mensagemCusto.textContent = "Nao foi possivel carregar as pecas do Supabase.";
-      mensagemCusto.className = "form-message form-message--warning";
-    }
-  } else {
-    produtos = buscarProdutos();
-  }
-
-  produtosCustoCarregados = produtos.map(normalizarProduto);
-
-  const pecaIdUrl = obterPecaIdDaUrl();
-
-  if (pecaIdUrl) {
-    const produtoUrl = produtosCustoCarregados.find(produto => Number(produto.id) === pecaIdUrl);
-
-    if (produtoUrl) {
-      selecionarProdutoCusto(produtoUrl);
-    }
-  }
-
-  if (produtos.length === 0) {
-    mensagemCusto.textContent = supabaseConfigurado
-      ? "Nenhum produto encontrado no Supabase. Cadastre uma peca antes de adicionar custos."
-      : "Supabase nao configurado. Preencha js/supabase-config.js para carregar as pecas do banco.";
-    mensagemCusto.className = "form-message form-message--warning";
-  }
-}
-
-async function carregarOrigensParaCustos() {
-  if (supabaseEstaConfigurado()) {
-    try {
-      origensCustoCarregadas = await window.supabaseService.listarOrigens() || [];
-      return;
-    } catch (erro) {
-      console.error("Erro ao carregar origens do Supabase para custos:", erro);
-      origensCustoCarregadas = [];
-      return;
-    }
-  }
-
-  origensCustoCarregadas = buscarOrigens();
-}
-
-function buscarProdutoPorId(pecaId) {
-  return produtosCustoCarregados.find(item => Number(item.id) === Number(pecaId));
-}
-
-function fecharSugestoesCusto() {
+function fecharSugestoes() {
+  sugestoesPecaCusto.hidden = true;
   sugestoesPecaCusto.innerHTML = "";
-  sugestoesPecaCusto.classList.remove("is-open");
-  indiceSugestaoCusto = -1;
+  buscaPecaCusto.setAttribute("aria-expanded", "false");
+  buscaPecaCusto.removeAttribute("aria-activedescendant");
+  sugestoesAtuais = [];
+  indiceSugestao = -1;
 }
 
-function obterPrimeiroIndiceDisponivel(produtos) {
-  return produtos.findIndex(produto => calcularQuantidadeDisponivel(produto) > 0);
-}
+// Custo de peça só entra em peça com estoque (regra da tela antiga, mantida).
+function renderizarSugestoes() {
+  sugestoesAtuais = buscarPecas(buscaPecaCusto.value);
 
-function selecionarProdutoCusto(produto) {
-  const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
-
-  if (quantidadeDisponivel <= 0) {
+  if (!String(buscaPecaCusto.value || "").trim()) {
+    fecharSugestoes();
     return;
   }
 
-  selectProdutoCusto.value = String(produto.id);
-  campoBuscaPecaCusto.value = formatarNomePeca(produto);
-  fecharSugestoesCusto();
-  renderizarResumoProduto();
+  indiceSugestao = sugestoesAtuais.findIndex(peca => calcularSaldo(peca.id) > 0);
+  sugestoesPecaCusto.innerHTML = sugestoesAtuais.length
+    ? sugestoesAtuais.map((peca, indice) => {
+      const saldo = calcularSaldo(peca.id);
+      const origem = obterOrigem(peca);
+      return `
+        <button type="button" role="option" id="sugestao-custo-${peca.id}" class="custo-busca__opcao${indice === indiceSugestao ? " is-active" : ""}"
+          data-indice="${indice}" aria-selected="${indice === indiceSugestao}" ${saldo > 0 ? "" : "disabled"}>
+          <span class="custo-busca__nome">${escaparHtml(peca.nome)} <span class="mono">${escaparHtml(peca.sku || "")}</span></span>
+          <span class="custo-busca__meta">${escaparHtml(origem?.descricao || "")}${origem ? " · " : ""}${saldo > 0 ? `${saldo} un.` : "Sem estoque"}</span>
+        </button>`;
+    }).join("")
+    : '<p class="custo-busca__vazio">Nenhuma peça encontrada.</p>';
+
+  sugestoesPecaCusto.hidden = false;
+  buscaPecaCusto.setAttribute("aria-expanded", "true");
+  atualizarDestaqueSugestao();
 }
 
-function renderizarSugestoesCusto(produtos) {
-  if (!String(campoBuscaPecaCusto?.value || "").trim()) {
-    fecharSugestoesCusto();
-    return;
-  }
-
-  sugestoesCustoAtuais = produtos;
-  sugestoesPecaCusto.innerHTML = "";
-  indiceSugestaoCusto = obterPrimeiroIndiceDisponivel(produtos);
-
-  if (produtos.length === 0) {
-    const item = document.createElement("div");
-    item.className = "autocomplete-option";
-    item.textContent = "Nenhuma peça encontrada";
-    sugestoesPecaCusto.appendChild(item);
-    sugestoesPecaCusto.classList.add("is-open");
-    return;
-  }
-
-  produtos.forEach((produto, indice) => {
-    const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
-    const botao = document.createElement("button");
-    const textoQuantidade = quantidadeDisponivel > 0
-      ? `${quantidadeDisponivel} disponível${quantidadeDisponivel === 1 ? "" : "s"}`
-      : "SEM ESTOQUE";
-
-    botao.type = "button";
-    botao.className = `autocomplete-option${indice === indiceSugestaoCusto ? " is-active" : ""}${quantidadeDisponivel <= 0 ? " autocomplete-option--unavailable" : ""}`;
-    botao.disabled = quantidadeDisponivel <= 0;
-    botao.innerHTML = `
-      <span>${formatarNomePecaDestacado(produto)}</span>
-      <span class="autocomplete-option__meta">${textoQuantidade}</span>
-    `;
-    botao.addEventListener("click", () => selecionarProdutoCusto(produto));
-
-    sugestoesPecaCusto.appendChild(botao);
-  });
-
-  sugestoesPecaCusto.classList.add("is-open");
-}
-
-function atualizarDestaqueSugestoesCusto() {
-  Array.from(sugestoesPecaCusto.querySelectorAll(".autocomplete-option")).forEach((item, indice) => {
-    item.classList.toggle("is-active", indice === indiceSugestaoCusto);
+function atualizarDestaqueSugestao() {
+  sugestoesPecaCusto.querySelectorAll(".custo-busca__opcao").forEach(opcao => {
+    const ativa = Number(opcao.dataset.indice) === indiceSugestao;
+    opcao.classList.toggle("is-active", ativa);
+    opcao.setAttribute("aria-selected", String(ativa));
+    if (ativa) buscaPecaCusto.setAttribute("aria-activedescendant", opcao.id);
   });
 }
 
-function moverDestaqueSugestoesCusto(direcao) {
-  const indicesDisponiveis = sugestoesCustoAtuais
-    .map((produto, indice) => calcularQuantidadeDisponivel(produto) > 0 ? indice : -1)
-    .filter(indice => indice >= 0);
-
-  if (indicesDisponiveis.length === 0) {
-    indiceSugestaoCusto = -1;
-    atualizarDestaqueSugestoesCusto();
-    return;
-  }
-
-  const posicaoAtual = indicesDisponiveis.indexOf(indiceSugestaoCusto);
-  const proximaPosicao = posicaoAtual < 0
-    ? 0
-    : (posicaoAtual + direcao + indicesDisponiveis.length) % indicesDisponiveis.length;
-
-  indiceSugestaoCusto = indicesDisponiveis[proximaPosicao];
-  atualizarDestaqueSugestoesCusto();
+function moverDestaque(direcao) {
+  const disponiveis = sugestoesAtuais.map((peca, indice) => (calcularSaldo(peca.id) > 0 ? indice : -1)).filter(indice => indice >= 0);
+  if (!disponiveis.length) return;
+  const posicao = disponiveis.indexOf(indiceSugestao);
+  indiceSugestao = disponiveis[posicao < 0 ? 0 : (posicao + direcao + disponiveis.length) % disponiveis.length];
+  atualizarDestaqueSugestao();
 }
 
-function atualizarSugestoesCusto() {
-  selectProdutoCusto.value = "";
-  renderizarSugestoesCusto(filtrarProdutosPorBusca(produtosCustoCarregados));
-  renderizarResumoProduto();
-}
-
-function renderizarResumoProduto() {
-  const pecaId = Number(selectProdutoCusto.value);
-  resumoProdutoCusto.innerHTML = "";
-
-  if (!pecaId) {
-    resumoProdutoCusto.innerHTML = `
-      <article class="cost-selected-piece cost-selected-piece--empty">
-        <div>
-          <span>Peca selecionada</span>
-          <strong>Nenhuma peca selecionada</strong>
-          <p>Use a busca acima para vincular um custo.</p>
-        </div>
-      </article>
-    `;
+function renderizarCartaoPeca() {
+  if (!pecaSelecionada) {
+    cartaoPecaCusto.hidden = true;
+    cartaoPecaCusto.innerHTML = "";
+    campoBuscaPeca.hidden = false;
     return;
   }
 
-  const produto = buscarProdutoPorId(pecaId);
+  const peca = pecaSelecionada;
+  const saldo = calcularSaldo(peca.id);
+  const origem = obterOrigem(peca);
+  const imagem = String(peca.imagemUrl || "").trim();
 
-  if (!produto) {
-    mensagemCusto.textContent = "Nao foi possivel encontrar a peca selecionada. Atualize a lista e tente novamente.";
-    mensagemCusto.className = "form-message form-message--warning";
-    return;
-  }
-
-  const quantidadeDisponivel = calcularQuantidadeDisponivel(produto);
-
-  resumoProdutoCusto.innerHTML = `
-    <article class="cost-selected-piece">
-      <div>
-        <span>Peca selecionada</span>
-        <strong>${escaparHtml(produto.sku || "-")}</strong>
-        <h4>${escaparHtml(produto.nome || produto.nome_peca || produto.nomePeca || produto.nomeProduto || produto.descricao || "-")}</h4>
-      </div>
-      <div class="cost-selected-piece__stock">
-        <span>Estoque disponivel</span>
-        <strong>${quantidadeDisponivel}</strong>
-      </div>
-      <button class="button-secondary" type="button" data-acao="detalhes-produto" data-peca-id="${produto.id}">Ver detalhes</button>
-    </article>
+  cartaoPecaCusto.innerHTML = `
+    <span class="thumb custo-peca__foto">${imagem ? `<img src="${escaparHtml(imagem)}" alt="">` : '<i class="ri-image-line" aria-hidden="true"></i>'}</span>
+    <div class="custo-peca__texto">
+      <a class="custo-peca__nome" href="detalhes-produto.html?pecaId=${encodeURIComponent(peca.id)}">${escaparHtml(peca.nome)}</a>
+      <span class="custo-peca__meta"><span class="mono">${escaparHtml(peca.sku || "")}</span>${origem ? ` · ${escaparHtml(origem.descricao || origem.codigoOrigem)}` : ""} · ${saldo} un. em estoque</span>
+    </div>
+    ${custoEmEdicao ? "" : '<button type="button" class="btn btn--quiet btn--compact" id="botaoTrocarPecaCusto">Trocar peça</button>'}
   `;
+  cartaoPecaCusto.hidden = false;
+  campoBuscaPeca.hidden = true;
 }
 
-async function carregarCustos() {
-  if (supabaseEstaConfigurado()) {
-    try {
-      custosCustoCarregados = await window.supabaseService.listarCustosPeca() || [];
-      ordenarCustosPorMaisRecente();
-      mensagemListaCustos.textContent = "";
-      return "supabase";
-    } catch (erro) {
-      console.error("Erro ao carregar custos da peca no Supabase:", erro);
-      custosCustoCarregados = [];
-      mensagemListaCustos.textContent = "Nao foi possivel carregar os custos do Supabase.";
-      return "erro";
+function selecionarPeca(peca, { focar = true } = {}) {
+  pecaSelecionada = peca;
+  fecharSugestoes();
+  buscaPecaCusto.value = "";
+  renderizarCartaoPeca();
+  atualizarResumo();
+  paginaAtual = 1;
+  renderizarLista();
+  if (focar) selectTipoCusto.focus();
+}
+
+function trocarPeca() {
+  pecaSelecionada = null;
+  renderizarCartaoPeca();
+  atualizarResumo();
+  paginaAtual = 1;
+  renderizarLista();
+  buscaPecaCusto.focus();
+}
+
+// ---- Tipos de custo (Peça ou Ambos, ativos; um tipo antigo só aparece ao editar um custo que o usa) ----
+
+function renderizarTipos(custo = null) {
+  const opcoes = ['<option value="">Selecione o tipo</option>'];
+  tiposCusto
+    .slice()
+    .sort((a, b) => String(a.nome).localeCompare(String(b.nome), "pt-BR"))
+    .forEach(tipo => opcoes.push(`<option value="${tipo.id}">${escaparHtml(tipo.nome)}</option>`));
+
+  let valor = "";
+  if (custo) {
+    const ativo = tiposCusto.some(tipo => Number(tipo.id) === Number(custo.tipoCustoId));
+    if (custo.tipoCustoId && ativo) {
+      valor = String(custo.tipoCustoId);
+    } else if (custo.tipoCustoId) {
+      opcoes.push(`<option value="${custo.tipoCustoId}">${escaparHtml(custo.tipoCusto || "Tipo")} (inativo)</option>`);
+      valor = String(custo.tipoCustoId);
+    } else if (custo.tipoCusto) {
+      opcoes.push(`<option value="${TIPO_LEGADO}">${escaparHtml(custo.tipoCusto)}</option>`);
+      valor = TIPO_LEGADO;
     }
   }
 
-  custosCustoCarregados = buscarCustos();
-  ordenarCustosPorMaisRecente();
-  return "local";
+  selectTipoCusto.innerHTML = opcoes.join("");
+  selectTipoCusto.value = valor;
 }
 
-function ordenarCustosPorMaisRecente() {
-  custosCustoCarregados.sort((a, b) => {
-    const dataA = String(a.data || a.dataCusto || "");
-    const dataB = String(b.data || b.dataCusto || "");
-    const comparacaoData = dataB.localeCompare(dataA);
-
-    if (comparacaoData !== 0) {
-      return comparacaoData;
-    }
-
-    return Number(b.id || 0) - Number(a.id || 0);
-  });
+function obterTipoEscolhido() {
+  const valor = selectTipoCusto.value;
+  if (!valor) return null;
+  if (valor === TIPO_LEGADO) return { id: null, nome: custoEmEdicao?.tipoCusto || "" };
+  const opcao = selectTipoCusto.selectedOptions[0];
+  const tipo = tiposCusto.find(item => Number(item.id) === Number(valor));
+  return { id: Number(valor), nome: tipo ? tipo.nome : String(custoEmEdicao?.tipoCusto || opcao?.textContent || "") };
 }
 
-function obterDataCusto(custo) {
-  return String(custo.data || custo.dataCusto || "").slice(0, 10);
-}
+// ---- Resumo lateral ----
 
-function obterTipoCusto(custo) {
-  return custo.tipoCusto || custo.tipo || "-";
-}
+function atualizarResumo() {
+  const valorDigitado = lerMoeda(campoValorCusto.value);
+  const valor = Number.isFinite(valorDigitado) && valorDigitado > 0 ? valorDigitado : 0;
 
-function renderizarFiltroTipoCustoLista() {
-  if (!filtroTipoCustoLista) {
+  if (!pecaSelecionada) {
+    resumoPecaCusto.textContent = "—";
+    rotuloJaLancados.textContent = "Já lançados";
+    resumoJaLancados.textContent = "—";
+    resumoEsteCusto.textContent = valor ? formatarMoeda(valor) : "—";
+    resumoTotalCustos.textContent = "—";
     return;
   }
 
-  const valorAtual = filtroTipoCustoLista.value;
-  const tipos = [...new Set(custosCustoCarregados.map(obterTipoCusto).filter(tipo => tipo && tipo !== "-"))];
-  filtroTipoCustoLista.innerHTML = '<option value="">Todos</option>';
+  // Na edição, o custo editado sai de "já lançados" e entra como "este custo" com o valor novo.
+  const outros = custosDaPeca(pecaSelecionada.id).filter(custo => !custoEmEdicao || Number(custo.id) !== Number(custoEmEdicao.id));
+  const totalOutros = outros.reduce((total, custo) => total + Number(custo.valor || 0), 0);
 
-  tipos
-    .sort((a, b) => String(a).localeCompare(String(b), "pt-BR"))
-    .forEach(tipo => {
-      const opcao = document.createElement("option");
-      opcao.value = tipo;
-      opcao.textContent = tipo;
-      filtroTipoCustoLista.appendChild(opcao);
-    });
-
-  filtroTipoCustoLista.value = tipos.includes(valorAtual) ? valorAtual : "";
+  resumoPecaCusto.textContent = pecaSelecionada.nome;
+  rotuloJaLancados.textContent = outros.length ? `Já lançados (${outros.length})` : "Já lançados";
+  resumoJaLancados.textContent = formatarMoeda(totalOutros);
+  rotuloEsteCusto.textContent = custoEmEdicao ? "Este custo (editando)" : "Este custo";
+  resumoEsteCusto.textContent = formatarMoeda(valor);
+  resumoTotalCustos.textContent = formatarMoeda(totalOutros + valor);
 }
 
-function filtrarCustosLista(custos) {
-  const termo = String(campoBuscaCustosLista?.value || "").trim().toLowerCase();
-  const dataInicial = dataInicialCustos?.value || "";
-  const dataFinal = dataFinalCustos?.value || "";
-  const tipo = filtroTipoCustoLista?.value || "";
+// ---- Formulário ----
 
-  return custos.filter(custo => {
-    const produto = obterDadosProdutoDoCusto(custo);
-    const dataCusto = obterDataCusto(custo);
-    const tipoCusto = obterTipoCusto(custo);
-    const textoBusca = [
-      produto.sku,
-      produto.nome,
-      custo.descricao,
-      custo.observacoes
-    ].join(" ").toLowerCase();
-
-    if (termo && !textoBusca.includes(termo)) {
-      return false;
-    }
-
-    if (dataInicial && (!dataCusto || dataCusto < dataInicial)) {
-      return false;
-    }
-
-    if (dataFinal && (!dataCusto || dataCusto > dataFinal)) {
-      return false;
-    }
-
-    if (tipo && tipoCusto !== tipo) {
-      return false;
-    }
-
-    return true;
-  });
+function limparCamposCusto() {
+  renderizarTipos();
+  campoValorCusto.value = "";
+  campoDescricaoCusto.value = "";
+  campoObservacoesCusto.value = "";
+  campoDataCusto.value = obterDataLocalHoje();
 }
 
-function alternarPainelFiltrosCustos(aberto) {
-  shellCustos?.classList.toggle("cost-list-shell--filters-open", aberto);
-  botaoAbrirFiltrosCustos?.setAttribute("aria-expanded", aberto ? "true" : "false");
-}
-
-function limparFiltrosCustos() {
-  if (dataInicialCustos) dataInicialCustos.value = "";
-  if (dataFinalCustos) dataFinalCustos.value = "";
-  if (filtroTipoCustoLista) filtroTipoCustoLista.value = "";
-
-  renderizarCustos();
-}
-
-function formatarData(data) {
-  if (!data) {
-    return "-";
-  }
-
-  const dataIso = String(data).slice(0, 10);
-  const partes = dataIso.split("-");
-
-  if (partes.length !== 3) {
-    return dataIso;
-  }
-
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
-}
-
-function obterDadosProdutoDoCusto(custo) {
-  const produto = buscarProdutoPorId(custo.pecaId);
-
-  return {
-    sku: produto?.sku || custo.sku || "-",
-    nome: produto ? formatarNomePeca(produto) : custo.produtoNome || `Peca ${custo.pecaId || ""}`.trim()
-  };
-}
-
-function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
-}
-
-function renderizarCustos(origemDados = supabaseEstaConfigurado() ? "supabase" : "local") {
-  const custos = filtrarCustosLista(custosCustoCarregados);
-  tabelaCustos.innerHTML = "";
-
-  if (custos.length === 0) {
-    mensagemListaCustos.textContent = custosCustoCarregados.length > 0
-      ? "Nenhum custo encontrado para os filtros informados."
-      : origemDados === "erro"
-      ? "Nao foi possivel carregar os custos do Supabase."
-      : origemDados === "supabase"
-        ? "Nenhum custo cadastrado no Supabase."
-        : "Nenhum custo local cadastrado.";
-    return;
-  }
-
-  mensagemListaCustos.textContent = "";
-  custoExclusaoPendenteId = custos.some(custo => Number(custo.id) === Number(custoExclusaoPendenteId)) ? custoExclusaoPendenteId : null;
-
-  custos.forEach((custo) => {
-    const linha = document.createElement("article");
-    const custoId = custo.id || "";
-    const observacaoCurta = custo.descricao || custo.observacoes || "-";
-
-    linha.className = `cost-line${Number(custoExclusaoPendenteId) === Number(custoId) ? " cost-line--confirm" : ""}`;
-    linha.innerHTML = `
-      <time datetime="${escaparHtml(obterDataCusto(custo))}">${formatarData(custo.data || custo.dataCusto)}</time>
-      <span class="cost-line__type">${escaparHtml(custo.tipoCusto || custo.tipo || "-")}</span>
-      <strong class="cost-line__value">${formatarMoeda(custo.valor)}</strong>
-      <p title="${escaparHtml(observacaoCurta)}">${escaparHtml(observacaoCurta)}</p>
-      <div class="cost-line__actions">
-        <button class="button-secondary" type="button" data-acao="editar-custo" data-custo-id="${custoId}">Editar</button>
-        <button class="button-secondary button-danger-soft" type="button" data-acao="excluir-custo" data-custo-id="${custoId}">Excluir</button>
-      </div>
-    `;
-
-    tabelaCustos.appendChild(linha);
-
-    if (Number(custoExclusaoPendenteId) === Number(custoId)) {
-      const linhaConfirmacao = document.createElement("div");
-      linhaConfirmacao.className = "cost-delete-confirm-row";
-      linhaConfirmacao.innerHTML = `
-        <div class="cost-delete-confirm">
-          <span>Excluir este custo?</span>
-          <button class="button-secondary button-danger-soft" type="button" data-acao="confirmar-exclusao-custo" data-custo-id="${custoId}">Confirmar exclusao</button>
-          <button class="button-secondary" type="button" data-acao="cancelar-exclusao-custo">Cancelar</button>
-        </div>
-      `;
-      tabelaCustos.appendChild(linhaConfirmacao);
-    }
-  });
-}
-
-function abrirDetalhesProduto(pecaId) {
-  window.location.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}`;
-}
-
-function buscarCustoPorId(custoId) {
-  return custosCustoCarregados.find(custo => Number(custo.id) === Number(custoId));
-}
-
-function preencherFormularioParaEdicao(custo) {
-  const produto = buscarProdutoPorId(custo.pecaId);
-
-  custoEmEdicaoId = Number(custo.id);
-  selectProdutoCusto.value = String(custo.pecaId || "");
-  campoBuscaPecaCusto.value = produto ? formatarNomePeca(produto) : custo.produtoNome || "";
-  renderizarResumoProduto();
-  renderizarTiposCusto(custo.tipoCusto || custo.tipo || "");
-  document.getElementById("descricaoCusto").value = custo.descricao || "";
-  document.getElementById("valorCusto").value = Number(custo.valor || 0).toFixed(2);
-  document.getElementById("dataCusto").value = String(custo.data || custo.dataCusto || "").slice(0, 10);
-  document.getElementById("observacoesCusto").value = custo.observacoes || "";
-  botaoSalvarCusto.textContent = "Atualizar custo";
-  botaoCancelarEdicaoCusto.hidden = false;
-  mensagemCusto.textContent = "Editando custo cadastrado.";
-  mensagemCusto.className = "form-message form-message--warning";
-  formularioCusto.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function cancelarEdicaoCusto() {
-  custoEmEdicaoId = null;
-  formularioCusto.reset();
-  renderizarTiposCusto();
-  preencherDataCustoPadrao();
-  renderizarResumoProduto();
+function sairDaEdicao() {
+  custoEmEdicao = null;
   botaoSalvarCusto.textContent = "Salvar custo";
-  botaoCancelarEdicaoCusto.hidden = true;
-  mensagemCusto.textContent = "";
-  mensagemCusto.className = "form-message";
+  botaoCancelarCusto.textContent = "Cancelar";
+  limparCamposCusto();
+  renderizarCartaoPeca();
+  atualizarResumo();
+  renderizarLista();
 }
 
-function montarCusto(produto, tipo, descricao, valor, data, tipoCustoId) {
-  return {
-    id: Date.now(),
-    pecaId: Number(produto.id),
-    produtoNome: formatarNomePeca(produto),
-    tipo: tipo,
-    tipoCusto: tipo,
-    tipoCustoId,
-    descricao: descricao,
-    valor: Number(valor),
-    data: data,
-    dataCusto: data,
-    observacoes: document.getElementById("observacoesCusto").value.trim()
+function editarCusto(custo) {
+  const peca = obterPeca(custo.pecaId);
+  custoEmEdicao = custo;
+  pecaSelecionada = peca || { id: custo.pecaId, nome: `Peça ${custo.pecaId}`, sku: "" };
+  renderizarTipos(custo);
+  campoValorCusto.value = formatarMoeda(custo.valor);
+  campoDataCusto.value = String(custo.dataCusto || custo.data || "").slice(0, 10);
+  campoDescricaoCusto.value = custo.descricao || "";
+  campoObservacoesCusto.value = custo.observacoes || "";
+  botaoSalvarCusto.textContent = "Salvar alterações";
+  botaoCancelarCusto.textContent = "Cancelar edição";
+  mostrarMensagem("");
+  renderizarCartaoPeca();
+  atualizarResumo();
+  renderizarLista();
+  formCusto.scrollIntoView({ behavior: "smooth", block: "start" });
+  selectTipoCusto.focus({ preventScroll: true });
+}
+
+function cancelar() {
+  if (custoEmEdicao) {
+    sairDaEdicao();
+    return;
+  }
+  window.location.href = linkVoltarCusto.href;
+}
+
+function validarFormulario() {
+  if (!pecaSelecionada) return "Escolha a peça.";
+  if (!obterTipoEscolhido()) return "Escolha o tipo de custo.";
+  const valor = lerMoeda(campoValorCusto.value);
+  if (valor === null || !Number.isFinite(valor) || valor <= 0) return "Informe um valor maior que zero.";
+  if (!campoDataCusto.value) return "Informe a data do custo.";
+  if (!campoDescricaoCusto.value.trim()) return "Informe a descrição do custo.";
+  return "";
+}
+
+async function salvarCusto(evento) {
+  evento.preventDefault();
+
+  const erro = validarFormulario();
+  if (erro) {
+    mostrarMensagem(escaparHtml(erro));
+    return;
+  }
+
+  const tipo = obterTipoEscolhido();
+  const valor = lerMoeda(campoValorCusto.value);
+  const custo = {
+    id: custoEmEdicao?.id,
+    pecaId: Number(pecaSelecionada.id),
+    tipo: tipo.nome,
+    tipoCusto: tipo.nome,
+    tipoCustoId: tipo.id,
+    descricao: campoDescricaoCusto.value.trim(),
+    observacoes: campoObservacoesCusto.value.trim(),
+    valor,
+    data: campoDataCusto.value,
+    dataCusto: campoDataCusto.value
   };
-}
+  const editando = Boolean(custoEmEdicao);
 
-async function salvarCustoNoSupabaseOuFallback(custo) {
-  if (supabaseEstaConfigurado()) {
-    const custoSalvo = custoEmEdicaoId
-      ? await window.supabaseService.atualizarCustoPeca(custo)
-      : await window.supabaseService.salvarCustoPeca(custo);
-    console.log("Custo salvo no Supabase:", custoSalvo);
-    return "supabase";
-  }
-
-  salvarCustoNoCache(custo);
-  console.warn("Custo da peca salvo no armazenamento temporario:", custo);
-  return "fallback";
-}
-
-formularioCusto.addEventListener("submit", async function (evento) {
-  evento.preventDefault();
-
-  const pecaId = Number(selectProdutoCusto.value);
-  const tipo = document.getElementById("tipoCusto").value;
-  const tipoCustoId = selectTipoCusto.selectedOptions[0]?.dataset?.tipoId || null;
-  const descricao = document.getElementById("descricaoCusto").value.trim();
-  const valorDigitado = document.getElementById("valorCusto").value;
-  const data = document.getElementById("dataCusto").value;
-
-  if (!pecaId || !tipo || !descricao || !valorDigitado || !data) {
-    mensagemCusto.textContent = "Preencha peca, tipo, descricao, valor e data do custo.";
-    mensagemCusto.className = "form-message form-message--warning";
-    return;
-  }
-
-  if (Number(valorDigitado) <= 0) {
-    mensagemCusto.textContent = "O valor do custo deve ser maior que zero.";
-    mensagemCusto.className = "form-message form-message--warning";
-    return;
-  }
-
-  const produto = buscarProdutoPorId(pecaId);
-
-  if (!produto) {
-    mensagemCusto.textContent = "Nao foi possivel encontrar a peca selecionada. Atualize a lista e tente novamente.";
-    mensagemCusto.className = "form-message form-message--warning";
-    return;
-  }
-
-  const custo = montarCusto(produto, tipo, descricao, valorDigitado, data, tipoCustoId);
-  custo.id = custoEmEdicaoId || custo.id;
-
-  if (!custo.pecaId) {
-    mensagemCusto.textContent = "Nao foi possivel identificar a peca. Atualize a lista de pecas e tente novamente.";
-    mensagemCusto.className = "form-message form-message--warning";
-    return;
-  }
-
-  const botaoSalvar = formularioCusto.querySelector("button[type='submit']");
-  botaoSalvar.disabled = true;
-
+  botaoSalvarCusto.disabled = true;
   try {
-    const destino = await salvarCustoNoSupabaseOuFallback(custo);
-    const estavaEditando = Boolean(custoEmEdicaoId);
-    const mensagemSucesso = destino === "supabase"
-      ? `Custo ${estavaEditando ? "atualizado" : "cadastrado"} no Supabase e vinculado a peca.`
-      : `Custo ${estavaEditando ? "atualizado" : "cadastrado"} no armazenamento temporario.`;
-
-    alert(`Custo ${estavaEditando ? "atualizado" : "cadastrado"} com sucesso.`);
-    cancelarEdicaoCusto();
-    mensagemCusto.textContent = mensagemSucesso;
-    mensagemCusto.className = "form-message form-message--success";
-    await carregarCustos();
-    renderizarFiltroTipoCustoLista();
-    renderizarResumoProduto();
-    renderizarCustos(destino);
-  } catch (erro) {
-    console.error("Erro ao cadastrar custo da peca:", erro);
-    mensagemCusto.textContent = "Nao foi possivel salvar o custo da peca.";
-    mensagemCusto.className = "form-message form-message--warning";
-  } finally {
-    botaoSalvar.disabled = false;
-  }
-});
-
-selectProdutoCusto.addEventListener("change", renderizarResumoProduto);
-
-campoBuscaPecaCusto?.addEventListener("input", atualizarSugestoesCusto);
-botaoNovoTipoCusto?.addEventListener("click", criarNovoTipoCusto);
-botaoCancelarEdicaoCusto?.addEventListener("click", cancelarEdicaoCusto);
-
-campoBuscaCustosLista?.addEventListener("input", () => renderizarCustos());
-
-[dataInicialCustos, dataFinalCustos, filtroTipoCustoLista].forEach(campo => {
-  campo?.addEventListener("input", () => renderizarCustos());
-  campo?.addEventListener("change", () => renderizarCustos());
-});
-
-botaoAbrirFiltrosCustos?.addEventListener("click", () => {
-  const aberto = !shellCustos?.classList.contains("cost-list-shell--filters-open");
-  alternarPainelFiltrosCustos(aberto);
-});
-
-botaoFecharFiltrosCustos?.addEventListener("click", () => {
-  alternarPainelFiltrosCustos(false);
-});
-
-botaoAplicarFiltrosCustos?.addEventListener("click", () => {
-  renderizarCustos();
-  alternarPainelFiltrosCustos(false);
-});
-
-botaoLimparFiltrosCustos?.addEventListener("click", limparFiltrosCustos);
-
-document.addEventListener("keydown", evento => {
-  if (evento.key === "Escape") {
-    alternarPainelFiltrosCustos(false);
-  }
-});
-
-campoBuscaPecaCusto?.addEventListener("focus", () => {
-  if (!selectProdutoCusto.value && String(campoBuscaPecaCusto.value || "").trim()) {
-    renderizarSugestoesCusto(filtrarProdutosPorBusca(produtosCustoCarregados));
-  }
-});
-
-campoBuscaPecaCusto?.addEventListener("keydown", evento => {
-  if (evento.key === "ArrowDown") {
-    evento.preventDefault();
-    moverDestaqueSugestoesCusto(1);
-    return;
-  }
-
-  if (evento.key === "ArrowUp") {
-    evento.preventDefault();
-    moverDestaqueSugestoesCusto(-1);
-    return;
-  }
-
-  if (evento.key === "Escape") {
-    fecharSugestoesCusto();
-    alternarPainelFiltrosCustos(false);
-    return;
-  }
-
-  if (evento.key !== "Enter") {
-    return;
-  }
-
-  evento.preventDefault();
-  const produto = sugestoesCustoAtuais[indiceSugestaoCusto] || sugestoesCustoAtuais[0];
-
-  if (produto) {
-    selecionarProdutoCusto(produto);
-  }
-});
-
-tabelaCustos.addEventListener("click", function (evento) {
-  const botao = evento.target.closest("button");
-
-  if (!botao) {
-    return;
-  }
-
-  if (botao.dataset.acao === "detalhes-produto" && botao.dataset.pecaId) {
-    abrirDetalhesProduto(botao.dataset.pecaId);
-  }
-
-  if (botao.dataset.acao === "editar-custo") {
-    const custo = buscarCustoPorId(botao.dataset.custoId);
-
-    if (custo) {
-      preencherFormularioParaEdicao(custo);
+    if (editando) {
+      await window.supabaseService.atualizarCustoPeca(custo);
+    } else {
+      await window.supabaseService.salvarCustoPeca(custo);
     }
+
+    custosCusto = (await window.supabaseService.listarCustosPeca()) || [];
+    const linkPeca = `<a href="detalhes-produto.html?pecaId=${encodeURIComponent(custo.pecaId)}">Ver peça</a>`;
+    const texto = `Custo de ${formatarMoeda(valor)} ${editando ? "atualizado" : "lançado"} em ${escaparHtml(pecaSelecionada.nome)} · ${linkPeca}`;
+    if (editando) {
+      sairDaEdicao();
+    } else {
+      limparCamposCusto();
+      atualizarResumo();
+    }
+    renderizarFiltroTipos();
+    renderizarLista();
+    mostrarMensagem(texto, true);
+  } catch (erroSalvar) {
+    console.error("Erro ao salvar custo da peça:", erroSalvar);
+    mostrarMensagem("Não foi possível salvar o custo da peça.");
+  } finally {
+    botaoSalvarCusto.disabled = false;
   }
+}
 
-  if (botao.dataset.acao === "excluir-custo") {
-    custoExclusaoPendenteId = Number(botao.dataset.custoId);
-    renderizarCustos();
-  }
-
-  if (botao.dataset.acao === "cancelar-exclusao-custo") {
-    custoExclusaoPendenteId = null;
-    renderizarCustos();
-  }
-
-  if (botao.dataset.acao === "confirmar-exclusao-custo") {
-    excluirCusto(botao.dataset.custoId);
-  }
-});
-
-resumoProdutoCusto.addEventListener("click", function (evento) {
-  const botao = evento.target.closest("button[data-acao='detalhes-produto']");
-
-  if (botao?.dataset.pecaId) {
-    abrirDetalhesProduto(botao.dataset.pecaId);
-  }
-});
-
-async function excluirCusto(custoId) {
-  const custo = buscarCustoPorId(custoId);
-
-  if (!custo) {
-    mensagemCusto.textContent = "Nao foi possivel identificar o custo para excluir.";
-    mensagemCusto.className = "form-message form-message--warning";
-    return;
-  }
-
-  if (!supabaseEstaConfigurado()) {
-    mensagemCusto.textContent = "Configure o Supabase para excluir custos reais da peca.";
-    mensagemCusto.className = "form-message form-message--warning";
-    return;
-  }
+async function excluirCusto(custo) {
+  const peca = obterPeca(custo.pecaId);
+  const confirmar = window.confirm(`Excluir o custo de ${formatarMoeda(custo.valor)} (${custo.tipoCusto || "sem tipo"}) de ${peca?.nome || "esta peça"}?`);
+  if (!confirmar) return;
 
   try {
     await window.supabaseService.excluirCustoPeca(custo.id);
-    custoExclusaoPendenteId = null;
-
-    if (Number(custoEmEdicaoId) === Number(custo.id)) {
-      cancelarEdicaoCusto();
-    }
-
-    await carregarCustos();
-    renderizarFiltroTipoCustoLista();
-    renderizarCustos("supabase");
-    renderizarResumoProduto();
-    mensagemCusto.textContent = "Custo excluido do Supabase com sucesso.";
-    mensagemCusto.className = "form-message form-message--success";
-  } catch (erro) {
-    console.error("Erro ao excluir custo da peca:", erro);
-    mensagemCusto.textContent = "Nao foi possivel excluir o custo da peca.";
-    mensagemCusto.className = "form-message form-message--warning";
+    custosCusto = custosCusto.filter(item => Number(item.id) !== Number(custo.id));
+    if (custoEmEdicao && Number(custoEmEdicao.id) === Number(custo.id)) sairDaEdicao();
+    renderizarFiltroTipos();
+    atualizarResumo();
+    renderizarLista();
+    mostrarMensagem("Custo excluído.", true);
+  } catch (erroExcluir) {
+    console.error("Erro ao excluir custo da peça:", erroExcluir);
+    mostrarMensagem("Não foi possível excluir o custo da peça.");
   }
 }
 
-async function iniciarTelaCustos() {
-  preencherDataCustoPadrao();
-  await carregarTiposCusto();
-  await carregarProdutos();
-  await carregarOrigensParaCustos();
-  const origemDados = await carregarCustos();
-  renderizarFiltroTipoCustoLista();
-  renderizarCustos(origemDados);
-  renderizarResumoProduto();
+// ---- Lista de custos lançados ----
+
+function montarLinhas() {
+  return custosCusto
+    .map(custo => {
+      const peca = obterPeca(custo.pecaId);
+      return {
+        custo,
+        data: String(custo.dataCusto || custo.data || "").slice(0, 10),
+        nome: peca?.nome || `Peça ${custo.pecaId}`,
+        sku: peca?.sku || "",
+        tipo: custo.tipoCusto || custo.tipo || ""
+      };
+    })
+    .sort((a, b) => b.data.localeCompare(a.data) || Number(b.custo.id) - Number(a.custo.id));
 }
 
-iniciarTelaCustos();
+function filtrarLinhas(linhas) {
+  const palavras = normalizarTexto(buscaCustosLista.value).split(/\s+/).filter(Boolean);
+  const tipo = filtroTipoCustoLista.value;
+  const inicio = dataInicialCustos.value;
+  const fim = dataFinalCustos.value;
+
+  return linhas.filter(linha => {
+    const texto = normalizarTexto(`${linha.sku} ${linha.nome} ${linha.tipo} ${linha.custo.descricao} ${linha.custo.observacoes}`);
+    return (!pecaSelecionada || Number(linha.custo.pecaId) === Number(pecaSelecionada.id)) &&
+      palavras.every(palavra => texto.includes(palavra)) &&
+      (!tipo || linha.tipo === tipo) &&
+      (!inicio || (linha.data && linha.data >= inicio)) &&
+      (!fim || (linha.data && linha.data <= fim));
+  });
+}
+
+function renderizarFiltroTipos() {
+  const atual = filtroTipoCustoLista.value;
+  const tipos = [...new Set(custosCusto.map(custo => custo.tipoCusto || custo.tipo).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+  filtroTipoCustoLista.innerHTML = '<option value="">Todos os tipos</option>' +
+    tipos.map(tipo => `<option value="${escaparHtml(tipo)}">${escaparHtml(tipo)}</option>`).join("");
+  filtroTipoCustoLista.value = tipos.includes(atual) ? atual : "";
+}
+
+function renderizarLinha(linha) {
+  const { custo } = linha;
+  const emEdicao = custoEmEdicao && Number(custoEmEdicao.id) === Number(custo.id);
+  const href = `detalhes-produto.html?pecaId=${encodeURIComponent(custo.pecaId)}`;
+
+  return `
+    <tr${emEdicao ? ' aria-current="true"' : ""}>
+      <td class="cell-nowrap" data-label="Data">${formatarData(linha.data)}</td>
+      <td data-label="Peça">
+        <div class="item-cell__text">
+          <a class="item-cell__name" href="${href}">${escaparHtml(linha.nome)}</a>
+          ${linha.sku ? `<span class="item-cell__meta"><span class="mono">${escaparHtml(linha.sku)}</span></span>` : ""}
+        </div>
+      </td>
+      <td data-label="Tipo">${escaparHtml(linha.tipo || "—")}</td>
+      <td data-label="Descrição">
+        <div class="item-cell__text">
+          <span>${escaparHtml(custo.descricao || "—")}</span>
+          ${custo.observacoes ? `<span class="item-cell__meta">${escaparHtml(custo.observacoes)}</span>` : ""}
+        </div>
+      </td>
+      <td class="num cell-strong" data-label="Valor">${formatarMoeda(custo.valor)}</td>
+      <td class="cell-acoes">
+        <div class="row-actions">
+          <button type="button" class="btn btn--secondary btn--compact" data-acao="editar" data-id="${custo.id}"${emEdicao ? " disabled" : ""}>${emEdicao ? "Editando" : "Editar"}</button>
+          <button type="button" class="btn btn--quiet btn--compact" data-acao="excluir" data-id="${custo.id}">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function renderizarLista() {
+  const todas = montarLinhas();
+  const filtradas = filtrarLinhas(todas);
+  const doEscopo = pecaSelecionada ? todas.filter(linha => Number(linha.custo.pecaId) === Number(pecaSelecionada.id)) : todas;
+
+  contadorCustos.textContent = pecaSelecionada
+    ? `${doEscopo.length} ${doEscopo.length === 1 ? "custo" : "custos"} desta peça`
+    : `${todas.length} ${todas.length === 1 ? "custo" : "custos"} em todas as peças`;
+
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ITENS_POR_PAGINA));
+  paginaAtual = Math.min(Math.max(1, paginaAtual), totalPaginas);
+  const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const pagina = filtradas.slice(inicio, inicio + ITENS_POR_PAGINA);
+
+  if (filtradas.length === 0) {
+    const vazio = doEscopo.length
+      ? "Nenhum custo encontrado para esta busca ou filtro."
+      : pecaSelecionada ? "Nenhum custo lançado nesta peça ainda." : "Nenhum custo de peça lançado ainda.";
+    tabelaCustos.innerHTML = `<tr class="data-table__empty"><td colspan="6">${vazio}</td></tr>`;
+    paginacaoCustos.hidden = true;
+    return;
+  }
+
+  tabelaCustos.innerHTML = pagina.map(renderizarLinha).join("");
+  paginacaoCustos.hidden = filtradas.length <= ITENS_POR_PAGINA;
+  paginacaoTextoCustos.textContent = `Mostrando ${inicio + 1}–${inicio + pagina.length} de ${filtradas.length}`;
+  botaoPaginaAnterior.disabled = paginaAtual <= 1;
+  botaoPaginaProxima.disabled = paginaAtual >= totalPaginas;
+}
+
+// ---- Início ----
+
+function aplicarPecaDaUrl() {
+  const pecaId = Number(new URLSearchParams(window.location.search).get("pecaId"));
+  if (!pecaId) return;
+
+  const peca = obterPeca(pecaId);
+  if (!peca) {
+    mostrarMensagem("Peça não encontrada. Busque a peça abaixo.");
+    return;
+  }
+
+  linkVoltarCusto.href = `detalhes-produto.html?pecaId=${encodeURIComponent(pecaId)}`;
+  textoVoltarCusto.textContent = peca.nome;
+
+  if (calcularSaldo(pecaId) <= 0) {
+    mostrarMensagem(`${escaparHtml(peca.nome)} está sem estoque: custo de peça só é lançado em peça com estoque.`);
+    return;
+  }
+
+  selecionarPeca(peca, { focar: false });
+  selectTipoCusto.focus();
+}
+
+async function iniciarCustos() {
+  campoDataCusto.value = obterDataLocalHoje();
+
+  if (!window.supabaseService?.estaConfigurado()) {
+    mostrarMensagem("Configure o Supabase para lançar custos de peça.");
+    return;
+  }
+
+  try {
+    const [pecas, origens, entradas, custos, tipos] = await Promise.all([
+      window.supabaseService.listarPecas(),
+      window.supabaseService.listarOrigens(),
+      window.supabaseService.listarEntradasEstoque(),
+      window.supabaseService.listarCustosPeca(),
+      window.supabaseService.listarTiposCusto("peca")
+    ]);
+
+    pecasCusto = pecas || [];
+    origensCusto = origens || [];
+    entradasCusto = entradas || [];
+    custosCusto = custos || [];
+    tiposCusto = tipos || [];
+
+    renderizarTipos();
+    renderizarFiltroTipos();
+    aplicarPecaDaUrl();
+    atualizarResumo();
+    renderizarLista();
+
+    if (!tiposCusto.length) {
+      mostrarMensagem('Nenhum tipo de custo ativo para peças. <a href="tipos-custo.html">Cadastrar tipo</a>');
+    }
+  } catch (erro) {
+    console.error("Erro ao carregar a tela de custos:", erro);
+    mostrarMensagem("Não foi possível carregar peças e custos.");
+  }
+}
+
+if (formCusto) {
+  formCusto.addEventListener("submit", salvarCusto);
+  botaoCancelarCusto.addEventListener("click", cancelar);
+
+  buscaPecaCusto.addEventListener("input", renderizarSugestoes);
+  buscaPecaCusto.addEventListener("keydown", evento => {
+    if (evento.key === "ArrowDown" || evento.key === "ArrowUp") {
+      evento.preventDefault();
+      moverDestaque(evento.key === "ArrowDown" ? 1 : -1);
+    } else if (evento.key === "Enter") {
+      evento.preventDefault();
+      const peca = sugestoesAtuais[indiceSugestao];
+      if (peca && calcularSaldo(peca.id) > 0) selecionarPeca(peca);
+    } else if (evento.key === "Escape") {
+      fecharSugestoes();
+    }
+  });
+
+  sugestoesPecaCusto.addEventListener("click", evento => {
+    const opcao = evento.target.closest(".custo-busca__opcao");
+    if (opcao && !opcao.disabled) selecionarPeca(sugestoesAtuais[Number(opcao.dataset.indice)]);
+  });
+
+  document.addEventListener("click", evento => {
+    if (!campoBuscaPeca.contains(evento.target)) fecharSugestoes();
+  });
+
+  cartaoPecaCusto.addEventListener("click", evento => {
+    if (evento.target.closest("#botaoTrocarPecaCusto")) trocarPeca();
+  });
+
+  campoValorCusto.addEventListener("input", atualizarResumo);
+  campoValorCusto.addEventListener("blur", () => {
+    const valor = lerMoeda(campoValorCusto.value);
+    if (Number.isFinite(valor) && valor > 0) campoValorCusto.value = formatarMoeda(valor);
+  });
+
+  [buscaCustosLista, filtroTipoCustoLista, dataInicialCustos, dataFinalCustos].forEach(campo => {
+    campo.addEventListener("input", () => {
+      paginaAtual = 1;
+      renderizarLista();
+    });
+  });
+
+  tabelaCustos.addEventListener("click", evento => {
+    const botao = evento.target.closest("button[data-acao]");
+    if (!botao) return;
+    const custo = custosCusto.find(item => Number(item.id) === Number(botao.dataset.id));
+    if (!custo) return;
+    if (botao.dataset.acao === "editar") editarCusto(custo);
+    if (botao.dataset.acao === "excluir") excluirCusto(custo);
+  });
+
+  botaoPaginaAnterior.addEventListener("click", () => {
+    paginaAtual -= 1;
+    renderizarLista();
+  });
+
+  botaoPaginaProxima.addEventListener("click", () => {
+    paginaAtual += 1;
+    renderizarLista();
+  });
+
+  iniciarCustos();
+}

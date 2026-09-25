@@ -280,24 +280,16 @@ Scripts criticos:
 
 ## Padrao da tela Custo de peca
 
-- `paginas/cadastro-custo.html` usa fluxo operacional vertical.
-- Ordem da tela: Buscar peca, Dados da peca selecionada, Novo custo e Historico de custos cadastrados.
-- A tela e focada em localizar peca, lancar custo, editar custo e excluir custo.
-- Historico fica abaixo do formulario, em lista compacta sem barra horizontal.
-- Cada custo deve mostrar data, tipo, valor, observacao e acoes `Editar` e `Excluir`.
-- Exclusao exige confirmacao antes de remover do Supabase.
-- Custo de peca pode mostrar valores de custo lancados, mas nao deve virar analise financeira pesada.
-- Evitar layout dividido em duas colunas quando apertar o conteudo.
-
-Implementacao atual confirmada:
-
-- `js/custos.js` carrega pecas, origens, custos da peca e tipos de custo, priorizando Supabase e mantendo fallback local quando necessario.
-- A tela atual aceita `?pecaId=...` para abrir uma peca ja selecionada no formulario.
-- Tipos de custo de categoria `peca` e `ambos` aparecem para selecao nesta tela.
-- O historico atual suporta busca textual, filtro por periodo e filtro por tipo.
-- Cada linha do historico permite `Editar`, `Excluir` com confirmacao em duas etapas e `Ver detalhes` da peca vinculada.
-- Nesta rodada foram removidas funcoes mortas que ainda calculavam custo por origem dentro da tela de custos.
-- Exclusao persistente de custo depende de Supabase configurado.
+- `paginas/cadastro-custo.html` ("Lançar custo") lanca, edita e exclui custos ligados a uma peca (limpeza, pintura, conserto...). Tela ja migrada para o redesenho (`ui-v2`, `css/custo-peca.css`, `js/custos.js`). Nao tem item na sidebar: abre pelo `Lançar custo` do detalhe da peca e do menu de Produtos.
+- Aceita `?pecaId=`: a peca ja vem escolhida e o link de voltar leva ao detalhe dela.
+- Blocos: Peça (busca por SKU, nome, compatibilidade ou origem, cada palavra sem acento; a peca escolhida vira cartao com nome, SKU · origem, estoque e `Trocar peça`, no mesmo desenho da Registrar venda) e Custo (tipo, valor, data padrao hoje, descricao e observacao opcional; link `Gerenciar tipos` para Tipos de custo).
+- So peca com estoque recebe custo (regra da tela antiga, mantida). Com `?pecaId=` de peca sem estoque a tela avisa.
+- Tipos: ativos de categoria Peca ou Ambos. Ao editar um custo com tipo inativado ou antigo sem tipo vinculado, esse tipo aparece so para aquele custo.
+- Resumo lateral "Custos da peça": peca, ja lancados (quantidade e soma), este custo e o total de custos da peca. Na edicao, o custo editado sai de "ja lancados". `Salvar custo` (principal) e `Cancelar` ficam no resumo.
+- Depois de salvar: fica na tela com a mesma peca, limpa os campos e mostra "Custo de R$ X lançado em {peça} · Ver peça".
+- "Custos lançados": tabela Data, Peca (link + SKU), Tipo, Descricao (e observacao), Valor, `Editar` (carrega no formulario) e `Excluir` (com confirmacao). Com peca escolhida, mostra so os custos dela. Busca, tipo e periodo; mais recente primeiro; 20 por pagina.
+- Os custos entram no lucro das vendas e no resultado da origem pelo `financeiro-utils.js`; a tela nao calcula resultado.
+- Sairam no redesenho: o `+ Novo tipo` por janela do navegador (tipos ficam em Tipos de custo, como na Registrar venda), a lista local de tipos e o modo sem Supabase (`localStorage`).
 
 ## Padrao da tela Historico de vendas
 
