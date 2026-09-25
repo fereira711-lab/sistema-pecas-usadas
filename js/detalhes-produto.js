@@ -12,6 +12,7 @@ const mensagemVendasProduto = document.getElementById("mensagemVendasProduto");
 const tabelaVendasProduto = document.getElementById("tabelaVendasProduto");
 const botaoImagemProduto = document.getElementById("botaoImagemProduto");
 const botaoVenderProduto = document.getElementById("botaoVenderProduto");
+const linkVerVendaProduto = document.getElementById("linkVerVendaProduto");
 const botaoAdicionarEstoqueProduto = document.getElementById("botaoAdicionarEstoqueProduto");
 const botaoLancamentoCustoProduto = document.getElementById("botaoLancamentoCustoProduto");
 const acoesProduto = document.getElementById("acoesProduto");
@@ -1084,9 +1085,15 @@ function renderizarDadosProduto(produto) {
     origensUtilizadas[0]?.descricao ? escaparHtml(origensUtilizadas[0].descricao) : ""
   ].filter(Boolean).join(" · ") || "Peça sem SKU";
 
+  // Peça vendida (sem saldo e com venda): no lugar do "Vender" desabilitado, "Ver venda" (a mais recente).
+  const ultimaVenda = ordenarVendasPorData(contextoProduto.vendas)[0] || null;
+  const vendida = quantidadeDisponivel <= 0 && Boolean(ultimaVenda);
   acoesProduto.hidden = false;
+  botaoVenderProduto.hidden = vendida;
   botaoVenderProduto.disabled = quantidadeDisponivel <= 0;
   botaoVenderProduto.title = quantidadeDisponivel <= 0 ? "Peça sem estoque" : "";
+  linkVerVendaProduto.hidden = !vendida;
+  if (vendida) linkVerVendaProduto.href = `detalhes-venda.html?vendaId=${encodeURIComponent(ultimaVenda.id)}`;
   if (linkLancarCustoProduto) linkLancarCustoProduto.href = `cadastro-custo.html?pecaId=${encodeURIComponent(produto.id)}`;
   if (botaoImagemProduto) botaoImagemProduto.textContent = imagemUrl ? "Trocar imagem" : "Adicionar imagem";
 
@@ -1102,12 +1109,37 @@ function renderizarDadosProduto(produto) {
       ${compatibilidade ? `<p class="peca-principal__compat"><span class="peca-principal__rotulo">Compatível com</span> ${escaparHtml(compatibilidade)}</p>` : ""}
       ${observacoes ? `<p class="peca-principal__obs">${escaparHtml(observacoes)}</p>` : ""}
     </div>
+    ${vendida ? montarResultadoVendaHtml(linkOrigens, origensUtilizadas.length) : `
     <dl class="peca-principal__dados">
       <div><dt>Preço de venda</dt><dd class="${precoVenda > 0 ? "" : "text-warning"}">${precoVenda > 0 ? formatarMoeda(precoVenda) : "Sem preço"}</dd></div>
       <div><dt>Custo da peça</dt><dd>${custo.calculado ? formatarMoeda(custo.valor) : "Custo não calculado"}</dd></div>
       <div><dt>Margem prevista</dt><dd class="${margem === null ? "" : margem < 0 ? "text-danger" : "text-success"}">${margem === null ? "—" : formatarPercentual(margem)}</dd></div>
       <div><dt>${origensUtilizadas.length > 1 ? "Origens" : "Origem"}</dt><dd>${linkOrigens}</dd></div>
-    </dl>
+    </dl>`}
+  `;
+}
+
+// Peça vendida: o bloco do topo mostra o resultado das vendas dela (financeiro-utils.calcularLucroPeca,
+// com os custos lançados na peça rateados) no lugar da margem prevista.
+function montarResultadoVendaHtml(linkOrigens, quantidadeOrigens) {
+  const resultado = calcularResultado();
+  const lucro = resultado.lucroPeca;
+  const classe = lucro === null ? "" : lucro < 0 ? "text-danger" : "text-success";
+  const linhaNegativa = valor => (Number(valor || 0) > 0 ? `− ${formatarMoeda(valor)}` : formatarMoeda(0));
+
+  return `
+    <div class="peca-principal__resultado">
+      <span class="peca-principal__rotulo">Resultado da venda</span>
+      <dl class="peca-principal__dados">
+        <div><dt>Vendida por</dt><dd>${formatarMoeda(resultado.receitaTotal)}</dd></div>
+        <div><dt>Custo da peça</dt><dd>${resultado.custoEntradasConsumidas === null ? "Custo não calculado" : linhaNegativa(resultado.custoEntradasConsumidas)}</dd></div>
+        <div><dt>Custos da peça</dt><dd>${linhaNegativa(resultado.custosDaPeca)}</dd></div>
+        <div><dt>Custos da venda</dt><dd>${linhaNegativa(resultado.custosDaVenda)}</dd></div>
+        <div class="peca-principal__lucro"><dt>Lucro</dt><dd class="${classe}">${lucro === null ? "Custo não calculado" : formatarMoeda(lucro)}</dd></div>
+        <div><dt>Margem</dt><dd class="${classe}">${resultado.margem === null ? "—" : formatarPercentual(resultado.margem)}</dd></div>
+        <div><dt>${quantidadeOrigens > 1 ? "Origens" : "Origem"}</dt><dd>${linkOrigens}</dd></div>
+      </dl>
+    </div>
   `;
 }
 

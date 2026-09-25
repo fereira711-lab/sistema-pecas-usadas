@@ -234,8 +234,9 @@ Scripts criticos:
 ## Padrao da tela Detalhes do produto
 
 - `paginas/detalhes-produto.html` ("Detalhes da peça") e a central operacional/comercial da peca. Tela ja migrada para o redesenho (`ui-v2`, `css/detalhes-produto.css`, `js/detalhes-produto.js`).
-- Cabecalho: link `Produtos`, titulo com o nome da peca, subtitulo "SKU · origem". Acoes: `Editar dados` (secundario, abre o formulario na tela), menu "⋯" (Lançar custo, Nova entrada de estoque, Trocar imagem e, separado, Excluir peça) e `Vender` (principal; desabilitado sem estoque).
+- Cabecalho: link `Produtos`, titulo com o nome da peca, subtitulo "SKU · origem". Acoes: `Editar dados` (secundario, abre o formulario na tela), menu "⋯" (Lançar custo, Nova entrada de estoque, Trocar imagem e, separado, Excluir peça) e `Vender` (principal; peca vendida mostra `Ver venda` no lugar).
 - Bloco principal: foto, pilula de situacao (mesmas regras e prioridade de Produtos: Vendida; Preço abaixo do custo > Parada ha N dias > Em estoque), "Compatível com", observacao e a lista Preco de venda, Custo da peca, Margem prevista e Origem (link).
+- Peca vendida (sem saldo e com venda): no lugar de Preco/Custo/Margem prevista, o bloco mostra "Resultado da venda" (Vendida por, Custo da peca, Custos da peca, Custos da venda, Lucro e Margem, por `financeiro-utils.calcularLucroPeca`), e o botao `Vender` da lugar a `Ver venda` (secundario, venda mais recente).
 - Custo da peca = custo da proxima unidade a sair (ou da ultima vendida), por `financeiro-utils.calcularCustoReferenciaPeca`, como em Produtos. O antigo "Custo medio" saiu (regra do projeto: sem custo medio).
 - KPIs: Em estoque (unidades e numero de entradas), Vendidas (unidades e data da ultima venda), Receita das vendas e Custo consumido (`Custo não calculado` quando alguma venda nao tem consumo).
 - Entradas de estoque: `Nova entrada` abre o formulario dentro do card (origem, quantidade, custo unitario, data padrao hoje); tabela com Data, Origem (link), Qtd., Consumida, Saldo, Custo unitario, Valor atribuido, `Editar` e `Excluir` (travados quando a entrada ja foi consumida por venda).

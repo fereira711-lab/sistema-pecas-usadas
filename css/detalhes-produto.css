@@ -83,6 +83,20 @@
   text-align: right;
 }
 
+/* Peça vendida: título "Resultado da venda" sobre a lista e o lucro em destaque. */
+.peca-principal__resultado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.peca-principal__lucro dt,
+.peca-principal__lucro dd {
+  font-size: var(--fs-card-title);
+  font-weight: 700;
+}
+
 @media (max-width: 1080px) {
   .peca-principal {
     grid-template-columns: 120px minmax(0, 1fr);
@@ -93,7 +107,8 @@
     height: 120px;
   }
 
-  .peca-principal__dados {
+  .peca-principal__dados,
+  .peca-principal__resultado {
     grid-column: 1 / -1;
   }
 }
