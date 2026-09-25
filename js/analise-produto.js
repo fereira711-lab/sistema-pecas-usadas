@@ -95,10 +95,6 @@ function obterCanalVenda(venda) {
   return String(venda.canalVenda || venda.canal_venda || venda.canal || "").trim();
 }
 
-function obterDataCusto(custo) {
-  return String(custo.dataCusto || custo.data || custo.data_custo || "").slice(0, 10);
-}
-
 function obterQuantidadeVendida(venda) {
   return Number(venda.quantidadeVendida || venda.quantidadeVendidaNaVenda || venda.quantidade_vendida || 0);
 }
@@ -132,7 +128,8 @@ function calcularAnaliseProduto(peca, agrupamentos) {
     agrupamentos.vendas,
     agrupamentos.consumos,
     agrupamentos.custosPeca,
-    agrupamentos.custosVenda
+    agrupamentos.custosVenda,
+    agrupamentos.entradas
   );
 
   return {
@@ -141,8 +138,10 @@ function calcularAnaliseProduto(peca, agrupamentos) {
     sku: formatarSku(peca),
     nome: formatarNome(peca),
     receita: resultado.receita,
-    custoEstoque: resultado.calculado ? resultado.custoConsumido : null,
+    // Custo da peça = entrada consumida + custos lançados na peça, rateados pelas unidades vendidas.
+    custoEstoque: resultado.calculado ? resultado.custoConsumido + resultado.custosPeca : null,
     custosPeca: resultado.custosPeca,
+    custosPecaEmEstoque: resultado.custosPecaEmEstoque,
     custosVenda: resultado.custosVenda,
     lucro: resultado.calculado ? resultado.lucro : null,
     margem: resultado.calculado ? resultado.margem : null,
@@ -158,13 +157,14 @@ function calcularAnalises(dados) {
     consumos: dados.consumosEstoque,
     custosPeca: dados.custosPeca,
     custosVenda: dados.custosVenda,
+    entradas: dados.entradasEstoque,
     vendasPorPeca: agruparPorId(dados.vendas, "pecaId")
   };
 
   return dados.pecas.map(peca => calcularAnaliseProduto(peca, agrupamentos));
 }
 
-// Período e canal filtram as vendas (e seus consumos e custos); custos da peça seguem a data do custo.
+// Período e canal filtram as vendas (e seus consumos e custos). Custos da peça entram rateados nas vendas.
 function obterDadosFiltradosGlobais() {
   const dataInicial = filtroDataInicialAnaliseProduto.value || "";
   const dataFinal = filtroDataFinalAnaliseProduto.value || "";
@@ -179,8 +179,7 @@ function obterDadosFiltradosGlobais() {
     ...dadosAnaliseProduto,
     vendas: vendasFiltradas,
     consumosEstoque: dadosAnaliseProduto.consumosEstoque.filter(consumo => idsVendas.has(Number(consumo.vendaId))),
-    custosVenda: dadosAnaliseProduto.custosVenda.filter(custo => idsVendas.has(Number(custo.vendaId))),
-    custosPeca: dadosAnaliseProduto.custosPeca.filter(custo => itemDentroDoIntervalo(obterDataCusto(custo), dataInicial, dataFinal))
+    custosVenda: dadosAnaliseProduto.custosVenda.filter(custo => idsVendas.has(Number(custo.vendaId)))
   };
 }
 
@@ -230,7 +229,12 @@ function renderizarResumo(analises) {
   const receita = somar(analises, "receita");
   const custoPecas = pendentes ? null : somar(analises, "custoEstoque");
   const custosPeca = somar(analises, "custosPeca");
+  const custosPecaEmEstoque = somar(analises, "custosPecaEmEstoque");
   const custosVenda = somar(analises, "custosVenda");
+  const notaCusto = [
+    pendentes ? `${formatarNumero(pendentes)} ${pendentes === 1 ? "peça" : "peças"} com venda sem custo` : "",
+    !pendentes && custosPeca ? `inclui ${formatarMoeda(custosPeca)} lançados nas peças` : ""
+  ].filter(Boolean).join("");
   const lucro = pendentes ? null : somar(analises, "lucro");
   const margem = lucro === null || receita <= 0 ? null : (lucro / receita) * 100;
 
@@ -239,11 +243,11 @@ function renderizarResumo(analises) {
     criarKpi(
       "Custo das peças vendidas",
       custoPecas === null ? "Custo não calculado" : formatarMoeda(custoPecas),
-      pendentes ? `${formatarNumero(pendentes)} ${pendentes === 1 ? "peça" : "peças"} com venda sem custo` : "",
+      notaCusto,
       custoPecas === null ? "kpi__value--muted" : "",
       pendentes ? "kpi__note--warning" : ""
     ) +
-    criarKpi("Outros custos", formatarMoeda(custosPeca + custosVenda), `${formatarMoeda(custosPeca)} na peça · ${formatarMoeda(custosVenda)} na venda`) +
+    criarKpi("Custos da venda", formatarMoeda(custosVenda), custosPecaEmEstoque ? `${formatarMoeda(custosPecaEmEstoque)} lançados em peças ainda em estoque (fora do lucro)` : "Frete, embalagem, tarifas") +
     criarKpi(
       "Lucro",
       lucro === null ? "Custo não calculado" : formatarMoeda(lucro),
@@ -270,7 +274,7 @@ function renderizarLinha(analise) {
       <td class="num" data-label="Vendidas">${formatarNumero(analise.quantidadeVendida)}</td>
       <td class="num" data-label="Receita">${semVenda ? "—" : formatarMoeda(analise.receita)}</td>
       <td class="num" data-label="Custo da peça">${analise.custoEstoque === null ? '<span class="text-warning">Não calculado</span>' : semVenda ? "—" : formatarMoeda(analise.custoEstoque)}</td>
-      <td class="num" data-label="Outros custos">${analise.custosPeca + analise.custosVenda ? formatarMoeda(analise.custosPeca + analise.custosVenda) : "—"}</td>
+      <td class="num" data-label="Custos da venda">${analise.custosVenda ? formatarMoeda(analise.custosVenda) : "—"}</td>
       <td class="num cell-strong" data-label="Lucro">${lucro}</td>
       <td class="num" data-label="Margem">${formatarMargem(analise.margem)}</td>
     </tr>

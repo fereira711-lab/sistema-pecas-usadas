@@ -25,6 +25,8 @@ const tabelaCustoFifoVenda = document.getElementById("tabelaCustoFifoVenda");
 const resumo = {
   receita: document.getElementById("resumoReceita"),
   custoPeca: document.getElementById("resumoCustoPeca"),
+  linhaCustosPeca: document.getElementById("linhaCustosPecaVenda"),
+  custosPeca: document.getElementById("resumoCustosPecaVenda"),
   custosVenda: document.getElementById("resumoCustosVenda"),
   lucroLinha: document.getElementById("resumoLucroLinha"),
   lucro: document.getElementById("resumoLucro"),
@@ -33,7 +35,7 @@ const resumo = {
 };
 
 let vendaAtual = null;
-let contextoVenda = { produto: null, origens: [], entradas: [], custosVenda: [], consumos: [] };
+let contextoVenda = { produto: null, origens: [], entradas: [], custosVenda: [], consumos: [], custosPeca: [] };
 let canalEditado = "";
 
 // ---- Formatação ----
@@ -178,9 +180,15 @@ function renderizarEntradaConsumida() {
 }
 
 function renderizarResultado(venda) {
-  const resultado = window.financeiroUtils.calcularLucroVenda(venda, contextoVenda.consumos, contextoVenda.custosVenda);
+  // Custos lançados na peça (limpeza, pintura...) entram rateados pelas unidades vendidas.
+  const resultado = window.financeiroUtils.calcularLucroVenda(venda, contextoVenda.consumos, contextoVenda.custosVenda, {
+    custosPeca: contextoVenda.custosPeca,
+    entradas: contextoVenda.entradas
+  });
 
   resumo.receita.textContent = formatarMoeda(resultado.receita);
+  resumo.linhaCustosPeca.hidden = !(resultado.custosPeca > 0);
+  resumo.custosPeca.textContent = formatarNegativo(resultado.custosPeca);
   resumo.custosVenda.textContent = formatarNegativo(resultado.custosVenda);
   resumo.lucroLinha.classList.remove("summary-side__result--success", "summary-side__result--danger", "summary-side__result--neutral");
   resumo.margem.classList.remove("text-success", "text-danger");
@@ -200,7 +208,9 @@ function renderizarResultado(venda) {
   resumo.margem.textContent = resultado.margem === null ? "—" : formatarPercentual(resultado.margem);
   resumo.lucroLinha.classList.add(`summary-side__result--${classe}`);
   if (resultado.margem !== null) resumo.margem.classList.add(`text-${classe}`);
-  resumo.nota.textContent = "O custo da peça vem da entrada consumida na baixa de estoque desta venda.";
+  resumo.nota.textContent = resultado.custosPeca > 0
+    ? "O custo da peça vem da entrada consumida nesta venda; os custos da peça (limpeza, pintura etc.) entram divididos pelas unidades da peça."
+    : "O custo da peça vem da entrada consumida na baixa de estoque desta venda.";
 }
 
 function renderizarTela() {
@@ -297,12 +307,13 @@ async function iniciarDetalhesVenda() {
 
   try {
     const servico = window.supabaseService;
-    const [vendas, origens, custosVenda, consumos, entradas] = await Promise.all([
+    const [vendas, origens, custosVenda, consumos, entradas, custosPeca] = await Promise.all([
       servico.listarVendas(),
       servico.listarOrigens(),
       servico.listarCustosVenda(),
       servico.listarConsumosEstoque(),
-      servico.listarEntradasEstoque()
+      servico.listarEntradasEstoque(),
+      servico.listarCustosPeca()
     ]);
     const venda = (vendas || []).find(item => Number(item.id) === vendaId);
 
@@ -317,7 +328,8 @@ async function iniciarDetalhesVenda() {
       origens: origens || [],
       entradas: entradas || [],
       custosVenda: (custosVenda || []).filter(custo => Number(custo.vendaId) === vendaId),
-      consumos: (consumos || []).filter(consumo => Number(consumo.vendaId) === vendaId)
+      consumos: (consumos || []).filter(consumo => Number(consumo.vendaId) === vendaId),
+      custosPeca: custosPeca || []
     };
     vendaAtual = venda;
     mostrarMensagem("");

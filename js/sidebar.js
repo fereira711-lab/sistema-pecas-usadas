@@ -203,16 +203,17 @@
     if (!servico || !servico.estaConfigurado?.()) return;
 
     try {
-      if (!window.financeiroUtils) await carregarScript("js/financeiro-utils.js?v=6");
-      if (!window.alertasRegras) await carregarScript("js/alertas-regras.js?v=3");
+      if (!window.financeiroUtils) await carregarScript("js/financeiro-utils.js?v=7");
+      if (!window.alertasRegras) await carregarScript("js/alertas-regras.js?v=5");
 
-      const [origens, pecas, vendas, consumosEstoque, entradasEstoque, custosVenda] = await Promise.all([
+      const [origens, pecas, vendas, consumosEstoque, entradasEstoque, custosVenda, custosPeca] = await Promise.all([
         servico.listarOrigens(),
         servico.listarPecas(),
         servico.listarVendas(),
         servico.listarConsumosEstoque(),
         servico.listarEntradasEstoque(),
-        servico.listarCustosVenda?.() || []
+        servico.listarCustosVenda?.() || [],
+        servico.listarCustosPeca?.() || []
       ]);
 
       guardarContador(window.alertasRegras.contarGruposDeAtencao({
@@ -221,7 +222,8 @@
         vendas: vendas || [],
         consumosEstoque: consumosEstoque || [],
         entradasEstoque: entradasEstoque || [],
-        custosVenda: custosVenda || []
+        custosVenda: custosVenda || [],
+        custosPeca: custosPeca || []
       }));
     } catch (erro) {
       console.error("Não foi possível calcular o contador de alertas:", erro);

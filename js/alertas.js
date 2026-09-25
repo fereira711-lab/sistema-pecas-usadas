@@ -123,7 +123,7 @@ function descreverGrupo(grupo, dados) {
             criarCelulaPeca(pecaPorId.get(Number(venda.pecaId)) || { nome: venda.produtoNome, sku: venda.sku }),
             celula(venda.canalVenda || "—", "cell-muted cell-nowrap"),
             celula(formatarMoeda(resultado.receita), "num"),
-            celula(formatarMoeda(resultado.custoConsumido + resultado.custosVenda), "num cell-muted"),
+            celula(formatarMoeda(resultado.custoConsumido + resultado.custosPeca + resultado.custosVenda), "num cell-muted"),
             celula(formatarMoeda(resultado.lucro), "num text-danger")
           ],
           acao: { texto: "Ver venda", href: linkVenda(venda.id) }
@@ -343,13 +343,14 @@ async function carregarDados() {
   }
 
   try {
-    const [origens, pecas, vendas, consumosEstoque, entradasEstoque, custosVenda] = await Promise.all([
+    const [origens, pecas, vendas, consumosEstoque, entradasEstoque, custosVenda, custosPeca] = await Promise.all([
       window.supabaseService.listarOrigens(),
       window.supabaseService.listarPecas(),
       window.supabaseService.listarVendas(),
       window.supabaseService.listarConsumosEstoque(),
       window.supabaseService.listarEntradasEstoque(),
-      window.supabaseService.listarCustosVenda()
+      window.supabaseService.listarCustosVenda(),
+      window.supabaseService.listarCustosPeca()
     ]);
 
     return {
@@ -358,7 +359,8 @@ async function carregarDados() {
       vendas: vendas || [],
       consumosEstoque: consumosEstoque || [],
       entradasEstoque: entradasEstoque || [],
-      custosVenda: custosVenda || []
+      custosVenda: custosVenda || [],
+      custosPeca: custosPeca || []
     };
   } catch (erro) {
     console.error("Erro ao carregar alertas:", erro);

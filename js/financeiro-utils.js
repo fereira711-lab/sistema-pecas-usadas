@@ -56,6 +56,26 @@
     };
   }
 
+  // Custos lançados na peça (limpeza, pintura etc.) fazem parte do custo da peça, rateados por unidade:
+  // custos da peça / unidades totais das entradas (decisão de Rafael, 2026-09-25). Ao vender, entram no
+  // lucro da venda pela quantidade vendida; o que sobra fica como custo em estoque.
+  function calcularCustosPecaPorUnidade(pecaId, custosPeca, entradas) {
+    const total = calcularCustosPeca(pecaId, custosPeca).valor;
+    const unidades = somar(filtrarPorId(entradas, "pecaId", pecaId), "quantidadeTotal");
+    return unidades > 0 ? total / unidades : total;
+  }
+
+  function calcularCustosPecaRateados(pecaId, quantidade, custosPeca, entradas) {
+    return calcularCustosPecaPorUnidade(pecaId, custosPeca, entradas) * Math.max(0, Number(quantidade || 0));
+  }
+
+  function calcularCustosPecaEmEstoque(pecaId, custosPeca, entradas) {
+    const saldo = filtrarPorId(entradas, "pecaId", pecaId).reduce((total, entrada) => (
+      total + Math.max(0, Number(entrada?.quantidadeTotal || 0) - Number(entrada?.quantidadeConsumida || 0))
+    ), 0);
+    return calcularCustosPecaPorUnidade(pecaId, custosPeca, entradas) * saldo;
+  }
+
   function obterQuantidadeOrigensDaPeca(pecaId, entradas) {
     const origens = new Set(
       (entradas || [])
@@ -67,10 +87,15 @@
     return origens.size;
   }
 
-  function calcularLucroVenda(venda, consumos, custosVenda) {
+  // Lucro da venda = receita − custo consumido (entrada) − custos da peça rateados − custos da venda.
+  // "custosDaPeca" = { custosPeca, entradas } (todas as linhas; a função filtra pela peça da venda).
+  function calcularLucroVenda(venda, consumos, custosVenda, custosDaPeca = null) {
     const receita = calcularReceitaVenda(venda);
     const custoConsumido = calcularCustoConsumidoVenda(venda?.id, consumos);
     const custosDaVenda = calcularCustosVenda(venda?.id, custosVenda);
+    const custosPecaRateados = custosDaPeca
+      ? calcularCustosPecaRateados(venda?.pecaId, obterQuantidadeVenda(venda) || 1, custosDaPeca.custosPeca, custosDaPeca.entradas)
+      : 0;
 
     if (!custoConsumido.calculado) {
       return {
@@ -78,61 +103,59 @@
         motivo: "custo nao calculado",
         receita,
         custoConsumido: null,
+        custosPeca: custosPecaRateados,
         custosVenda: custosDaVenda.valor,
         lucro: null,
         margem: null
       };
     }
 
-    const lucro = receita - custoConsumido.valor - custosDaVenda.valor;
+    const lucro = receita - custoConsumido.valor - custosPecaRateados - custosDaVenda.valor;
 
     return {
       calculado: true,
       receita,
       custoConsumido: custoConsumido.valor,
+      custosPeca: custosPecaRateados,
       custosVenda: custosDaVenda.valor,
       lucro,
       margem: receita > 0 ? (lucro / receita) * 100 : null
     };
   }
 
-  function calcularLucroPeca(peca, vendas, consumos, custosPeca, custosVenda) {
+  // Resultado da peça = soma das vendas dela (cada uma com os custos da peça rateados). Custos lançados
+  // em unidades ainda não vendidas ficam fora do lucro ("custosPecaEmEstoque").
+  function calcularLucroPeca(peca, vendas, consumos, custosPeca, custosVenda, entradas) {
     const pecaId = obterId(peca?.id);
     const vendasDaPeca = filtrarPorId(vendas, "pecaId", pecaId);
-    const custosDaPeca = calcularCustosPeca(pecaId, custosPeca);
-    const receitas = vendasDaPeca.reduce((total, venda) => total + calcularReceitaVenda(venda), 0);
-    const resultadosVenda = vendasDaPeca.map(venda => calcularLucroVenda(venda, consumos, custosVenda));
+    const rateio = { custosPeca, entradas };
+    const resultadosVenda = vendasDaPeca.map(venda => calcularLucroVenda(venda, consumos, custosVenda, rateio));
+    const receitas = resultadosVenda.reduce((total, resultado) => total + resultado.receita, 0);
+    const custosPecaVendidos = resultadosVenda.reduce((total, resultado) => total + resultado.custosPeca, 0);
+    const custosDasVendas = resultadosVenda.reduce((total, resultado) => total + Number(resultado.custosVenda || 0), 0);
     const vendasSemCusto = resultadosVenda.filter(resultado => !resultado.calculado).length;
+    const base = {
+      receita: receitas,
+      custosPeca: custosPecaVendidos,
+      custosPecaEmEstoque: calcularCustosPecaEmEstoque(pecaId, custosPeca, entradas),
+      custosVenda: custosDasVendas,
+      vendas: vendasDaPeca
+    };
 
     if (vendasSemCusto > 0) {
-      return {
-        calculado: false,
-        motivo: "custo nao calculado",
-        receita: receitas,
-        custoConsumido: null,
-        custosPeca: custosDaPeca.valor,
-        custosVenda: resultadosVenda.reduce((total, resultado) => total + Number(resultado.custosVenda || 0), 0),
-        lucro: null,
-        margem: null,
-        vendasSemCusto,
-        vendas: vendasDaPeca
-      };
+      return { ...base, calculado: false, motivo: "custo nao calculado", custoConsumido: null, lucro: null, margem: null, vendasSemCusto };
     }
 
     const custoConsumido = resultadosVenda.reduce((total, resultado) => total + Number(resultado.custoConsumido || 0), 0);
-    const custosDasVendas = resultadosVenda.reduce((total, resultado) => total + Number(resultado.custosVenda || 0), 0);
-    const lucro = receitas - custoConsumido - custosDaPeca.valor - custosDasVendas;
+    const lucro = receitas - custoConsumido - custosPecaVendidos - custosDasVendas;
 
     return {
+      ...base,
       calculado: true,
-      receita: receitas,
       custoConsumido,
-      custosPeca: custosDaPeca.valor,
-      custosVenda: custosDasVendas,
       lucro,
       margem: receitas > 0 ? (lucro / receitas) * 100 : null,
-      vendasSemCusto: 0,
-      vendas: vendasDaPeca
+      vendasSemCusto: 0
     };
   }
 
@@ -208,10 +231,9 @@
         total + Number(entrada.quantidadeTotal || 0) * Number(entrada.custoUnitario || 0)
       ), 0);
       const vendas = resultadoOrigem.vendas.filter(venda => obterId(venda.pecaId) === pecaId);
-      const resultadosVenda = vendas.map(venda => calcularLucroVenda(venda, consumos, custosVenda));
+      // Lucro de cada venda já com os custos da peça rateados pelas unidades vendidas.
+      const resultadosVenda = vendas.map(venda => calcularLucroVenda(venda, consumos, custosVenda, { custosPeca, entradas }));
       const receita = resultadosVenda.reduce((total, resultado) => total + resultado.receita, 0);
-      // Custo lançado na peça só entra quando a peça tem uma origem só (mesma regra do resultado da origem).
-      const custosDaPeca = obterQuantidadeOrigensDaPeca(pecaId, entradas) <= 1 ? calcularCustosPeca(pecaId, custosPeca).valor : 0;
       const lucroCalculado = vendas.length > 0 && resultadosVenda.every(resultado => resultado.calculado);
       const precoVenda = Number(peca.precoVenda || peca.preco_venda || 0);
 
@@ -230,7 +252,7 @@
           : {
               calculado: lucroCalculado,
               valor: lucroCalculado
-                ? resultadosVenda.reduce((total, resultado) => total + resultado.lucro, 0) - custosDaPeca
+                ? resultadosVenda.reduce((total, resultado) => total + resultado.lucro, 0)
                 : null
             }
       };
@@ -282,7 +304,20 @@
   // - com saldo: custo unitário da entrada mais antiga com saldo (a próxima unidade a ser consumida);
   // - sem saldo: custo unitário da última unidade consumida;
   // - sem entrada: não calculado.
-  function calcularCustoReferenciaPeca(pecaId, entradas, consumos) {
+  // Com "custosPeca", o valor inclui os custos lançados na peça por unidade ("custosPecaUnidade"),
+  // porque eles fazem parte do custo da peça; "custoEntrada" é só o da entrada.
+  function calcularCustoReferenciaPeca(pecaId, entradas, consumos, custosPeca = null) {
+    const referencia = calcularCustoReferenciaEntrada(pecaId, entradas, consumos);
+    const custosPecaUnidade = custosPeca && referencia.calculado ? calcularCustosPecaPorUnidade(pecaId, custosPeca, entradas) : 0;
+    return {
+      ...referencia,
+      custoEntrada: referencia.valor,
+      custosPecaUnidade,
+      valor: referencia.calculado ? referencia.valor + custosPecaUnidade : null
+    };
+  }
+
+  function calcularCustoReferenciaEntrada(pecaId, entradas, consumos) {
     const entradasDaPeca = filtrarPorId(entradas, "pecaId", pecaId);
     const proximaEntrada = entradasDaPeca
       .filter(entrada => Number(entrada?.quantidadeTotal || 0) - Number(entrada?.quantidadeConsumida || 0) > 0)
@@ -306,7 +341,8 @@
   // Prévia do custo de uma venda antes de registrar: percorre as entradas com saldo na mesma ordem
   // de consumo (compararOrdemConsumo) e soma o custo das N próximas unidades. Com quantidade 1 é o
   // mesmo valor de calcularCustoReferenciaPeca. O custo oficial continua vindo do banco ao registrar.
-  function estimarCustoVendaPeca(pecaId, quantidade, entradas) {
+  // "custosPeca" (opcional) devolve também os custos lançados na peça rateados pela quantidade.
+  function estimarCustoVendaPeca(pecaId, quantidade, entradas, custosPeca = null) {
     let restante = Math.max(0, Math.floor(Number(quantidade || 0)));
     const pedida = restante;
     let valor = 0;
@@ -328,6 +364,7 @@
     return {
       calculado: pedida > 0 && restante === 0,
       valor: pedida > 0 && restante === 0 ? valor : null,
+      custosPeca: custosPeca ? calcularCustosPecaRateados(pecaId, pedida, custosPeca, entradas) : 0,
       quantidadeSemEstoque: restante,
       partes
     };
@@ -352,6 +389,9 @@
     calcularCustoConsumidoVenda,
     calcularCustosVenda,
     calcularCustosPeca,
+    calcularCustosPecaPorUnidade,
+    calcularCustosPecaRateados,
+    calcularCustosPecaEmEstoque,
     calcularLucroVenda,
     calcularLucroPeca,
     calcularResultadoOrigem,

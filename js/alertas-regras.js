@@ -125,7 +125,7 @@
         return [];
       }
 
-      const custo = financeiro.calcularCustoReferenciaPeca(peca.id, dados.entradasEstoque, dados.consumosEstoque);
+      const custo = financeiro.calcularCustoReferenciaPeca(peca.id, dados.entradasEstoque, dados.consumosEstoque, dados.custosPeca || []);
 
       if (!custo.calculado || preco >= custo.valor - TOLERANCIA) {
         return [];
@@ -144,7 +144,7 @@
   function calcularResultadosVendas(dados, financeiro) {
     return (dados.vendas || []).map(venda => ({
       venda,
-      resultado: financeiro.calcularLucroVenda(venda, dados.consumosEstoque, dados.custosVenda)
+      resultado: financeiro.calcularLucroVenda(venda, dados.consumosEstoque, dados.custosVenda, { custosPeca: dados.custosPeca || [], entradas: dados.entradasEstoque })
     }));
   }
 

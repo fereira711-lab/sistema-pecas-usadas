@@ -15,7 +15,7 @@ const campoImagemProdutoExistente = document.getElementById("imagemProdutoExiste
 
 const ITENS_POR_PAGINA = 20;
 
-let dadosProdutos = { pecas: [], origens: [], entradas: [], vendas: [], consumos: [] };
+let dadosProdutos = { pecas: [], origens: [], entradas: [], vendas: [], consumos: [], custosPeca: [] };
 let linhasProdutos = [];
 let situacaoSelecionada = "todas";
 let paginaAtual = 1;
@@ -78,12 +78,13 @@ async function carregarDados() {
   }
 
   try {
-    const [pecas, origens, entradas, vendas, consumos] = await Promise.all([
+    const [pecas, origens, entradas, vendas, consumos, custosPeca] = await Promise.all([
       window.supabaseService.listarPecas(),
       window.supabaseService.listarOrigens(),
       window.supabaseService.listarEntradasEstoque(),
       window.supabaseService.listarVendas(),
-      window.supabaseService.listarConsumosEstoque()
+      window.supabaseService.listarConsumosEstoque(),
+      window.supabaseService.listarCustosPeca()
     ]);
 
     mensagemProdutos.textContent = "";
@@ -93,7 +94,8 @@ async function carregarDados() {
       origens: origens || [],
       entradas: entradas || [],
       vendas: vendas || [],
-      consumos: consumos || []
+      consumos: consumos || [],
+      custosPeca: custosPeca || []
     };
   } catch (erro) {
     console.error("Erro ao carregar produtos do Supabase:", erro);
@@ -139,7 +141,7 @@ function montarLinhas() {
   return dadosProdutos.pecas.map(peca => {
     const saldo = calcularSaldoPeca(peca.id);
     const temEntrada = dadosProdutos.entradas.some(entrada => Number(entrada.pecaId) === peca.id);
-    const custo = financeiro ? financeiro.calcularCustoReferenciaPeca(peca.id, dadosProdutos.entradas, dadosProdutos.consumos) : { calculado: false, valor: null };
+    const custo = financeiro ? financeiro.calcularCustoReferenciaPeca(peca.id, dadosProdutos.entradas, dadosProdutos.consumos, dadosProdutos.custosPeca) : { calculado: false, valor: null };
     const margem = financeiro && custo.calculado ? financeiro.calcularMargemPreco(peca.precoVenda, custo.valor) : null;
     const parada = paradas.get(peca.id) || null;
     const origem = origemPorId.get(peca.origemId) || null;

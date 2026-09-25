@@ -20,7 +20,9 @@ let dadosAnalisePeriodo = {
   vendas: [],
   consumosEstoque: [],
   custosVenda: [],
-  pecas: []
+  pecas: [],
+  custosPeca: [],
+  entradas: []
 };
 let custoSelecionado = "";
 let paginaAtual = 1;
@@ -125,7 +127,10 @@ function calcularLinhas(vendas) {
   const pecasPorId = new Map(dadosAnalisePeriodo.pecas.map(peca => [Number(peca.id), peca]));
 
   return vendas.map(venda => {
-    const resultado = window.financeiroUtils.calcularLucroVenda(venda, dadosAnalisePeriodo.consumosEstoque, dadosAnalisePeriodo.custosVenda);
+    const resultado = window.financeiroUtils.calcularLucroVenda(venda, dadosAnalisePeriodo.consumosEstoque, dadosAnalisePeriodo.custosVenda, {
+      custosPeca: dadosAnalisePeriodo.custosPeca,
+      entradas: dadosAnalisePeriodo.entradas
+    });
     const peca = pecasPorId.get(Number(venda.pecaId)) || null;
 
     return {
@@ -136,7 +141,9 @@ function calcularLinhas(vendas) {
       canal: obterCanalVenda(venda),
       quantidade: Number(venda.quantidadeVendida || venda.quantidade_vendida || 0),
       receita: resultado.receita,
-      custoPeca: resultado.calculado ? resultado.custoConsumido : null,
+      // Custo da peça = entrada consumida + custos lançados na peça rateados (mesma conta de Por produto).
+      custoPeca: resultado.calculado ? resultado.custoConsumido + resultado.custosPeca : null,
+      custosPecaLancados: resultado.custosPeca,
       custosVenda: resultado.custosVenda,
       lucro: resultado.calculado ? resultado.lucro : null,
       margem: resultado.calculado ? resultado.margem : null,
@@ -182,7 +189,9 @@ function renderizarResumo(linhas) {
     criarKpi(
       "Custo das peças",
       custoPecas === null ? "Custo não calculado" : formatarMoeda(custoPecas),
-      pendentes ? `${formatarNumero(pendentes)} ${pendentes === 1 ? "venda sem custo calculado" : "vendas sem custo calculado"}` : "",
+      pendentes
+        ? `${formatarNumero(pendentes)} ${pendentes === 1 ? "venda sem custo calculado" : "vendas sem custo calculado"}`
+        : somar(linhas, "custosPecaLancados") ? `inclui ${formatarMoeda(somar(linhas, "custosPecaLancados"))} lançados nas peças` : "",
       custoPecas === null ? "kpi__value--muted" : "",
       pendentes ? "kpi__note--warning" : ""
     ) +
@@ -267,18 +276,22 @@ async function iniciarAnalisePeriodo() {
   }
 
   try {
-    const [vendas, consumosEstoque, custosVenda, pecas] = await Promise.all([
+    const [vendas, consumosEstoque, custosVenda, pecas, custosPeca, entradas] = await Promise.all([
       window.supabaseService.listarVendas(),
       window.supabaseService.listarConsumosEstoque(),
       window.supabaseService.listarCustosVenda(),
-      window.supabaseService.listarPecas()
+      window.supabaseService.listarPecas(),
+      window.supabaseService.listarCustosPeca(),
+      window.supabaseService.listarEntradasEstoque()
     ]);
 
     dadosAnalisePeriodo = {
       vendas: vendas || [],
       consumosEstoque: consumosEstoque || [],
       custosVenda: custosVenda || [],
-      pecas: pecas || []
+      pecas: pecas || [],
+      custosPeca: custosPeca || [],
+      entradas: entradas || []
     };
     preencherCanais(dadosAnalisePeriodo.vendas);
     renderizarAnalise();

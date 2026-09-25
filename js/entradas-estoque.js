@@ -17,6 +17,8 @@ const botaoPaginaAnterior = document.getElementById("paginaAnterior");
 const botaoPaginaProxima = document.getElementById("paginaProxima");
 
 let linhasEntradas = [];
+let entradasCarregadas = [];
+let custosPecaCarregados = [];
 let statusSelecionado = "";
 let paginaAtual = 1;
 
@@ -124,11 +126,21 @@ function criarKpi({ rotulo, valor, nota = "" }) {
   `;
 }
 
+// Custos lançados nas peças (limpeza, pintura...) que ainda estão em estoque: parte do custo da peça
+// que só entra no lucro quando ela vender (financeiro-utils.calcularCustosPecaEmEstoque).
+function calcularCustosPecaEmEstoque() {
+  const financeiro = window.financeiroUtils;
+  if (!financeiro?.calcularCustosPecaEmEstoque) return 0;
+  const idsPecas = [...new Set(entradasCarregadas.map(entrada => Number(entrada.pecaId)))];
+  return idsPecas.reduce((total, pecaId) => total + financeiro.calcularCustosPecaEmEstoque(pecaId, custosPecaCarregados, entradasCarregadas), 0);
+}
+
 function renderizarResumo() {
   const comSaldo = linhasEntradas.filter(linha => linha.saldo > 0);
   const unidadesEmEstoque = comSaldo.reduce((soma, linha) => soma + linha.saldo, 0);
   const unidadesConsumidas = linhasEntradas.reduce((soma, linha) => soma + linha.consumida, 0);
-  const custoEmEstoque = comSaldo.reduce((soma, linha) => soma + linha.custoEmEstoque, 0);
+  const custosPecaEmEstoque = calcularCustosPecaEmEstoque();
+  const custoEmEstoque = comSaldo.reduce((soma, linha) => soma + linha.custoEmEstoque, 0) + custosPecaEmEstoque;
 
   resumoEntradas.textContent = linhasEntradas.length
     ? `${plural(linhasEntradas.length, "entrada registrada", "entradas registradas")} · ${plural(unidadesEmEstoque, "unidade em estoque", "unidades em estoque")}`
@@ -142,7 +154,11 @@ function renderizarResumo() {
     }),
     criarKpi({ rotulo: "Em estoque", valor: plural(unidadesEmEstoque, "unidade", "unidades"), nota: "Saldo das entradas" }),
     criarKpi({ rotulo: "Consumidas", valor: plural(unidadesConsumidas, "unidade", "unidades"), nota: "Baixadas pelas vendas" }),
-    criarKpi({ rotulo: "Custo em estoque", valor: formatarMoeda(custoEmEstoque), nota: "Saldo × custo unitário" })
+    criarKpi({
+      rotulo: "Custo em estoque",
+      valor: formatarMoeda(custoEmEstoque),
+      nota: custosPecaEmEstoque ? `Saldo × custo unitário + ${formatarMoeda(custosPecaEmEstoque)} lançados nas peças` : "Saldo × custo unitário"
+    })
   ].join("");
 }
 
@@ -242,7 +258,13 @@ async function iniciarEntradasEstoque() {
   }
 
   try {
-    linhasEntradas = montarLinhasEntradas(await window.supabaseService.listarEntradasEstoque() || []);
+    const [entradas, custosPeca] = await Promise.all([
+      window.supabaseService.listarEntradasEstoque(),
+      window.supabaseService.listarCustosPeca()
+    ]);
+    entradasCarregadas = entradas || [];
+    custosPecaCarregados = custosPeca || [];
+    linhasEntradas = montarLinhasEntradas(entradasCarregadas);
     mensagemEntradasEstoque.textContent = "";
     renderizarFiltroOrigens();
     renderizarResumo();

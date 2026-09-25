@@ -277,7 +277,8 @@ function calcularResultado() {
         contextoProduto.vendas,
         contextoProduto.consumosEstoque,
         contextoProduto.custosPeca,
-        contextoProduto.custosVenda
+        contextoProduto.custosVenda,
+        contextoProduto.entradas
       )
     : null;
   const receitaTotal = financeiro
@@ -1061,7 +1062,7 @@ function renderizarDadosProduto(produto) {
   const precoVenda = Number(produto.precoVenda || 0);
   // Custo da próxima unidade a sair (ou da última vendida), a mesma regra de Produtos. Sem custo médio.
   const custo = financeiro
-    ? financeiro.calcularCustoReferenciaPeca(produto.id, contextoProduto.entradas, contextoProduto.consumosEstoque)
+    ? financeiro.calcularCustoReferenciaPeca(produto.id, contextoProduto.entradas, contextoProduto.consumosEstoque, contextoProduto.custosPeca)
     : { calculado: false, valor: null };
   const margem = financeiro && custo.calculado ? financeiro.calcularMargemPreco(precoVenda, custo.valor) : null;
   const situacao = calcularSituacaoProduto(produto, quantidadeDisponivel, margem);
@@ -1277,7 +1278,10 @@ function renderizarVendas() {
 
   tabelaVendasProduto.innerHTML = ordenarVendasPorData(contextoProduto.vendas).map(venda => {
     const href = `detalhes-venda.html?vendaId=${encodeURIComponent(venda.id)}`;
-    const resultado = window.financeiroUtils?.calcularLucroVenda(venda, contextoProduto.consumosEstoque, contextoProduto.custosVenda);
+    const resultado = window.financeiroUtils?.calcularLucroVenda(venda, contextoProduto.consumosEstoque, contextoProduto.custosVenda, {
+      custosPeca: contextoProduto.custosPeca,
+      entradas: contextoProduto.entradas
+    });
     const lucro = resultado?.calculado
       ? `<td class="num cell-strong ${resultado.lucro < 0 ? "text-danger" : "text-success"}" data-label="Lucro">${formatarMoeda(resultado.lucro)}</td>`
       : '<td class="num cell-muted" data-label="Lucro">Custo não calculado</td>';

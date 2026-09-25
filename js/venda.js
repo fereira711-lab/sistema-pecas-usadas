@@ -24,6 +24,8 @@ const botaoRegistrarVenda = document.getElementById("botaoRegistrarVenda");
 const resumoReceita = document.getElementById("resumoReceita");
 const resumoCustoPeca = document.getElementById("resumoCustoPeca");
 const resumoCustosVenda = document.getElementById("resumoCustosVenda");
+const linhaCustosPecaVenda = document.getElementById("linhaCustosPecaVenda");
+const resumoCustosPecaVenda = document.getElementById("resumoCustosPecaVenda");
 const resumoLucroLinha = document.getElementById("resumoLucroLinha");
 const resumoLucro = document.getElementById("resumoLucro");
 const resumoMargem = document.getElementById("resumoMargem");
@@ -32,6 +34,7 @@ const notaCustoVenda = document.getElementById("notaCustoVenda");
 let pecasVenda = [];
 let origensVenda = [];
 let entradasVenda = [];
+let custosPecaVenda = [];
 let tiposCustoVenda = [];
 let pecaSelecionada = null;
 let canalSelecionado = "";
@@ -108,25 +111,28 @@ function obterOrigem(peca) {
 
 // ---- Prévia do resultado (sem DOM, para poder testar) ----
 
-// Receita, custo da peça estimado pela ordem de consumo, custos da venda, lucro e margem.
-// Sem estoque suficiente ou sem entrada: custo não calculado, sem inventar lucro/margem.
-function calcularPreviaVenda({ pecaId, quantidade, valorUnitario, custosVenda, entradas }) {
+// Receita, custo da peça estimado pela ordem de consumo, custos lançados na peça (rateados pelas
+// unidades), custos da venda, lucro e margem. Sem estoque suficiente ou sem entrada: custo não
+// calculado, sem inventar lucro/margem.
+function calcularPreviaVenda({ pecaId, quantidade, valorUnitario, custosVenda, entradas, custosPeca = [] }) {
   const qtd = Number.isInteger(quantidade) && quantidade > 0 ? quantidade : 0;
   const unitario = Number.isFinite(valorUnitario) && valorUnitario >= 0 ? valorUnitario : 0;
   const receita = qtd * unitario;
   const totalCustosVenda = (custosVenda || []).reduce((total, custo) => total + Number(custo.valor || 0), 0);
   const custo = pecaId && qtd > 0 && window.financeiroUtils?.estimarCustoVendaPeca
-    ? window.financeiroUtils.estimarCustoVendaPeca(pecaId, qtd, entradas)
-    : { calculado: false, valor: null, quantidadeSemEstoque: 0 };
+    ? window.financeiroUtils.estimarCustoVendaPeca(pecaId, qtd, entradas, custosPeca)
+    : { calculado: false, valor: null, custosPeca: 0, quantidadeSemEstoque: 0 };
 
   if (!custo.calculado) {
-    return { receita, custoPeca: null, custosVenda: totalCustosVenda, lucro: null, margem: null, quantidadeSemEstoque: custo.quantidadeSemEstoque };
+    return { receita, custoPeca: null, custosPeca: 0, custosVenda: totalCustosVenda, lucro: null, margem: null, quantidadeSemEstoque: custo.quantidadeSemEstoque };
   }
 
-  const lucro = receita - custo.valor - totalCustosVenda;
+  const custosPecaRateados = Number(custo.custosPeca || 0);
+  const lucro = receita - custo.valor - custosPecaRateados - totalCustosVenda;
   return {
     receita,
     custoPeca: custo.valor,
+    custosPeca: custosPecaRateados,
     custosVenda: totalCustosVenda,
     lucro,
     margem: receita > 0 ? (lucro / receita) * 100 : null,
@@ -331,11 +337,14 @@ function atualizarResumo() {
     quantidade: lerQuantidade(),
     valorUnitario: lerMoeda(campoValor.value),
     custosVenda: custos,
-    entradas: entradasVenda
+    entradas: entradasVenda,
+    custosPeca: custosPecaVenda
   });
 
   resumoReceita.textContent = formatarMoeda(previa.receita);
   resumoCustosVenda.textContent = formatarNegativo(previa.custosVenda);
+  linhaCustosPecaVenda.hidden = !(previa.custosPeca > 0);
+  resumoCustosPecaVenda.textContent = formatarNegativo(previa.custosPeca);
   resumoLucroLinha.classList.remove("summary-side__result--success", "summary-side__result--danger", "summary-side__result--neutral");
   resumoMargem.classList.remove("text-success", "text-danger");
 
@@ -463,16 +472,18 @@ async function iniciarRegistrarVenda() {
   }
 
   try {
-    const [pecas, origens, entradas, tipos] = await Promise.all([
+    const [pecas, origens, entradas, tipos, custosPeca] = await Promise.all([
       window.supabaseService.listarPecas(),
       window.supabaseService.listarOrigens(),
       window.supabaseService.listarEntradasEstoque(),
-      window.supabaseService.listarTiposCusto("venda")
+      window.supabaseService.listarTiposCusto("venda"),
+      window.supabaseService.listarCustosPeca()
     ]);
     pecasVenda = pecas || [];
     origensVenda = origens || [];
     entradasVenda = entradas || [];
     tiposCustoVenda = tipos || [];
+    custosPecaVenda = custosPeca || [];
   } catch (erro) {
     console.error("Erro ao carregar dados da venda:", erro);
     mostrarMensagem("Não foi possível carregar as peças do Supabase.");

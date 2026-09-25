@@ -76,7 +76,7 @@ function calcularSituacao(item, parada, financeiro, dados) {
   if (item.vendida) return { chave: "vendida" };
   if (item.saldo <= 0) return { chave: "sem-saldo" };
 
-  const custo = financeiro.calcularCustoReferenciaPeca(item.peca.id, dados.entradas, dados.consumos);
+  const custo = financeiro.calcularCustoReferenciaPeca(item.peca.id, dados.entradas, dados.consumos, dados.custosPeca);
   const margem = custo.calculado ? financeiro.calcularMargemPreco(item.precoVenda, custo.valor) : null;
 
   if (margem !== null && margem < 0) return { chave: "abaixo-custo" };

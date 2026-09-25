@@ -62,7 +62,10 @@ function calcularResultadoVenda(venda, dados) {
   if (!financeiro) {
     return { calculado: false, receita: 0, custoConsumido: null, custosVenda: 0, lucro: null, margem: null };
   }
-  return financeiro.calcularLucroVenda(venda, dados.consumosEstoque || [], dados.custosVenda || []);
+  return financeiro.calcularLucroVenda(venda, dados.consumosEstoque || [], dados.custosVenda || [], {
+    custosPeca: dados.custosPeca || [],
+    entradas: dados.entradasEstoque || []
+  });
 }
 
 // ---- Período ----
@@ -126,7 +129,8 @@ function renderizarKpis(dados, periodo) {
   const custosDaVenda = resultados.reduce((total, r) => total + Number(r.custosVenda || 0), 0);
   const calculados = resultados.filter(r => r.calculado);
   const semCusto = resultados.length - calculados.length;
-  const custoPecas = calculados.reduce((total, r) => total + Number(r.custoConsumido || 0), 0);
+  // Custo da peça = entrada consumida + custos lançados na peça, rateados pelas unidades vendidas.
+  const custoPecas = calculados.reduce((total, r) => total + Number(r.custoConsumido || 0) + Number(r.custosPeca || 0), 0);
 
   // Lucro e margem só aparecem quando todas as vendas do período têm custo calculado.
   let kpiLucro;
@@ -426,7 +430,7 @@ function renderizarUltimasVendas(dados) {
     const sku = peca?.sku || venda.sku || "";
     const resultado = calcularResultadoVenda(venda, dados);
     // Custos = custo da peça + custos da venda, para que valor − custos = lucro na mesma linha.
-    const custos = resultado.calculado ? formatarMoeda(Number(resultado.custoConsumido || 0) + Number(resultado.custosVenda || 0)) : "Custo não calculado";
+    const custos = resultado.calculado ? formatarMoeda(Number(resultado.custoConsumido || 0) + Number(resultado.custosPeca || 0) + Number(resultado.custosVenda || 0)) : "Custo não calculado";
     const lucro = resultado.calculado ? formatarMoeda(resultado.lucro) : "—";
     const classeLucro = !resultado.calculado ? "cell-muted" : resultado.lucro < 0 ? "text-danger" : "text-success";
 
