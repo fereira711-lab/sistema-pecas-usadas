@@ -416,6 +416,9 @@ Custos (`js/analise-custos.js`):
 - Painel escuro a esquerda (mesma cor da sidebar) com a marca (icone, nome do sistema e da loja) e uma frase curta; a direita, card com titulo "Entrar", e-mail, senha, mensagem e botao `Entrar` na largura toda. Ate 760px a marca vira uma faixa no topo.
 - A mensagem usa as classes `form-message--warning`/`--success` que o `auth.js` aplica. Login aprovado volta para a pagina do `?redirect=` ou abre o Painel.
 - Nome do sistema e da loja escritos na pagina (os mesmos das constantes de `js/sidebar.js`); o nome comercial ainda esta pendente.
+- "Esqueci minha senha" (2026-09-25): troca o card para "Recuperar senha" (e-mail + `Enviar link`, `Voltar para a entrada`) e chama `supabase.auth.resetPasswordForEmail` com `redirectTo` = `paginas/nova-senha.html` da mesma origem. A resposta e a mesma para qualquer e-mail (nao revela quem esta cadastrado).
+- `paginas/nova-senha.html` (`data-auth="nova-senha"`): o cliente do Supabase le o link do e-mail; com sessao de recuperacao mostra "Nova senha" + "Repita a nova senha" (minimo 8 caracteres) e salva com `supabase.auth.updateUser({ password })`, depois abre o Painel. Link invalido ou expirado: aviso e link para a entrada. Tudo em `js/auth.js`.
+- Configuracao no painel do Supabase (feita por Rafael, nao pelo codigo): Authentication > URL Configuration > Redirect URLs com o endereco de `paginas/nova-senha.html` de cada ambiente (ex.: `http://127.0.0.1:8080/paginas/nova-senha.html` e o endereco publicado); Site URL com o endereco principal. O e-mail padrao do Supabase tem limite baixo de envios por hora; para uso real, configurar SMTP proprio em Authentication > SMTP Settings.
 
 ## Tarefas grandes
 

@@ -107,6 +107,30 @@ body.ui-v2.login {
   justify-content: center;
 }
 
+/* "Esqueci minha senha" e "Voltar para a entrada": link discreto abaixo do botão. */
+.login__link {
+  align-self: center;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--link);
+  font-family: var(--font-sans);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.login__link:hover {
+  color: var(--link-hover);
+}
+
+.login__link:focus-visible {
+  outline: none;
+  border-radius: var(--radius-xs);
+  box-shadow: var(--focus-ring);
+}
+
 /* A mensagem recebe as classes form-message--* do auth.js. */
 .login .form-message {
   margin: 0;

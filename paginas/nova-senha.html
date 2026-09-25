@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nova senha · DWDW ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="../css/base.css?v=16">
+  <link rel="stylesheet" href="../css/login.css?v=2">
+</head>
+<body data-auth="nova-senha" class="ui-v2 login">
+  <aside class="login__marca" aria-label="Sistema">
+    <div class="login__marca-topo">
+      <span class="login__marca-icone" aria-hidden="true"><i class="ri-car-line"></i></span>
+      <span class="login__marca-texto">
+        <span class="login__marca-nome">DWDW ERP</span>
+        <span class="login__marca-loja">DWDW Autopeças</span>
+      </span>
+    </div>
+    <p class="login__marca-frase">Peças, origens, estoque e vendas do desmanche num lugar só.</p>
+  </aside>
+
+  <main class="login__area">
+    <section class="card login__card" aria-labelledby="tituloNovaSenha">
+      <div class="login__cabecalho">
+        <h1 class="login__titulo" id="tituloNovaSenha">Nova senha</h1>
+        <p class="login__subtitulo">Crie a nova senha de acesso ao sistema.</p>
+      </div>
+
+      <form id="formNovaSenha" class="login__form" hidden>
+        <div class="field">
+          <label class="field__label" for="novaSenha">Nova senha</label>
+          <input id="novaSenha" class="input" type="password" autocomplete="new-password" minlength="8" required>
+          <span class="field__hint">Pelo menos 8 caracteres.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="confirmarNovaSenha">Repita a nova senha</label>
+          <input id="confirmarNovaSenha" class="input" type="password" autocomplete="new-password" minlength="8" required>
+        </div>
+
+        <button id="botaoSalvarNovaSenha" type="submit" class="btn btn--primary login__botao">Salvar nova senha</button>
+      </form>
+
+      <p id="mensagemNovaSenha" class="form-message" aria-live="polite">Conferindo o link...</p>
+      <a id="linkVoltarLogin" class="login__link" href="login.html" hidden>Voltar para a entrada</a>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js?v=6"></script>
+  <script src="../js/auth.js?v=5"></script>
+</body>
+</html>
