@@ -3,18 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Entrando no sistema - Sistema de Gestao de Pecas Usadas</title>
+  <title>DWDW ERP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/base.css?v=16">
-  <link rel="stylesheet" href="css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark app-entry-page">
-  <main class="app-entry-shell" aria-live="polite">
-    <p class="hero__tag">DWDW ERP</p>
-    <h1>Abrindo painel</h1>
-    <p>Validando acesso para carregar o Painel Geral.</p>
+<!-- Entrada do site: confere a sessão e abre o Painel (sem sessão, o auth.js leva para o Login). -->
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page" aria-live="polite">
+    <p class="page-head__subtitle">Abrindo o painel…</p>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

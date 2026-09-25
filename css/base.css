@@ -1,9 +1,9 @@
 /*
  * base.css — fundação visual do redesenho (docs/redesenho/pacote-redesenho-erp/ESPECIFICACAO-REDESENHO.md).
  *
- * Convive com o style.css antigo enquanto as telas migram uma a uma:
+ * Todas as telas do sistema usam body.ui-v2 (o style.css antigo saiu na Fase 9 e ficou só para os
+ * previews antigos, em previews/legado-style.css):
  * - nenhuma regra aqui atinge elementos soltos (body, h1, button, input...) fora de body.ui-v2;
- * - todos os componentes usam classes que não existem no style.css;
  * - fora do :root, nenhuma cor, raio ou espaçamento literal: tudo por variável.
  */
 
@@ -129,7 +129,7 @@ body.ui-v2 p {
   margin: 0;
 }
 
-/* Enquanto a sessão é verificada, nada da tela aparece (mesma regra do style.css antigo). */
+/* Enquanto a sessão é verificada, nada da tela aparece. */
 .auth-checking .side-nav,
 .auth-checking .page {
   display: none;
