@@ -25,9 +25,23 @@
     elemento.className = `form-message${tipo ? ` form-message--${tipo}` : ""}`;
   }
 
+  // Destino depois do login (?redirect=): só caminho dentro do próprio sistema, começando com "/".
+  // Recusa endereço de outro site ("//site", "/\site"), esquema ("http:", "javascript:"), caracteres de
+  // controle e qualquer coisa que não comece com "/". Valor recusado: volta null e o login abre o Painel.
+  function validarDestinoRetorno(valor) {
+    const destino = String(valor ?? "").trim();
+
+    if (!destino.startsWith("/")) return null;
+    if (destino.startsWith("//") || destino.includes("\\")) return null;
+    if (/[\u0000-\u001f\u007f]/.test(destino)) return null;
+    if (/^\/*[a-z][a-z0-9+.-]*:/i.test(destino)) return null;
+
+    return destino;
+  }
+
   function obterUrlRetorno() {
     const parametros = new URLSearchParams(window.location.search);
-    return parametros.get("redirect") || caminhoInicial();
+    return validarDestinoRetorno(parametros.get("redirect")) || caminhoInicial();
   }
 
   function limparSessaoLocal() {
@@ -43,7 +57,9 @@
   }
 
   function redirecionarParaLogin() {
-    const destino = `${caminhoLogin()}?redirect=${encodeURIComponent(window.location.href)}`;
+    // Só o caminho da página (sem origem), para passar na validação do retorno.
+    const caminho = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const destino = `${caminhoLogin()}?redirect=${encodeURIComponent(caminho)}`;
     window.location.replace(destino);
   }
 
@@ -281,6 +297,8 @@
       window.location.href = obterUrlRetorno();
     }
   }
+
+  window.authRetorno = { validarDestinoRetorno };
 
   document.addEventListener("DOMContentLoaded", () => {
     const paginaAuth = document.body.dataset.auth;
