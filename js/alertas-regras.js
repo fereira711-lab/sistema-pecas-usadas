@@ -1,6 +1,6 @@
 // Regras de "precisa de atenção" do redesenho (seção 8 da especificação), pensadas para desmanche:
 // - quantidade 1 não é alerta e peça recém-cadastrada sem venda também não;
-// - peça parada há mais de 90 dias (sem venda desde a entrada), com o valor parado;
+// - peça parada há mais de 90 dias sem venda (a mesma regra do Giro de estoque), com o valor parado;
 // - venda sem custo calculado, venda com prejuízo, origem com valor a distribuir e distribuição acima do pago;
 // - peça em estoque com preço abaixo do custo (aprovada depois da Fase 3).
 // Funções puras: recebem os dados já carregados e não tocam no DOM. Lucro e prejuízo vêm do financeiro-utils.js.
@@ -42,37 +42,28 @@
     }, {});
   }
 
-  function calcularPecasParadas(dados, hoje) {
-    const hojeMs = hojeUtc(hoje);
-    const vendasPorPeca = agruparPor(dados.vendas, "pecaId");
+  // Peça parada = "Parado" do Giro de estoque (classificarGiroPecas): tem saldo e está há mais de 90 dias
+  // sem venda (contando da última venda ou, sem venda desde a entrada, da entrada mais antiga com saldo).
+  // Uma regra só para Produtos, Painel, Alertas, Detalhes da origem e Giro (decisão de Rafael, 2026-09-25).
+  // Com "financeiro", o valor parado inclui os custos lançados na peça que ainda estão em estoque.
+  function calcularPecasParadas(dados, hoje, financeiro = null) {
     const entradasPorPeca = agruparPor(dados.entradasEstoque, "pecaId");
+    const custosEmEstoque = pecaId => (financeiro?.calcularCustosPecaEmEstoque && dados.custosPeca
+      ? financeiro.calcularCustosPecaEmEstoque(pecaId, dados.custosPeca, dados.entradasEstoque)
+      : 0);
 
-    return (dados.pecas || []).flatMap(peca => {
-      const pecaId = obterId(peca.id);
-      const datasVenda = (vendasPorPeca[pecaId] || []).map(venda => dataDoDia(venda.dataVenda)).filter(Boolean);
-      const ultimaVenda = datasVenda.length ? Math.max(...datasVenda) : null;
-
-      // Entrada parada: ainda tem saldo, entrou há mais de 90 dias e a peça não vendeu desde essa entrada.
-      const entradasParadas = (entradasPorPeca[pecaId] || []).filter(entrada => {
-        const dataEntrada = dataDoDia(entrada.dataEntrada || entrada.createdAt);
-        if (!dataEntrada || obterSaldoEntrada(entrada) <= 0) return false;
-        const dias = Math.floor((hojeMs - dataEntrada) / UM_DIA_MS);
-        return dias > DIAS_PARA_PECA_PARADA && (ultimaVenda === null || ultimaVenda < dataEntrada);
+    return classificarGiroPecas(dados, hoje)
+      .filter(item => item.chave === "parado")
+      .map(item => {
+        const entradasComSaldo = (entradasPorPeca[obterId(item.peca.id)] || []).filter(entrada => obterSaldoEntrada(entrada) > 0);
+        return {
+          peca: item.peca,
+          dias: item.dias,
+          quantidade: item.saldo,
+          valorParado: entradasComSaldo.reduce((total, entrada) => total + obterSaldoEntrada(entrada) * Number(entrada.custoUnitario || 0), 0) +
+            custosEmEstoque(item.peca.id)
+        };
       });
-
-      if (entradasParadas.length === 0) {
-        return [];
-      }
-
-      const entradaMaisAntiga = Math.min(...entradasParadas.map(entrada => dataDoDia(entrada.dataEntrada || entrada.createdAt)));
-
-      return [{
-        peca,
-        dias: Math.floor((hojeMs - entradaMaisAntiga) / UM_DIA_MS),
-        quantidade: entradasParadas.reduce((total, entrada) => total + obterSaldoEntrada(entrada), 0),
-        valorParado: entradasParadas.reduce((total, entrada) => total + obterSaldoEntrada(entrada) * Number(entrada.custoUnitario || 0), 0)
-      }];
-    });
   }
 
   // Giro de estoque (Análises), nas mesmas faixas do resto do sistema (decisão de 2026-09-25):
@@ -195,7 +186,7 @@
       {
         tipo: "peca-parada",
         gravidade: "warning",
-        itens: calcularPecasParadas(dados, hoje)
+        itens: calcularPecasParadas(dados, hoje, financeiro)
       },
       {
         tipo: "origem-a-distribuir",

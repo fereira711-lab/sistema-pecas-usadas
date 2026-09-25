@@ -204,7 +204,7 @@
 
     try {
       if (!window.financeiroUtils) await carregarScript("js/financeiro-utils.js?v=7");
-      if (!window.alertasRegras) await carregarScript("js/alertas-regras.js?v=5");
+      if (!window.alertasRegras) await carregarScript("js/alertas-regras.js?v=7");
 
       const [origens, pecas, vendas, consumosEstoque, entradasEstoque, custosVenda, custosPeca] = await Promise.all([
         servico.listarOrigens(),

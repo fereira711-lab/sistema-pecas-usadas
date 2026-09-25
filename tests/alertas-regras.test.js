@@ -220,7 +220,7 @@ test("Giro: venda depois da entrada conta a partir da venda; sem saldo e Sem est
   ]);
 });
 
-test("Giro: peca Parada no giro e a mesma peca parada dos Alertas (1 unidade por entrada)", () => {
+test("Giro: peca Parada no giro e a mesma peca parada dos Alertas", () => {
   const dados = {
     pecas: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
     entradasEstoque: [
@@ -238,4 +238,29 @@ test("Giro: peca Parada no giro e a mesma peca parada dos Alertas (1 unidade por
 
   assert.deepEqual(paradasGiro, [1, 3]);
   assert.deepEqual(paradasGiro, paradasAlertas);
+});
+
+test("Alertas usam o Parado do Giro: entrada com 3 unidades que vendeu 1 ha 100 dias e parada", () => {
+  const dados = {
+    pecas: [{ id: 1 }],
+    entradasEstoque: [{ id: 10, pecaId: 1, quantidadeTotal: 3, quantidadeConsumida: 1, custoUnitario: 40, dataEntrada: "2026-01-10" }],
+    vendas: [{ id: 5, pecaId: 1, dataVenda: "2026-06-16" }]
+  };
+  const paradas = Array.from(alertasRegras.calcularPecasParadas(dados, HOJE));
+
+  assert.equal(paradas.length, 1);
+  assert.equal(paradas[0].dias, 100);
+  assert.equal(paradas[0].quantidade, 2);
+  assert.equal(paradas[0].valorParado, 80);
+  assert.equal(alertasRegras.classificarGiroPecas(dados, HOJE)[0].chave, "parado");
+});
+
+test("Alertas: valor parado inclui os custos lancados na peca que ainda esta em estoque", () => {
+  const parada = calcular({
+    pecas: [{ id: 1, nome: "Painel", precoVenda: 350 }],
+    entradasEstoque: [{ id: 10, pecaId: 1, quantidadeTotal: 1, quantidadeConsumida: 0, custoUnitario: 180, dataEntrada: "2026-04-28" }],
+    custosPeca: [{ pecaId: 1, valor: 30 }]
+  }).find(grupo => grupo.tipo === "peca-parada");
+
+  assert.equal(parada.itens[0].valorParado, 210);
 });

@@ -352,7 +352,7 @@ Custos (`js/analise-custos.js`):
 ## Giro de estoque
 
 - `paginas/giro-estoque.html` e a aba "Giro de estoque" das Analises: leitura operacional de quais pecas vendem e quais estao paradas, sem financeiro pesado (`js/giro-estoque.js`).
-- Faixas (decisao de Rafael de 2026-09-25, em `alertas-regras.classificarGiroPecas`, com teste): Girando ate 30 dias, Lento de 31 a 90, Parado acima de 90 (o mesmo limite da peca parada de Produtos e Alertas). Os dias contam da ultima venda ou, sem venda desde que a peca entrou, da entrada mais antiga que ainda tem saldo. Peca sem saldo fica "Sem estoque". Com uma unidade por entrada (desmanche), "Parado" no Giro e exatamente a peca parada dos Alertas.
+- Faixas (decisao de Rafael de 2026-09-25, em `alertas-regras.classificarGiroPecas`, com teste): Girando ate 30 dias, Lento de 31 a 90, Parado acima de 90 (o mesmo limite da peca parada de Produtos e Alertas). Os dias contam da ultima venda ou, sem venda desde que a peca entrou, da entrada mais antiga que ainda tem saldo. Peca sem saldo fica "Sem estoque". "Parado" no Giro e a peca parada de Produtos, Painel, Detalhes da origem e Alertas (mesma funcao).
 - KPIs: Girando, Lentas, Paradas e Unidades vendidas no periodo. Filtros: busca por SKU/nome, periodo das vendas (so muda a coluna "Vendidas"), origem, ordenacao e segmentado Todas / Girando / Lento / Parado / Sem estoque.
 - Tabela: Peca (link + SKU · origem), Estoque, Vendidas, Ultima venda, Sem venda ha (dias) e Situacao (pilula).
 - Sairam no redesenho: as faixas antigas (Maior giro ate 15 dias, Atenção ate 30, Parado acima de 30), "Estoque baixo" e o uso da data de cadastro da peca no lugar da data da entrada.
@@ -392,7 +392,7 @@ Custos (`js/analise-custos.js`):
   - Distribuicao acima do pago (critico): origem, valor pago, distribuido, acima do pago; `Ver origem`.
   - Venda sem custo calculado (atencao): data, peca, canal, valor; `Ver venda`.
   - Preco abaixo do custo (atencao): peca, preco, custo, margem; `Ajustar preço` (abre a edicao com foco no preco).
-  - Peca parada ha mais de 90 dias (atencao): peca, origem, dias, estoque, custo parado (saldo x custo unitario da entrada), ordenada pelo maior custo parado; resumo "R$ X de custo parado" (o mesmo texto no Painel); `Ver peça`.
+  - Peca parada ha mais de 90 dias (atencao): a mesma regra do "Parado" do Giro de estoque (`alertas-regras.calcularPecasParadas` usa `classificarGiroPecas`, decisao de 2026-09-25): peca com saldo e mais de 90 dias sem venda, contando da ultima venda ou, sem venda desde a entrada, da entrada mais antiga com saldo. Mostra peca, origem, dias, estoque e custo parado (saldo x custo unitario + custos lancados na peca ainda em estoque), ordenada pelo maior custo parado; resumo "R$ X de custo parado" (o mesmo texto no Painel); `Ver peça`.
   - Origem com valor a distribuir (informacao): origem, valor pago, distribuido, a distribuir; `Distribuir`.
 - Com busca ativa, o titulo mostra o parcial: "2 de 6 peças paradas há mais de 90 dias".
 - Cada card tem ancora com o tipo (ex.: `alertas.html#peca-parada`), usada pelos links do Painel.
