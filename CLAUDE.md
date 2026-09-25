@@ -115,9 +115,17 @@ Decisoes de 2026-09-24:
 
 ## Publicacao (Netlify)
 
-- Preparada em 2026-09-25, ainda nao publicada. `netlify.toml`: build `node scripts/build.js`, publica a pasta `dist/` (fora do Git), "/" abre `/painel.html` e cabecalhos X-Frame-Options DENY, X-Content-Type-Options nosniff e Referrer-Policy strict-origin-when-cross-origin.
+- Publicado em 2026-09-25 em https://patio-pecas.netlify.app (Netlify ligado ao repositorio GitHub, branch `main`: cada push publica de novo). Rafael testou login, navegacao no celular, recuperacao de senha e o bloqueio dos arquivos internos. No Supabase, Site URL = https://patio-pecas.netlify.app e Redirect URLs com `https://patio-pecas.netlify.app/paginas/nova-senha.html` e `http://127.0.0.1:8080/paginas/nova-senha.html`.
+- `netlify.toml`: build `node scripts/build.js`, publica a pasta `dist/` (fora do Git), "/" abre `/painel.html` e cabecalhos X-Frame-Options DENY, X-Content-Type-Options nosniff e Referrer-Policy strict-origin-when-cross-origin.
 - `scripts/build.js` (sem dependencias) copia so `index.html`, `painel.html`, `paginas/`, `css/` e `js/` (menos `css/mapa-mental.css`, que so a documentacao usa). Falha se aparecer arquivo proibido (.md, .sql, .bat, .ps1, .log, .env, backup...) ou se uma pagina apontar para arquivo que nao foi copiado. Tela nova ou arquivo novo fora dessas pastas precisa entrar na lista do script.
 - Testar a publicacao localmente: `node scripts/build.js` e `node dev-server.js dist`.
+- Pendencias depois da publicacao:
+  - dados de demonstracao ainda estao no banco de producao (3 origens `[DEMO]`, 27 pecas `DM-`, 12 vendas): o site publicado mostra esses dados; apagar com `scripts\demo-apagar.bat` antes do uso real (decisao de Rafael sobre quando);
+  - e-mail de recuperacao de senha usa o SMTP padrao do Supabase (limite baixo de envios por hora); para uso real, configurar SMTP proprio em Authentication > SMTP Settings;
+  - repositorio `fereira711-lab/sistema-pecas-usadas` e publico (sem segredo versionado, mas expoe `sql/`, documentacao e o endereco do projeto Supabase); decidir se fica privado (o Netlify funciona igual);
+  - bucket Storage `pecas` com 64 imagens orfas da simulacao (15,43 MB), remocao por Rafael pelo painel do Supabase;
+  - revisar os tipos de custo `Embalagem 2` e `Rafael`, que parecem cadastros de teste;
+  - riscos que continuam: backups diarios so nesta maquina e sem as imagens do Storage; projeto Supabase pode pausar por inatividade; RPCs `criar_peca_com_entrada` e `registrar_venda_fifo` sem teste automatizado.
 
 ## Integracoes futuras
 
