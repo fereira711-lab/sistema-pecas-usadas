@@ -101,6 +101,7 @@ Reforcos:
 - Tela migrada: `body` com a classe `ui-v2`, sem carregar `style.css`; CSS especifico da tela num arquivo proprio em `css/` (ex.: `css/painel.css`).
 - Ordem das fases: 1 fundacao; 2 sidebar e Painel; 3 Produtos; 4 Alertas com as regras novas (atualizando os testes); 5 Nova peca (compatibilidade + SKU automatico so quando em branco); 6 Registrar venda (canal fixo e previa do resultado); 7 Detalhes da origem; 8 demais telas; 9 remover do `style.css` o que ficou sem uso.
 - Cada fase termina com commit; Rafael aprova visualmente antes da proxima quando pedir.
+- Fases 1 a 8 concluidas em 2026-09-25: todas as telas do sistema usam `ui-v2`. Falta a Fase 9 (limpar o `style.css`).
 
 Decisoes de 2026-09-24:
 
@@ -407,6 +408,13 @@ Custos (`js/analise-custos.js`):
 - "Ultimas vendas" (subtitulo "Independente do período"): 7 vendas mais recentes com data, SKU + peca · origem, canal, valor, custos (peca + venda) e lucro (vermelho se negativo).
 - Removidos no redesenho: bloco "Ações rápidas" (duplicava a sidebar), bloco de alertas que repetia os contadores e "Movimentações recentes".
 - Todos os valores financeiros vem do `financeiro-utils.js`; o Painel nao recalcula FIFO nem custo.
+
+## Padrao da tela Login
+
+- `paginas/login.html` ("Entrar") ja migrada para o redesenho (`ui-v2`, `css/login.css`); o fluxo continua em `js/auth.js` (sem mudanca).
+- Painel escuro a esquerda (mesma cor da sidebar) com a marca (icone, nome do sistema e da loja) e uma frase curta; a direita, card com titulo "Entrar", e-mail, senha, mensagem e botao `Entrar` na largura toda. Ate 760px a marca vira uma faixa no topo.
+- A mensagem usa as classes `form-message--warning`/`--success` que o `auth.js` aplica. Login aprovado volta para a pagina do `?redirect=` ou abre o Painel.
+- Nome do sistema e da loja escritos na pagina (os mesmos das constantes de `js/sidebar.js`); o nome comercial ainda esta pendente.
 
 ## Tarefas grandes
 

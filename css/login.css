@@ -1,0 +1,153 @@
+/* Login (redesenho). Marca no painel escuro (mesma cor da sidebar) e o formulário num card. */
+
+body.ui-v2.login {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+  margin: 0;
+  background: var(--bg);
+}
+
+/* ---- Painel da marca ---- */
+
+.login__marca {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-8);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+}
+
+.login__marca-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.login__marca-icone {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--text);
+  font-size: var(--icon-size-lg);
+}
+
+.login__marca-texto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+}
+
+.login__marca-nome {
+  font-size: var(--fs-card-title);
+  font-weight: 700;
+  color: var(--sidebar-brand-text);
+}
+
+.login__marca-loja {
+  font-size: var(--fs-label);
+  color: var(--sidebar-muted);
+}
+
+.login__marca-frase {
+  max-width: 280px;
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--sidebar-muted);
+}
+
+/* ---- Formulário ---- */
+
+.login__area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
+}
+
+.login__card {
+  width: 100%;
+  max-width: 400px;
+}
+
+.login__cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.login__titulo {
+  margin: 0;
+  font-size: var(--fs-title);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.login__subtitulo {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--text-muted);
+}
+
+.login__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.login__botao {
+  width: 100%;
+  justify-content: center;
+}
+
+/* A mensagem recebe as classes form-message--* do auth.js. */
+.login .form-message {
+  margin: 0;
+  font-size: var(--fs-label);
+  font-weight: 600;
+}
+
+.login .form-message:empty {
+  display: none;
+}
+
+.login .form-message--warning {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.login .form-message--success {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+@media (max-width: 760px) {
+  body.ui-v2.login {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .login__marca {
+    padding: var(--space-4);
+  }
+
+  .login__marca-frase {
+    display: none;
+  }
+
+  .login__area {
+    align-items: flex-start;
+    padding: var(--space-6) var(--space-4);
+  }
+}

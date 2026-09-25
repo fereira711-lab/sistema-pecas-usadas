@@ -3,51 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Sistema de Gestao de Pecas Usadas</title>
+  <title>Entrar · DWDW ERP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css">
   <link rel="stylesheet" href="../css/base.css?v=16">
-  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/login.css?v=1">
 </head>
-<body data-auth="login" class="ui-soft-dark login-page">
-  <main class="login-shell">
-    <section class="login-identity" aria-label="Identidade do sistema">
-      <span class="login-badge">Sistema operacional</span>
-      <h1>DWDW ERP</h1>
-      <p>Gestão de peças usadas, estoque, vendas e origens.</p>
-    </section>
+<body data-auth="login" class="ui-v2 login">
+  <aside class="login__marca" aria-label="Sistema">
+    <div class="login__marca-topo">
+      <span class="login__marca-icone" aria-hidden="true"><i class="ri-car-line"></i></span>
+      <span class="login__marca-texto">
+        <span class="login__marca-nome">DWDW ERP</span>
+        <span class="login__marca-loja">DWDW Autopeças</span>
+      </span>
+    </div>
+    <p class="login__marca-frase">Peças, origens, estoque e vendas do desmanche num lugar só.</p>
+  </aside>
 
-    <section class="login-card" aria-label="Acesso ao sistema">
-      <div class="login-card__header">
-        <p class="login-eyebrow">Acesso interno</p>
-        <h2>Entrar no sistema</h2>
-        <p>Acesse o painel operacional do sistema.</p>
+  <main class="login__area">
+    <section class="card login__card" aria-labelledby="tituloLogin">
+      <div class="login__cabecalho">
+        <h1 class="login__titulo" id="tituloLogin">Entrar</h1>
+        <p class="login__subtitulo">Use o e-mail e a senha da loja.</p>
       </div>
 
-      <form id="formLogin" class="login-form">
-        <div class="form-group">
-          <label for="emailLogin">E-mail</label>
-          <input id="emailLogin" type="email" autocomplete="email" required>
+      <form id="formLogin" class="login__form">
+        <div class="field">
+          <label class="field__label" for="emailLogin">E-mail</label>
+          <input id="emailLogin" class="input" type="email" autocomplete="email" required>
         </div>
 
-        <div class="form-group">
-          <label for="senhaLogin">Senha</label>
-          <input id="senhaLogin" type="password" autocomplete="current-password" required>
+        <div class="field">
+          <label class="field__label" for="senhaLogin">Senha</label>
+          <input id="senhaLogin" class="input" type="password" autocomplete="current-password" required>
         </div>
 
         <p id="mensagemLogin" class="form-message" aria-live="polite"></p>
 
-        <button id="botaoLogin" type="submit" class="button-primary login-button">Entrar</button>
+        <button id="botaoLogin" type="submit" class="btn btn--primary login__botao">Entrar</button>
       </form>
-
-      <div class="login-note">
-        Login aprovado abre o <strong>Painel Geral</strong>.
-      </div>
     </section>
   </main>
-
-  <footer class="login-footer">Ambiente de gestão interna</footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/supabase-config.js?v=6"></script>
