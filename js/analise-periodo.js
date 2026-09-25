@@ -141,8 +141,9 @@ function calcularLinhas(vendas) {
       canal: obterCanalVenda(venda),
       quantidade: Number(venda.quantidadeVendida || venda.quantidade_vendida || 0),
       receita: resultado.receita,
-      // Custo da peça = entrada consumida + custos lançados na peça rateados (mesma conta de Por produto).
+      // Custo das peças = custo de entrada consumido + custos lançados na peça rateados (mesma conta de Por produto).
       custoPeca: resultado.calculado ? resultado.custoConsumido + resultado.custosPeca : null,
+      custoEntrada: resultado.calculado ? resultado.custoConsumido : null,
       custosPecaLancados: resultado.custosPeca,
       custosVenda: resultado.custosVenda,
       lucro: resultado.calculado ? resultado.lucro : null,
@@ -219,7 +220,8 @@ function renderizarLinha(linha) {
       <td class="cell-muted cell-nowrap" data-label="Canal">${escaparHtml(linha.canal || "—")}</td>
       <td class="num" data-label="Qtd.">${formatarNumero(linha.quantidade)}</td>
       <td class="num" data-label="Receita">${formatarMoeda(linha.receita)}</td>
-      <td class="num" data-label="Custo da peça">${linha.custoPeca === null ? '<span class="text-warning">Não calculado</span>' : formatarMoeda(linha.custoPeca)}</td>
+      <td class="num" data-label="Custo de entrada">${linha.custoEntrada === null ? '<span class="text-warning">Não calculado</span>' : formatarMoeda(linha.custoEntrada)}</td>
+      <td class="num" data-label="Custos lançados">${linha.custosPecaLancados ? formatarMoeda(linha.custosPecaLancados) : "—"}</td>
       <td class="num" data-label="Custos da venda">${formatarMoeda(linha.custosVenda)}</td>
       <td class="num cell-strong" data-label="Lucro">${linha.lucro === null ? '<span class="text-warning">Custo não calculado</span>' : `<span class="${classeResultado(linha.lucro)}">${formatarMoeda(linha.lucro)}</span>`}</td>
       <td class="num" data-label="Margem">${formatarMargem(linha.margem)}</td>
@@ -252,7 +254,7 @@ function renderizarAnalise() {
   const pagina = filtradas.slice(inicio, inicio + ITENS_POR_PAGINA);
 
   if (!filtradas.length) {
-    tabelaAnalisePeriodo.innerHTML = '<tr class="data-table__empty"><td colspan="10">Nenhuma venda encontrada no período selecionado.</td></tr>';
+    tabelaAnalisePeriodo.innerHTML = '<tr class="data-table__empty"><td colspan="11">Nenhuma venda encontrada no período selecionado.</td></tr>';
     paginacaoAnalisePeriodo.hidden = true;
     return;
   }

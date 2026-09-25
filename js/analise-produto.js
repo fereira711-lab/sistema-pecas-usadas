@@ -138,8 +138,9 @@ function calcularAnaliseProduto(peca, agrupamentos) {
     sku: formatarSku(peca),
     nome: formatarNome(peca),
     receita: resultado.receita,
-    // Custo da peça = entrada consumida + custos lançados na peça, rateados pelas unidades vendidas.
+    // Custo das peças vendidas = custo de entrada consumido + custos lançados na peça, rateados pelas unidades vendidas.
     custoEstoque: resultado.calculado ? resultado.custoConsumido + resultado.custosPeca : null,
+    custoEntrada: resultado.calculado ? resultado.custoConsumido : null,
     custosPeca: resultado.custosPeca,
     custosPecaEmEstoque: resultado.custosPecaEmEstoque,
     custosVenda: resultado.custosVenda,
@@ -164,7 +165,7 @@ function calcularAnalises(dados) {
   return dados.pecas.map(peca => calcularAnaliseProduto(peca, agrupamentos));
 }
 
-// Período e canal filtram as vendas (e seus consumos e custos). Custos da peça entram rateados nas vendas.
+// Período e canal filtram as vendas (e seus consumos e custos). Custos lançados na peça entram rateados nas vendas.
 function obterDadosFiltradosGlobais() {
   const dataInicial = filtroDataInicialAnaliseProduto.value || "";
   const dataFinal = filtroDataFinalAnaliseProduto.value || "";
@@ -273,7 +274,8 @@ function renderizarLinha(analise) {
       </td>
       <td class="num" data-label="Vendidas">${formatarNumero(analise.quantidadeVendida)}</td>
       <td class="num" data-label="Receita">${semVenda ? "—" : formatarMoeda(analise.receita)}</td>
-      <td class="num" data-label="Custo da peça">${analise.custoEstoque === null ? '<span class="text-warning">Não calculado</span>' : semVenda ? "—" : formatarMoeda(analise.custoEstoque)}</td>
+      <td class="num" data-label="Custo de entrada">${analise.custoEntrada === null ? '<span class="text-warning">Não calculado</span>' : semVenda ? "—" : formatarMoeda(analise.custoEntrada)}</td>
+      <td class="num" data-label="Custos lançados">${analise.custosPeca ? formatarMoeda(analise.custosPeca) : "—"}</td>
       <td class="num" data-label="Custos da venda">${analise.custosVenda ? formatarMoeda(analise.custosVenda) : "—"}</td>
       <td class="num cell-strong" data-label="Lucro">${lucro}</td>
       <td class="num" data-label="Margem">${formatarMargem(analise.margem)}</td>
@@ -296,7 +298,7 @@ function renderizarAnalises() {
   const pagina = filtradas.slice(inicio, inicio + ITENS_POR_PAGINA);
 
   if (!filtradas.length) {
-    tabelaAnaliseProduto.innerHTML = '<tr class="data-table__empty"><td colspan="7">Nenhuma peça encontrada para esta busca ou filtro.</td></tr>';
+    tabelaAnaliseProduto.innerHTML = '<tr class="data-table__empty"><td colspan="8">Nenhuma peça encontrada para esta busca ou filtro.</td></tr>';
     paginacaoAnaliseProduto.hidden = true;
     return;
   }

@@ -44,7 +44,7 @@
           <span class="field__hint" id="dicaCanalAntigo" hidden></span>
         </div>
       </div>
-      <p class="field__hint">Quantidade, valor e custo da peça ficam protegidos: vêm da baixa de estoque feita ao registrar.</p>
+      <p class="field__hint">Quantidade, valor e custo de entrada ficam protegidos: vêm da baixa de estoque feita ao registrar.</p>
       <div class="form-actions-bar">
         <button type="button" id="cancelarEdicaoVenda" class="btn btn--quiet">Cancelar</button>
         <button type="submit" class="btn btn--primary">Salvar venda</button>
@@ -110,8 +110,8 @@
         <h2 class="card__title" id="tituloResultadoVenda">Resultado da venda</h2>
         <div class="summary-side__rows">
           <div class="summary-side__row"><span class="summary-side__label">Receita</span><span class="summary-side__value" id="resumoReceita">—</span></div>
-          <div class="summary-side__row"><span class="summary-side__label">Custo da peça</span><span class="summary-side__value" id="resumoCustoPeca">—</span></div>
-          <div class="summary-side__row" id="linhaCustosPecaVenda" hidden><span class="summary-side__label">Custos da peça</span><span class="summary-side__value" id="resumoCustosPecaVenda">—</span></div>
+          <div class="summary-side__row"><span class="summary-side__label">Custo de entrada</span><span class="summary-side__value" id="resumoCustoPeca">—</span></div>
+          <div class="summary-side__row" id="linhaCustosPecaVenda" hidden><span class="summary-side__label">Custos lançados</span><span class="summary-side__value" id="resumoCustosPecaVenda">—</span></div>
           <div class="summary-side__row"><span class="summary-side__label">Custos da venda</span><span class="summary-side__value" id="resumoCustosVenda">—</span></div>
         </div>
         <div class="summary-side__result summary-side__result--neutral" id="resumoLucroLinha">
@@ -131,7 +131,7 @@
   <script src="../js/moeda-utils.js?v=2"></script>
   <script src="../js/supabase-service.js?v=36"></script>
   <script src="../js/financeiro-utils.js?v=7"></script>
-  <script src="../js/detalhes-venda.js?v=22"></script>
+  <script src="../js/detalhes-venda.js?v=23"></script>
   <script src="../js/sidebar.js?v=13"></script>
 </body>
 </html>

@@ -48,7 +48,8 @@ Separacao de telas:
 Linguagem de interface:
 
 - Evitar destacar termos tecnicos internos para o usuario final.
-- Usar `Custo da peca`, `Custo calculado`, `Custo nao calculado` e `Entrada consumida`.
+- Usar `Custo de entrada`, `Custos lançados`, `Custo calculado`, `Custo nao calculado` e `Entrada consumida`.
+- Nomes na interface (decisao de Rafael de 2026-09-25): `Custo de entrada` = parte do valor da origem atribuida a unidade na entrada de estoque (o antigo "Custo da peça"); `Custos lançados` = limpeza, pintura etc. lancados na peca (o antigo "Custos da peça"); `Custo de entrada consumido` = custo de entrada baixado pelas vendas (o antigo card "Custo consumido" de Detalhes da peca). `Custos da venda` continua igual. Onde a tela mostra a soma dos dois (KPI "Custo das peças vendidas" do Painel e das Analises, coluna "Custo" de Produtos), o nome fica o do total.
 - Nao destacar `FIFO` na interface, mantendo FIFO apenas como regra tecnica/documental.
 
 ## Padrao da sidebar e navegacao
@@ -226,7 +227,7 @@ Scripts criticos:
 - Data da entrada (editavel, padrao hoje), preco de venda e compatibilidade (opcional) vao na mesma chamada de `criar_peca_com_entrada` (parametros opcionais `p_data_entrada`, `p_preco_venda`, `p_compatibilidade`, migration `sql/15`): peca, entrada, preco e compatibilidade sao gravados juntos, ou nada. Sem esses parametros a funcao se comporta como antes (data da compra da origem, preco 0, compatibilidade nula).
 - O antigo campo "Observação da entrada" saiu porque nao era gravado (a tabela de entradas nao tem essa coluna).
 - "Nova entrada" em Detalhes do produto grava direto em `entradas_estoque` com a data escolhida no campo (padrao hoje).
-- Resumo lateral: origem, quantidade, custo da peca, preco de venda, margem prevista (`financeiro-utils.calcularMargemPreco`, verde/vermelho), lucro previsto ((preco - custo) x quantidade) e quanto a origem fica a distribuir depois (ou quanto passa do valor pago).
+- Resumo lateral: origem, quantidade, custo de entrada, preco de venda, margem prevista (`financeiro-utils.calcularMargemPreco`, verde/vermelho), lucro previsto ((preco - custo) x quantidade) e quanto a origem fica a distribuir depois (ou quanto passa do valor pago).
 - Rodape: `Cancelar` (volta a Produtos) · `Salvar e cadastrar outra` (fica na tela, mantem a origem, limpa os campos da peca e mostra o SKU gerado) · `Salvar peça` (principal; abre o detalhe da peca salva).
 - Origem nao e peca; peca nasce depois da origem. Custo da venda continua vindo do consumo de estoque. Nao criar calculo financeiro paralelo nessa tela.
 - Edicao da peca (inclusive compatibilidade) continua em `detalhes-produto.html`, que tambem mostra "Compatível com".
@@ -235,12 +236,12 @@ Scripts criticos:
 
 - `paginas/detalhes-produto.html` ("Detalhes da peça") e a central operacional/comercial da peca. Tela ja migrada para o redesenho (`ui-v2`, `css/detalhes-produto.css`, `js/detalhes-produto.js`).
 - Cabecalho: link `Produtos`, titulo com o nome da peca, subtitulo "SKU · origem". Acoes: `Editar dados` (secundario, abre o formulario na tela), menu "⋯" (Lançar custo, Nova entrada de estoque, Trocar imagem e, separado, Excluir peça) e `Vender` (principal; peca vendida mostra `Ver venda` no lugar).
-- Bloco principal: foto, pilula de situacao (mesmas regras e prioridade de Produtos: Vendida; Preço abaixo do custo > Parada ha N dias > Em estoque), "Compatível com", observacao e a lista Preco de venda, Custo da peca, Margem prevista e Origem (link).
-- Peca vendida (sem saldo e com venda): no lugar de Preco/Custo/Margem prevista, o bloco mostra "Resultado da venda" (Vendida por, Custo da peca, Custos da peca, Custos da venda, Lucro e Margem, por `financeiro-utils.calcularLucroPeca`), e o botao `Vender` da lugar a `Ver venda` (secundario, venda mais recente).
-- Custo da peca = custo da proxima unidade a sair (ou da ultima vendida), por `financeiro-utils.calcularCustoReferenciaPeca`, como em Produtos. O antigo "Custo medio" saiu (regra do projeto: sem custo medio).
-- KPIs: Em estoque (unidades e numero de entradas), Vendidas (unidades e data da ultima venda), Receita das vendas e Custo consumido (`Custo não calculado` quando alguma venda nao tem consumo).
+- Bloco principal: foto, pilula de situacao (mesmas regras e prioridade de Produtos: Vendida; Preço abaixo do custo > Parada ha N dias > Em estoque), "Compatível com", observacao e a lista Preco de venda, Custo de entrada, Custos lancados (por unidade, quando ha), Margem prevista (sobre a soma dos dois) e Origem (link).
+- Peca vendida (sem saldo e com venda): no lugar de Preco/Custo/Margem prevista, o bloco mostra "Resultado da venda" (Vendida por, Custo de entrada, Custos lancados, Custos da venda, Lucro e Margem, por `financeiro-utils.calcularLucroPeca`), e o botao `Vender` da lugar a `Ver venda` (secundario, venda mais recente).
+- Custo de entrada = custo da proxima unidade a sair (ou da ultima vendida), mais os custos lancados por unidade para a margem prevista, por `financeiro-utils.calcularCustoReferenciaPeca`, como em Produtos. O antigo "Custo medio" saiu (regra do projeto: sem custo medio).
+- KPIs: Em estoque (unidades e numero de entradas), Vendidas (unidades e data da ultima venda), Receita das vendas e Custo de entrada consumido (`Custo não calculado` quando alguma venda nao tem consumo).
 - Entradas de estoque: `Nova entrada` abre o formulario dentro do card (origem, quantidade, custo unitario, data padrao hoje); tabela com Data, Origem (link), Qtd., Consumida, Saldo, Custo unitario, Valor atribuido, `Editar` e `Excluir` (travados quando a entrada ja foi consumida por venda).
-- Custos da peca: link `Lançar custo` (abre `cadastro-custo.html?pecaId=`); tabela com Data, Tipo, Descricao (e observacao), Valor, `Editar` (formulario no card) e `Excluir`.
+- Custos lancados: link `Lançar custo` (abre `cadastro-custo.html?pecaId=`); tabela com Data, Tipo, Descricao (e observacao), Valor, `Editar` (formulario no card) e `Excluir`.
 - Vendas: Data, Canal, Qtd., Valor, Lucro da venda (`financeiro-utils.calcularLucroVenda`; `Custo não calculado` sem consumo) e `Ver venda`.
 - Aceita `?editar=1` (abre a edicao; com `&campo=preco` o foco vai para o preco) e `#excluir` (usado pelo menu de Produtos: inicia a exclusao, com as mesmas travas e a confirmacao).
 - Exclusao da peca: so sem venda, custo ou consumo; se ainda houver entrada sem consumo, pede para excluir as entradas antes.
@@ -287,7 +288,7 @@ Scripts criticos:
 - Blocos: Peça (busca por SKU, nome, compatibilidade ou origem, cada palavra sem acento; a peca escolhida vira cartao com nome, SKU · origem, estoque e `Trocar peça`, no mesmo desenho da Registrar venda) e Custo (tipo, valor, data padrao hoje, descricao e observacao opcional; link `Gerenciar tipos` para Tipos de custo).
 - So peca com estoque recebe custo (regra da tela antiga, mantida). Com `?pecaId=` de peca sem estoque a tela avisa.
 - Tipos: ativos de categoria Peca ou Ambos. Ao editar um custo com tipo inativado ou antigo sem tipo vinculado, esse tipo aparece so para aquele custo.
-- Resumo lateral "Custos da peça": peca, ja lancados (quantidade e soma), este custo e o total de custos da peca. Na edicao, o custo editado sai de "ja lancados". `Salvar custo` (principal) e `Cancelar` ficam no resumo.
+- Resumo lateral "Custos lançados": peca, ja lancados (quantidade e soma), este custo e o total de custos lancados. Na edicao, o custo editado sai de "ja lancados". `Salvar custo` (principal) e `Cancelar` ficam no resumo.
 - Depois de salvar: fica na tela com a mesma peca, limpa os campos e mostra "Custo de R$ X lançado em {peça} · Ver peça".
 - "Custos lançados": tabela Data, Peca (link + SKU), Tipo, Descricao (e observacao), Valor, `Editar` (carrega no formulario) e `Excluir` (com confirmacao). Com peca escolhida, mostra so os custos dela. Busca, tipo e periodo; mais recente primeiro; 20 por pagina.
 - Os custos entram no lucro das vendas e no resultado da origem pelo `financeiro-utils.js`; a tela nao calcula resultado.
@@ -309,7 +310,7 @@ Scripts criticos:
 - Canal por botoes com opcoes fixas: Mercado Livre, WhatsApp, Balcão, Outro (obrigatorio). Componente `.choice-group`/`.choice` do `base.css`: opcao escolhida com fundo escuro (`--text`) e texto branco (`--text-on-dark`); nao usar o controle segmentado, que e dos filtros. Valores antigos em texto livre continuam exibidos como estao nas outras telas.
 - Custos da venda: rotulos "Tipo" e "Valor" uma vez so, como cabecalho das colunas (aparece quando existe linha); cada campo tem `aria-label`.
 - Aceita `?pecaId=` (botao `Vender` de Produtos e do detalhe da peca). Peca sem estoque aparece desabilitada na busca.
-- Resumo lateral "Resultado da venda" ANTES de registrar: receita, custo da peca, custos da venda, lucro e margem (margem na mesma cor do lucro: verde se positivo, vermelho se negativo). O custo da peca e estimado por `financeiro-utils.estimarCustoVendaPeca`: as N proximas unidades na mesma ordem de consumo do banco (data da entrada e depois id); com 1 unidade e o mesmo valor de `calcularCustoReferenciaPeca`. Sem estoque suficiente: `Custo não calculado` e "Falta N un. em estoque", sem inventar lucro/margem. Texto de apoio: "O custo vem da entrada mais antiga desta peça e é confirmado ao registrar."
+- Resumo lateral "Resultado da venda" ANTES de registrar: receita, custo de entrada, custos lancados (quando ha), custos da venda, lucro e margem (margem na mesma cor do lucro: verde se positivo, vermelho se negativo). O custo da peca e estimado por `financeiro-utils.estimarCustoVendaPeca`: as N proximas unidades na mesma ordem de consumo do banco (data da entrada e depois id); com 1 unidade e o mesmo valor de `calcularCustoReferenciaPeca`. Sem estoque suficiente: `Custo não calculado` e "Falta N un. em estoque", sem inventar lucro/margem. Texto de apoio: "O custo vem da entrada mais antiga desta peça e é confirmado ao registrar."
 - `Registrar venda` e a acao principal, no resumo; `Cancelar` volta para Vendas. Depois de registrar: fica na tela, limpa o formulario e mostra "Venda de X registrada · Ver venda".
 - O registro continua pela funcao oficial `registrar_venda_fifo` (FIFO no banco). Desde `sql/16`, venda, baixa FIFO, custos da venda (`p_custos`, lista `[{tipo_custo_id, valor}]`) e observacao (`p_observacoes`) vao na mesma chamada: ou grava tudo, ou nada. A funcao recusa custo negativo e tipo inexistente, inativo ou fora da categoria de venda. O custo real vem de `venda_consumos_estoque`; `financeiro-utils.js` continua sendo a fonte oficial.
 - Sairam no redesenho: botao "+ Novo tipo" (tipos ficam na tela Tipos de custo), campo de observacao por custo da venda e o fallback em `localStorage` sem Supabase.
@@ -319,8 +320,8 @@ Scripts criticos:
 - `paginas/detalhes-venda.html` e o extrato completo de uma venda. Tela ja migrada para o redesenho (`ui-v2`, `css/detalhes-venda.css`, `js/detalhes-venda.js`).
 - Cabecalho: link `Vendas`, titulo "Venda de {peca}", subtitulo "Venda nº N · data · canal". Acoes: `Ver peça` e `Editar venda` (secundarios).
 - Blocos: Peça vendida (foto, nome, SKU · origem com link, quantidade, unitario e total), Dados da venda (data, canal, observacao), Custos da venda (tabela Tipo, Data, Observacao, Valor e o total no cabecalho) e Entrada consumida (tabela Entrada, Origem, Data da entrada, Qtd., Custo unitario, Custo total; pilula `Custo calculado` ou `Custo não calculado`).
-- Resumo lateral "Resultado da venda": receita, custo da peca (entrada consumida), custos da peca (lancados na peca e rateados pelas unidades; a linha so aparece quando ha), custos da venda, lucro e margem (verde/vermelho), por `financeiro-utils.calcularLucroVenda`. Sem consumo registrado: `Custo não calculado`, sem lucro nem margem.
-- `Editar venda` abre um formulario na propria tela so com data e canal (botoes `.choice` com os canais fixos; canal antigo em texto livre e mantido se nao for trocado). Quantidade, valor e custo consumido ficam protegidos.
+- Resumo lateral "Resultado da venda": receita, custo de entrada (entrada consumida), custos lancados (na peca e rateados pelas unidades; a linha so aparece quando ha), custos da venda, lucro e margem (verde/vermelho), por `financeiro-utils.calcularLucroVenda`. Sem consumo registrado: `Custo não calculado`, sem lucro nem margem.
+- `Editar venda` abre um formulario na propria tela so com data e canal (botoes `.choice` com os canais fixos; canal antigo em texto livre e mantido se nao for trocado). Quantidade, valor e custo de entrada ficam protegidos.
 - O custo real da venda vem de `venda_consumos_estoque`. Sem custo medio e sem `origem.valor_total` como custo. FIFO continua regra tecnica interna, fora da interface.
 - Sairam no redesenho: o modo sem Supabase (`localStorage`). Nao transformar o extrato em analise geral.
 
@@ -332,20 +333,20 @@ Scripts criticos:
 
 Por produto (`js/analise-produto.js`):
 
-- Resultado por peca por `financeiro-utils.calcularLucroPeca`. Filtros: busca por SKU/nome, periodo das vendas (custos da peca pela data do custo), canal, ordenacao e segmentado Com venda (padrao) / Prejuízo (so peca com venda) / Custo não calculado / Todas.
-- KPIs (todas as pecas da busca, periodo e canal, sem o segmentado): Receita, Custo das pecas vendidas, Outros custos ("R$ X na peça · R$ Y na venda") e Lucro com margem. O lucro total inclui custos lancados em peca ainda nao vendida, como antes.
-- Tabela: Peca, Vendidas (no periodo), Receita, Custo da peca (consumido), Outros custos (custos da peca + custos da venda), Lucro e Margem. Receita − custo − outros custos = lucro da linha.
+- Resultado por peca por `financeiro-utils.calcularLucroPeca`. Filtros: busca por SKU/nome, periodo das vendas (custos lancados entram rateados nas vendas), canal, ordenacao e segmentado Com venda (padrao) / Prejuízo (so peca com venda) / Custo não calculado / Todas.
+- KPIs (todas as pecas da busca, periodo e canal, sem o segmentado): Receita, Custo das pecas vendidas (custo de entrada + custos lancados das unidades vendidas; nota "inclui R$ X lançados nas peças"), Custos da venda (nota com os custos lancados em pecas ainda em estoque, fora do lucro) e Lucro com margem.
+- Tabela: Peca, Vendidas (no periodo), Receita, Custo de entrada, Custos lancados, Custos da venda, Lucro e Margem. Receita − custo de entrada − custos lancados − custos da venda = lucro da linha.
 
 Por período (`js/analise-periodo.js`):
 
 - Vendas do intervalo (padrao: mes atual; atalhos Hoje, 7 dias, 30 dias, Personalizado) por `financeiro-utils.calcularLucroVenda`. Filtros: busca por SKU/peca/canal, canal e segmentado Todas / Custo calculado / Custo não calculado.
 - KPIs: Receita (vendas e unidades), Custo das pecas, Custos da venda e Lucro com margem (mesma conta do Painel; custos lancados na peca nao entram no lucro da venda).
-- Tabela: Data, Peca (link para o extrato), Canal, Qtd., Receita, Custo da peca, Custos da venda, Lucro, Margem e `Ver venda`. As linhas batem com Detalhes da venda.
+- Tabela: Data, Peca (link para o extrato), Canal, Qtd., Receita, Custo de entrada, Custos lancados, Custos da venda, Lucro, Margem e `Ver venda`. As linhas batem com Detalhes da venda.
 
 Custos (`js/analise-custos.js`):
 
-- Custos da peca e custos da venda juntos, sem lucro nem margem. Filtros: busca (tipo, peca, venda, observacao), periodo (padrao todo o periodo), tipo e segmentado Todos / Na peça / Na venda.
-- KPIs: Total de custos (lancamentos), Custos da peca, Custos da venda e Maior tipo (valor e % do total).
+- Custos lancados e custos da venda juntos, sem lucro nem margem. Filtros: busca (tipo, peca, venda, observacao), periodo (padrao todo o periodo), tipo e segmentado Todos / Na peça / Na venda.
+- KPIs: Total de custos (lancamentos), Custos lancados, Custos da venda e Maior tipo (valor e % do total).
 - "Por tipo": Tipo, Lancamentos, Na peca, Na venda, Total, % do total e `Ver lançamentos` (filtra a lista de baixo pelo tipo). "Lançamentos": Data, Tipo, Lancado em (peca ou venda, com link), Observacao e Valor; 20 por pagina.
 - Nome do tipo como cadastrado; tipo antigo gravado em minusculas ganha a primeira letra maiuscula (`formatarNomeTipoCusto`).
 

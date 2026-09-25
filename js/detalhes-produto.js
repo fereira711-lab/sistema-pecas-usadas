@@ -1112,7 +1112,8 @@ function renderizarDadosProduto(produto) {
     ${vendida ? montarResultadoVendaHtml(linkOrigens, origensUtilizadas.length) : `
     <dl class="peca-principal__dados">
       <div><dt>Preço de venda</dt><dd class="${precoVenda > 0 ? "" : "text-warning"}">${precoVenda > 0 ? formatarMoeda(precoVenda) : "Sem preço"}</dd></div>
-      <div><dt>Custo da peça</dt><dd>${custo.calculado ? formatarMoeda(custo.valor) : "Custo não calculado"}</dd></div>
+      <div><dt>Custo de entrada</dt><dd>${custo.calculado ? formatarMoeda(custo.custoEntrada) : "Custo não calculado"}</dd></div>
+      ${custo.calculado && custo.custosPecaUnidade > 0 ? `<div><dt>Custos lançados</dt><dd>${formatarMoeda(custo.custosPecaUnidade)}</dd></div>` : ""}
       <div><dt>Margem prevista</dt><dd class="${margem === null ? "" : margem < 0 ? "text-danger" : "text-success"}">${margem === null ? "—" : formatarPercentual(margem)}</dd></div>
       <div><dt>${origensUtilizadas.length > 1 ? "Origens" : "Origem"}</dt><dd>${linkOrigens}</dd></div>
     </dl>`}
@@ -1132,8 +1133,8 @@ function montarResultadoVendaHtml(linkOrigens, quantidadeOrigens) {
       <span class="peca-principal__rotulo">Resultado da venda</span>
       <dl class="peca-principal__dados">
         <div><dt>Vendida por</dt><dd>${formatarMoeda(resultado.receitaTotal)}</dd></div>
-        <div><dt>Custo da peça</dt><dd>${resultado.custoEntradasConsumidas === null ? "Custo não calculado" : linhaNegativa(resultado.custoEntradasConsumidas)}</dd></div>
-        <div><dt>Custos da peça</dt><dd>${linhaNegativa(resultado.custosDaPeca)}</dd></div>
+        <div><dt>Custo de entrada</dt><dd>${resultado.custoEntradasConsumidas === null ? "Custo não calculado" : linhaNegativa(resultado.custoEntradasConsumidas)}</dd></div>
+        <div><dt>Custos lançados</dt><dd>${linhaNegativa(resultado.custosDaPeca)}</dd></div>
         <div><dt>Custos da venda</dt><dd>${linhaNegativa(resultado.custosDaVenda)}</dd></div>
         <div class="peca-principal__lucro"><dt>Lucro</dt><dd class="${classe}">${lucro === null ? "Custo não calculado" : formatarMoeda(lucro)}</dd></div>
         <div><dt>Margem</dt><dd class="${classe}">${resultado.margem === null ? "—" : formatarPercentual(resultado.margem)}</dd></div>
@@ -1180,7 +1181,7 @@ function renderizarResumo() {
       nota: pluralizar(contextoProduto.vendas.length, "venda", "vendas")
     }),
     criarKpi({
-      rotulo: "Custo consumido",
+      rotulo: "Custo de entrada consumido",
       valor: resultado.custoCalculado ? formatarMoeda(resultado.custoEntradasConsumidas || 0) : "Custo não calculado",
       classeValor: resultado.custoCalculado ? "" : "kpi__value--muted",
       nota: resultado.custoCalculado
@@ -1337,7 +1338,7 @@ async function excluirCustoProduto(custoId) {
     return;
   }
 
-  const confirmar = window.confirm("Excluir este custo da peça?");
+  const confirmar = window.confirm("Excluir este custo lançado?");
 
   if (!confirmar) {
     return;

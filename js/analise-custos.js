@@ -1,4 +1,4 @@
-// Análises · Custos (redesenho): custos da peça e custos da venda agrupados por tipo, e a lista de lançamentos.
+// Análises · Custos (redesenho): custos lançados nas peças e custos da venda agrupados por tipo, e a lista de lançamentos.
 // Sem lucro nem margem nesta aba.
 const ITENS_POR_PAGINA = 20;
 
@@ -248,7 +248,7 @@ function renderizarResumo(custos, grupos) {
 
   resumoAnaliseCustos.innerHTML =
     criarKpi("Total de custos", formatarMoeda(totalPeca + totalVenda), `${formatarNumero(custos.length)} ${custos.length === 1 ? "lançamento" : "lançamentos"}`) +
-    criarKpi("Custos da peça", formatarMoeda(totalPeca), `${formatarNumero(quantidadePeca)} · limpeza, pintura, conserto`) +
+    criarKpi("Custos lançados", formatarMoeda(totalPeca), `${formatarNumero(quantidadePeca)} · limpeza, pintura, conserto`) +
     criarKpi("Custos da venda", formatarMoeda(totalVenda), `${formatarNumero(quantidadeVenda)} · frete, embalagem, tarifas`) +
     criarKpi("Maior tipo", maior ? escaparHtml(maior.tipo) : "—", maior ? `${formatarMoeda(maior.totalGeral)} · ${formatarPercentual(maior.percentual)} do total` : "", maior ? "kpi__value--tight" : "kpi__value--muted");
 }

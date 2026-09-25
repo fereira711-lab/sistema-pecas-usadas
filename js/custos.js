@@ -395,7 +395,7 @@ async function salvarCusto(evento) {
     mostrarMensagem(texto, true);
   } catch (erroSalvar) {
     console.error("Erro ao salvar custo da peça:", erroSalvar);
-    mostrarMensagem("Não foi possível salvar o custo da peça.");
+    mostrarMensagem("Não foi possível salvar o custo lançado.");
   } finally {
     botaoSalvarCusto.disabled = false;
   }
@@ -416,7 +416,7 @@ async function excluirCusto(custo) {
     mostrarMensagem("Custo excluído.", true);
   } catch (erroExcluir) {
     console.error("Erro ao excluir custo da peça:", erroExcluir);
-    mostrarMensagem("Não foi possível excluir o custo da peça.");
+    mostrarMensagem("Não foi possível excluir o custo lançado.");
   }
 }
 

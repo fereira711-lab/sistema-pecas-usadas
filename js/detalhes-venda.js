@@ -1,5 +1,5 @@
 // Detalhes da venda (redesenho): o extrato de uma venda. Peça vendida, dados, custos da venda,
-// entrada consumida (de onde veio o custo da peça) e o resultado, tudo pelo financeiro-utils.js.
+// entrada consumida (de onde veio o custo de entrada) e o resultado, tudo pelo financeiro-utils.js.
 // Só data e canal podem ser editados; quantidade, valor e custo consumido ficam protegidos.
 const CANAIS_FIXOS = ["Mercado Livre", "WhatsApp", "Balcão", "Outro"];
 const TEXTO_CUSTO_NAO_CALCULADO = "Custo não calculado";
@@ -148,7 +148,7 @@ function renderizarCustos(venda) {
   `).join("");
 }
 
-// De onde veio o custo da peça: as entradas consumidas na baixa de estoque desta venda.
+// De onde veio o custo de entrada: as entradas consumidas na baixa de estoque desta venda.
 function renderizarEntradaConsumida() {
   const consumos = contextoVenda.consumos;
 
@@ -209,8 +209,8 @@ function renderizarResultado(venda) {
   resumo.lucroLinha.classList.add(`summary-side__result--${classe}`);
   if (resultado.margem !== null) resumo.margem.classList.add(`text-${classe}`);
   resumo.nota.textContent = resultado.custosPeca > 0
-    ? "O custo da peça vem da entrada consumida nesta venda; os custos da peça (limpeza, pintura etc.) entram divididos pelas unidades da peça."
-    : "O custo da peça vem da entrada consumida na baixa de estoque desta venda.";
+    ? "O custo de entrada vem da entrada consumida nesta venda; os custos lançados (limpeza, pintura etc.) entram divididos pelas unidades da peça."
+    : "O custo de entrada vem da entrada consumida na baixa de estoque desta venda.";
 }
 
 function renderizarTela() {
