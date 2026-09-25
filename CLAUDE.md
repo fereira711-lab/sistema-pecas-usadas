@@ -101,7 +101,7 @@ Reforcos:
 - Tela migrada: `body` com a classe `ui-v2`, sem carregar `style.css`; CSS especifico da tela num arquivo proprio em `css/` (ex.: `css/painel.css`).
 - Ordem das fases: 1 fundacao; 2 sidebar e Painel; 3 Produtos; 4 Alertas com as regras novas (atualizando os testes); 5 Nova peca (compatibilidade + SKU automatico so quando em branco); 6 Registrar venda (canal fixo e previa do resultado); 7 Detalhes da origem; 8 demais telas; 9 remover do `style.css` o que ficou sem uso.
 - Cada fase termina com commit; Rafael aprova visualmente antes da proxima quando pedir.
-- Fases 1 a 8 concluidas em 2026-09-25: todas as telas do sistema usam `ui-v2`. Falta a Fase 9 (limpar o `style.css`).
+- Fases 1 a 8 concluidas em 2026-09-25: todas as telas da navegacao (sidebar e telas ligadas a ela) e o Login usam `ui-v2`. Ainda carregam o `style.css`: `index.html` e `dashboard.html` (entrada tecnica e legado), `paginas/lotes.html` e `paginas/relatorios.html` (fora da navegacao). Falta a Fase 9 (limpar o `style.css`).
 
 Decisoes de 2026-09-24:
 
