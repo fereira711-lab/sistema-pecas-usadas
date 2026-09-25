@@ -1,8 +1,8 @@
 // Navegação principal do sistema (redesenho, seção 6 da especificação).
 // Monta a sidebar em todas as telas, marca o item ativo e mostra o contador de "precisa de atenção".
 (function () {
-  // O nome comercial do sistema ainda está pendente (seção 9 da especificação).
-  const NOME_SISTEMA = "DWDW ERP";
+  // Nome comercial do sistema e nome da loja cliente (decisão 50 da especificação).
+  const NOME_SISTEMA = "Pátio Peças";
   const NOME_LOJA = "DWDW Autopeças";
 
   const CHAVE_CONTADOR = "sidebar:contadorAtencao";

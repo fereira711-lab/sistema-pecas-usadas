@@ -82,7 +82,7 @@ function renderizarCabecalho(venda) {
   const produto = contextoVenda.produto;
   const nome = produto?.nome || venda.produtoNome || `Peça ${venda.pecaId || ""}`.trim();
 
-  document.title = `Venda de ${nome} · Detalhes da venda`;
+  document.title = `Venda de ${nome} · Detalhes da venda · Pátio Peças`;
   tituloVenda.textContent = `Venda de ${nome}`;
   subtituloVenda.textContent = [`Venda nº ${venda.id}`, formatarData(obterDataVenda(venda)), venda.canalVenda].filter(Boolean).join(" · ");
   linkVerPeca.href = venda.pecaId ? `detalhes-produto.html?pecaId=${encodeURIComponent(venda.pecaId)}` : "produtos.html";

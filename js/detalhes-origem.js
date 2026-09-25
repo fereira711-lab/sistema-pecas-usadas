@@ -188,7 +188,7 @@ async function carregarDados(idOrigem) {
 // ---- Renderização ----
 
 function renderizarCabecalho(origem) {
-  document.title = `${origem.descricao || "Origem"} · Detalhes da origem`;
+  document.title = `${origem.descricao || "Origem"} · Detalhes da origem · Pátio Peças`;
   tituloOrigem.textContent = origem.descricao || "Origem sem descrição";
   const partes = [origem.tipoOrigem || origem.tipo, origem.dataCompra ? `comprado em ${formatarData(origem.dataCompra)}` : ""]
     .filter(Boolean)

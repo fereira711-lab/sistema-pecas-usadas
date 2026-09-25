@@ -1,4 +1,4 @@
-# DWDW ERP — visão do sistema
+# Pátio Peças — visão do sistema
 
 ## Objetivo
 

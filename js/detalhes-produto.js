@@ -1078,7 +1078,7 @@ function renderizarDadosProduto(produto) {
     )).join(", ")
     : "—";
 
-  document.title = `${nome} · Detalhes da peça`;
+  document.title = `${nome} · Detalhes da peça · Pátio Peças`;
   tituloProduto.textContent = nome;
   subtituloProduto.innerHTML = [
     sku ? `<span class="mono">${escaparHtml(sku)}</span>` : "",

@@ -198,7 +198,7 @@ As demais telas (Histórico de vendas, Origens, Entradas de estoque, Alertas, An
 
 ## 9. Pendente, fora deste redesenho
 
-- Nome comercial do sistema (nos mockups aparece `[NOME DO SISTEMA]`). O nome da loja cliente aparece abaixo da marca.
+- ~~Nome comercial do sistema~~ definido em 2026-09-25: `Pátio Peças` (decisão 50).
 - Tela de Login no novo padrão.
 
 ## 10. Decisões tomadas durante a implementação (2026-09-24)
@@ -272,3 +272,4 @@ Fase 6 (Registrar venda):
 47. **Alertas com o "Parado" do Giro** (decisão de Rafael): a peça parada de Produtos, Painel, Detalhes da origem e Alertas é a mesma do Giro (mais de 90 dias sem venda pela última venda ou pela entrada). O custo parado inclui os custos lançados na peça ainda em estoque.
 48. **Fase 9:** `index.html` (entrada do site) migrada; `dashboard.html`, `lotes.html` e `relatorios.html` (redirecionamentos antigos sem link) removidos com `js/lotes.js` e `js/relatorios.js`; `css/style.css` saiu do sistema e ficou só para os previews antigos (`previews/legado-style.css`). Saiu também o card "Anúncio no marketplace" (nenhum aviso de função futura para o cliente) e entrou "Esqueci minha senha" no Login.
 49. **Nomes dos custos** (decisão de Rafael): "Custo da peça" (parte do valor da origem) virou "Custo de entrada"; "Custos da peça" (limpeza, pintura etc.) virou "Custos lançados"; o card "Custo consumido" de Detalhes da peça virou "Custo de entrada consumido". "Custos da venda" ficou igual. Onde antes aparecia a soma com o nome antigo (Análises e bloco da peça em estoque), as duas partes passaram a aparecer separadas.
+50. **Nome comercial** (decisão de Rafael): o sistema se chama `Pátio Peças`. Aparece na sidebar, no Login, na Nova senha, na entrada (`index.html`) e no `<title>` de todas as telas ("Tela · Pátio Peças"). Embaixo da marca continua o nome da loja cliente, `DWDW Autopeças`. Frase do Login: "O lucro de cada peça, de cada carro." Pastas, repositório e projeto do Supabase ficam com os nomes antigos por enquanto.
