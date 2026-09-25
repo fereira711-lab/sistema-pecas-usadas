@@ -381,32 +381,17 @@ Implementacao atual confirmada:
 
 ## Padrao da tela Tipos de custo
 
-- `paginas/tipos-custo.html` e tela administrativa, nao analise financeira.
-- Serve para cadastrar, editar, ativar e inativar tipos de custo.
-- Tipos podem valer para custos da peca, custos da venda ou ambos.
-- Categorias oficiais: `Peca`, `Venda` e `Ambos`.
-- Status oficiais: `Ativo` e `Inativo`.
-- Impedir duplicidade por diferenca de maiusculas/minusculas e espacos extras.
-- O nome fica como foi digitado (ex.: "Tarifa Mercado Livre"): so tira espacos das pontas e espacos duplicados, sem mudar maiusculas (decisao de 2026-09-24; vale tambem para o novo tipo criado em Custo de peca). A Analise de custos mostra o nome como cadastrado; so tipos antigos gravados todo em minusculas ("frete") ganham a primeira letra maiuscula.
-
-Implementacao atual confirmada:
-
-- `js/tipos-custo.js` exige Supabase configurado para administrar os tipos de custo.
-- A tela atual lista nome, categoria, status e quantidade de usos por tipo.
-- A busca e os filtros atuais cobrem nome, categoria e status, com seletor `Mostrar`.
-- A duplicidade atual e barrada por normalizacao de acento, espacos e caixa.
-- O fluxo atual permite `Editar` e `Ativar/Inativar`, sem exclusao fisica pela interface.
-- O uso do tipo e consultado antes da renderizacao, reforcando a regra de inativar em vez de duplicar.
-- `Limpeza`, `limpeza` e `LIMPEZA` devem ser tratados como o mesmo tipo (tambem sem diferenciar acentos: `Comissao` = `Comissão`).
-- Normalizar o nome para comparacao antes de salvar.
-- Evitar tipos parecidos que baguncam relatorios e analises.
-- UX padrao: busca no topo, seletor `Mostrar`, botao `Filtros`, formulario Novo/editar tipo, painel de uso recomendado e lista compacta.
-- Acoes da lista: `Editar`, `Inativar` e `Ativar`.
-- Custo de peca usa tipos com categoria Peca ou Ambos.
-- Cadastro de venda usa tipos com categoria Venda ou Ambos.
-- Analise de custos depende dos tipos padronizados para agrupar corretamente.
-- Preferir inativar tipos antigos em vez de apagar.
+- `paginas/tipos-custo.html` e tela administrativa, nao analise financeira. Tela ja migrada para o redesenho (`ui-v2`, so componentes do `base.css`, `js/tipos-custo.js`).
+- Cabecalho: titulo "Tipos de custo", subtitulo "N tipos cadastrados · M ativos" e acao principal `Novo tipo`.
+- `Novo tipo` e `Editar` abrem um formulario na propria tela: nome (com a dica de que maiusculas, acentos e espacos nao diferenciam) e "Vale para" por botoes `.choice` (Peça, Venda, Ambos). Status nao fica no formulario: muda pelo `Inativar`/`Ativar` da lista.
+- Filtros: busca pelo nome (cada palavra, sem acento), status (ativos e inativos, so ativos, so inativos) e controle segmentado "Vale para" com contagem: Todos, Peça, Venda, Ambos.
+- Tabela: Tipo, Vale para, Usos ("N em peças · M em vendas" ou "Sem uso"), Status (pilula Ativo/Inativo) e acoes `Editar` e `Inativar`/`Ativar`. Ativos primeiro, depois por nome.
+- Categorias oficiais: `peca`, `venda` e `ambos`. Custo de peca usa tipos Peca ou Ambos; Registrar venda usa Venda ou Ambos.
+- Sem exclusao fisica pela interface: tipo antigo e inativado.
+- Nome fica como foi digitado (ex.: "Tarifa Mercado Livre"): so tira espacos das pontas e duplicados, sem mudar maiusculas (decisao de 2026-09-24). A duplicidade e barrada sem diferenciar maiusculas, acentos e espacos (`Limpeza` = `LIMPEZA`, `Comissao` = `Comissão`), na tela e de novo no `supabase-service.js`.
+- A Analise de custos mostra o nome como cadastrado; so tipos antigos gravados todo em minusculas ("frete") ganham a primeira letra maiuscula.
 - Exibicao: cada linha de custo guarda uma copia do nome do tipo do dia do lancamento (`tipo_custo`, e as vezes `descricao`). As telas mostram o nome ATUAL do tipo vinculado (`tipos_custo.nome` via `tipo_custo_id`, no mapeamento do `supabase-service.js`); a copia so aparece em registro antigo sem tipo vinculado. Nos custos da venda, uma `descricao` que so repete o nome copiado nao e observacao e fica vazia na tela (decisao de 2026-09-24, sem mudanca no banco).
+- Sairam no redesenho: seletor `Mostrar`, painel lateral de filtros, card "Uso recomendado", campo "Observação curta" (reservado e desabilitado) e o texto "Padrão canônico" em cada linha.
 - Nao alterar calculos financeiros nessa tela.
 
 ## Entradas de estoque

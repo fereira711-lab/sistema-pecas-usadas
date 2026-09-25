@@ -8,161 +8,84 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/base.css?v=16">
-  <link rel="stylesheet" href="../css/style.css">
 </head>
-<body data-auth="protected" class="auth-checking ui-soft-dark cost-types-page">
-  <header class="page-header cost-types-header">
-    <div>
-      <p class="hero__tag">Administracao</p>
-      <h1>Tipos de custo</h1>
-      <p class="hero__description">Administre categorias usadas em custos da peça e custos da venda.</p>
-    </div>
-    <a class="button-primary" href="#formTipoCusto">Novo tipo</a>
-  </header>
+<body data-auth="protected" class="auth-checking ui-v2">
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__text">
+        <h1 class="page-head__title">Tipos de custo</h1>
+        <p class="page-head__subtitle" id="resumoTiposCusto">Carregando tipos…</p>
+      </div>
+      <div class="page-head__actions">
+        <button type="button" id="botaoNovoTipoCusto" class="btn btn--primary">
+          <i class="ri-add-line" aria-hidden="true"></i>Novo tipo
+        </button>
+      </div>
+    </header>
 
-  <main class="container stock-layout cost-types-shell" id="costTypesShell">
-    <section class="products-search-toolbar cost-types-toolbar" aria-label="Busca e filtros">
-      <label class="products-page-size-field">
-        <span>Mostrar</span>
-        <select id="quantidadeTiposCusto">
-          <option value="12">12</option>
-          <option value="24">24</option>
-          <option value="48">48</option>
-          <option value="todos">Todos</option>
+    <p id="mensagemTiposCusto" class="page-message" role="status"></p>
+
+    <form id="formTipoCusto" class="card" aria-labelledby="tituloFormTipoCusto" hidden>
+      <h2 class="card__title" id="tituloFormTipoCusto">Novo tipo de custo</h2>
+      <input id="tipoCustoId" type="hidden">
+      <div class="field-grid">
+        <div class="field">
+          <label class="field__label" for="nomeTipoCusto">Nome do tipo</label>
+          <input id="nomeTipoCusto" class="input" type="text" placeholder="Ex.: Limpeza" autocomplete="off" required>
+          <span class="field__hint">Maiúsculas, acentos e espaços não diferenciam: Limpeza e LIMPEZA são o mesmo tipo.</span>
+        </div>
+        <div class="field">
+          <span class="field__label" id="rotuloCategoriaTipoCusto">Vale para</span>
+          <div class="choice-group" role="group" aria-labelledby="rotuloCategoriaTipoCusto" id="categoriaTipoCusto">
+            <button type="button" class="choice" data-categoria="peca" aria-pressed="true">Peça</button>
+            <button type="button" class="choice" data-categoria="venda" aria-pressed="false">Venda</button>
+            <button type="button" class="choice" data-categoria="ambos" aria-pressed="false">Ambos</button>
+          </div>
+        </div>
+      </div>
+      <p id="mensagemFormTipoCusto" class="page-message" role="status"></p>
+      <div class="form-actions-bar">
+        <button type="button" id="cancelarTipoCusto" class="btn btn--quiet">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Salvar tipo</button>
+      </div>
+    </form>
+
+    <div class="toolbar">
+      <div class="toolbar__group">
+        <div class="search-field">
+          <label class="sr-only" for="buscaTipoCusto">Buscar tipo</label>
+          <i class="ri-search-line search-field__icon" aria-hidden="true"></i>
+          <input id="buscaTipoCusto" class="input" type="search" placeholder="Buscar por nome do tipo" autocomplete="off">
+        </div>
+        <label class="sr-only" for="filtroStatusTiposCusto">Status</label>
+        <select id="filtroStatusTiposCusto" class="select">
+          <option value="">Ativos e inativos</option>
+          <option value="ativo">Só ativos</option>
+          <option value="inativo">Só inativos</option>
         </select>
-      </label>
-
-      <label class="products-search-field">
-        <span>Buscar tipo</span>
-        <input id="buscaTipoCusto" type="search" placeholder="Buscar por nome do tipo">
-      </label>
-
-      <button id="abrirFiltrosTiposCusto" type="button" class="products-filter-toggle button-secondary">Filtros</button>
-    </section>
-
-    <aside class="products-filter-panel cost-types-filter-panel" aria-label="Filtros avancados">
-      <div class="products-filter-panel__header">
-        <div>
-          <p class="hero__tag">Filtros</p>
-          <h3>Tipos cadastrados</h3>
-        </div>
-        <button id="fecharFiltrosTiposCusto" type="button" class="products-filter-close" aria-label="Fechar filtros">X</button>
       </div>
-
-      <div class="products-filters">
-        <label for="filtroCategoriaTiposCusto">
-          Categoria
-          <select id="filtroCategoriaTiposCusto">
-            <option value="">Todas</option>
-            <option value="peca">Peça</option>
-            <option value="venda">Venda</option>
-            <option value="ambos">Ambos</option>
-          </select>
-        </label>
-
-        <label for="filtroStatusTiposCusto">
-          Status
-          <select id="filtroStatusTiposCusto">
-            <option value="">Todos</option>
-            <option value="ativo">Ativo</option>
-            <option value="inativo">Inativo</option>
-          </select>
-        </label>
+      <div class="segmented" role="group" aria-label="Vale para" id="filtroCategoriaTiposCusto">
+        <button type="button" class="segmented__item" data-categoria="" aria-pressed="true">Todos <span class="segmented__count" data-contagem="">0</span></button>
+        <button type="button" class="segmented__item" data-categoria="peca" aria-pressed="false">Peça <span class="segmented__count" data-contagem="peca">0</span></button>
+        <button type="button" class="segmented__item" data-categoria="venda" aria-pressed="false">Venda <span class="segmented__count" data-contagem="venda">0</span></button>
+        <button type="button" class="segmented__item" data-categoria="ambos" aria-pressed="false">Ambos <span class="segmented__count" data-contagem="ambos">0</span></button>
       </div>
+    </div>
 
-      <div class="products-filter-panel__actions">
-        <button id="limparFiltrosTiposCusto" type="button" class="button-secondary">Limpar filtros</button>
-        <button id="aplicarFiltrosTiposCusto" type="button" class="button-primary">Aplicar/Fechar</button>
-      </div>
-    </aside>
-
-    <section class="cost-types-admin-grid">
-      <article class="form-card cost-types-form-card">
-        <div class="cost-types-card-header">
-          <div>
-            <p class="hero__tag">Cadastro</p>
-            <h2>Novo / editar tipo</h2>
-          </div>
-          <span class="status-badge status-badge--info">Admin</span>
-        </div>
-
-        <form id="formTipoCusto">
-          <input id="tipoCustoId" type="hidden">
-
-          <div class="cost-types-form-grid">
-            <div class="form-group cost-types-field-wide">
-              <label for="nomeTipoCusto">Nome do tipo *</label>
-              <input id="nomeTipoCusto" type="text" placeholder="Ex.: Limpeza">
-            </div>
-
-            <div class="form-group">
-              <label for="categoriaTipoCusto">Categoria *</label>
-              <select id="categoriaTipoCusto">
-                <option value="peca">Peça</option>
-                <option value="venda">Venda</option>
-                <option value="ambos">Ambos</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="statusTipoCusto">Status</label>
-              <select id="statusTipoCusto">
-                <option value="ativo">Ativo</option>
-                <option value="inativo">Inativo</option>
-              </select>
-            </div>
-
-            <div class="form-group cost-types-field-wide">
-              <label for="observacaoTipoCusto">Observação curta</label>
-              <input id="observacaoTipoCusto" type="text" placeholder="Campo reservado para etapa futura" disabled>
-            </div>
-          </div>
-
-          <p id="mensagemTipoCusto" class="form-message" aria-live="polite"></p>
-
-          <div class="form-actions">
-            <button type="submit" class="button-primary">Salvar</button>
-            <button id="cancelarEdicaoTipoCusto" type="button" class="button-secondary" hidden>Cancelar edição</button>
-          </div>
-        </form>
-      </article>
-
-      <article class="stock-card cost-types-help-card">
-        <div class="cost-types-card-header">
-          <div>
-            <p class="hero__tag">Organizacao</p>
-            <h2>Uso recomendado</h2>
-          </div>
-        </div>
-        <ul class="cost-types-help-list">
-          <li>Use nomes curtos e padronizados.</li>
-          <li>Escolha se o custo vale para peça, venda ou ambos.</li>
-          <li>Inative tipos antigos em vez de duplicar cadastro.</li>
-          <li>Limpeza, limpeza e LIMPEZA devem ser tratados como o mesmo tipo.</li>
-        </ul>
-      </article>
-    </section>
-
-    <section class="stock-card cost-types-list-card">
-      <div class="cost-types-card-header">
-        <div>
-          <p class="hero__tag">Lista</p>
-          <h2>Tipos de custo cadastrados</h2>
-        </div>
-        <span id="contadorTiposCusto" class="status-badge status-badge--info">0 tipos</span>
-      </div>
-
-      <p id="mensagemListaTiposCusto" class="empty-message"></p>
-
-      <div class="cost-types-list" role="table" aria-label="Tipos de custo cadastrados">
-        <div class="cost-types-row cost-types-row--head" role="row">
-          <span>Nome do tipo</span>
-          <span>Categoria</span>
-          <span>Status</span>
-          <span>Usos</span>
-          <span>Ações</span>
-        </div>
-        <div id="listaTiposCusto"></div>
+    <section class="card card--table" aria-label="Tipos de custo cadastrados">
+      <div class="table-wrap">
+        <table class="data-table data-table--responsive">
+          <thead>
+            <tr>
+              <th scope="col">Tipo</th>
+              <th scope="col">Vale para</th>
+              <th scope="col">Usos</th>
+              <th scope="col">Status</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody id="tabelaTiposCusto"></tbody>
+        </table>
       </div>
     </section>
   </main>
@@ -171,7 +94,7 @@
   <script src="../js/supabase-config.js?v=6"></script>
   <script src="../js/auth.js?v=4"></script>
   <script src="../js/supabase-service.js?v=36"></script>
-  <script src="../js/tipos-custo.js?v=2"></script>
+  <script src="../js/tipos-custo.js?v=3"></script>
   <script src="../js/sidebar.js?v=9"></script>
 </body>
 </html>
