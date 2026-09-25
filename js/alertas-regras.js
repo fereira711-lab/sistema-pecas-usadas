@@ -28,7 +28,8 @@
   }
 
   function hojeUtc(hoje) {
-    const data = hoje instanceof Date ? hoje : new Date();
+    // Checagem pelo metodo (e nao "instanceof Date") para aceitar datas vindas de outro contexto, como nos testes.
+    const data = hoje && typeof hoje.getFullYear === "function" ? hoje : new Date();
     return Date.UTC(data.getFullYear(), data.getMonth(), data.getDate());
   }
 
